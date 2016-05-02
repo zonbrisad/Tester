@@ -1,0 +1,30 @@
+/* 
+    Document   : testcss
+    Created on : 2010-nov-05, 11:08:47
+    Author     : peter.malmberg
+    Description:
+        Purpose of the stylesheet follows.
+*/
+
+/* 
+   TODO customize this sample style
+   Syntax recommendation http://www.w3.org/TR/REC-CSS2/
+*/
+
+root { 
+    display: block;
+    background-color: #ccffcc;
+}
+
+body {
+    background-color: #ccffff;
+    font-family: sans-serif;
+    font-size: small;
+}
+h1 {
+    background-color: #990099;
+    color: #ccccff;
+}
+table {
+    border: 4;
+}

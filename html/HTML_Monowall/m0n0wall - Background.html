@@ -1,0 +1,122 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!-- saved from url=(0034)http://m0n0.ch/wall/background.php -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>m0n0wall - Background</title>
+
+<meta property="og:image" content="http://m0n0.ch/images/m0n0wall.gif">
+
+<link href="./m0n0wall - Background_files/base.css" rel="stylesheet" type="text/css">
+<link rel="shortcut icon" href="http://m0n0.ch/favicon.ico">
+</head>
+
+<body link="#3a568d" alink="#3a568d" vlink="#3a568d">
+<table border="0" cellpadding="0" cellspacing="0">
+  <tbody><tr> 
+    <td colspan="2" style="padding-bottom: 12px" class="rowlineb">
+	<table border="0" cellspacing="0" cellpadding="0" width="100%">
+	<div id="hej" class="stitle">GPMon</div> 
+<!--	<tbody><tr><td><a href="http://m0n0.ch/wall/"><img src="./m0n0wall - Background_files/m0n0wall.gif" width="300" height="84" border="0"></a></td>
+ -->
+	<td valign="bottom" align="right">
+	</td>
+	</tr>
+	</tbody></table>
+	</td>
+	<td></td>
+  </tr>
+  <tr>
+   
+  </tr>
+  <tr> 
+    <td valign="top" style="padding: 12px 12px 12px 0"> 
+      <table width="150" border="0" cellspacing="0" cellpadding="0">
+        <tbody><tr> 
+          <td class="navtbl">			
+			<div class="nav">
+			<ul>
+				<li class="title">Information</li>
+				<li><a href="./m0n0wall - Background_files/m0n0wall - Background.html" class="naventact">Background</a></li>
+				<li><a href="http://m0n0.ch/wall/facts.php">Facts</a></li>
+				<li><a href="http://m0n0.ch/wall/hardware.php">Hardware</a></li>
+				<li><a href="http://m0n0.ch/wall/features.php">Features</a></li>
+				<li><a href="http://m0n0.ch/wall/screenshots.php">Screenshots</a></li>
+				<li><a href="http://m0n0.ch/wall/changelog.php">Change log</a></li>
+				<li><button type="button" onClick="document.getElementId('hej').innerHTML='Blaha'">Click me</button></li>
+				<li><button type="button" onClick="document.title='Blaha'">Title</button></li>
+				<li><button type="button" onClick="document.title='Blaha'">Test</button></li>
+			</ul>
+			<ul>
+				<li class="title">Getting m0n0wall</li>
+				<li><a href="http://m0n0.ch/wall/quickstart.php">Quick start guide</a></li>
+				<li><a href="http://m0n0.ch/wall/beta.php">Beta versions</a></li>
+				<li><a href="http://m0n0.ch/wall/downloads.php">Downloads</a></li>
+				<li><a href="http://m0n0.ch/wall/installation.php">Installation</a></li>
+				<li><a href="http://m0n0.ch/wall/upgrading.php">Upgrading</a></li>
+				<li><a href="http://m0n0.ch/wall/oldversions.php">Old versions</a></li>
+				<li><a href="http://m0n0.ch/wall/repository.php">Repository</a></li>
+			</ul>
+			<ul>
+				<li class="title">Support</li>
+				<li><a href="http://m0n0.ch/wall/screencasts.php">Screencasts</a></li>
+				<li><a href="http://doc.m0n0.ch/handbook/faq.html" target="_blank">FAQ</a></li>
+				<li><a href="http://m0n0.ch/wall/gettinghelp.php">Getting help</a></li>
+				<li><a href="http://m0n0.ch/wall/documentation.php">Documentation</a></li>
+				<li><a href="http://forum.m0n0.ch/" target="_blank">Forum</a></li>
+				<li><a href="http://m0n0.ch/wall/mailinglist.php">Mailing lists</a></li>
+				<li><a href="http://m0n0.ch/wall/security.php">Security</a></li>
+			</ul>
+			<ul>
+				<li class="title">Miscellaneous</li>
+								<li><a href="http://m0n0.ch/wall/tools.php">Tools/resources</a></li>
+				<li><a href="http://m0n0.ch/wall/quotes.php">Quotes</a></li>
+				<li><a href="http://m0n0.ch/wall/gallery.php">Gallery</a></li>
+												<li><a href="http://m0n0.ch/wall/donations.php">Donations</a></li>
+								<li><a href="http://m0n0.ch/wall/license.php">License</a></li>
+			</ul>
+			</div>
+			</td>
+        </tr>
+      </tbody></table>
+    <p class="indent"><span class="gray">Last update:</span><br>
+       01/15/2014<br>
+      <span class="gray">Current version:</span><br>
+       1.8.1<br>
+	  <span class="gray">Latest beta snapshot:</span><br>
+       1.8.2b576	</p></td>
+    <td width="552" valign="top" style="padding: 8 8 12 8">
+      <div class="pgtitle">Background</div>        <div class="just">
+          <p>Ever since I started playing with packet filters on 
+          embedded PCs, I wanted to have a nice web-based GUI to control all aspects 
+          of my firewall without having to type a single shell command. There are 
+          numerous efforts to create nice firewall packages with web interfaces 
+          on the Internet (most of them Linux based), but none met all my requirements 
+          (free, fast, simple, clean and with all the features I need). So, I eventually 
+          started writing my own web GUI. But soon I figured out that I didn't want 
+          to create another incarnation of webmin – I wanted to create a complete, 
+          new embedded firewall software package. It all evolved to the point where 
+          one could plug in the box, set the LAN IP address via the serial console, 
+          log into the web interface and set it up. Then I decided that I didn't 
+          like the usual bootup system configuration with shell scripts (I already 
+          had to write a C program to generate the filter rules since that's almost 
+          impossible in a shell script), and since my web interface was based on 
+          PHP, it didn't take me long to figure out that I might use PHP for the 
+          system configuration as well. That way, the configuration data would no 
+          longer have to be stored in text files that can be parsed in a shell script 
+        – it could now be stored in an XML file. So I completely rewrote 
+          the whole system again, not changing much in the look-and-feel, but quite 
+          a lot "under the hood".</p>
+          <p align="right"><em>- Manuel Kasper</em> </p>
+        </div> 
+            </td>
+  </tr>
+  <tr> 
+    <td colspan="2" valign="top" style="padding-top: 8px;" class="rowlinet">
+	  <span class="paras">© 
+      2015 by Peter Malmberg &lt;<a href="mailto:peter.malmberg@gmail.com">peter.malmberg@gmail.com</a>&gt;. 
+      All rights reserved.
+      </span></td><td></td>
+  </tr>
+</tbody></table>
+
+
+</body></html>
