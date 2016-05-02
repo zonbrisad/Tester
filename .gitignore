@@ -1,0 +1,63 @@
+
+
+# Makeplate specific files
+#--------------------------------------------------------------------
+archive
+backup
+output
+personal.mk
+
+# Temporary files
+#--------------------------------------------------------------------
+*.tmp
+*.old
+*~
+
+# Revision control
+#--------------------------------------------------------------------
+.svn
+.git
+
+# C/C++
+#--------------------------------------------------------------------
+
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+*.lo
+*.slo
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Static Libraries
+*.lib
+*.a
+*.la
+*.lo
+*.lai
+
+# Shared libraries (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+
+# Misc
+#--------------------------------------------------------------------
+*.d
+
