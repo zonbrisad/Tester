@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
 #
 #
 #
@@ -10,10 +12,14 @@ import sys
 from PyQt4.QtGui import *
  
 # Settings ------------------------------------------------------------------
-AppName     = "Test"
+AppName     = "QtTest"
+AppVersion  = "0.1"
+AppLicence  = "MIT"
+AppAuthor   = "Peter Malmberg <peter.malmnerg@gmail.com>"
 WindowTitle = "My program"
 WindowXSize = 320
 WindowYsize = 240
+
 
 # Code ----------------------------------------------------------------------
 
@@ -27,10 +33,9 @@ def main():
     app = QApplication(sys.argv)       
  
     # The QWidget widget is the base class of all user interface objects in PyQt4.
-    w = QWidget()
- 
     global w
-    
+    w = QMainWindow()
+         
     # Set window size. 
     w.resize(320, 240)
  
@@ -49,20 +54,32 @@ def main():
     tbtn.resize(tbtn.sizeHint())
     tbtn.move(100, 110)       
 
-
     # Create main menu
-    #mainMenu = w.menuBar()
-    #mainMenu.setNativeMenuBar(False)
-    #fileMenu = mainMenu.addMenu('&amp;File')
+    mainMenu = w.menuBar()
+    mainMenu.setNativeMenuBar(False)
+    fileMenu = mainMenu.addMenu('File')
+    helpMenu = mainMenu.addMenu('Help')
+    
+    # Add exit button
+    exitButton = QAction( 'Exit', w)
+    exitButton.setShortcut('Ctrl+Q')
+    exitButton.setStatusTip('Exit application')
+    exitButton.triggered.connect(w.close)
+    fileMenu.addAction(exitButton)
+    
+    # Add about button
+    aboutButton = QAction( 'About', w)
+    aboutButton.setStatusTip('About application')
+    aboutButton.triggered.connect(w.close)
+    helpMenu.addAction(aboutButton)                 
     
     # Statusbar
-    #w.statusBar().showMessage('Kalle')
+    w.statusBar().showMessage('Kalle')
     
     # Show window
     w.show() 
     
     sys.exit(app.exec_())
-
 
     
 if __name__ == '__main__':
