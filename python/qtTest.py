@@ -15,6 +15,7 @@ from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
 # Settings ------------------------------------------------------------------
+
 AppName     = "PyQtTest"
 AppVersion  = "0.1"
 AppLicence  = "MIT"
@@ -78,14 +79,10 @@ def main():
     btn = QPushButton('Exit')
     btn.setToolTip('Click to quit!')
     btn.clicked.connect(exit)
-    #btn.resize(btn.sizeHint())
-    #btn.move(100, 80)       
 
     # Add open file button
     tbtn = QPushButton('File')
     tbtn.clicked.connect(oFile)
-    #tbtn.resize(tbtn.sizeHint())
-    #tbtn.move(100, 110)       
 
     # Create main menu
     mainMenu = w.menuBar()
@@ -110,19 +107,25 @@ def main():
     # Statusbar
     w.statusBar().showMessage('Kalle')
     
-    l = QLabel("Etikett")
-
+    #l = QLabel("Etikett")
+    
+    text = QTextEdit()
+    #text.append("Kalle")
+    
     # Create Vertical box layout
     vbox = QVBoxLayout()    
     
     vbox.addWidget(tbtn)
     vbox.addStretch()    
     vbox.addWidget(btn)
-    vbox.addWidget(l)
+    #vbox.addWidget(l)
+    vbox.addWidget(text)
 
-    qw = QWidget()
-    qw.setLayout(vbox)
-    w.setCentralWidget(qw)
+    # Create a central widget for main window
+    cw = QWidget()
+    cw.setLayout(vbox)
+    
+    w.setCentralWidget(cw)
     
     # Show window
     w.show() 
