@@ -1,22 +1,25 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+#----------------------------------------------------------------------------
+#  Description: A simple PyQt Testprogram    
+#    
+#  Author:  Peter Malmberg <peter.malmberg@gmail.com>
+#  Licence: MIT
 #
 #
-#
-#
-#
-
+#----------------------------------------------------------------------------
 
 # Imports -------------------------------------------------------------------
 import sys
 from PyQt4.QtGui import *
- 
+from PyQt4.QtCore import *
+
 # Settings ------------------------------------------------------------------
-AppName     = "QtTest"
+AppName     = "PyQtTest"
 AppVersion  = "0.1"
 AppLicence  = "MIT"
 AppAuthor   = "Peter Malmberg <peter.malmnerg@gmail.com>"
-WindowTitle = "My program"
+WindowTitle = AppName
 WindowXSize = 320
 WindowYsize = 240
 
@@ -27,7 +30,36 @@ def oFile():
     filename = QFileDialog.getOpenFileName(w, 'Open File', '/')
     print("Filename " + filename)
 
+def aboutDialog():
+    d = QDialog()
+    b1 = QPushButton("ok",d)
+    b1.move(100,50)
+    d.setWindowTitle("About " + AppName)
+    d.setWindowModality(Qt.ApplicationModal)
+    l = QLabel(AppName, d)
+    l.move(20,10)
+    l = QLabel("Version: "+AppVersion, d)
+    l.move(20,30)
+    l = QLabel("Licence: "+AppLicence, d)
+    l.move(20,50)
+    d.exec_()
 
+def msgbtn(i):
+    print "Button pressed is:",i.text()
+    
+def msgBox():
+    msg = QMessageBox()
+    #msg.setIcon(QMessageBox.Information)
+    msg.setText("This is a message box")
+    msg.setInformativeText("This is additional information")
+    msg.setWindowTitle("MessageBox demo")
+    msg.setDetailedText("The details are as follows:")
+    msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+    msg.buttonClicked.connect(msgbtn)
+    
+    retval = msg.exec_()
+    print "value of pressed message box button:", retval
+    
 def main():
     # Create an PyQT4 application object.
     app = QApplication(sys.argv)       
@@ -35,24 +67,25 @@ def main():
     # The QWidget widget is the base class of all user interface objects in PyQt4.
     global w
     w = QMainWindow()
-         
+    
     # Set window size. 
     w.resize(320, 240)
  
     # Set window title  
     w.setWindowTitle(WindowTitle) 
  
-    # Add a button
-    btn = QPushButton('Exit', w)
+    # Add a exit button
+    btn = QPushButton('Exit')
     btn.setToolTip('Click to quit!')
     btn.clicked.connect(exit)
-    btn.resize(btn.sizeHint())
-    btn.move(100, 80)       
+    #btn.resize(btn.sizeHint())
+    #btn.move(100, 80)       
 
-    tbtn = QPushButton('File', w)
+    # Add open file button
+    tbtn = QPushButton('File')
     tbtn.clicked.connect(oFile)
-    tbtn.resize(tbtn.sizeHint())
-    tbtn.move(100, 110)       
+    #tbtn.resize(tbtn.sizeHint())
+    #tbtn.move(100, 110)       
 
     # Create main menu
     mainMenu = w.menuBar()
@@ -70,11 +103,26 @@ def main():
     # Add about button
     aboutButton = QAction( 'About', w)
     aboutButton.setStatusTip('About application')
-    aboutButton.triggered.connect(w.close)
-    helpMenu.addAction(aboutButton)                 
+#    aboutButton.triggered.connect(aboutDialog)
+    aboutButton.triggered.connect(msgBox)
+    #helpMenu.addAction(aboutButton)                 
     
     # Statusbar
     w.statusBar().showMessage('Kalle')
+    
+    l = QLabel("Etikett")
+
+    # Create Vertical box layout
+    vbox = QVBoxLayout()    
+    
+    vbox.addWidget(tbtn)
+    vbox.addStretch()    
+    vbox.addWidget(btn)
+    vbox.addWidget(l)
+
+    qw = QWidget()
+    qw.setLayout(vbox)
+    w.setCentralWidget(qw)
     
     # Show window
     w.show() 
