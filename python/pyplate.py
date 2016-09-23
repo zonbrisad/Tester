@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------
 # 
@@ -16,7 +16,7 @@
 
 # Imports -------------------------------------------------------------------
 
-import os
+import sys, os, traceback
 import logging
 import argparse
 from datetime import datetime, date, time
@@ -81,43 +81,56 @@ E_END="\e[m"              # Clear Attributes
 E_INFO=E_BR_CYAN
 E_WARNING=E_BR_YELLOW
 E_ERROR=E_BR_RED
-E_CRITICAL=E_ON_RED$E_WHITE
+E_CRITICAL=E_ON_RED+E_WHITE
 
 
 
 def printInfo():
     print("Script name    " + AppName)
     print("Script version " + AppVersion)
-    print("Script path    " +  os.path.realpath(__file__))
+    print("Script path    " + os.path.realpath(__file__))
 
-    
+def colorTest():
+    print(E_RED + "Red" + E_END)
     
     
 def main():
     logging.basicConfig(level=logging.DEBUG)
 
     printInfo()
-    
+#    colorTest()
+ 
     # options parsing
     parser = argparse.ArgumentParser(description="C/C++ template generator")
-    parser.add_argument("--newc",    action="store_true", help="Create a new C and H file set")
+
+    parser.add_argument("--helpx",     help="Print help informationt")
+
     parser.add_argument("--newcpp",  action="store_true", help="Create a new C++ and H file set")
+
     parser.add_argument("--licence", type=str,            help="Licence of new file", default="")
     parser.add_argument("--author",  type=str,            help="Author of file",      default="")
     parser.add_argument("--dir",     type=str,            help="Directory where to store file",  default=".")
-    
+
     args = parser.parse_args()
-    
+    sys.exit(0)
     if args.newc:
         newModule(args.dir, args.author, args.licence)
         exit
         
 
-
-def pyPlateMain():        
-    break
-        
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+        sys.exit(0)
+    except KeyboardInterrupt as e: # Ctrl-C
+        raise e
+    except SystemExit as e:        # sys.exit()
+        raise e
+    except Exception as e:
+        print('ERROR, UNEXPECTED EXCEPTION')
+        print(str(e))
+        traceback.print_exc()
+        os._exit(1)
+                
     
     

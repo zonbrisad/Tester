@@ -1,16 +1,24 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#----------------------------------------------------------------------------
+# -----------------------------------------------------------------------
 #  Description: A simple PyQt Testprogram    
 #    
-#  Author:  Peter Malmberg <peter.malmberg@gmail.com>
-#  Licence: MIT
 #
+# File:    qtTest.py
+# Author:  Peter Malmberg <peter.malmberg@gmail.com>
+# Date:    2016-02-19
+# Version: 0.2
+# Python:  >=3
+# Licence: MIT
+# 
+# -----------------------------------------------------------------------
 #
-#----------------------------------------------------------------------------
 
 # Imports -------------------------------------------------------------------
-import sys
+
+import sys, os, traceback
+import logging
+#import argparse
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
@@ -46,7 +54,7 @@ def aboutDialog():
     d.exec_()
 
 def msgbtn(i):
-    print "Button pressed is:",i.text()
+    print("Button pressed is:",i.text())
     
 def msgBox():
     msg = QMessageBox()
@@ -59,7 +67,7 @@ def msgBox():
     msg.buttonClicked.connect(msgbtn)
     
     retval = msg.exec_()
-    print "value of pressed message box button:", retval
+    print("value of pressed message box button:", retval)
     
 def main():
     # Create an PyQT4 application object.
@@ -106,11 +114,15 @@ def main():
     
     # Statusbar
     w.statusBar().showMessage('Kalle')
-    
-    #l = QLabel("Etikett")
+
+    pixmap = QPixmap("logo.jpg")
+#    pixmap.scaled(100,100, Qt::IgnoreAspectRatio )
+        
+    label = QLabel()
+    label.setPixmap(pixmap)
     
     text = QTextEdit()
-    #text.append("Kalle")
+    text.append("Kalle")
     
     # Create Vertical box layout
     vbox = QVBoxLayout()    
@@ -118,7 +130,7 @@ def main():
     vbox.addWidget(tbtn)
     vbox.addStretch()    
     vbox.addWidget(btn)
-    #vbox.addWidget(l)
+    vbox.addWidget(label)
     vbox.addWidget(text)
 
     # Create a central widget for main window
@@ -133,5 +145,19 @@ def main():
     sys.exit(app.exec_())
 
     
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    try:
+        main()
+        sys.exit(0)
+    except KeyboardInterrupt as e: # Ctrl-C
+        raise e
+    except SystemExit as e:        # sys.exit()
+        raise e
+    except Exception as e:
+        print('ERROR, UNEXPECTED EXCEPTION')
+        print(str(e))
+        traceback.print_exc()
+        os._exit(1)
+                
+    
+    
