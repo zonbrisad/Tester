@@ -69,6 +69,13 @@ def msgBox():
     retval = msg.exec_()
     print("value of pressed message box button:", retval)
     
+
+def addText(txt):
+    text.append(txt)
+
+def timerEvent():
+    addText("Timer event")
+    
 def main():
     # Create an PyQT4 application object.
     app = QApplication(sys.argv)       
@@ -121,8 +128,10 @@ def main():
     label = QLabel()
     label.setPixmap(pixmap)
     
+    # Add text edit field
+    global text
     text = QTextEdit()
-    text.append("Kalle")
+    addText("Testing")
     
     # Create Vertical box layout
     vbox = QVBoxLayout()    
@@ -138,6 +147,12 @@ def main():
     cw.setLayout(vbox)
     
     w.setCentralWidget(cw)
+
+    # Create a timer object
+    timer = QTimer()
+    timer.setInterval(1000)
+    timer.timeout.connect(timerEvent)
+    timer.start()
     
     # Show window
     w.show() 
