@@ -22,16 +22,19 @@ import logging
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
+
 # Settings ------------------------------------------------------------------
 
+# Application settings
 AppName     = "PyQtTest"
 AppVersion  = "0.1"
 AppLicence  = "MIT"
 AppAuthor   = "Peter Malmberg <peter.malmnerg@gmail.com>"
+
+# Qt settings
 WindowTitle = AppName
 WindowXSize = 320
-WindowYsize = 240
-
+WindowYSize = 240
 
 # Code ----------------------------------------------------------------------
 
@@ -79,13 +82,13 @@ def timerEvent():
 def main():
     # Create an PyQT4 application object.
     app = QApplication(sys.argv)       
- 
+
     # The QWidget widget is the base class of all user interface objects in PyQt4.
     global w
     w = QMainWindow()
-    
+
     # Set window size. 
-    w.resize(320, 240)
+    w.resize(WindowXSize, WindowYSize)
  
     # Set window title  
     w.setWindowTitle(WindowTitle) 

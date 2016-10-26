@@ -180,7 +180,7 @@
 #define E_ON_YELLOW     "\33[43m"
 #define E_ON_BLUE       "\33[44m"
 #define E_ON_MAGENTA    "\33[45m"
-#define E_ON_CYAN       "\33[46m"
+#define E_ON_CYAN       "\33[1;46m"
 #define E_ON_WHITE      "\33[1;47m"
 
 #define E_END           "\033[0m"
