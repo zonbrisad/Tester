@@ -5,10 +5,10 @@
 
 
 void printColor(char *str, char *color) {
-	printf("%s%-15s Example text and chars #/-_+!@$%&{}() %s\n", color, str, E_END); 
+	printf("%s%-15s Example text and chars #/-_+!@$%%&{}() %s\n", color, str, E_END); 
 }
 void printColor2(char *str, char *color, char *bg) {
-	printf("%s%s%-15s Example text and chars #/-_+!@$%&{}() %s\n", bg, color, str, E_END); 
+	printf("%s%s%-15s Example text and chars #/-_+!@$%%&{}() %s\n", bg, color, str, E_END); 
 }
 
 char *bgColors[] = {E_ON_WHITE, E_ON_YELLOW,E_ON_RED, E_ON_BLUE, E_ON_GREEN, E_ON_CYAN, E_ON_MAGENTA,  NULL};
@@ -88,9 +88,9 @@ void bar(int x) {
 			buf3[i] = ' ';
 		}
 	}
-	buf1[BUF1] = '\0';
-	buf2[BUF2] = '\0';
-	buf3[BUF3] = '\0';
+	buf1[BUF1-1] = '\0';
+	buf2[BUF2-1] = '\0';
+	buf3[BUF3-1] = '\0';
 	printf("["E_BR_GREEN"%s%s%s%s%s%s] %2d\n", buf1, E_BR_YELLOW, buf2, E_BR_RED, buf3, E_END, x);
 }
 
