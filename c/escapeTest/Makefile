@@ -19,7 +19,7 @@ TARGET_PLATFORM = linux
 LICENCE = GPLv2
 
 # Target file name (without extension).
-TARGET = makeplate
+TARGET = esctest
 
 # List C source files here. (C dependencies are automatically generated.)
 SRC = src/main.c 
@@ -261,8 +261,8 @@ C_ACTION=$(E_BR_MAGENTA)
 
 # Messages ------------------------------------------------------------------
 MSG_LINE             = "$(E_WHITE)------------------------------------------------------------------$(E_END)"
-MSG_BEGIN            = "${E_WHITE}-------------------------------- Begin ---------------------------${E_END}"
-MSG_END              = "${E_WHITE}-------------------------------- End -----------------------------${E_END}"
+MSG_BEGIN            = "${E_WHITE}Begin ${E_GRAY}------------------------------------------------------------${E_END}"
+MSG_END              = "${E_WHITE}End ${E_GRAY}--------------------------------------------------------------${E_END}"
 MSG_ERRORS_NONE      = "${C_OK}Errors: none ${E_END}"
 MSG_LINKING          = "${C_ACTION}Linking:${E_END}"
 MSG_COMPILING        = "${C_ACTION}Compiling C:${E_END}"

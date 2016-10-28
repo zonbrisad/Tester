@@ -1,7 +1,13 @@
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
+#include <signal.h>
+#include <math.h>
+#include <sys/ioctl.h>
+
 #include "def.h"
+
 
 
 void printColor(char *str, char *color) {
@@ -107,16 +113,55 @@ void barTest(void) {
 }
 
 
+void sinTest(void) {
+	int i,j;
+	j = 0;
+	printf(E_HIDE_CURSOR);
+	while (1) {
+		for (i=0;i<40;i++) {
+			bar( 25 + round(24*sin(j*0.2+i*0.2+0.1)));
+		}
+		printf(E_CUR_RETURN);
+		for (i=0;i<39;i++) {
+			printf(E_CUR_UP);
+		}
+		j++;
+		usleep(50000);
+	}
+}
+
+void signalC(int sig) {
+	printf(E_SHOW_CURSOR);
+	exit(0);
+}
+
+void printInfo(void) {	
+	int cols  = 0;
+	int lines = 0;
+//	struct ttysize ts;
+	struct winsize ts;
+	ioctl(STDIN_FILENO,  TIOCGWINSZ , &ts);
+	cols = ts.ws_col;
+	lines = ts.ws_row;
+	printf("Terminal is %dx%d\n", cols, lines);
+}
+
 int main(int argc, char *argv[]) {
 	
 	printf("Escape sequence test.\n\n");
 	
+	signal(SIGINT, signalC);
+
+	printf(E_HIDE_CURSOR);
+	printInfo();
+	
 	printColors();
 	
-	barTest();
+	//barTest();
 	
+	sinTest();
  
-	
+	printf(E_SHOW_CURSOR);
 	return 0;
 
 }
