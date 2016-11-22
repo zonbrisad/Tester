@@ -125,7 +125,7 @@ def main():
     # Statusbar
     w.statusBar().showMessage('Kalle')
 
-    pixmap = QPixmap("logo.jpg")
+    pixmap = QPixmap("flower.jpg")
 #    pixmap.scaled(100,100, Qt::IgnoreAspectRatio )
         
     label = QLabel()
