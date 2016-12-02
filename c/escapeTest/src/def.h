@@ -191,10 +191,10 @@
 // ANSI movement codes ------------------------------------------------------
 
 #define E_CUR_RETURN  "\033[;0F"      // cursor return
-#define E_CUR_UP      "\033[;0A"      // cursor up
-#define E_CUR_DOWN    "\033[;0B"      // cursor down
-#define E_CUR_FORWARD "\033[;0C"      // cursor forward
-#define E_CUR_BACK    "\033[;0D"      // cursor back
+#define E_CUR_UP      "\033[;5A"      // cursor up
+#define E_CUR_DOWN    "\033[;2B"      // cursor down
+#define E_CUR_FORWARD "\033[;2C"      // cursor forward
+#define E_CUR_BACK    "\033[;2D"      // cursor back
 
 #define E_HIDE_CURSOR "\033[?25l"     // hide cursor
 #define E_SHOW_CURSOR "\033[?25h"     // show cursor
