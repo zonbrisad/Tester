@@ -87,7 +87,7 @@ fltk-1.3.4-1/jpeg/jutils.c
 
 # List C++ source files here. (C dependencies are automatically generated.)
 CPPSRC = \
-fltk-1.3.4-1/src/fl_cmap.cxx\
+fltk-1.3.4-1/src/cmap.cxx\
 fltk-1.3.4-1/src/filename_absolute.cxx\
 fltk-1.3.4-1/src/filename_expand.cxx\
 fltk-1.3.4-1/src/filename_ext.cxx\
@@ -610,7 +610,7 @@ C_FILTER   = | sed -ru -e $(F_FATAL_ERROR) -e $(F_ERROR) -e $(FF_ERROR)     \
                        -e $(F_WARNING4) -e $(F_WARNING5)                    \
                        -e $(F_NOTE) -e $(FF_NOTE)                           \
                        -e $(F_INF) -e $(FF_INF) -e $(F_BRACKET)
-CPP_FILTER = $(C_FILTER)
+CPP_FILTER = ${C_FILTER}
 
 LD_ERROR1="s/undefined reference/$$(printf "$(C_ERROR)")&$$(printf "$(E_END)")/i"
 LD_ERROR2="s/No such file or directory/$$(printf "$(C_ERROR)")&$$(printf "$(E_END)")/i"
@@ -711,7 +711,7 @@ $(OBJDIR)/%.o : %.c
 $(OBJDIR)/%.o : %.cpp
 	@echo
 	@echo -e $(MSG_COMPILING_CPP) "$(C_FILE)" $< "$(E_END)"
-	@$(CC) -c $(ALL_CPPFLAGS) $< -o $@ 2>&1 | $(CPP_FILTER)
+	@$(CC) -c $(ALL_CPPFLAGS) $< -o $@ 2>&1  $(CPP_FILTER)
 	
 # Assemble: create object files from assembler source files.
 $(OBJDIR)/%.o : %.S
