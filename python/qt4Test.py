@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------
-#  Description: A simple PyQt Testprogram    
+#  Description: A simple PyQt 4 Testprogram    
 #    
 #
 # File:    qtTest.py
@@ -9,6 +9,7 @@
 # Date:    2016-02-19
 # Version: 0.2
 # Python:  >=3
+# QT       4
 # Licence: MIT
 # 
 # -----------------------------------------------------------------------
@@ -18,7 +19,6 @@
 
 import sys, os, traceback
 import logging
-#import argparse
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
@@ -26,7 +26,7 @@ from PyQt4.QtCore import *
 # Settings ------------------------------------------------------------------
 
 # Application settings
-AppName     = "PyQtTest"
+AppName     = "PyQt4Test"
 AppVersion  = "0.1"
 AppLicence  = "MIT"
 AppAuthor   = "Peter Malmberg <peter.malmnerg@gmail.com>"

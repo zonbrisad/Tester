@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------
-#  Description: A simple PyQt 4 Testprogram    
+#  Description: A simple PyQt 5 Testprogram    
 #    
 #
 # File:    qtTest.py
@@ -9,7 +9,7 @@
 # Date:    2016-02-19
 # Version: 0.2
 # Python:  >=3
-# QT       4
+# QT       5
 # Licence: MIT
 # 
 # -----------------------------------------------------------------------
@@ -17,16 +17,18 @@
 
 # Imports -------------------------------------------------------------------
 
-import sys, os, traceback
+import sys 
+import os 
+import traceback
 import logging
-from PyQt4.QtGui import *
-from PyQt4.QtCore import *
-
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
 
 # Settings ------------------------------------------------------------------
 
 # Application settings
-AppName     = "PyQt4Test"
+AppName     = "PyQt5Test"
 AppVersion  = "0.1"
 AppLicence  = "MIT"
 AppAuthor   = "Peter Malmberg <peter.malmnerg@gmail.com>"
