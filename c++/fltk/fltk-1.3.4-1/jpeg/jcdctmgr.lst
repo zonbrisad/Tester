@@ -1,0 +1,2221 @@
+   1              		.file	"jcdctmgr.c"
+   2              		.text
+   3              	.Ltext0:
+   4              		.section	.text.unlikely.forward_DCT,"ax",@progbits
+   5              	.LCOLDB0:
+   6              		.section	.text.forward_DCT,"ax",@progbits
+   7              	.LHOTB0:
+   8              		.p2align 4,,15
+   9              		.section	.text.unlikely.forward_DCT
+  10              	.Ltext_cold0:
+  11              		.section	.text.forward_DCT
+  13              	forward_DCT:
+  14              	.LFB61:
+  15              		.file 1 "fltk-1.3.4-1/jpeg/jcdctmgr.c"
+   1:fltk-1.3.4-1/jpeg/jcdctmgr.c **** /*
+   2:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  * jcdctmgr.c
+   3:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  *
+   4:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  * Copyright (C) 1994-1996, Thomas G. Lane.
+   5:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  * Modified 2003-2013 by Guido Vollbeding.
+   6:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  * This file is part of the Independent JPEG Group's software.
+   7:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  * For conditions of distribution and use, see the accompanying README file.
+   8:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  *
+   9:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  * This file contains the forward-DCT management logic.
+  10:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  * This code selects a particular DCT implementation to be used,
+  11:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  * and it performs related housekeeping chores including coefficient
+  12:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  * quantization.
+  13:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  */
+  14:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+  15:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #define JPEG_INTERNALS
+  16:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #include "jinclude.h"
+  17:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #include "jpeglib.h"
+  18:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #include "jdct.h"		/* Private declarations for DCT subsystem */
+  19:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+  20:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+  21:fltk-1.3.4-1/jpeg/jcdctmgr.c **** /* Private subobject for this module */
+  22:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+  23:fltk-1.3.4-1/jpeg/jcdctmgr.c **** typedef struct {
+  24:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   struct jpeg_forward_dct pub;	/* public fields */
+  25:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+  26:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   /* Pointer to the DCT routine actually in use */
+  27:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   forward_DCT_method_ptr do_dct[MAX_COMPONENTS];
+  28:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+  29:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef DCT_FLOAT_SUPPORTED
+  30:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   /* Same as above for the floating-point case. */
+  31:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   float_DCT_method_ptr do_float_dct[MAX_COMPONENTS];
+  32:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #endif
+  33:fltk-1.3.4-1/jpeg/jcdctmgr.c **** } my_fdct_controller;
+  34:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+  35:fltk-1.3.4-1/jpeg/jcdctmgr.c **** typedef my_fdct_controller * my_fdct_ptr;
+  36:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+  37:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+  38:fltk-1.3.4-1/jpeg/jcdctmgr.c **** /* The allocated post-DCT divisor tables -- big enough for any
+  39:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  * supported variant and not identical to the quant table entries,
+  40:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  * because of scaling (especially for an unnormalized DCT) --
+  41:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  * are pointed to by dct_table in the per-component comp_info
+  42:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  * structures.  Each table is given in normal array order.
+  43:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  */
+  44:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+  45:fltk-1.3.4-1/jpeg/jcdctmgr.c **** typedef union {
+  46:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   DCTELEM int_array[DCTSIZE2];
+  47:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef DCT_FLOAT_SUPPORTED
+  48:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   FAST_FLOAT float_array[DCTSIZE2];
+  49:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #endif
+  50:fltk-1.3.4-1/jpeg/jcdctmgr.c **** } divisor_table;
+  51:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+  52:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+  53:fltk-1.3.4-1/jpeg/jcdctmgr.c **** /* The current scaled-DCT routines require ISLOW-style divisor tables,
+  54:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  * so be sure to compile that code if either ISLOW or SCALING is requested.
+  55:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  */
+  56:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef DCT_ISLOW_SUPPORTED
+  57:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #define PROVIDE_ISLOW_TABLES
+  58:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #else
+  59:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef DCT_SCALING_SUPPORTED
+  60:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #define PROVIDE_ISLOW_TABLES
+  61:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #endif
+  62:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #endif
+  63:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+  64:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+  65:fltk-1.3.4-1/jpeg/jcdctmgr.c **** /*
+  66:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  * Perform forward DCT on one or more blocks of a component.
+  67:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  *
+  68:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  * The input samples are taken from the sample_data[] array starting at
+  69:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  * position start_row/start_col, and moving to the right for any additional
+  70:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  * blocks. The quantized coefficients are returned in coef_blocks[].
+  71:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  */
+  72:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+  73:fltk-1.3.4-1/jpeg/jcdctmgr.c **** METHODDEF(void)
+  74:fltk-1.3.4-1/jpeg/jcdctmgr.c **** forward_DCT (j_compress_ptr cinfo, jpeg_component_info * compptr,
+  75:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	     JSAMPARRAY sample_data, JBLOCKROW coef_blocks,
+  76:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	     JDIMENSION start_row, JDIMENSION start_col,
+  77:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	     JDIMENSION num_blocks)
+  78:fltk-1.3.4-1/jpeg/jcdctmgr.c **** /* This version is used for integer DCT implementations. */
+  79:fltk-1.3.4-1/jpeg/jcdctmgr.c **** {
+  16              		.loc 1 79 0
+  17              		.cfi_startproc
+  18              	.LVL0:
+  19 0000 4157     		pushq	%r15
+  20              		.cfi_def_cfa_offset 16
+  21              		.cfi_offset 15, -16
+  22 0002 4156     		pushq	%r14
+  23              		.cfi_def_cfa_offset 24
+  24              		.cfi_offset 14, -24
+  80:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   /* This routine is heavily used, so it's worth coding it tightly. */
+  81:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   my_fdct_ptr fdct = (my_fdct_ptr) cinfo->fdct;
+  82:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   forward_DCT_method_ptr do_dct = fdct->do_dct[compptr->component_index];
+  83:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   DCTELEM * divisors = (DCTELEM *) compptr->dct_table;
+  84:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   DCTELEM workspace[DCTSIZE2];	/* work area for FDCT subroutine */
+  85:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   JDIMENSION bi;
+  86:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+  87:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   sample_data += start_row;	/* fold in the vertical offset once */
+  25              		.loc 1 87 0
+  26 0004 4589C0   		movl	%r8d, %r8d
+  79:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   /* This routine is heavily used, so it's worth coding it tightly. */
+  27              		.loc 1 79 0
+  28 0007 4155     		pushq	%r13
+  29              		.cfi_def_cfa_offset 32
+  30              		.cfi_offset 13, -32
+  31 0009 4154     		pushq	%r12
+  32              		.cfi_def_cfa_offset 40
+  33              		.cfi_offset 12, -40
+  34 000b 55       		pushq	%rbp
+  35              		.cfi_def_cfa_offset 48
+  36              		.cfi_offset 6, -48
+  37 000c 53       		pushq	%rbx
+  38              		.cfi_def_cfa_offset 56
+  39              		.cfi_offset 3, -56
+  40 000d 4889F5   		movq	%rsi, %rbp
+  41 0010 4881EC28 		subq	$296, %rsp
+  41      010000
+  42              		.cfi_def_cfa_offset 352
+  82:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   DCTELEM * divisors = (DCTELEM *) compptr->dct_table;
+  43              		.loc 1 82 0
+  44 0017 488BB728 		movq	552(%rdi), %rsi
+  44      020000
+  45              	.LVL1:
+  46 001e 48637D04 		movslq	4(%rbp), %rdi
+  47              	.LVL2:
+  79:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   /* This routine is heavily used, so it's worth coding it tightly. */
+  48              		.loc 1 79 0
+  49 0022 8B842460 		movl	352(%rsp), %eax
+  49      010000
+  83:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   DCTELEM workspace[DCTSIZE2];	/* work area for FDCT subroutine */
+  50              		.loc 1 83 0
+  51 0029 4C8B7558 		movq	88(%rbp), %r14
+  79:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   /* This routine is heavily used, so it's worth coding it tightly. */
+  52              		.loc 1 79 0
+  53 002d 64488B1C 		movq	%fs:40, %rbx
+  53      25280000 
+  53      00
+  54 0036 48899C24 		movq	%rbx, 280(%rsp)
+  54      18010000 
+  55 003e 31DB     		xorl	%ebx, %ebx
+  56              		.loc 1 87 0
+  57 0040 4A8D1CC2 		leaq	(%rdx,%r8,8), %rbx
+  88:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+  89:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   for (bi = 0; bi < num_blocks; bi++, start_col += compptr->DCT_h_scaled_size) {
+  58              		.loc 1 89 0
+  59 0044 85C0     		testl	%eax, %eax
+  82:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   DCTELEM * divisors = (DCTELEM *) compptr->dct_table;
+  60              		.loc 1 82 0
+  61 0046 4C8B64FE 		movq	88(%rsi,%rdi,8), %r12
+  61      58
+  62              	.LVL3:
+  87:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+  63              		.loc 1 87 0
+  64 004b 48895C24 		movq	%rbx, 8(%rsp)
+  64      08
+  65              	.LVL4:
+  66              		.loc 1 89 0
+  67 0050 0F848700 		je	.L1
+  67      0000
+  68 0056 8D58FF   		leal	-1(%rax), %ebx
+  69              	.LVL5:
+  70 0059 4589CF   		movl	%r9d, %r15d
+  71 005c 4989CD   		movq	%rcx, %r13
+  72 005f 4883C301 		addq	$1, %rbx
+  73 0063 48C1E307 		salq	$7, %rbx
+  74 0067 4801CB   		addq	%rcx, %rbx
+  75              	.LVL6:
+  76 006a 660F1F44 		.p2align 4,,10
+  76      0000
+  77              		.p2align 3
+  78              	.L7:
+  90:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     /* Perform the DCT */
+  91:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     (*do_dct) (workspace, sample_data, start_col);
+  79              		.loc 1 91 0
+  80 0070 4489FA   		movl	%r15d, %edx
+  81 0073 488B7424 		movq	8(%rsp), %rsi
+  81      08
+  82 0078 488D7C24 		leaq	16(%rsp), %rdi
+  82      10
+  83 007d 41FFD4   		call	*%r12
+  84              	.LVL7:
+  85 0080 31C9     		xorl	%ecx, %ecx
+  86 0082 EB24     		jmp	.L6
+  87              	.LVL8:
+  88              		.p2align 4,,10
+  89 0084 0F1F4000 		.p2align 3
+  90              	.L3:
+  91              	.LBB2:
+  92:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+  93:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     /* Quantize/descale the coefficients, and store into coef_blocks[] */
+  94:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     { register DCTELEM temp, qval;
+  95:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       register int i;
+  96:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       register JCOEFPTR output_ptr = coef_blocks[bi];
+  97:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+  98:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       for (i = 0; i < DCTSIZE2; i++) {
+  99:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	qval = divisors[i];
+ 100:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	temp = workspace[i];
+ 101:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	/* Divide the coefficient value by qval, ensuring proper rounding.
+ 102:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 * Since C does not specify the direction of rounding for negative
+ 103:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 * quotients, we have to force the dividend positive for portability.
+ 104:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 *
+ 105:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 * In most files, at least half of the output values will be zero
+ 106:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 * (at default quantization settings, more like three-quarters...)
+ 107:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 * so we should ensure that this case is fast.  On many machines,
+ 108:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 * a comparison is enough cheaper than a divide to make a special test
+ 109:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 * a win.  Since both inputs will be nonnegative, we need only test
+ 110:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 * for a < b to discover whether a/b is 0.
+ 111:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 * If your machine's division is fast enough, define FAST_DIVIDE.
+ 112:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 */
+ 113:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef FAST_DIVIDE
+ 114:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #define DIVIDE_BY(a,b)	a /= b
+ 115:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #else
+ 116:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #define DIVIDE_BY(a,b)	if (a >= b) a /= b; else a = 0
+ 117:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #endif
+ 118:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	if (temp < 0) {
+ 119:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	  temp = -temp;
+ 120:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	  temp += qval>>1;	/* for rounding */
+ 121:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	  DIVIDE_BY(temp, qval);
+ 122:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	  temp = -temp;
+ 123:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	} else {
+ 124:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	  temp += qval>>1;	/* for rounding */
+  92              		.loc 1 124 0
+  93 0088 01D6     		addl	%edx, %esi
+  94              	.LVL9:
+  95 008a 31C0     		xorl	%eax, %eax
+ 125:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	  DIVIDE_BY(temp, qval);
+  96              		.loc 1 125 0
+  97 008c 39F7     		cmpl	%esi, %edi
+  98 008e 7F05     		jg	.L5
+  99              	.LVL10:
+ 100 0090 89F0     		movl	%esi, %eax
+ 101 0092 99       		cltd
+ 102 0093 F7FF     		idivl	%edi
+ 103              	.LVL11:
+ 104              	.L5:
+ 126:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	}
+ 127:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	output_ptr[i] = (JCOEF) temp;
+ 105              		.loc 1 127 0 discriminator 2
+ 106 0095 66418944 		movw	%ax, 0(%r13,%rcx)
+ 106      0D00
+ 107 009b 4883C102 		addq	$2, %rcx
+  98:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	qval = divisors[i];
+ 108              		.loc 1 98 0 discriminator 2
+ 109 009f 4881F980 		cmpq	$128, %rcx
+ 109      000000
+ 110 00a6 7428     		je	.L16
+ 111              	.LVL12:
+ 112              	.L6:
+  99:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	temp = workspace[i];
+ 113              		.loc 1 99 0
+ 114 00a8 418B3C4E 		movl	(%r14,%rcx,2), %edi
+ 115              	.LVL13:
+ 100:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	/* Divide the coefficient value by qval, ensuring proper rounding.
+ 116              		.loc 1 100 0
+ 117 00ac 8B744C10 		movl	16(%rsp,%rcx,2), %esi
+ 118              	.LVL14:
+ 120:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	  DIVIDE_BY(temp, qval);
+ 119              		.loc 1 120 0
+ 120 00b0 89FA     		movl	%edi, %edx
+ 121 00b2 D1FA     		sarl	%edx
+ 118:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	  temp = -temp;
+ 122              		.loc 1 118 0
+ 123 00b4 85F6     		testl	%esi, %esi
+ 124 00b6 79D0     		jns	.L3
+ 125              	.LVL15:
+ 120:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	  DIVIDE_BY(temp, qval);
+ 126              		.loc 1 120 0
+ 127 00b8 29F2     		subl	%esi, %edx
+ 128              	.LVL16:
+ 129 00ba 31C0     		xorl	%eax, %eax
+ 121:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	  temp = -temp;
+ 130              		.loc 1 121 0
+ 131 00bc 39D7     		cmpl	%edx, %edi
+ 132 00be 7FD5     		jg	.L5
+ 133              	.LVL17:
+ 134 00c0 89D0     		movl	%edx, %eax
+ 135 00c2 99       		cltd
+ 136              	.LVL18:
+ 137 00c3 F7FF     		idivl	%edi
+ 138              	.LVL19:
+ 139 00c5 F7D8     		negl	%eax
+ 140              	.LVL20:
+ 141 00c7 EBCC     		jmp	.L5
+ 142              	.LVL21:
+ 143 00c9 0F1F8000 		.p2align 4,,10
+ 143      000000
+ 144              		.p2align 3
+ 145              	.L16:
+ 146 00d0 4983ED80 		subq	$-128, %r13
+ 147              	.LVL22:
+ 148              	.LBE2:
+  89:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     /* Perform the DCT */
+ 149              		.loc 1 89 0 discriminator 2
+ 150 00d4 44037D24 		addl	36(%rbp), %r15d
+ 151              	.LVL23:
+ 152 00d8 4939DD   		cmpq	%rbx, %r13
+ 153 00db 7593     		jne	.L7
+ 154              	.LVL24:
+ 155              	.L1:
+ 128:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       }
+ 129:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     }
+ 130:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   }
+ 131:fltk-1.3.4-1/jpeg/jcdctmgr.c **** }
+ 156              		.loc 1 131 0
+ 157 00dd 488B8424 		movq	280(%rsp), %rax
+ 157      18010000 
+ 158 00e5 64483304 		xorq	%fs:40, %rax
+ 158      25280000 
+ 158      00
+ 159 00ee 7512     		jne	.L17
+ 160 00f0 4881C428 		addq	$296, %rsp
+ 160      010000
+ 161              		.cfi_remember_state
+ 162              		.cfi_def_cfa_offset 56
+ 163 00f7 5B       		popq	%rbx
+ 164              		.cfi_def_cfa_offset 48
+ 165 00f8 5D       		popq	%rbp
+ 166              		.cfi_def_cfa_offset 40
+ 167              	.LVL25:
+ 168 00f9 415C     		popq	%r12
+ 169              		.cfi_def_cfa_offset 32
+ 170              	.LVL26:
+ 171 00fb 415D     		popq	%r13
+ 172              		.cfi_def_cfa_offset 24
+ 173 00fd 415E     		popq	%r14
+ 174              		.cfi_def_cfa_offset 16
+ 175              	.LVL27:
+ 176 00ff 415F     		popq	%r15
+ 177              		.cfi_def_cfa_offset 8
+ 178 0101 C3       		ret
+ 179              	.LVL28:
+ 180              	.L17:
+ 181              		.cfi_restore_state
+ 182 0102 E8000000 		call	__stack_chk_fail
+ 182      00
+ 183              	.LVL29:
+ 184              		.cfi_endproc
+ 185              	.LFE61:
+ 187              		.section	.text.unlikely.forward_DCT
+ 188              	.LCOLDE0:
+ 189              		.section	.text.forward_DCT
+ 190              	.LHOTE0:
+ 191              		.section	.text.unlikely.forward_DCT_float,"ax",@progbits
+ 192              	.LCOLDB2:
+ 193              		.section	.text.forward_DCT_float,"ax",@progbits
+ 194              	.LHOTB2:
+ 195              		.p2align 4,,15
+ 197              	forward_DCT_float:
+ 198              	.LFB62:
+ 132:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+ 133:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+ 134:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef DCT_FLOAT_SUPPORTED
+ 135:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+ 136:fltk-1.3.4-1/jpeg/jcdctmgr.c **** METHODDEF(void)
+ 137:fltk-1.3.4-1/jpeg/jcdctmgr.c **** forward_DCT_float (j_compress_ptr cinfo, jpeg_component_info * compptr,
+ 138:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 		   JSAMPARRAY sample_data, JBLOCKROW coef_blocks,
+ 139:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 		   JDIMENSION start_row, JDIMENSION start_col,
+ 140:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 		   JDIMENSION num_blocks)
+ 141:fltk-1.3.4-1/jpeg/jcdctmgr.c **** /* This version is used for floating-point DCT implementations. */
+ 142:fltk-1.3.4-1/jpeg/jcdctmgr.c **** {
+ 199              		.loc 1 142 0
+ 200              		.cfi_startproc
+ 201              	.LVL30:
+ 202 0000 4157     		pushq	%r15
+ 203              		.cfi_def_cfa_offset 16
+ 204              		.cfi_offset 15, -16
+ 205 0002 4156     		pushq	%r14
+ 206              		.cfi_def_cfa_offset 24
+ 207              		.cfi_offset 14, -24
+ 143:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   /* This routine is heavily used, so it's worth coding it tightly. */
+ 144:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   my_fdct_ptr fdct = (my_fdct_ptr) cinfo->fdct;
+ 145:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   float_DCT_method_ptr do_dct = fdct->do_float_dct[compptr->component_index];
+ 146:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   FAST_FLOAT * divisors = (FAST_FLOAT *) compptr->dct_table;
+ 147:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   FAST_FLOAT workspace[DCTSIZE2]; /* work area for FDCT subroutine */
+ 148:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   JDIMENSION bi;
+ 149:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+ 150:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   sample_data += start_row;	/* fold in the vertical offset once */
+ 208              		.loc 1 150 0
+ 209 0004 4589C0   		movl	%r8d, %r8d
+ 142:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   /* This routine is heavily used, so it's worth coding it tightly. */
+ 210              		.loc 1 142 0
+ 211 0007 4155     		pushq	%r13
+ 212              		.cfi_def_cfa_offset 32
+ 213              		.cfi_offset 13, -32
+ 214 0009 4154     		pushq	%r12
+ 215              		.cfi_def_cfa_offset 40
+ 216              		.cfi_offset 12, -40
+ 217 000b 55       		pushq	%rbp
+ 218              		.cfi_def_cfa_offset 48
+ 219              		.cfi_offset 6, -48
+ 220 000c 53       		pushq	%rbx
+ 221              		.cfi_def_cfa_offset 56
+ 222              		.cfi_offset 3, -56
+ 223 000d 4889F5   		movq	%rsi, %rbp
+ 224 0010 4881EC28 		subq	$296, %rsp
+ 224      010000
+ 225              		.cfi_def_cfa_offset 352
+ 146:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   FAST_FLOAT workspace[DCTSIZE2]; /* work area for FDCT subroutine */
+ 226              		.loc 1 146 0
+ 227 0017 4C8B7D58 		movq	88(%rbp), %r15
+ 142:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   /* This routine is heavily used, so it's worth coding it tightly. */
+ 228              		.loc 1 142 0
+ 229 001b 64488B34 		movq	%fs:40, %rsi
+ 229      25280000 
+ 229      00
+ 230 0024 4889B424 		movq	%rsi, 280(%rsp)
+ 230      18010000 
+ 231 002c 31F6     		xorl	%esi, %esi
+ 232              	.LVL31:
+ 145:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   FAST_FLOAT * divisors = (FAST_FLOAT *) compptr->dct_table;
+ 233              		.loc 1 145 0
+ 234 002e 488BB728 		movq	552(%rdi), %rsi
+ 234      020000
+ 235 0035 48637D04 		movslq	4(%rbp), %rdi
+ 236              	.LVL32:
+ 142:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   /* This routine is heavily used, so it's worth coding it tightly. */
+ 237              		.loc 1 142 0
+ 238 0039 8B842460 		movl	352(%rsp), %eax
+ 238      010000
+ 145:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   FAST_FLOAT * divisors = (FAST_FLOAT *) compptr->dct_table;
+ 239              		.loc 1 145 0
+ 240 0040 4C8BA4FE 		movq	168(%rsi,%rdi,8), %r12
+ 240      A8000000 
+ 241              	.LVL33:
+ 242              		.loc 1 150 0
+ 243 0048 4A8D34C2 		leaq	(%rdx,%r8,8), %rsi
+ 244              	.LVL34:
+ 151:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+ 152:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   for (bi = 0; bi < num_blocks; bi++, start_col += compptr->DCT_h_scaled_size) {
+ 245              		.loc 1 152 0
+ 246 004c 85C0     		testl	%eax, %eax
+ 150:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+ 247              		.loc 1 150 0
+ 248 004e 48897424 		movq	%rsi, 8(%rsp)
+ 248      08
+ 249              	.LVL35:
+ 250              		.loc 1 152 0
+ 251 0053 0F847E00 		je	.L18
+ 251      0000
+ 252 0059 8D58FF   		leal	-1(%rax), %ebx
+ 253 005c 4589CD   		movl	%r9d, %r13d
+ 254 005f 4989CE   		movq	%rcx, %r14
+ 255 0062 F30F100D 		movss	.LC1(%rip), %xmm1
+ 255      00000000 
+ 256 006a 4883C301 		addq	$1, %rbx
+ 257 006e 48C1E307 		salq	$7, %rbx
+ 258 0072 4801CB   		addq	%rcx, %rbx
+ 259              	.LVL36:
+ 260              		.p2align 4,,10
+ 261 0075 0F1F00   		.p2align 3
+ 262              	.L21:
+ 263 0078 F30F114C 		movss	%xmm1, 4(%rsp)
+ 263      2404
+ 264              	.LVL37:
+ 153:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     /* Perform the DCT */
+ 154:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     (*do_dct) (workspace, sample_data, start_col);
+ 265              		.loc 1 154 0
+ 266 007e 4489EA   		movl	%r13d, %edx
+ 267 0081 488B7424 		movq	8(%rsp), %rsi
+ 267      08
+ 268 0086 488D7C24 		leaq	16(%rsp), %rdi
+ 268      10
+ 269 008b 41FFD4   		call	*%r12
+ 270              	.LVL38:
+ 271 008e 31D2     		xorl	%edx, %edx
+ 272 0090 F30F104C 		movss	4(%rsp), %xmm1
+ 272      2404
+ 273              	.LVL39:
+ 274 0096 662E0F1F 		.p2align 4,,10
+ 274      84000000 
+ 274      0000
+ 275              		.p2align 3
+ 276              	.L20:
+ 277              	.LBB3:
+ 155:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+ 156:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     /* Quantize/descale the coefficients, and store into coef_blocks[] */
+ 157:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     { register FAST_FLOAT temp;
+ 158:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       register int i;
+ 159:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       register JCOEFPTR output_ptr = coef_blocks[bi];
+ 160:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+ 161:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       for (i = 0; i < DCTSIZE2; i++) {
+ 162:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	/* Apply the quantization and scaling factor */
+ 163:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	temp = workspace[i] * divisors[i];
+ 164:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	/* Round to nearest integer.
+ 165:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 * Since C does not specify the direction of rounding for negative
+ 166:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 * quotients, we have to force the dividend positive for portability.
+ 167:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 * The maximum coefficient size is +-16K (for 12-bit data), so this
+ 168:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 * code should work for either 16-bit or 32-bit ints.
+ 169:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 */
+ 170:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	output_ptr[i] = (JCOEF) ((int) (temp + (FAST_FLOAT) 16384.5) - 16384);
+ 278              		.loc 1 170 0 discriminator 3
+ 279 00a0 F30F1044 		movss	16(%rsp,%rdx,2), %xmm0
+ 279      5410
+ 280 00a6 F3410F59 		mulss	(%r15,%rdx,2), %xmm0
+ 280      0457
+ 281 00ac F30F58C1 		addss	%xmm1, %xmm0
+ 282 00b0 F30F2CC0 		cvttss2si	%xmm0, %eax
+ 283 00b4 662D0040 		subw	$16384, %ax
+ 284 00b8 66418904 		movw	%ax, (%r14,%rdx)
+ 284      16
+ 285              	.LVL40:
+ 286 00bd 4883C202 		addq	$2, %rdx
+ 161:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	/* Apply the quantization and scaling factor */
+ 287              		.loc 1 161 0 discriminator 3
+ 288 00c1 4881FA80 		cmpq	$128, %rdx
+ 288      000000
+ 289 00c8 75D6     		jne	.L20
+ 290 00ca 4983EE80 		subq	$-128, %r14
+ 291              	.LVL41:
+ 292              	.LBE3:
+ 152:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     /* Perform the DCT */
+ 293              		.loc 1 152 0 discriminator 2
+ 294 00ce 44036D24 		addl	36(%rbp), %r13d
+ 295              	.LVL42:
+ 296 00d2 4939DE   		cmpq	%rbx, %r14
+ 297 00d5 75A1     		jne	.L21
+ 298              	.LVL43:
+ 299              	.L18:
+ 171:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       }
+ 172:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     }
+ 173:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   }
+ 174:fltk-1.3.4-1/jpeg/jcdctmgr.c **** }
+ 300              		.loc 1 174 0
+ 301 00d7 488B8424 		movq	280(%rsp), %rax
+ 301      18010000 
+ 302 00df 64483304 		xorq	%fs:40, %rax
+ 302      25280000 
+ 302      00
+ 303 00e8 7512     		jne	.L27
+ 304 00ea 4881C428 		addq	$296, %rsp
+ 304      010000
+ 305              		.cfi_remember_state
+ 306              		.cfi_def_cfa_offset 56
+ 307 00f1 5B       		popq	%rbx
+ 308              		.cfi_def_cfa_offset 48
+ 309 00f2 5D       		popq	%rbp
+ 310              		.cfi_def_cfa_offset 40
+ 311              	.LVL44:
+ 312 00f3 415C     		popq	%r12
+ 313              		.cfi_def_cfa_offset 32
+ 314              	.LVL45:
+ 315 00f5 415D     		popq	%r13
+ 316              		.cfi_def_cfa_offset 24
+ 317 00f7 415E     		popq	%r14
+ 318              		.cfi_def_cfa_offset 16
+ 319 00f9 415F     		popq	%r15
+ 320              		.cfi_def_cfa_offset 8
+ 321              	.LVL46:
+ 322 00fb C3       		ret
+ 323              	.LVL47:
+ 324              	.L27:
+ 325              		.cfi_restore_state
+ 326 00fc E8000000 		call	__stack_chk_fail
+ 326      00
+ 327              	.LVL48:
+ 328              		.cfi_endproc
+ 329              	.LFE62:
+ 331              		.section	.text.unlikely.forward_DCT_float
+ 332              	.LCOLDE2:
+ 333              		.section	.text.forward_DCT_float
+ 334              	.LHOTE2:
+ 335              		.section	.text.unlikely.start_pass_fdctmgr,"ax",@progbits
+ 336              	.LCOLDB6:
+ 337              		.section	.text.start_pass_fdctmgr,"ax",@progbits
+ 338              	.LHOTB6:
+ 339              		.p2align 4,,15
+ 341              	start_pass_fdctmgr:
+ 342              	.LFB63:
+ 175:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+ 176:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #endif /* DCT_FLOAT_SUPPORTED */
+ 177:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+ 178:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+ 179:fltk-1.3.4-1/jpeg/jcdctmgr.c **** /*
+ 180:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  * Initialize for a processing pass.
+ 181:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  * Verify that all referenced Q-tables are present, and set up
+ 182:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  * the divisor table for each one.
+ 183:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  * In the current implementation, DCT of all components is done during
+ 184:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  * the first pass, even if only some components will be output in the
+ 185:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  * first scan.  Hence all components should be examined here.
+ 186:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  */
+ 187:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+ 188:fltk-1.3.4-1/jpeg/jcdctmgr.c **** METHODDEF(void)
+ 189:fltk-1.3.4-1/jpeg/jcdctmgr.c **** start_pass_fdctmgr (j_compress_ptr cinfo)
+ 190:fltk-1.3.4-1/jpeg/jcdctmgr.c **** {
+ 343              		.loc 1 190 0
+ 344              		.cfi_startproc
+ 345              	.LVL49:
+ 346 0000 4157     		pushq	%r15
+ 347              		.cfi_def_cfa_offset 16
+ 348              		.cfi_offset 15, -16
+ 349              	.LVL50:
+ 350 0002 4156     		pushq	%r14
+ 351              		.cfi_def_cfa_offset 24
+ 352              		.cfi_offset 14, -24
+ 353 0004 4155     		pushq	%r13
+ 354              		.cfi_def_cfa_offset 32
+ 355              		.cfi_offset 13, -32
+ 356 0006 4154     		pushq	%r12
+ 357              		.cfi_def_cfa_offset 40
+ 358              		.cfi_offset 12, -40
+ 359 0008 55       		pushq	%rbp
+ 360              		.cfi_def_cfa_offset 48
+ 361              		.cfi_offset 6, -48
+ 362 0009 53       		pushq	%rbx
+ 363              		.cfi_def_cfa_offset 56
+ 364              		.cfi_offset 3, -56
+ 365 000a 4883EC18 		subq	$24, %rsp
+ 366              		.cfi_def_cfa_offset 80
+ 191:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   my_fdct_ptr fdct = (my_fdct_ptr) cinfo->fdct;
+ 192:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   int ci, qtblno, i;
+ 193:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   jpeg_component_info *compptr;
+ 194:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   int method = 0;
+ 195:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   JQUANT_TBL * qtbl;
+ 196:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   DCTELEM * dtbl;
+ 197:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+ 198:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
+ 367              		.loc 1 198 0
+ 368 000e 8B775C   		movl	92(%rdi), %esi
+ 369 0011 488B5F68 		movq	104(%rdi), %rbx
+ 370              	.LVL51:
+ 371 0015 488B8728 		movq	552(%rdi), %rax
+ 371      020000
+ 372              	.LBB4:
+ 199:fltk-1.3.4-1/jpeg/jcdctmgr.c ****        ci++, compptr++) {
+ 200:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     /* Select the proper DCT routine for this component's scaling */
+ 201:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     switch ((compptr->DCT_h_scaled_size << 8) + compptr->DCT_v_scaled_size) {
+ 202:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef DCT_SCALING_SUPPORTED
+ 203:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((1 << 8) + 1):
+ 204:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_1x1;
+ 205:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 206:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 207:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((2 << 8) + 2):
+ 208:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_2x2;
+ 209:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 210:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 211:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((3 << 8) + 3):
+ 212:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_3x3;
+ 213:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 214:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 215:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((4 << 8) + 4):
+ 216:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_4x4;
+ 217:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 218:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 219:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((5 << 8) + 5):
+ 220:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_5x5;
+ 221:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 222:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 223:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((6 << 8) + 6):
+ 224:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_6x6;
+ 225:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 226:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 227:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((7 << 8) + 7):
+ 228:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_7x7;
+ 229:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 230:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 231:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((9 << 8) + 9):
+ 232:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_9x9;
+ 233:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 234:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 235:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((10 << 8) + 10):
+ 236:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_10x10;
+ 237:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 238:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 239:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((11 << 8) + 11):
+ 240:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_11x11;
+ 241:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 242:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 243:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((12 << 8) + 12):
+ 244:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_12x12;
+ 245:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 246:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 247:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((13 << 8) + 13):
+ 248:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_13x13;
+ 249:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 250:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 251:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((14 << 8) + 14):
+ 252:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_14x14;
+ 253:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 254:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 255:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((15 << 8) + 15):
+ 256:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_15x15;
+ 257:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 258:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 259:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((16 << 8) + 16):
+ 260:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_16x16;
+ 261:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 262:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 263:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((16 << 8) + 8):
+ 264:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_16x8;
+ 265:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 266:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 267:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((14 << 8) + 7):
+ 268:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_14x7;
+ 269:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 270:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 271:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((12 << 8) + 6):
+ 272:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_12x6;
+ 273:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 274:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 275:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((10 << 8) + 5):
+ 276:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_10x5;
+ 277:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 278:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 279:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((8 << 8) + 4):
+ 280:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_8x4;
+ 281:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 282:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 283:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((6 << 8) + 3):
+ 284:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_6x3;
+ 285:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 286:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 287:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((4 << 8) + 2):
+ 288:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_4x2;
+ 289:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 290:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 291:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((2 << 8) + 1):
+ 292:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_2x1;
+ 293:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 294:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 295:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((8 << 8) + 16):
+ 296:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_8x16;
+ 297:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 298:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 299:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((7 << 8) + 14):
+ 300:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_7x14;
+ 301:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 302:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 303:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((6 << 8) + 12):
+ 304:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_6x12;
+ 305:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 306:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 307:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((5 << 8) + 10):
+ 308:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_5x10;
+ 309:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 310:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 311:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((4 << 8) + 8):
+ 312:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_4x8;
+ 313:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 314:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 315:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((3 << 8) + 6):
+ 316:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_3x6;
+ 317:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 318:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 319:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((2 << 8) + 4):
+ 320:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_2x4;
+ 321:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 322:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 323:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((1 << 8) + 2):
+ 324:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->do_dct[ci] = jpeg_fdct_1x2;
+ 325:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 326:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 327:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #endif
+ 328:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((DCTSIZE << 8) + DCTSIZE):
+ 329:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       switch (cinfo->dct_method) {
+ 330:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef DCT_ISLOW_SUPPORTED
+ 331:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       case JDCT_ISLOW:
+ 332:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	fdct->do_dct[ci] = jpeg_fdct_islow;
+ 333:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	method = JDCT_ISLOW;
+ 334:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	break;
+ 335:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #endif
+ 336:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef DCT_IFAST_SUPPORTED
+ 337:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       case JDCT_IFAST:
+ 338:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	fdct->do_dct[ci] = jpeg_fdct_ifast;
+ 339:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	method = JDCT_IFAST;
+ 340:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	break;
+ 341:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #endif
+ 342:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef DCT_FLOAT_SUPPORTED
+ 343:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       case JDCT_FLOAT:
+ 344:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	fdct->do_float_dct[ci] = jpeg_fdct_float;
+ 345:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	method = JDCT_FLOAT;
+ 346:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	break;
+ 347:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #endif
+ 348:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       default:
+ 349:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	ERREXIT(cinfo, JERR_NOT_COMPILED);
+ 350:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	break;
+ 351:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       }
+ 352:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 353:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     default:
+ 354:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       ERREXIT2(cinfo, JERR_BAD_DCTSIZE,
+ 355:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	       compptr->DCT_h_scaled_size, compptr->DCT_v_scaled_size);
+ 356:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 357:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     }
+ 358:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     qtblno = compptr->quant_tbl_no;
+ 359:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     /* Make sure specified quantization table is present */
+ 360:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     if (qtblno < 0 || qtblno >= NUM_QUANT_TBLS ||
+ 361:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	cinfo->quant_tbl_ptrs[qtblno] == NULL)
+ 362:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       ERREXIT1(cinfo, JERR_NO_QUANT_TABLE, qtblno);
+ 363:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     qtbl = cinfo->quant_tbl_ptrs[qtblno];
+ 364:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     /* Create divisor table from quant table */
+ 365:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     switch (method) {
+ 366:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef PROVIDE_ISLOW_TABLES
+ 367:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case JDCT_ISLOW:
+ 368:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       /* For LL&M IDCT method, divisors are equal to raw quantization
+ 369:fltk-1.3.4-1/jpeg/jcdctmgr.c ****        * coefficients multiplied by 8 (to counteract scaling).
+ 370:fltk-1.3.4-1/jpeg/jcdctmgr.c ****        */
+ 371:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       dtbl = (DCTELEM *) compptr->dct_table;
+ 372:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       for (i = 0; i < DCTSIZE2; i++) {
+ 373:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	dtbl[i] =
+ 374:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	  ((DCTELEM) qtbl->quantval[i]) << (compptr->component_needed ? 4 : 3);
+ 375:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       }
+ 376:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->pub.forward_DCT[ci] = forward_DCT;
+ 377:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 378:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #endif
+ 379:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef DCT_IFAST_SUPPORTED
+ 380:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case JDCT_IFAST:
+ 381:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       {
+ 382:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	/* For AA&N IDCT method, divisors are equal to quantization
+ 383:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 * coefficients scaled by scalefactor[row]*scalefactor[col], where
+ 384:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 *   scalefactor[0] = 1
+ 385:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 *   scalefactor[k] = cos(k*PI/16) * sqrt(2)    for k=1..7
+ 386:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 * We apply a further scale factor of 8.
+ 387:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 */
+ 388:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #define CONST_BITS 14
+ 389:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	static const INT16 aanscales[DCTSIZE2] = {
+ 390:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	  /* precomputed values scaled up by 14 bits */
+ 391:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	  16384, 22725, 21407, 19266, 16384, 12873,  8867,  4520,
+ 392:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	  22725, 31521, 29692, 26722, 22725, 17855, 12299,  6270,
+ 393:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	  21407, 29692, 27969, 25172, 21407, 16819, 11585,  5906,
+ 394:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	  19266, 26722, 25172, 22654, 19266, 15137, 10426,  5315,
+ 395:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	  16384, 22725, 21407, 19266, 16384, 12873,  8867,  4520,
+ 396:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	  12873, 17855, 16819, 15137, 12873, 10114,  6967,  3552,
+ 397:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	   8867, 12299, 11585, 10426,  8867,  6967,  4799,  2446,
+ 398:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	   4520,  6270,  5906,  5315,  4520,  3552,  2446,  1247
+ 399:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	};
+ 400:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	SHIFT_TEMPS
+ 401:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+ 402:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	dtbl = (DCTELEM *) compptr->dct_table;
+ 403:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	for (i = 0; i < DCTSIZE2; i++) {
+ 404:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	  dtbl[i] = (DCTELEM)
+ 405:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	    DESCALE(MULTIPLY16V16((INT32) qtbl->quantval[i],
+ 406:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 				  (INT32) aanscales[i]),
+ 407:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 		    compptr->component_needed ? CONST_BITS-4 : CONST_BITS-3);
+ 408:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	}
+ 409:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       }
+ 410:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->pub.forward_DCT[ci] = forward_DCT;
+ 411:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 412:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #endif
+ 413:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef DCT_FLOAT_SUPPORTED
+ 414:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case JDCT_FLOAT:
+ 415:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       {
+ 416:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	/* For float AA&N IDCT method, divisors are equal to quantization
+ 417:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 * coefficients scaled by scalefactor[row]*scalefactor[col], where
+ 418:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 *   scalefactor[0] = 1
+ 419:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 *   scalefactor[k] = cos(k*PI/16) * sqrt(2)    for k=1..7
+ 420:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 * We apply a further scale factor of 8.
+ 421:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 * What's actually stored is 1/divisor so that the inner loop can
+ 422:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 * use a multiplication rather than a division.
+ 423:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	 */
+ 424:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	FAST_FLOAT * fdtbl = (FAST_FLOAT *) compptr->dct_table;
+ 373              		.loc 1 424 0
+ 374 001c F20F1015 		movsd	.LC3(%rip), %xmm2
+ 374      00000000 
+ 425:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	int row, col;
+ 426:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	static const double aanscalefactor[DCTSIZE] = {
+ 427:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	  1.0, 1.387039845, 1.306562965, 1.175875602,
+ 428:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	  1.0, 0.785694958, 0.541196100, 0.275899379
+ 429:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	};
+ 430:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+ 431:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	i = 0;
+ 432:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	for (row = 0; row < DCTSIZE; row++) {
+ 433:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	  for (col = 0; col < DCTSIZE; col++) {
+ 434:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	    fdtbl[i] = (FAST_FLOAT)
+ 435:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	      (1.0 / ((double) qtbl->quantval[i] *
+ 436:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 		      aanscalefactor[row] * aanscalefactor[col] *
+ 437:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 		      (compptr->component_needed ? 16.0 : 8.0)));
+ 375              		.loc 1 437 0
+ 376 0024 F20F1025 		movsd	.LC5(%rip), %xmm4
+ 376      00000000 
+ 377              	.LBE4:
+ 198:fltk-1.3.4-1/jpeg/jcdctmgr.c ****        ci++, compptr++) {
+ 378              		.loc 1 198 0
+ 379 002c 85F6     		testl	%esi, %esi
+ 380 002e 0F8E6103 		jle	.L28
+ 380      0000
+ 381 0034 4C8D6058 		leaq	88(%rax), %r12
+ 382 0038 4889FD   		movq	%rdi, %rbp
+ 383 003b 4531F6   		xorl	%r14d, %r14d
+ 384 003e 4531ED   		xorl	%r13d, %r13d
+ 385              	.LVL52:
+ 386              		.p2align 4,,10
+ 387 0041 0F1F8000 		.p2align 3
+ 387      000000
+ 388              	.L99:
+ 201:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef DCT_SCALING_SUPPORTED
+ 389              		.loc 1 201 0
+ 390 0048 8B4324   		movl	36(%rbx), %eax
+ 391 004b C1E008   		sall	$8, %eax
+ 392 004e 034328   		addl	40(%rbx), %eax
+ 393 0051 3D070700 		cmpl	$1799, %eax
+ 393      00
+ 394 0056 0F84CD05 		je	.L31
+ 394      0000
+ 395 005c 0F8F2E01 		jg	.L32
+ 395      0000
+ 396 0062 3D020400 		cmpl	$1026, %eax
+ 396      00
+ 397 0067 0F84AC05 		je	.L33
+ 397      0000
+ 398 006d 0F8F4D02 		jg	.L34
+ 398      0000
+ 399 0073 3D020200 		cmpl	$514, %eax
+ 399      00
+ 400 0078 0F848B05 		je	.L35
+ 400      0000
+ 401 007e 0F8F8203 		jg	.L36
+ 401      0000
+ 402 0084 3D020100 		cmpl	$258, %eax
+ 402      00
+ 403 0089 0F846A05 		je	.L37
+ 403      0000
+ 404 008f 3D010200 		cmpl	$513, %eax
+ 404      00
+ 405 0094 0F84FC03 		je	.L38
+ 405      0000
+ 406 009a 3D010100 		cmpl	$257, %eax
+ 406      00
+ 407 009f 0F846104 		je	.L115
+ 407      0000
+ 408              	.L30:
+ 354:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	       compptr->DCT_h_scaled_size, compptr->DCT_v_scaled_size);
+ 409              		.loc 1 354 0
+ 410 00a5 488B4500 		movq	0(%rbp), %rax
+ 411 00a9 F20F1164 		movsd	%xmm4, 8(%rsp)
+ 411      2408
+ 412 00af 4889EF   		movq	%rbp, %rdi
+ 413 00b2 F20F1114 		movsd	%xmm2, (%rsp)
+ 413      24
+ 414 00b7 C7402807 		movl	$7, 40(%rax)
+ 414      000000
+ 415 00be 488B4500 		movq	0(%rbp), %rax
+ 416 00c2 8B5324   		movl	36(%rbx), %edx
+ 417 00c5 89502C   		movl	%edx, 44(%rax)
+ 418 00c8 488B4500 		movq	0(%rbp), %rax
+ 419 00cc 8B5328   		movl	40(%rbx), %edx
+ 420 00cf 895030   		movl	%edx, 48(%rax)
+ 421 00d2 488B4500 		movq	0(%rbp), %rax
+ 422 00d6 FF10     		call	*(%rax)
+ 423              	.LVL53:
+ 358:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     /* Make sure specified quantization table is present */
+ 424              		.loc 1 358 0
+ 425 00d8 8B4310   		movl	16(%rbx), %eax
+ 354:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	       compptr->DCT_h_scaled_size, compptr->DCT_v_scaled_size);
+ 426              		.loc 1 354 0
+ 427 00db F20F1064 		movsd	8(%rsp), %xmm4
+ 427      2408
+ 428 00e1 F20F1014 		movsd	(%rsp), %xmm2
+ 428      24
+ 429              	.LVL54:
+ 360:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	cinfo->quant_tbl_ptrs[qtblno] == NULL)
+ 430              		.loc 1 360 0
+ 431 00e6 83F803   		cmpl	$3, %eax
+ 432 00e9 4C63F8   		movslq	%eax, %r15
+ 433 00ec 0F860501 		jbe	.L116
+ 433      0000
+ 434              		.p2align 4,,10
+ 435 00f2 660F1F44 		.p2align 3
+ 435      0000
+ 436              	.L76:
+ 362:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     qtbl = cinfo->quant_tbl_ptrs[qtblno];
+ 437              		.loc 1 362 0
+ 438 00f8 488B5500 		movq	0(%rbp), %rdx
+ 439 00fc F20F1164 		movsd	%xmm4, 8(%rsp)
+ 439      2408
+ 440 0102 4889EF   		movq	%rbp, %rdi
+ 441 0105 F20F1114 		movsd	%xmm2, (%rsp)
+ 441      24
+ 442 010a C7422836 		movl	$54, 40(%rdx)
+ 442      000000
+ 443 0111 488B5500 		movq	0(%rbp), %rdx
+ 444 0115 89422C   		movl	%eax, 44(%rdx)
+ 445 0118 488B4500 		movq	0(%rbp), %rax
+ 446              	.LVL55:
+ 447 011c FF10     		call	*(%rax)
+ 448              	.LVL56:
+ 365:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef PROVIDE_ISLOW_TABLES
+ 449              		.loc 1 365 0
+ 450 011e 4183FE01 		cmpl	$1, %r14d
+ 451 0122 4A8B74FD 		movq	112(%rbp,%r15,8), %rsi
+ 451      70
+ 452              	.LBB5:
+ 402:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	for (i = 0; i < DCTSIZE2; i++) {
+ 453              		.loc 1 402 0
+ 454 0127 488B7B58 		movq	88(%rbx), %rdi
+ 455 012b F20F1064 		movsd	8(%rsp), %xmm4
+ 455      2408
+ 456 0131 F20F1014 		movsd	(%rsp), %xmm2
+ 456      24
+ 457              	.LVL57:
+ 458              	.LBE5:
+ 365:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef PROVIDE_ISLOW_TABLES
+ 459              		.loc 1 365 0
+ 460 0136 0F85D700 		jne	.L117
+ 460      0000
+ 461              	.L79:
+ 462              	.LVL58:
+ 463              	.LBB6:
+ 402:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	for (i = 0; i < DCTSIZE2; i++) {
+ 464              		.loc 1 402 0
+ 465 013c 31D2     		xorl	%edx, %edx
+ 466 013e B8004000 		movl	$16384, %eax
+ 466      00
+ 467 0143 EB2D     		jmp	.L87
+ 468              	.LVL59:
+ 469              		.p2align 4,,10
+ 470 0145 0F1F00   		.p2align 3
+ 471              	.L84:
+ 405:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 				  (INT32) aanscales[i]),
+ 472              		.loc 1 405 0
+ 473 0148 48050002 		addq	$512, %rax
+ 473      0000
+ 474 014e B90A0000 		movl	$10, %ecx
+ 474      00
+ 475              	.L95:
+ 404:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	    DESCALE(MULTIPLY16V16((INT32) qtbl->quantval[i],
+ 476              		.loc 1 404 0 discriminator 8
+ 477 0153 48D3F8   		sarq	%cl, %rax
+ 478 0156 890457   		movl	%eax, (%rdi,%rdx,2)
+ 479 0159 4883C202 		addq	$2, %rdx
+ 403:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	  dtbl[i] = (DCTELEM)
+ 480              		.loc 1 403 0 discriminator 8
+ 481 015d 4881FA80 		cmpq	$128, %rdx
+ 481      000000
+ 482 0164 0F840C02 		je	.L86
+ 482      0000
+ 483 016a 480FBF82 		movswq	aanscales.4981(%rdx), %rax
+ 483      00000000 
+ 484              	.L87:
+ 405:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 				  (INT32) aanscales[i]),
+ 485              		.loc 1 405 0
+ 486 0172 0FB70C16 		movzwl	(%rsi,%rdx), %ecx
+ 487 0176 480FAFC1 		imulq	%rcx, %rax
+ 488 017a 8B4B34   		movl	52(%rbx), %ecx
+ 489 017d 85C9     		testl	%ecx, %ecx
+ 490 017f 75C7     		jne	.L84
+ 491 0181 48050004 		addq	$1024, %rax
+ 491      0000
+ 492 0187 B90B0000 		movl	$11, %ecx
+ 492      00
+ 493 018c EBC5     		jmp	.L95
+ 494              	.LVL60:
+ 495 018e 6690     		.p2align 4,,10
+ 496              		.p2align 3
+ 497              	.L32:
+ 498              	.LBE6:
+ 201:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef DCT_SCALING_SUPPORTED
+ 499              		.loc 1 201 0
+ 500 0190 3D0B0B00 		cmpl	$2827, %eax
+ 500      00
+ 501 0195 0F844E04 		je	.L51
+ 501      0000
+ 502 019b 0F8E6701 		jle	.L118
+ 502      0000
+ 503 01a1 3D070E00 		cmpl	$3591, %eax
+ 503      00
+ 504 01a6 0F842D04 		je	.L61
+ 504      0000
+ 505 01ac 0F8EF201 		jle	.L119
+ 505      0000
+ 506 01b2 3D0F0F00 		cmpl	$3855, %eax
+ 506      00
+ 507 01b7 0F848C03 		je	.L66
+ 507      0000
+ 508 01bd 0F8E6B03 		jle	.L120
+ 508      0000
+ 509 01c3 3D081000 		cmpl	$4104, %eax
+ 509      00
+ 510 01c8 0F84E802 		je	.L69
+ 510      0000
+ 511 01ce 3D101000 		cmpl	$4112, %eax
+ 511      00
+ 512 01d3 0F85CCFE 		jne	.L30
+ 512      FFFF
+ 260:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 513              		.loc 1 260 0
+ 514 01d9 49C70424 		movq	$jpeg_fdct_16x16, (%r12)
+ 514      00000000 
+ 515              	.LVL61:
+ 261:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 516              		.loc 1 261 0
+ 517 01e1 4531F6   		xorl	%r14d, %r14d
+ 518              	.LVL62:
+ 519              		.p2align 4,,10
+ 520 01e4 0F1F4000 		.p2align 3
+ 521              	.L71:
+ 358:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     /* Make sure specified quantization table is present */
+ 522              		.loc 1 358 0
+ 523 01e8 8B4310   		movl	16(%rbx), %eax
+ 524              	.LVL63:
+ 360:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	cinfo->quant_tbl_ptrs[qtblno] == NULL)
+ 525              		.loc 1 360 0
+ 526 01eb 83F803   		cmpl	$3, %eax
+ 527 01ee 4C63F8   		movslq	%eax, %r15
+ 528 01f1 0F8701FF 		ja	.L76
+ 528      FFFF
+ 529              	.L116:
+ 361:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       ERREXIT1(cinfo, JERR_NO_QUANT_TABLE, qtblno);
+ 530              		.loc 1 361 0 discriminator 1
+ 531 01f7 4A8B74FD 		movq	112(%rbp,%r15,8), %rsi
+ 531      70
+ 360:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	cinfo->quant_tbl_ptrs[qtblno] == NULL)
+ 532              		.loc 1 360 0 discriminator 1
+ 533 01fc 4885F6   		testq	%rsi, %rsi
+ 534 01ff 0F84F3FE 		je	.L76
+ 534      FFFF
+ 535              	.LVL64:
+ 365:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef PROVIDE_ISLOW_TABLES
+ 536              		.loc 1 365 0
+ 537 0205 4183FE01 		cmpl	$1, %r14d
+ 538              	.LBB7:
+ 402:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	for (i = 0; i < DCTSIZE2; i++) {
+ 539              		.loc 1 402 0
+ 540 0209 488B7B58 		movq	88(%rbx), %rdi
+ 541              	.LBE7:
+ 365:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef PROVIDE_ISLOW_TABLES
+ 542              		.loc 1 365 0
+ 543 020d 0F8429FF 		je	.L79
+ 543      FFFF
+ 544              	.LVL65:
+ 545              	.L117:
+ 546 0213 4183FE02 		cmpl	$2, %r14d
+ 547 0217 0F853301 		jne	.L121
+ 547      0000
+ 548              	.LVL66:
+ 549              	.LBB8:
+ 424:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	int row, col;
+ 550              		.loc 1 424 0
+ 551 021d 660F28DA 		movapd	%xmm2, %xmm3
+ 552              		.loc 1 437 0
+ 553 0221 F20F102D 		movsd	.LC4(%rip), %xmm5
+ 553      00000000 
+ 424:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	int row, col;
+ 554              		.loc 1 424 0
+ 555 0229 4531C0   		xorl	%r8d, %r8d
+ 556              	.LVL67:
+ 557 022c 0F1F4000 		.p2align 4,,10
+ 558              		.p2align 3
+ 559              	.L88:
+ 560 0230 4489C1   		movl	%r8d, %ecx
+ 561              	.LVL68:
+ 562              	.LBE8:
+ 563              	.LBB9:
+ 405:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 				  (INT32) aanscales[i]),
+ 564              		.loc 1 405 0
+ 565 0233 31D2     		xorl	%edx, %edx
+ 566 0235 660F28C2 		movapd	%xmm2, %xmm0
+ 567 0239 EB0E     		jmp	.L92
+ 568 023b 0F1F4400 		.p2align 4,,10
+ 568      00
+ 569              		.p2align 3
+ 570              	.L90:
+ 571 0240 F20F1084 		movsd	aanscalefactor.4989(%rdx,%rdx), %xmm0
+ 571      12000000 
+ 571      00
+ 572              	.LVL69:
+ 573              	.L92:
+ 574              	.LBE9:
+ 575              	.LBB10:
+ 435:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 		      aanscalefactor[row] * aanscalefactor[col] *
+ 576              		.loc 1 435 0
+ 577 0249 4863C1   		movslq	%ecx, %rax
+ 436:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 		      (compptr->component_needed ? 16.0 : 8.0)));
+ 578              		.loc 1 436 0
+ 579 024c 660FEFC9 		pxor	%xmm1, %xmm1
+ 580 0250 0FB70446 		movzwl	(%rsi,%rax,2), %eax
+ 581 0254 F20F2AC8 		cvtsi2sd	%eax, %xmm1
+ 582              		.loc 1 437 0
+ 583 0258 8B4334   		movl	52(%rbx), %eax
+ 584 025b 85C0     		testl	%eax, %eax
+ 436:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 		      (compptr->component_needed ? 16.0 : 8.0)));
+ 585              		.loc 1 436 0
+ 586 025d F20F59CB 		mulsd	%xmm3, %xmm1
+ 587 0261 F20F59C1 		mulsd	%xmm1, %xmm0
+ 588              		.loc 1 437 0
+ 589 0265 660F28CC 		movapd	%xmm4, %xmm1
+ 590 0269 7404     		je	.L89
+ 591 026b 660F28CD 		movapd	%xmm5, %xmm1
+ 592              	.L89:
+ 434:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	      (1.0 / ((double) qtbl->quantval[i] *
+ 593              		.loc 1 434 0 discriminator 2
+ 594 026f F20F59C1 		mulsd	%xmm1, %xmm0
+ 595 0273 660F28F2 		movapd	%xmm2, %xmm6
+ 596 0277 660FEFFF 		pxor	%xmm7, %xmm7
+ 438:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	    i++;
+ 597              		.loc 1 438 0 discriminator 2
+ 598 027b 83C101   		addl	$1, %ecx
+ 599              	.LVL70:
+ 434:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	      (1.0 / ((double) qtbl->quantval[i] *
+ 600              		.loc 1 434 0 discriminator 2
+ 601 027e F20F5EF0 		divsd	%xmm0, %xmm6
+ 602 0282 660F28C6 		movapd	%xmm6, %xmm0
+ 603 0286 F20F5AF8 		cvtsd2ss	%xmm0, %xmm7
+ 604 028a F30F113C 		movss	%xmm7, (%rdi,%rdx)
+ 604      17
+ 605 028f 4883C204 		addq	$4, %rdx
+ 433:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	    fdtbl[i] = (FAST_FLOAT)
+ 606              		.loc 1 433 0 discriminator 2
+ 607 0293 4883FA20 		cmpq	$32, %rdx
+ 608 0297 75A7     		jne	.L90
+ 609              	.LVL71:
+ 610 0299 4983C008 		addq	$8, %r8
+ 611              	.LVL72:
+ 612 029d 4883C720 		addq	$32, %rdi
+ 432:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	  for (col = 0; col < DCTSIZE; col++) {
+ 613              		.loc 1 432 0 discriminator 2
+ 614 02a1 4983F840 		cmpq	$64, %r8
+ 615 02a5 0F847502 		je	.L91
+ 615      0000
+ 616 02ab F2410F10 		movsd	aanscalefactor.4989(%r8), %xmm3
+ 616      98000000 
+ 616      00
+ 617 02b4 E977FFFF 		jmp	.L88
+ 617      FF
+ 618              	.LVL73:
+ 619 02b9 0F1F8000 		.p2align 4,,10
+ 619      000000
+ 620              		.p2align 3
+ 621              	.L34:
+ 622              	.LBE10:
+ 201:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef DCT_SCALING_SUPPORTED
+ 623              		.loc 1 201 0
+ 624 02c0 3D0A0500 		cmpl	$1290, %eax
+ 624      00
+ 625 02c5 0F84FE02 		je	.L43
+ 625      0000
+ 626 02cb 0F8F0401 		jg	.L44
+ 626      0000
+ 627 02d1 3D080400 		cmpl	$1032, %eax
+ 627      00
+ 628 02d6 0F84DD02 		je	.L45
+ 628      0000
+ 629 02dc 3D050500 		cmpl	$1285, %eax
+ 629      00
+ 630 02e1 0F84BF01 		je	.L46
+ 630      0000
+ 631 02e7 3D040400 		cmpl	$1028, %eax
+ 631      00
+ 632 02ec 0F85B3FD 		jne	.L30
+ 632      FFFF
+ 216:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 633              		.loc 1 216 0
+ 634 02f2 49C70424 		movq	$jpeg_fdct_4x4, (%r12)
+ 634      00000000 
+ 635              	.LVL74:
+ 217:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 636              		.loc 1 217 0
+ 637 02fa 4531F6   		xorl	%r14d, %r14d
+ 218:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((5 << 8) + 5):
+ 638              		.loc 1 218 0
+ 639 02fd E9E6FEFF 		jmp	.L71
+ 639      FF
+ 640              	.LVL75:
+ 641              		.p2align 4,,10
+ 642 0302 660F1F44 		.p2align 3
+ 642      0000
+ 643              	.L118:
+ 201:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef DCT_SCALING_SUPPORTED
+ 644              		.loc 1 201 0
+ 645 0308 3D100800 		cmpl	$2064, %eax
+ 645      00
+ 646 030d 0F845602 		je	.L53
+ 646      0000
+ 647 0313 0F8F1E01 		jg	.L54
+ 647      0000
+ 648 0319 3D040800 		cmpl	$2052, %eax
+ 648      00
+ 649 031e 0F843502 		je	.L55
+ 649      0000
+ 650 0324 3D080800 		cmpl	$2056, %eax
+ 650      00
+ 651 0329 0F843501 		je	.L56
+ 651      0000
+ 652 032f 3D0E0700 		cmpl	$1806, %eax
+ 652      00
+ 653 0334 0F856BFD 		jne	.L30
+ 653      FFFF
+ 300:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 654              		.loc 1 300 0
+ 655 033a 49C70424 		movq	$jpeg_fdct_7x14, (%r12)
+ 655      00000000 
+ 656              	.LVL76:
+ 301:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 657              		.loc 1 301 0
+ 658 0342 4531F6   		xorl	%r14d, %r14d
+ 302:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((6 << 8) + 12):
+ 659              		.loc 1 302 0
+ 660 0345 E99EFEFF 		jmp	.L71
+ 660      FF
+ 661              	.LVL77:
+ 662 034a 660F1F44 		.p2align 4,,10
+ 662      0000
+ 663              		.p2align 3
+ 664              	.L121:
+ 371:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       for (i = 0; i < DCTSIZE2; i++) {
+ 665              		.loc 1 371 0
+ 666 0350 31C0     		xorl	%eax, %eax
+ 667              	.LVL78:
+ 668              		.p2align 4,,10
+ 669 0352 660F1F44 		.p2align 3
+ 669      0000
+ 670              	.L82:
+ 374:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       }
+ 671              		.loc 1 374 0
+ 672 0358 837B3401 		cmpl	$1, 52(%rbx)
+ 673 035c 0FB71406 		movzwl	(%rsi,%rax), %edx
+ 674 0360 19C9     		sbbl	%ecx, %ecx
+ 675 0362 83C104   		addl	$4, %ecx
+ 373:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	  ((DCTELEM) qtbl->quantval[i]) << (compptr->component_needed ? 4 : 3);
+ 676              		.loc 1 373 0
+ 677 0365 D3E2     		sall	%cl, %edx
+ 678 0367 891447   		movl	%edx, (%rdi,%rax,2)
+ 679 036a 4883C002 		addq	$2, %rax
+ 372:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	dtbl[i] =
+ 680              		.loc 1 372 0
+ 681 036e 483D8000 		cmpq	$128, %rax
+ 681      0000
+ 682 0374 75E2     		jne	.L82
+ 683              	.L86:
+ 410:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 684              		.loc 1 410 0
+ 685 0376 49C74424 		movq	$forward_DCT, -80(%r12)
+ 685      B0000000 
+ 685      00
+ 686              	.LVL79:
+ 687              	.L83:
+ 199:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     /* Select the proper DCT routine for this component's scaling */
+ 688              		.loc 1 199 0
+ 689 037f 4183C501 		addl	$1, %r13d
+ 690              	.LVL80:
+ 691 0383 4883C360 		addq	$96, %rbx
+ 692              	.LVL81:
+ 693 0387 4983C408 		addq	$8, %r12
+ 198:fltk-1.3.4-1/jpeg/jcdctmgr.c ****        ci++, compptr++) {
+ 694              		.loc 1 198 0
+ 695 038b 44396D5C 		cmpl	%r13d, 92(%rbp)
+ 696 038f 0F8FB3FC 		jg	.L99
+ 696      FFFF
+ 697              	.LVL82:
+ 698              	.L28:
+ 439:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	  }
+ 440:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	}
+ 441:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       }
+ 442:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       fdct->pub.forward_DCT[ci] = forward_DCT_float;
+ 443:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 444:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #endif
+ 445:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     default:
+ 446:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       ERREXIT(cinfo, JERR_NOT_COMPILED);
+ 447:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 448:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     }
+ 449:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   }
+ 450:fltk-1.3.4-1/jpeg/jcdctmgr.c **** }
+ 699              		.loc 1 450 0
+ 700 0395 4883C418 		addq	$24, %rsp
+ 701              		.cfi_remember_state
+ 702              		.cfi_def_cfa_offset 56
+ 703 0399 5B       		popq	%rbx
+ 704              		.cfi_def_cfa_offset 48
+ 705              	.LVL83:
+ 706 039a 5D       		popq	%rbp
+ 707              		.cfi_def_cfa_offset 40
+ 708 039b 415C     		popq	%r12
+ 709              		.cfi_def_cfa_offset 32
+ 710 039d 415D     		popq	%r13
+ 711              		.cfi_def_cfa_offset 24
+ 712 039f 415E     		popq	%r14
+ 713              		.cfi_def_cfa_offset 16
+ 714 03a1 415F     		popq	%r15
+ 715              		.cfi_def_cfa_offset 8
+ 716 03a3 C3       		ret
+ 717              	.LVL84:
+ 718              	.L119:
+ 719              		.cfi_restore_state
+ 201:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef DCT_SCALING_SUPPORTED
+ 720              		.loc 1 201 0
+ 721 03a4 3D0C0C00 		cmpl	$3084, %eax
+ 721      00
+ 722 03a9 0F84CA01 		je	.L63
+ 722      0000
+ 723 03af 3D0D0D00 		cmpl	$3341, %eax
+ 723      00
+ 724 03b4 0F843C01 		je	.L64
+ 724      0000
+ 725 03ba 3D060C00 		cmpl	$3078, %eax
+ 725      00
+ 726 03bf 0F85E0FC 		jne	.L30
+ 726      FFFF
+ 272:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 727              		.loc 1 272 0
+ 728 03c5 49C70424 		movq	$jpeg_fdct_12x6, (%r12)
+ 728      00000000 
+ 729              	.LVL85:
+ 273:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 730              		.loc 1 273 0
+ 731 03cd 4531F6   		xorl	%r14d, %r14d
+ 274:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((10 << 8) + 5):
+ 732              		.loc 1 274 0
+ 733 03d0 E913FEFF 		jmp	.L71
+ 733      FF
+ 734              	.LVL86:
+ 735              	.L44:
+ 201:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef DCT_SCALING_SUPPORTED
+ 736              		.loc 1 201 0
+ 737 03d5 3D060600 		cmpl	$1542, %eax
+ 737      00
+ 738 03da 0F84A901 		je	.L48
+ 738      0000
+ 739 03e0 3D0C0600 		cmpl	$1548, %eax
+ 739      00
+ 740 03e5 0F84FB00 		je	.L49
+ 740      0000
+ 741 03eb 3D030600 		cmpl	$1539, %eax
+ 741      00
+ 742 03f0 0F85AFFC 		jne	.L30
+ 742      FFFF
+ 284:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 743              		.loc 1 284 0
+ 744 03f6 49C70424 		movq	$jpeg_fdct_6x3, (%r12)
+ 744      00000000 
+ 745              	.LVL87:
+ 285:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 746              		.loc 1 285 0
+ 747 03fe 4531F6   		xorl	%r14d, %r14d
+ 286:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((4 << 8) + 2):
+ 748              		.loc 1 286 0
+ 749 0401 E9E2FDFF 		jmp	.L71
+ 749      FF
+ 750              	.LVL88:
+ 751              	.L36:
+ 201:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef DCT_SCALING_SUPPORTED
+ 752              		.loc 1 201 0
+ 753 0406 3D030300 		cmpl	$771, %eax
+ 753      00
+ 754 040b 0F849801 		je	.L40
+ 754      0000
+ 755 0411 3D060300 		cmpl	$774, %eax
+ 755      00
+ 756 0416 0F84BA00 		je	.L41
+ 756      0000
+ 757 041c 3D040200 		cmpl	$516, %eax
+ 757      00
+ 758 0421 0F857EFC 		jne	.L30
+ 758      FFFF
+ 320:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 759              		.loc 1 320 0
+ 760 0427 49C70424 		movq	$jpeg_fdct_2x4, (%r12)
+ 760      00000000 
+ 761              	.LVL89:
+ 321:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 762              		.loc 1 321 0
+ 763 042f 4531F6   		xorl	%r14d, %r14d
+ 322:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((1 << 8) + 2):
+ 764              		.loc 1 322 0
+ 765 0432 E9B1FDFF 		jmp	.L71
+ 765      FF
+ 766              	.LVL90:
+ 767              	.L54:
+ 201:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef DCT_SCALING_SUPPORTED
+ 768              		.loc 1 201 0
+ 769 0437 3D050A00 		cmpl	$2565, %eax
+ 769      00
+ 770 043c 0F845701 		je	.L58
+ 770      0000
+ 771 0442 3D0A0A00 		cmpl	$2570, %eax
+ 771      00
+ 772 0447 747D     		je	.L59
+ 773 0449 3D090900 		cmpl	$2313, %eax
+ 773      00
+ 774 044e 0F8551FC 		jne	.L30
+ 774      FFFF
+ 232:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 775              		.loc 1 232 0
+ 776 0454 49C70424 		movq	$jpeg_fdct_9x9, (%r12)
+ 776      00000000 
+ 777              	.LVL91:
+ 233:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 778              		.loc 1 233 0
+ 779 045c 4531F6   		xorl	%r14d, %r14d
+ 234:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((10 << 8) + 10):
+ 780              		.loc 1 234 0
+ 781 045f E984FDFF 		jmp	.L71
+ 781      FF
+ 782              	.LVL92:
+ 783              	.L56:
+ 329:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef DCT_ISLOW_SUPPORTED
+ 784              		.loc 1 329 0
+ 785 0464 8B853801 		movl	312(%rbp), %eax
+ 785      0000
+ 786 046a 83F801   		cmpl	$1, %eax
+ 787 046d 0F84D601 		je	.L73
+ 787      0000
+ 788 0473 0F82C001 		jb	.L74
+ 788      0000
+ 789 0479 83F802   		cmpl	$2, %eax
+ 790 047c 0F85DA01 		jne	.L122
+ 790      0000
+ 344:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	method = JDCT_FLOAT;
+ 791              		.loc 1 344 0
+ 792 0482 49C74424 		movq	$jpeg_fdct_float, 80(%r12)
+ 792      50000000 
+ 792      00
+ 793              	.LVL93:
+ 345:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	break;
+ 794              		.loc 1 345 0
+ 795 048b 41BE0200 		movl	$2, %r14d
+ 795      0000
+ 346:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #endif
+ 796              		.loc 1 346 0
+ 797 0491 E952FDFF 		jmp	.L71
+ 797      FF
+ 798              	.LVL94:
+ 799              	.L38:
+ 292:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 800              		.loc 1 292 0
+ 801 0496 49C70424 		movq	$jpeg_fdct_2x1, (%r12)
+ 801      00000000 
+ 802              	.LVL95:
+ 293:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 803              		.loc 1 293 0
+ 804 049e 4531F6   		xorl	%r14d, %r14d
+ 294:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((8 << 8) + 16):
+ 805              		.loc 1 294 0
+ 806 04a1 E942FDFF 		jmp	.L71
+ 806      FF
+ 807              	.LVL96:
+ 808              	.L46:
+ 220:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 809              		.loc 1 220 0
+ 810 04a6 49C70424 		movq	$jpeg_fdct_5x5, (%r12)
+ 810      00000000 
+ 811              	.LVL97:
+ 221:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 812              		.loc 1 221 0
+ 813 04ae 4531F6   		xorl	%r14d, %r14d
+ 222:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((6 << 8) + 6):
+ 814              		.loc 1 222 0
+ 815 04b1 E932FDFF 		jmp	.L71
+ 815      FF
+ 816              	.LVL98:
+ 817              	.L69:
+ 264:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 818              		.loc 1 264 0
+ 819 04b6 49C70424 		movq	$jpeg_fdct_16x8, (%r12)
+ 819      00000000 
+ 820              	.LVL99:
+ 265:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 821              		.loc 1 265 0
+ 822 04be 4531F6   		xorl	%r14d, %r14d
+ 266:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((14 << 8) + 7):
+ 823              		.loc 1 266 0
+ 824 04c1 E922FDFF 		jmp	.L71
+ 824      FF
+ 825              	.LVL100:
+ 826              	.L59:
+ 236:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 827              		.loc 1 236 0
+ 828 04c6 49C70424 		movq	$jpeg_fdct_10x10, (%r12)
+ 828      00000000 
+ 829              	.LVL101:
+ 237:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 830              		.loc 1 237 0
+ 831 04ce 4531F6   		xorl	%r14d, %r14d
+ 238:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((11 << 8) + 11):
+ 832              		.loc 1 238 0
+ 833 04d1 E912FDFF 		jmp	.L71
+ 833      FF
+ 834              	.LVL102:
+ 835              	.L41:
+ 316:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 836              		.loc 1 316 0
+ 837 04d6 49C70424 		movq	$jpeg_fdct_3x6, (%r12)
+ 837      00000000 
+ 838              	.LVL103:
+ 317:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 839              		.loc 1 317 0
+ 840 04de 4531F6   		xorl	%r14d, %r14d
+ 318:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((2 << 8) + 4):
+ 841              		.loc 1 318 0
+ 842 04e1 E902FDFF 		jmp	.L71
+ 842      FF
+ 843              	.LVL104:
+ 844              	.L49:
+ 304:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 845              		.loc 1 304 0
+ 846 04e6 49C70424 		movq	$jpeg_fdct_6x12, (%r12)
+ 846      00000000 
+ 847              	.LVL105:
+ 305:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 848              		.loc 1 305 0
+ 849 04ee 4531F6   		xorl	%r14d, %r14d
+ 306:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((5 << 8) + 10):
+ 850              		.loc 1 306 0
+ 851 04f1 E9F2FCFF 		jmp	.L71
+ 851      FF
+ 852              	.LVL106:
+ 853              	.L64:
+ 248:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 854              		.loc 1 248 0
+ 855 04f6 49C70424 		movq	$jpeg_fdct_13x13, (%r12)
+ 855      00000000 
+ 856              	.LVL107:
+ 249:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 857              		.loc 1 249 0
+ 858 04fe 4531F6   		xorl	%r14d, %r14d
+ 250:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((14 << 8) + 14):
+ 859              		.loc 1 250 0
+ 860 0501 E9E2FCFF 		jmp	.L71
+ 860      FF
+ 861              	.LVL108:
+ 862              	.L115:
+ 204:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 863              		.loc 1 204 0
+ 864 0506 49C70424 		movq	$jpeg_fdct_1x1, (%r12)
+ 864      00000000 
+ 865              	.LVL109:
+ 205:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 866              		.loc 1 205 0
+ 867 050e 4531F6   		xorl	%r14d, %r14d
+ 206:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((2 << 8) + 2):
+ 868              		.loc 1 206 0
+ 869 0511 E9D2FCFF 		jmp	.L71
+ 869      FF
+ 870              	.LVL110:
+ 871 0516 662E0F1F 		.p2align 4,,10
+ 871      84000000 
+ 871      0000
+ 872              		.p2align 3
+ 873              	.L91:
+ 442:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 874              		.loc 1 442 0
+ 875 0520 49C74424 		movq	$forward_DCT_float, -80(%r12)
+ 875      B0000000 
+ 875      00
+ 443:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #endif
+ 876              		.loc 1 443 0
+ 877 0529 E951FEFF 		jmp	.L83
+ 877      FF
+ 878              	.LVL111:
+ 879              	.L120:
+ 201:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #ifdef DCT_SCALING_SUPPORTED
+ 880              		.loc 1 201 0
+ 881 052e 3D0E0E00 		cmpl	$3598, %eax
+ 881      00
+ 882 0533 0F856CFB 		jne	.L30
+ 882      FFFF
+ 252:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 883              		.loc 1 252 0
+ 884 0539 49C70424 		movq	$jpeg_fdct_14x14, (%r12)
+ 884      00000000 
+ 885              	.LVL112:
+ 253:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 886              		.loc 1 253 0
+ 887 0541 4531F6   		xorl	%r14d, %r14d
+ 254:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((15 << 8) + 15):
+ 888              		.loc 1 254 0
+ 889 0544 E99FFCFF 		jmp	.L71
+ 889      FF
+ 890              	.LVL113:
+ 891              	.L66:
+ 256:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 892              		.loc 1 256 0
+ 893 0549 49C70424 		movq	$jpeg_fdct_15x15, (%r12)
+ 893      00000000 
+ 894              	.LVL114:
+ 257:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 895              		.loc 1 257 0
+ 896 0551 4531F6   		xorl	%r14d, %r14d
+ 258:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((16 << 8) + 16):
+ 897              		.loc 1 258 0
+ 898 0554 E98FFCFF 		jmp	.L71
+ 898      FF
+ 899              	.LVL115:
+ 900              	.L55:
+ 280:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 901              		.loc 1 280 0
+ 902 0559 49C70424 		movq	$jpeg_fdct_8x4, (%r12)
+ 902      00000000 
+ 903              	.LVL116:
+ 281:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 904              		.loc 1 281 0
+ 905 0561 4531F6   		xorl	%r14d, %r14d
+ 282:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((6 << 8) + 3):
+ 906              		.loc 1 282 0
+ 907 0564 E97FFCFF 		jmp	.L71
+ 907      FF
+ 908              	.LVL117:
+ 909              	.L53:
+ 296:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 910              		.loc 1 296 0
+ 911 0569 49C70424 		movq	$jpeg_fdct_8x16, (%r12)
+ 911      00000000 
+ 912              	.LVL118:
+ 297:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 913              		.loc 1 297 0
+ 914 0571 4531F6   		xorl	%r14d, %r14d
+ 298:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((7 << 8) + 14):
+ 915              		.loc 1 298 0
+ 916 0574 E96FFCFF 		jmp	.L71
+ 916      FF
+ 917              	.LVL119:
+ 918              	.L63:
+ 244:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 919              		.loc 1 244 0
+ 920 0579 49C70424 		movq	$jpeg_fdct_12x12, (%r12)
+ 920      00000000 
+ 921              	.LVL120:
+ 245:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 922              		.loc 1 245 0
+ 923 0581 4531F6   		xorl	%r14d, %r14d
+ 246:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((13 << 8) + 13):
+ 924              		.loc 1 246 0
+ 925 0584 E95FFCFF 		jmp	.L71
+ 925      FF
+ 926              	.LVL121:
+ 927              	.L48:
+ 224:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 928              		.loc 1 224 0
+ 929 0589 49C70424 		movq	$jpeg_fdct_6x6, (%r12)
+ 929      00000000 
+ 930              	.LVL122:
+ 225:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 931              		.loc 1 225 0
+ 932 0591 4531F6   		xorl	%r14d, %r14d
+ 226:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((7 << 8) + 7):
+ 933              		.loc 1 226 0
+ 934 0594 E94FFCFF 		jmp	.L71
+ 934      FF
+ 935              	.LVL123:
+ 936              	.L58:
+ 276:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 937              		.loc 1 276 0
+ 938 0599 49C70424 		movq	$jpeg_fdct_10x5, (%r12)
+ 938      00000000 
+ 939              	.LVL124:
+ 277:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 940              		.loc 1 277 0
+ 941 05a1 4531F6   		xorl	%r14d, %r14d
+ 278:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((8 << 8) + 4):
+ 942              		.loc 1 278 0
+ 943 05a4 E93FFCFF 		jmp	.L71
+ 943      FF
+ 944              	.LVL125:
+ 945              	.L40:
+ 212:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 946              		.loc 1 212 0
+ 947 05a9 49C70424 		movq	$jpeg_fdct_3x3, (%r12)
+ 947      00000000 
+ 948              	.LVL126:
+ 213:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 949              		.loc 1 213 0
+ 950 05b1 4531F6   		xorl	%r14d, %r14d
+ 214:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((4 << 8) + 4):
+ 951              		.loc 1 214 0
+ 952 05b4 E92FFCFF 		jmp	.L71
+ 952      FF
+ 953              	.LVL127:
+ 954              	.L45:
+ 312:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 955              		.loc 1 312 0
+ 956 05b9 49C70424 		movq	$jpeg_fdct_4x8, (%r12)
+ 956      00000000 
+ 957              	.LVL128:
+ 313:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 958              		.loc 1 313 0
+ 959 05c1 4531F6   		xorl	%r14d, %r14d
+ 314:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((3 << 8) + 6):
+ 960              		.loc 1 314 0
+ 961 05c4 E91FFCFF 		jmp	.L71
+ 961      FF
+ 962              	.LVL129:
+ 963              	.L43:
+ 308:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 964              		.loc 1 308 0
+ 965 05c9 49C70424 		movq	$jpeg_fdct_5x10, (%r12)
+ 965      00000000 
+ 966              	.LVL130:
+ 309:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 967              		.loc 1 309 0
+ 968 05d1 4531F6   		xorl	%r14d, %r14d
+ 310:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((4 << 8) + 8):
+ 969              		.loc 1 310 0
+ 970 05d4 E90FFCFF 		jmp	.L71
+ 970      FF
+ 971              	.LVL131:
+ 972              	.L61:
+ 268:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 973              		.loc 1 268 0
+ 974 05d9 49C70424 		movq	$jpeg_fdct_14x7, (%r12)
+ 974      00000000 
+ 975              	.LVL132:
+ 269:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 976              		.loc 1 269 0
+ 977 05e1 4531F6   		xorl	%r14d, %r14d
+ 270:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((12 << 8) + 6):
+ 978              		.loc 1 270 0
+ 979 05e4 E9FFFBFF 		jmp	.L71
+ 979      FF
+ 980              	.LVL133:
+ 981              	.L51:
+ 240:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 982              		.loc 1 240 0
+ 983 05e9 49C70424 		movq	$jpeg_fdct_11x11, (%r12)
+ 983      00000000 
+ 984              	.LVL134:
+ 241:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 985              		.loc 1 241 0
+ 986 05f1 4531F6   		xorl	%r14d, %r14d
+ 242:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((12 << 8) + 12):
+ 987              		.loc 1 242 0
+ 988 05f4 E9EFFBFF 		jmp	.L71
+ 988      FF
+ 989              	.LVL135:
+ 990              	.L37:
+ 324:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 991              		.loc 1 324 0
+ 992 05f9 49C70424 		movq	$jpeg_fdct_1x2, (%r12)
+ 992      00000000 
+ 993              	.LVL136:
+ 325:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 994              		.loc 1 325 0
+ 995 0601 4531F6   		xorl	%r14d, %r14d
+ 326:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #endif
+ 996              		.loc 1 326 0
+ 997 0604 E9DFFBFF 		jmp	.L71
+ 997      FF
+ 998              	.LVL137:
+ 999              	.L35:
+ 208:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 1000              		.loc 1 208 0
+ 1001 0609 49C70424 		movq	$jpeg_fdct_2x2, (%r12)
+ 1001      00000000 
+ 1002              	.LVL138:
+ 209:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 1003              		.loc 1 209 0
+ 1004 0611 4531F6   		xorl	%r14d, %r14d
+ 210:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((3 << 8) + 3):
+ 1005              		.loc 1 210 0
+ 1006 0614 E9CFFBFF 		jmp	.L71
+ 1006      FF
+ 1007              	.LVL139:
+ 1008              	.L33:
+ 288:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 1009              		.loc 1 288 0
+ 1010 0619 49C70424 		movq	$jpeg_fdct_4x2, (%r12)
+ 1010      00000000 
+ 1011              	.LVL140:
+ 289:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 1012              		.loc 1 289 0
+ 1013 0621 4531F6   		xorl	%r14d, %r14d
+ 290:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((2 << 8) + 1):
+ 1014              		.loc 1 290 0
+ 1015 0624 E9BFFBFF 		jmp	.L71
+ 1015      FF
+ 1016              	.LVL141:
+ 1017              	.L31:
+ 228:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       method = JDCT_ISLOW;	/* jfdctint uses islow-style table */
+ 1018              		.loc 1 228 0
+ 1019 0629 49C70424 		movq	$jpeg_fdct_7x7, (%r12)
+ 1019      00000000 
+ 1020              	.LVL142:
+ 229:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       break;
+ 1021              		.loc 1 229 0
+ 1022 0631 4531F6   		xorl	%r14d, %r14d
+ 230:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     case ((9 << 8) + 9):
+ 1023              		.loc 1 230 0
+ 1024 0634 E9AFFBFF 		jmp	.L71
+ 1024      FF
+ 1025              	.LVL143:
+ 1026              	.L74:
+ 332:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	method = JDCT_ISLOW;
+ 1027              		.loc 1 332 0
+ 1028 0639 49C70424 		movq	$jpeg_fdct_islow, (%r12)
+ 1028      00000000 
+ 1029              	.LVL144:
+ 333:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	break;
+ 1030              		.loc 1 333 0
+ 1031 0641 4531F6   		xorl	%r14d, %r14d
+ 334:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #endif
+ 1032              		.loc 1 334 0
+ 1033 0644 E99FFBFF 		jmp	.L71
+ 1033      FF
+ 1034              	.LVL145:
+ 1035              	.L73:
+ 338:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	method = JDCT_IFAST;
+ 1036              		.loc 1 338 0
+ 1037 0649 49C70424 		movq	$jpeg_fdct_ifast, (%r12)
+ 1037      00000000 
+ 1038              	.LVL146:
+ 339:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	break;
+ 1039              		.loc 1 339 0
+ 1040 0651 41BE0100 		movl	$1, %r14d
+ 1040      0000
+ 340:fltk-1.3.4-1/jpeg/jcdctmgr.c **** #endif
+ 1041              		.loc 1 340 0
+ 1042 0657 E98CFBFF 		jmp	.L71
+ 1042      FF
+ 1043              	.LVL147:
+ 1044              	.L122:
+ 349:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 	break;
+ 1045              		.loc 1 349 0
+ 1046 065c 488B4500 		movq	0(%rbp), %rax
+ 1047 0660 F20F1164 		movsd	%xmm4, 8(%rsp)
+ 1047      2408
+ 1048 0666 4889EF   		movq	%rbp, %rdi
+ 1049 0669 F20F1114 		movsd	%xmm2, (%rsp)
+ 1049      24
+ 1050 066e C7402831 		movl	$49, 40(%rax)
+ 1050      000000
+ 1051 0675 488B4500 		movq	0(%rbp), %rax
+ 1052 0679 FF10     		call	*(%rax)
+ 1053              	.LVL148:
+ 350:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       }
+ 1054              		.loc 1 350 0
+ 1055 067b F20F1014 		movsd	(%rsp), %xmm2
+ 1055      24
+ 1056 0680 F20F1064 		movsd	8(%rsp), %xmm4
+ 1056      2408
+ 1057 0686 E95DFBFF 		jmp	.L71
+ 1057      FF
+ 1058              		.cfi_endproc
+ 1059              	.LFE63:
+ 1061              		.section	.text.unlikely.start_pass_fdctmgr
+ 1062              	.LCOLDE6:
+ 1063              		.section	.text.start_pass_fdctmgr
+ 1064              	.LHOTE6:
+ 1065              		.section	.text.unlikely.jinit_forward_dct,"ax",@progbits
+ 1066              	.LCOLDB7:
+ 1067              		.section	.text.jinit_forward_dct,"ax",@progbits
+ 1068              	.LHOTB7:
+ 1069              		.p2align 4,,15
+ 1070              		.globl	jinit_forward_dct
+ 1072              	jinit_forward_dct:
+ 1073              	.LFB64:
+ 451:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+ 452:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+ 453:fltk-1.3.4-1/jpeg/jcdctmgr.c **** /*
+ 454:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  * Initialize FDCT manager.
+ 455:fltk-1.3.4-1/jpeg/jcdctmgr.c ****  */
+ 456:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+ 457:fltk-1.3.4-1/jpeg/jcdctmgr.c **** GLOBAL(void)
+ 458:fltk-1.3.4-1/jpeg/jcdctmgr.c **** jinit_forward_dct (j_compress_ptr cinfo)
+ 459:fltk-1.3.4-1/jpeg/jcdctmgr.c **** {
+ 1074              		.loc 1 459 0
+ 1075              		.cfi_startproc
+ 1076              	.LVL149:
+ 1077 0000 4154     		pushq	%r12
+ 1078              		.cfi_def_cfa_offset 16
+ 1079              		.cfi_offset 12, -16
+ 1080 0002 55       		pushq	%rbp
+ 1081              		.cfi_def_cfa_offset 24
+ 1082              		.cfi_offset 6, -24
+ 460:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   my_fdct_ptr fdct;
+ 461:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   int ci;
+ 462:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   jpeg_component_info *compptr;
+ 463:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+ 464:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   fdct = (my_fdct_ptr)
+ 1083              		.loc 1 464 0
+ 1084 0003 BAF80000 		movl	$248, %edx
+ 1084      00
+ 459:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   my_fdct_ptr fdct;
+ 1085              		.loc 1 459 0
+ 1086 0008 53       		pushq	%rbx
+ 1087              		.cfi_def_cfa_offset 32
+ 1088              		.cfi_offset 3, -32
+ 465:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 1089              		.loc 1 465 0
+ 1090 0009 488B4708 		movq	8(%rdi), %rax
+ 459:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   my_fdct_ptr fdct;
+ 1091              		.loc 1 459 0
+ 1092 000d 4889FB   		movq	%rdi, %rbx
+ 464:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 1093              		.loc 1 464 0
+ 1094 0010 BE010000 		movl	$1, %esi
+ 1094      00
+ 1095 0015 FF10     		call	*(%rax)
+ 1096              	.LVL150:
+ 466:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 				SIZEOF(my_fdct_controller));
+ 467:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   cinfo->fdct = &fdct->pub;
+ 1097              		.loc 1 467 0
+ 1098 0017 48898328 		movq	%rax, 552(%rbx)
+ 1098      020000
+ 468:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   fdct->pub.start_pass = start_pass_fdctmgr;
+ 1099              		.loc 1 468 0
+ 1100 001e 48C70000 		movq	$start_pass_fdctmgr, (%rax)
+ 1100      000000
+ 1101              	.LVL151:
+ 469:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 
+ 470:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
+ 1102              		.loc 1 470 0
+ 1103 0025 8B435C   		movl	92(%rbx), %eax
+ 1104              	.LVL152:
+ 1105 0028 4C8B6368 		movq	104(%rbx), %r12
+ 1106              	.LVL153:
+ 1107 002c 85C0     		testl	%eax, %eax
+ 1108 002e 7E2C     		jle	.L123
+ 1109 0030 31ED     		xorl	%ebp, %ebp
+ 1110              	.LVL154:
+ 1111              		.p2align 4,,10
+ 1112 0032 660F1F44 		.p2align 3
+ 1112      0000
+ 1113              	.L127:
+ 471:fltk-1.3.4-1/jpeg/jcdctmgr.c ****        ci++, compptr++) {
+ 472:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     /* Allocate a divisor table for each component */
+ 473:fltk-1.3.4-1/jpeg/jcdctmgr.c ****     compptr->dct_table =
+ 474:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 1114              		.loc 1 474 0
+ 1115 0038 488B4308 		movq	8(%rbx), %rax
+ 1116 003c BA000100 		movl	$256, %edx
+ 1116      00
+ 1117 0041 BE010000 		movl	$1, %esi
+ 1117      00
+ 1118 0046 4889DF   		movq	%rbx, %rdi
+ 471:fltk-1.3.4-1/jpeg/jcdctmgr.c ****        ci++, compptr++) {
+ 1119              		.loc 1 471 0
+ 1120 0049 83C501   		addl	$1, %ebp
+ 1121              	.LVL155:
+ 1122 004c 4983C460 		addq	$96, %r12
+ 1123              	.LVL156:
+ 1124              		.loc 1 474 0
+ 1125 0050 FF10     		call	*(%rax)
+ 1126              	.LVL157:
+ 473:fltk-1.3.4-1/jpeg/jcdctmgr.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 1127              		.loc 1 473 0
+ 1128 0052 49894424 		movq	%rax, -8(%r12)
+ 1128      F8
+ 1129              	.LVL158:
+ 470:fltk-1.3.4-1/jpeg/jcdctmgr.c ****        ci++, compptr++) {
+ 1130              		.loc 1 470 0
+ 1131 0057 396B5C   		cmpl	%ebp, 92(%rbx)
+ 1132 005a 7FDC     		jg	.L127
+ 1133              	.LVL159:
+ 1134              	.L123:
+ 475:fltk-1.3.4-1/jpeg/jcdctmgr.c **** 				  SIZEOF(divisor_table));
+ 476:fltk-1.3.4-1/jpeg/jcdctmgr.c ****   }
+ 477:fltk-1.3.4-1/jpeg/jcdctmgr.c **** }
+ 1135              		.loc 1 477 0
+ 1136 005c 5B       		popq	%rbx
+ 1137              		.cfi_def_cfa_offset 24
+ 1138              	.LVL160:
+ 1139 005d 5D       		popq	%rbp
+ 1140              		.cfi_def_cfa_offset 16
+ 1141 005e 415C     		popq	%r12
+ 1142              		.cfi_def_cfa_offset 8
+ 1143              	.LVL161:
+ 1144 0060 C3       		ret
+ 1145              		.cfi_endproc
+ 1146              	.LFE64:
+ 1148              		.section	.text.unlikely.jinit_forward_dct
+ 1149              	.LCOLDE7:
+ 1150              		.section	.text.jinit_forward_dct
+ 1151              	.LHOTE7:
+ 1152              		.section	.rodata.aanscalefactor.4989,"a",@progbits
+ 1153              		.align 32
+ 1156              	aanscalefactor.4989:
+ 1157 0000 00000000 		.long	0
+ 1158 0004 0000F03F 		.long	1072693248
+ 1159 0008 EF6148B1 		.long	2974310895
+ 1160 000c 5031F63F 		.long	1073099088
+ 1161 0010 CA6F4D91 		.long	2437771210
+ 1162 0014 AEE7F43F 		.long	1073014702
+ 1163 0018 AA116CEF 		.long	4016837034
+ 1164 001c 62D0F23F 		.long	1072877666
+ 1165 0020 00000000 		.long	0
+ 1166 0024 0000F03F 		.long	1072693248
+ 1167 0028 3BBFA7C0 		.long	3232218939
+ 1168 002c 6924E93F 		.long	1072243817
+ 1169 0030 BB20C77B 		.long	2076647611
+ 1170 0034 7A51E13F 		.long	1071731066
+ 1171 0038 5DAB72DE 		.long	3732056925
+ 1172 003c 55A8D13F 		.long	1070704725
+ 1173              		.section	.rodata.aanscales.4981,"a",@progbits
+ 1174              		.align 32
+ 1177              	aanscales.4981:
+ 1242              		.section	.rodata.cst4,"aM",@progbits,4
+ 1243              		.align 4
+ 1244              	.LC1:
+ 1245 0000 00018046 		.long	1182793984
+ 1246              		.section	.rodata.cst8,"aM",@progbits,8
+ 1247              		.align 8
+ 1248              	.LC3:
+ 1249 0000 00000000 		.long	0
+ 1250 0004 0000F03F 		.long	1072693248
+ 1251              		.align 8
+ 1252              	.LC4:
+ 1253 0008 00000000 		.long	0
+ 1254 000c 00003040 		.long	1076887552
+ 1255              		.align 8
+ 1256              	.LC5:
+ 1257 0010 00000000 		.long	0
+ 1258 0014 00002040 		.long	1075838976
+ 1259              		.text
+ 1260              	.Letext0:
+ 1261              		.section	.text.unlikely.forward_DCT
+ 1262              	.Letext_cold0:
+ 1263              		.file 2 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
+ 1264              		.file 3 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 1265              		.file 4 "/usr/include/libio.h"
+ 1266              		.file 5 "fltk-1.3.4-1/jpeg/jmorecfg.h"
+ 1267              		.file 6 "fltk-1.3.4-1/jpeg/jpeglib.h"
+ 1268              		.file 7 "fltk-1.3.4-1/jpeg/jpegint.h"
+ 1269              		.file 8 "fltk-1.3.4-1/jpeg/jerror.h"
+ 1270              		.file 9 "fltk-1.3.4-1/jpeg/jdct.h"
+ 1271              		.file 10 "/usr/include/stdio.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 jcdctmgr.c
+     /tmp/cc8mZE0w.s:13     .text.forward_DCT:0000000000000000 forward_DCT
+     /tmp/cc8mZE0w.s:197    .text.forward_DCT_float:0000000000000000 forward_DCT_float
+     /tmp/cc8mZE0w.s:341    .text.start_pass_fdctmgr:0000000000000000 start_pass_fdctmgr
+     /tmp/cc8mZE0w.s:1177   .rodata.aanscales.4981:0000000000000000 aanscales.4981
+     /tmp/cc8mZE0w.s:1156   .rodata.aanscalefactor.4989:0000000000000000 aanscalefactor.4989
+     /tmp/cc8mZE0w.s:1072   .text.jinit_forward_dct:0000000000000000 jinit_forward_dct
+     /tmp/cc8mZE0w.s:1244   .rodata.cst4:0000000000000000 .LC1
+     /tmp/cc8mZE0w.s:1248   .rodata.cst8:0000000000000000 .LC3
+     /tmp/cc8mZE0w.s:1256   .rodata.cst8:0000000000000010 .LC5
+     /tmp/cc8mZE0w.s:1252   .rodata.cst8:0000000000000008 .LC4
+                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
+                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+                           .group:0000000000000000 wm4.jconfig.h.10.247fc3ff67998f3074970b1373c70333
+                           .group:0000000000000000 wm4.features.h.19.24da27e0a4d0d521fd057013d982b8b5
+                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
+                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
+                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
+                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
+                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
+                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
+                           .group:0000000000000000 wm4.waitflags.h.25.e401b8bcfee800b540b27abd7cc78de9
+                           .group:0000000000000000 wm4.waitstatus.h.28.93f167f49d64e2b9b99f98d1162a93bf
+                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
+                           .group:0000000000000000 wm4.endian.h.41.24cced64aef71195a51d4daa8e4f4a95
+                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
+                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
+                           .group:0000000000000000 wm4.byteswap.h.38.11ee5fdc0f6cc53a16c505b9233cecef
+                           .group:0000000000000000 wm4.endian.h.63.97272d7c64d5db8020003b32e9289502
+                           .group:0000000000000000 wm4.waitstatus.h.99.408b6270fa6eb71377201a241ef15f79
+                           .group:0000000000000000 wm4.stdlib.h.50.84aeca2ac6f37d40e1e9b3cef757ba2d
+                           .group:0000000000000000 wm4.types.h.23.f6dcbaa72f8f71361acef09804d45a5e
+                           .group:0000000000000000 wm4.time.h.53.beb46e650cd406cb917b6b96b45e640a
+                           .group:0000000000000000 wm4.stddef.h.238.847b6907dabda77be90a9ab7ad789e2e
+                           .group:0000000000000000 wm4.types.h.187.bd5a05039b505b3620e6973f1b2ffeb1
+                           .group:0000000000000000 wm4.select.h.28.eb2f3debdbcffd1442ebddaebc4fb6ff
+                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
+                           .group:0000000000000000 wm4.select.h.36.f76c3b9e55c871743863013cc4cc14c9
+                           .group:0000000000000000 wm4.time.h.66.e70ce69790c975f0efb369340c432e0b
+                           .group:0000000000000000 wm4.time.h.25.ae5284cdff565e87a9198d819340325d
+                           .group:0000000000000000 wm4.select.h.49.e9d2041e5035cc68ebd1a20f7dbc8514
+                           .group:0000000000000000 wm4.select2.h.27.f95f2ab0ffee66dc1b6575014894b21a
+                           .group:0000000000000000 wm4.sysmacros.h.20.8a0c33ff175cd9b434a86c0aaa36f0a2
+                           .group:0000000000000000 wm4.types.h.229.67b3f66bd74b06b451caec392a72a945
+                           .group:0000000000000000 wm4.pthreadtypes.h.25.6892b1493314fcf446bbc76e7362acba
+                           .group:0000000000000000 wm4.alloca.h.19.edefa922a76c1cbaaf1e416903ba2d1c
+                           .group:0000000000000000 wm4.alloca.h.29.156e12058824cc23d961c4d3b13031f6
+                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
+                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
+                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
+                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
+                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
+                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
+                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
+                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
+                           .group:0000000000000000 wm4.stdio.h.80.17b7dd1ca72d8a61987532cb1d80194a
+                           .group:0000000000000000 wm4.stdio_lim.h.23.557290a6cddeba0587f574f29e3a5fb9
+                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
+                           .group:0000000000000000 wm4.stdio.h.26.cae64f7ada9bb8327a89dba6a5e93655
+                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
+                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
+                           .group:0000000000000000 wm4.string2.h.45.00535b99420fc3014c2da41d6645330d
+                           .group:0000000000000000 wm4.string3.h.31.0c4b9301b754a2db05eaafef869657d2
+                           .group:0000000000000000 wm4.jinclude.h.67.b19f941ec97c4845fa4609292c7e2db4
+                           .group:0000000000000000 wm4.jmorecfg.h.33.3b4c5f9cc07b3737823b06caf24d5b05
+                           .group:0000000000000000 wm4.jpeglib.h.40.4f111c27252a38df39328d65454e82f4
+                           .group:0000000000000000 wm4.jpegint.h.26.5219ef5d4e4921371d38e77b6091fd20
+                           .group:0000000000000000 wm4.jerror.h.25.1dbd8674e70ab5215bc0037320e5c2a2
+                           .group:0000000000000000 wm4.jdct.h.68.77a1fce97df2af4ec80ad9c80171cb02
+
+UNDEFINED SYMBOLS
+__stack_chk_fail
+jpeg_fdct_16x16
+jpeg_fdct_4x4
+jpeg_fdct_7x14
+jpeg_fdct_12x6
+jpeg_fdct_6x3
+jpeg_fdct_2x4
+jpeg_fdct_9x9
+jpeg_fdct_float
+jpeg_fdct_2x1
+jpeg_fdct_5x5
+jpeg_fdct_16x8
+jpeg_fdct_10x10
+jpeg_fdct_3x6
+jpeg_fdct_6x12
+jpeg_fdct_13x13
+jpeg_fdct_1x1
+jpeg_fdct_14x14
+jpeg_fdct_15x15
+jpeg_fdct_8x4
+jpeg_fdct_8x16
+jpeg_fdct_12x12
+jpeg_fdct_6x6
+jpeg_fdct_10x5
+jpeg_fdct_3x3
+jpeg_fdct_4x8
+jpeg_fdct_5x10
+jpeg_fdct_14x7
+jpeg_fdct_11x11
+jpeg_fdct_1x2
+jpeg_fdct_2x2
+jpeg_fdct_4x2
+jpeg_fdct_7x7
+jpeg_fdct_islow
+jpeg_fdct_ifast

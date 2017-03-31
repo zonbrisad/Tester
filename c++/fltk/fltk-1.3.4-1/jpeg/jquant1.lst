@@ -1,0 +1,4097 @@
+   1              		.file	"jquant1.c"
+   2              		.text
+   3              	.Ltext0:
+   4              		.section	.text.unlikely.create_colorindex,"ax",@progbits
+   5              	.LCOLDB0:
+   6              		.section	.text.create_colorindex,"ax",@progbits
+   7              	.LHOTB0:
+   8              		.p2align 4,,15
+   9              		.section	.text.unlikely.create_colorindex
+  10              	.Ltext_cold0:
+  11              		.section	.text.create_colorindex
+  13              	create_colorindex:
+  14              	.LFB65:
+  15              		.file 1 "fltk-1.3.4-1/jpeg/jquant1.c"
+   1:fltk-1.3.4-1/jpeg/jquant1.c **** /*
+   2:fltk-1.3.4-1/jpeg/jquant1.c ****  * jquant1.c
+   3:fltk-1.3.4-1/jpeg/jquant1.c ****  *
+   4:fltk-1.3.4-1/jpeg/jquant1.c ****  * Copyright (C) 1991-1996, Thomas G. Lane.
+   5:fltk-1.3.4-1/jpeg/jquant1.c ****  * Modified 2011 by Guido Vollbeding.
+   6:fltk-1.3.4-1/jpeg/jquant1.c ****  * This file is part of the Independent JPEG Group's software.
+   7:fltk-1.3.4-1/jpeg/jquant1.c ****  * For conditions of distribution and use, see the accompanying README file.
+   8:fltk-1.3.4-1/jpeg/jquant1.c ****  *
+   9:fltk-1.3.4-1/jpeg/jquant1.c ****  * This file contains 1-pass color quantization (color mapping) routines.
+  10:fltk-1.3.4-1/jpeg/jquant1.c ****  * These routines provide mapping to a fixed color map using equally spaced
+  11:fltk-1.3.4-1/jpeg/jquant1.c ****  * color values.  Optional Floyd-Steinberg or ordered dithering is available.
+  12:fltk-1.3.4-1/jpeg/jquant1.c ****  */
+  13:fltk-1.3.4-1/jpeg/jquant1.c **** 
+  14:fltk-1.3.4-1/jpeg/jquant1.c **** #define JPEG_INTERNALS
+  15:fltk-1.3.4-1/jpeg/jquant1.c **** #include "jinclude.h"
+  16:fltk-1.3.4-1/jpeg/jquant1.c **** #include "jpeglib.h"
+  17:fltk-1.3.4-1/jpeg/jquant1.c **** 
+  18:fltk-1.3.4-1/jpeg/jquant1.c **** #ifdef QUANT_1PASS_SUPPORTED
+  19:fltk-1.3.4-1/jpeg/jquant1.c **** 
+  20:fltk-1.3.4-1/jpeg/jquant1.c **** 
+  21:fltk-1.3.4-1/jpeg/jquant1.c **** /*
+  22:fltk-1.3.4-1/jpeg/jquant1.c ****  * The main purpose of 1-pass quantization is to provide a fast, if not very
+  23:fltk-1.3.4-1/jpeg/jquant1.c ****  * high quality, colormapped output capability.  A 2-pass quantizer usually
+  24:fltk-1.3.4-1/jpeg/jquant1.c ****  * gives better visual quality; however, for quantized grayscale output this
+  25:fltk-1.3.4-1/jpeg/jquant1.c ****  * quantizer is perfectly adequate.  Dithering is highly recommended with this
+  26:fltk-1.3.4-1/jpeg/jquant1.c ****  * quantizer, though you can turn it off if you really want to.
+  27:fltk-1.3.4-1/jpeg/jquant1.c ****  *
+  28:fltk-1.3.4-1/jpeg/jquant1.c ****  * In 1-pass quantization the colormap must be chosen in advance of seeing the
+  29:fltk-1.3.4-1/jpeg/jquant1.c ****  * image.  We use a map consisting of all combinations of Ncolors[i] color
+  30:fltk-1.3.4-1/jpeg/jquant1.c ****  * values for the i'th component.  The Ncolors[] values are chosen so that
+  31:fltk-1.3.4-1/jpeg/jquant1.c ****  * their product, the total number of colors, is no more than that requested.
+  32:fltk-1.3.4-1/jpeg/jquant1.c ****  * (In most cases, the product will be somewhat less.)
+  33:fltk-1.3.4-1/jpeg/jquant1.c ****  *
+  34:fltk-1.3.4-1/jpeg/jquant1.c ****  * Since the colormap is orthogonal, the representative value for each color
+  35:fltk-1.3.4-1/jpeg/jquant1.c ****  * component can be determined without considering the other components;
+  36:fltk-1.3.4-1/jpeg/jquant1.c ****  * then these indexes can be combined into a colormap index by a standard
+  37:fltk-1.3.4-1/jpeg/jquant1.c ****  * N-dimensional-array-subscript calculation.  Most of the arithmetic involved
+  38:fltk-1.3.4-1/jpeg/jquant1.c ****  * can be precalculated and stored in the lookup table colorindex[].
+  39:fltk-1.3.4-1/jpeg/jquant1.c ****  * colorindex[i][j] maps pixel value j in component i to the nearest
+  40:fltk-1.3.4-1/jpeg/jquant1.c ****  * representative value (grid plane) for that component; this index is
+  41:fltk-1.3.4-1/jpeg/jquant1.c ****  * multiplied by the array stride for component i, so that the
+  42:fltk-1.3.4-1/jpeg/jquant1.c ****  * index of the colormap entry closest to a given pixel value is just
+  43:fltk-1.3.4-1/jpeg/jquant1.c ****  *    sum( colorindex[component-number][pixel-component-value] )
+  44:fltk-1.3.4-1/jpeg/jquant1.c ****  * Aside from being fast, this scheme allows for variable spacing between
+  45:fltk-1.3.4-1/jpeg/jquant1.c ****  * representative values with no additional lookup cost.
+  46:fltk-1.3.4-1/jpeg/jquant1.c ****  *
+  47:fltk-1.3.4-1/jpeg/jquant1.c ****  * If gamma correction has been applied in color conversion, it might be wise
+  48:fltk-1.3.4-1/jpeg/jquant1.c ****  * to adjust the color grid spacing so that the representative colors are
+  49:fltk-1.3.4-1/jpeg/jquant1.c ****  * equidistant in linear space.  At this writing, gamma correction is not
+  50:fltk-1.3.4-1/jpeg/jquant1.c ****  * implemented by jdcolor, so nothing is done here.
+  51:fltk-1.3.4-1/jpeg/jquant1.c ****  */
+  52:fltk-1.3.4-1/jpeg/jquant1.c **** 
+  53:fltk-1.3.4-1/jpeg/jquant1.c **** 
+  54:fltk-1.3.4-1/jpeg/jquant1.c **** /* Declarations for ordered dithering.
+  55:fltk-1.3.4-1/jpeg/jquant1.c ****  *
+  56:fltk-1.3.4-1/jpeg/jquant1.c ****  * We use a standard 16x16 ordered dither array.  The basic concept of ordered
+  57:fltk-1.3.4-1/jpeg/jquant1.c ****  * dithering is described in many references, for instance Dale Schumacher's
+  58:fltk-1.3.4-1/jpeg/jquant1.c ****  * chapter II.2 of Graphics Gems II (James Arvo, ed. Academic Press, 1991).
+  59:fltk-1.3.4-1/jpeg/jquant1.c ****  * In place of Schumacher's comparisons against a "threshold" value, we add a
+  60:fltk-1.3.4-1/jpeg/jquant1.c ****  * "dither" value to the input pixel and then round the result to the nearest
+  61:fltk-1.3.4-1/jpeg/jquant1.c ****  * output value.  The dither value is equivalent to (0.5 - threshold) times
+  62:fltk-1.3.4-1/jpeg/jquant1.c ****  * the distance between output values.  For ordered dithering, we assume that
+  63:fltk-1.3.4-1/jpeg/jquant1.c ****  * the output colors are equally spaced; if not, results will probably be
+  64:fltk-1.3.4-1/jpeg/jquant1.c ****  * worse, since the dither may be too much or too little at a given point.
+  65:fltk-1.3.4-1/jpeg/jquant1.c ****  *
+  66:fltk-1.3.4-1/jpeg/jquant1.c ****  * The normal calculation would be to form pixel value + dither, range-limit
+  67:fltk-1.3.4-1/jpeg/jquant1.c ****  * this to 0..MAXJSAMPLE, and then index into the colorindex table as usual.
+  68:fltk-1.3.4-1/jpeg/jquant1.c ****  * We can skip the separate range-limiting step by extending the colorindex
+  69:fltk-1.3.4-1/jpeg/jquant1.c ****  * table in both directions.
+  70:fltk-1.3.4-1/jpeg/jquant1.c ****  */
+  71:fltk-1.3.4-1/jpeg/jquant1.c **** 
+  72:fltk-1.3.4-1/jpeg/jquant1.c **** #define ODITHER_SIZE  16	/* dimension of dither matrix */
+  73:fltk-1.3.4-1/jpeg/jquant1.c **** /* NB: if ODITHER_SIZE is not a power of 2, ODITHER_MASK uses will break */
+  74:fltk-1.3.4-1/jpeg/jquant1.c **** #define ODITHER_CELLS (ODITHER_SIZE*ODITHER_SIZE)	/* # cells in matrix */
+  75:fltk-1.3.4-1/jpeg/jquant1.c **** #define ODITHER_MASK  (ODITHER_SIZE-1) /* mask for wrapping around counters */
+  76:fltk-1.3.4-1/jpeg/jquant1.c **** 
+  77:fltk-1.3.4-1/jpeg/jquant1.c **** typedef int ODITHER_MATRIX[ODITHER_SIZE][ODITHER_SIZE];
+  78:fltk-1.3.4-1/jpeg/jquant1.c **** typedef int (*ODITHER_MATRIX_PTR)[ODITHER_SIZE];
+  79:fltk-1.3.4-1/jpeg/jquant1.c **** 
+  80:fltk-1.3.4-1/jpeg/jquant1.c **** static const UINT8 base_dither_matrix[ODITHER_SIZE][ODITHER_SIZE] = {
+  81:fltk-1.3.4-1/jpeg/jquant1.c ****   /* Bayer's order-4 dither array.  Generated by the code given in
+  82:fltk-1.3.4-1/jpeg/jquant1.c ****    * Stephen Hawley's article "Ordered Dithering" in Graphics Gems I.
+  83:fltk-1.3.4-1/jpeg/jquant1.c ****    * The values in this array must range from 0 to ODITHER_CELLS-1.
+  84:fltk-1.3.4-1/jpeg/jquant1.c ****    */
+  85:fltk-1.3.4-1/jpeg/jquant1.c ****   {   0,192, 48,240, 12,204, 60,252,  3,195, 51,243, 15,207, 63,255 },
+  86:fltk-1.3.4-1/jpeg/jquant1.c ****   { 128, 64,176,112,140, 76,188,124,131, 67,179,115,143, 79,191,127 },
+  87:fltk-1.3.4-1/jpeg/jquant1.c ****   {  32,224, 16,208, 44,236, 28,220, 35,227, 19,211, 47,239, 31,223 },
+  88:fltk-1.3.4-1/jpeg/jquant1.c ****   { 160, 96,144, 80,172,108,156, 92,163, 99,147, 83,175,111,159, 95 },
+  89:fltk-1.3.4-1/jpeg/jquant1.c ****   {   8,200, 56,248,  4,196, 52,244, 11,203, 59,251,  7,199, 55,247 },
+  90:fltk-1.3.4-1/jpeg/jquant1.c ****   { 136, 72,184,120,132, 68,180,116,139, 75,187,123,135, 71,183,119 },
+  91:fltk-1.3.4-1/jpeg/jquant1.c ****   {  40,232, 24,216, 36,228, 20,212, 43,235, 27,219, 39,231, 23,215 },
+  92:fltk-1.3.4-1/jpeg/jquant1.c ****   { 168,104,152, 88,164,100,148, 84,171,107,155, 91,167,103,151, 87 },
+  93:fltk-1.3.4-1/jpeg/jquant1.c ****   {   2,194, 50,242, 14,206, 62,254,  1,193, 49,241, 13,205, 61,253 },
+  94:fltk-1.3.4-1/jpeg/jquant1.c ****   { 130, 66,178,114,142, 78,190,126,129, 65,177,113,141, 77,189,125 },
+  95:fltk-1.3.4-1/jpeg/jquant1.c ****   {  34,226, 18,210, 46,238, 30,222, 33,225, 17,209, 45,237, 29,221 },
+  96:fltk-1.3.4-1/jpeg/jquant1.c ****   { 162, 98,146, 82,174,110,158, 94,161, 97,145, 81,173,109,157, 93 },
+  97:fltk-1.3.4-1/jpeg/jquant1.c ****   {  10,202, 58,250,  6,198, 54,246,  9,201, 57,249,  5,197, 53,245 },
+  98:fltk-1.3.4-1/jpeg/jquant1.c ****   { 138, 74,186,122,134, 70,182,118,137, 73,185,121,133, 69,181,117 },
+  99:fltk-1.3.4-1/jpeg/jquant1.c ****   {  42,234, 26,218, 38,230, 22,214, 41,233, 25,217, 37,229, 21,213 },
+ 100:fltk-1.3.4-1/jpeg/jquant1.c ****   { 170,106,154, 90,166,102,150, 86,169,105,153, 89,165,101,149, 85 }
+ 101:fltk-1.3.4-1/jpeg/jquant1.c **** };
+ 102:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 103:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 104:fltk-1.3.4-1/jpeg/jquant1.c **** /* Declarations for Floyd-Steinberg dithering.
+ 105:fltk-1.3.4-1/jpeg/jquant1.c ****  *
+ 106:fltk-1.3.4-1/jpeg/jquant1.c ****  * Errors are accumulated into the array fserrors[], at a resolution of
+ 107:fltk-1.3.4-1/jpeg/jquant1.c ****  * 1/16th of a pixel count.  The error at a given pixel is propagated
+ 108:fltk-1.3.4-1/jpeg/jquant1.c ****  * to its not-yet-processed neighbors using the standard F-S fractions,
+ 109:fltk-1.3.4-1/jpeg/jquant1.c ****  *		...	(here)	7/16
+ 110:fltk-1.3.4-1/jpeg/jquant1.c ****  *		3/16	5/16	1/16
+ 111:fltk-1.3.4-1/jpeg/jquant1.c ****  * We work left-to-right on even rows, right-to-left on odd rows.
+ 112:fltk-1.3.4-1/jpeg/jquant1.c ****  *
+ 113:fltk-1.3.4-1/jpeg/jquant1.c ****  * We can get away with a single array (holding one row's worth of errors)
+ 114:fltk-1.3.4-1/jpeg/jquant1.c ****  * by using it to store the current row's errors at pixel columns not yet
+ 115:fltk-1.3.4-1/jpeg/jquant1.c ****  * processed, but the next row's errors at columns already processed.  We
+ 116:fltk-1.3.4-1/jpeg/jquant1.c ****  * need only a few extra variables to hold the errors immediately around the
+ 117:fltk-1.3.4-1/jpeg/jquant1.c ****  * current column.  (If we are lucky, those variables are in registers, but
+ 118:fltk-1.3.4-1/jpeg/jquant1.c ****  * even if not, they're probably cheaper to access than array elements are.)
+ 119:fltk-1.3.4-1/jpeg/jquant1.c ****  *
+ 120:fltk-1.3.4-1/jpeg/jquant1.c ****  * The fserrors[] array is indexed [component#][position].
+ 121:fltk-1.3.4-1/jpeg/jquant1.c ****  * We provide (#columns + 2) entries per component; the extra entry at each
+ 122:fltk-1.3.4-1/jpeg/jquant1.c ****  * end saves us from special-casing the first and last pixels.
+ 123:fltk-1.3.4-1/jpeg/jquant1.c ****  *
+ 124:fltk-1.3.4-1/jpeg/jquant1.c ****  * Note: on a wide image, we might not have enough room in a PC's near data
+ 125:fltk-1.3.4-1/jpeg/jquant1.c ****  * segment to hold the error array; so it is allocated with alloc_large.
+ 126:fltk-1.3.4-1/jpeg/jquant1.c ****  */
+ 127:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 128:fltk-1.3.4-1/jpeg/jquant1.c **** #if BITS_IN_JSAMPLE == 8
+ 129:fltk-1.3.4-1/jpeg/jquant1.c **** typedef INT16 FSERROR;		/* 16 bits should be enough */
+ 130:fltk-1.3.4-1/jpeg/jquant1.c **** typedef int LOCFSERROR;		/* use 'int' for calculation temps */
+ 131:fltk-1.3.4-1/jpeg/jquant1.c **** #else
+ 132:fltk-1.3.4-1/jpeg/jquant1.c **** typedef INT32 FSERROR;		/* may need more than 16 bits */
+ 133:fltk-1.3.4-1/jpeg/jquant1.c **** typedef INT32 LOCFSERROR;	/* be sure calculation temps are big enough */
+ 134:fltk-1.3.4-1/jpeg/jquant1.c **** #endif
+ 135:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 136:fltk-1.3.4-1/jpeg/jquant1.c **** typedef FSERROR FAR *FSERRPTR;	/* pointer to error array (in FAR storage!) */
+ 137:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 138:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 139:fltk-1.3.4-1/jpeg/jquant1.c **** /* Private subobject */
+ 140:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 141:fltk-1.3.4-1/jpeg/jquant1.c **** #define MAX_Q_COMPS 4		/* max components I can handle */
+ 142:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 143:fltk-1.3.4-1/jpeg/jquant1.c **** typedef struct {
+ 144:fltk-1.3.4-1/jpeg/jquant1.c ****   struct jpeg_color_quantizer pub; /* public fields */
+ 145:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 146:fltk-1.3.4-1/jpeg/jquant1.c ****   /* Initially allocated colormap is saved here */
+ 147:fltk-1.3.4-1/jpeg/jquant1.c ****   JSAMPARRAY sv_colormap;	/* The color map as a 2-D pixel array */
+ 148:fltk-1.3.4-1/jpeg/jquant1.c ****   int sv_actual;		/* number of entries in use */
+ 149:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 150:fltk-1.3.4-1/jpeg/jquant1.c ****   JSAMPARRAY colorindex;	/* Precomputed mapping for speed */
+ 151:fltk-1.3.4-1/jpeg/jquant1.c ****   /* colorindex[i][j] = index of color closest to pixel value j in component i,
+ 152:fltk-1.3.4-1/jpeg/jquant1.c ****    * premultiplied as described above.  Since colormap indexes must fit into
+ 153:fltk-1.3.4-1/jpeg/jquant1.c ****    * JSAMPLEs, the entries of this array will too.
+ 154:fltk-1.3.4-1/jpeg/jquant1.c ****    */
+ 155:fltk-1.3.4-1/jpeg/jquant1.c ****   boolean is_padded;		/* is the colorindex padded for odither? */
+ 156:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 157:fltk-1.3.4-1/jpeg/jquant1.c ****   int Ncolors[MAX_Q_COMPS];	/* # of values alloced to each component */
+ 158:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 159:fltk-1.3.4-1/jpeg/jquant1.c ****   /* Variables for ordered dithering */
+ 160:fltk-1.3.4-1/jpeg/jquant1.c ****   int row_index;		/* cur row's vertical index in dither matrix */
+ 161:fltk-1.3.4-1/jpeg/jquant1.c ****   ODITHER_MATRIX_PTR odither[MAX_Q_COMPS]; /* one dither array per component */
+ 162:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 163:fltk-1.3.4-1/jpeg/jquant1.c ****   /* Variables for Floyd-Steinberg dithering */
+ 164:fltk-1.3.4-1/jpeg/jquant1.c ****   FSERRPTR fserrors[MAX_Q_COMPS]; /* accumulated errors */
+ 165:fltk-1.3.4-1/jpeg/jquant1.c ****   boolean on_odd_row;		/* flag to remember which row we are on */
+ 166:fltk-1.3.4-1/jpeg/jquant1.c **** } my_cquantizer;
+ 167:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 168:fltk-1.3.4-1/jpeg/jquant1.c **** typedef my_cquantizer * my_cquantize_ptr;
+ 169:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 170:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 171:fltk-1.3.4-1/jpeg/jquant1.c **** /*
+ 172:fltk-1.3.4-1/jpeg/jquant1.c ****  * Policy-making subroutines for create_colormap and create_colorindex.
+ 173:fltk-1.3.4-1/jpeg/jquant1.c ****  * These routines determine the colormap to be used.  The rest of the module
+ 174:fltk-1.3.4-1/jpeg/jquant1.c ****  * only assumes that the colormap is orthogonal.
+ 175:fltk-1.3.4-1/jpeg/jquant1.c ****  *
+ 176:fltk-1.3.4-1/jpeg/jquant1.c ****  *  * select_ncolors decides how to divvy up the available colors
+ 177:fltk-1.3.4-1/jpeg/jquant1.c ****  *    among the components.
+ 178:fltk-1.3.4-1/jpeg/jquant1.c ****  *  * output_value defines the set of representative values for a component.
+ 179:fltk-1.3.4-1/jpeg/jquant1.c ****  *  * largest_input_value defines the mapping from input values to
+ 180:fltk-1.3.4-1/jpeg/jquant1.c ****  *    representative values for a component.
+ 181:fltk-1.3.4-1/jpeg/jquant1.c ****  * Note that the latter two routines may impose different policies for
+ 182:fltk-1.3.4-1/jpeg/jquant1.c ****  * different components, though this is not currently done.
+ 183:fltk-1.3.4-1/jpeg/jquant1.c ****  */
+ 184:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 185:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 186:fltk-1.3.4-1/jpeg/jquant1.c **** LOCAL(int)
+ 187:fltk-1.3.4-1/jpeg/jquant1.c **** select_ncolors (j_decompress_ptr cinfo, int Ncolors[])
+ 188:fltk-1.3.4-1/jpeg/jquant1.c **** /* Determine allocation of desired colors to components, */
+ 189:fltk-1.3.4-1/jpeg/jquant1.c **** /* and fill in Ncolors[] array to indicate choice. */
+ 190:fltk-1.3.4-1/jpeg/jquant1.c **** /* Return value is total number of colors (product of Ncolors[] values). */
+ 191:fltk-1.3.4-1/jpeg/jquant1.c **** {
+ 192:fltk-1.3.4-1/jpeg/jquant1.c ****   int nc = cinfo->out_color_components; /* number of color components */
+ 193:fltk-1.3.4-1/jpeg/jquant1.c ****   int max_colors = cinfo->desired_number_of_colors;
+ 194:fltk-1.3.4-1/jpeg/jquant1.c ****   int total_colors, iroot, i, j;
+ 195:fltk-1.3.4-1/jpeg/jquant1.c ****   boolean changed;
+ 196:fltk-1.3.4-1/jpeg/jquant1.c ****   long temp;
+ 197:fltk-1.3.4-1/jpeg/jquant1.c ****   static const int RGB_order[3] = { RGB_GREEN, RGB_RED, RGB_BLUE };
+ 198:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 199:fltk-1.3.4-1/jpeg/jquant1.c ****   /* We can allocate at least the nc'th root of max_colors per component. */
+ 200:fltk-1.3.4-1/jpeg/jquant1.c ****   /* Compute floor(nc'th root of max_colors). */
+ 201:fltk-1.3.4-1/jpeg/jquant1.c ****   iroot = 1;
+ 202:fltk-1.3.4-1/jpeg/jquant1.c ****   do {
+ 203:fltk-1.3.4-1/jpeg/jquant1.c ****     iroot++;
+ 204:fltk-1.3.4-1/jpeg/jquant1.c ****     temp = iroot;		/* set temp = iroot ** nc */
+ 205:fltk-1.3.4-1/jpeg/jquant1.c ****     for (i = 1; i < nc; i++)
+ 206:fltk-1.3.4-1/jpeg/jquant1.c ****       temp *= iroot;
+ 207:fltk-1.3.4-1/jpeg/jquant1.c ****   } while (temp <= (long) max_colors); /* repeat till iroot exceeds root */
+ 208:fltk-1.3.4-1/jpeg/jquant1.c ****   iroot--;			/* now iroot = floor(root) */
+ 209:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 210:fltk-1.3.4-1/jpeg/jquant1.c ****   /* Must have at least 2 color values per component */
+ 211:fltk-1.3.4-1/jpeg/jquant1.c ****   if (iroot < 2)
+ 212:fltk-1.3.4-1/jpeg/jquant1.c ****     ERREXIT1(cinfo, JERR_QUANT_FEW_COLORS, (int) temp);
+ 213:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 214:fltk-1.3.4-1/jpeg/jquant1.c ****   /* Initialize to iroot color values for each component */
+ 215:fltk-1.3.4-1/jpeg/jquant1.c ****   total_colors = 1;
+ 216:fltk-1.3.4-1/jpeg/jquant1.c ****   for (i = 0; i < nc; i++) {
+ 217:fltk-1.3.4-1/jpeg/jquant1.c ****     Ncolors[i] = iroot;
+ 218:fltk-1.3.4-1/jpeg/jquant1.c ****     total_colors *= iroot;
+ 219:fltk-1.3.4-1/jpeg/jquant1.c ****   }
+ 220:fltk-1.3.4-1/jpeg/jquant1.c ****   /* We may be able to increment the count for one or more components without
+ 221:fltk-1.3.4-1/jpeg/jquant1.c ****    * exceeding max_colors, though we know not all can be incremented.
+ 222:fltk-1.3.4-1/jpeg/jquant1.c ****    * Sometimes, the first component can be incremented more than once!
+ 223:fltk-1.3.4-1/jpeg/jquant1.c ****    * (Example: for 16 colors, we start at 2*2*2, go to 3*2*2, then 4*2*2.)
+ 224:fltk-1.3.4-1/jpeg/jquant1.c ****    * In RGB colorspace, try to increment G first, then R, then B.
+ 225:fltk-1.3.4-1/jpeg/jquant1.c ****    */
+ 226:fltk-1.3.4-1/jpeg/jquant1.c ****   do {
+ 227:fltk-1.3.4-1/jpeg/jquant1.c ****     changed = FALSE;
+ 228:fltk-1.3.4-1/jpeg/jquant1.c ****     for (i = 0; i < nc; i++) {
+ 229:fltk-1.3.4-1/jpeg/jquant1.c ****       j = (cinfo->out_color_space == JCS_RGB ? RGB_order[i] : i);
+ 230:fltk-1.3.4-1/jpeg/jquant1.c ****       /* calculate new total_colors if Ncolors[j] is incremented */
+ 231:fltk-1.3.4-1/jpeg/jquant1.c ****       temp = total_colors / Ncolors[j];
+ 232:fltk-1.3.4-1/jpeg/jquant1.c ****       temp *= Ncolors[j]+1;	/* done in long arith to avoid oflo */
+ 233:fltk-1.3.4-1/jpeg/jquant1.c ****       if (temp > (long) max_colors)
+ 234:fltk-1.3.4-1/jpeg/jquant1.c **** 	break;			/* won't fit, done with this pass */
+ 235:fltk-1.3.4-1/jpeg/jquant1.c ****       Ncolors[j]++;		/* OK, apply the increment */
+ 236:fltk-1.3.4-1/jpeg/jquant1.c ****       total_colors = (int) temp;
+ 237:fltk-1.3.4-1/jpeg/jquant1.c ****       changed = TRUE;
+ 238:fltk-1.3.4-1/jpeg/jquant1.c ****     }
+ 239:fltk-1.3.4-1/jpeg/jquant1.c ****   } while (changed);
+ 240:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 241:fltk-1.3.4-1/jpeg/jquant1.c ****   return total_colors;
+ 242:fltk-1.3.4-1/jpeg/jquant1.c **** }
+ 243:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 244:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 245:fltk-1.3.4-1/jpeg/jquant1.c **** LOCAL(int)
+ 246:fltk-1.3.4-1/jpeg/jquant1.c **** output_value (j_decompress_ptr cinfo, int ci, int j, int maxj)
+ 247:fltk-1.3.4-1/jpeg/jquant1.c **** /* Return j'th output value, where j will range from 0 to maxj */
+ 248:fltk-1.3.4-1/jpeg/jquant1.c **** /* The output values must fall in 0..MAXJSAMPLE in increasing order */
+ 249:fltk-1.3.4-1/jpeg/jquant1.c **** {
+ 250:fltk-1.3.4-1/jpeg/jquant1.c ****   /* We always provide values 0 and MAXJSAMPLE for each component;
+ 251:fltk-1.3.4-1/jpeg/jquant1.c ****    * any additional values are equally spaced between these limits.
+ 252:fltk-1.3.4-1/jpeg/jquant1.c ****    * (Forcing the upper and lower values to the limits ensures that
+ 253:fltk-1.3.4-1/jpeg/jquant1.c ****    * dithering can't produce a color outside the selected gamut.)
+ 254:fltk-1.3.4-1/jpeg/jquant1.c ****    */
+ 255:fltk-1.3.4-1/jpeg/jquant1.c ****   return (int) (((INT32) j * MAXJSAMPLE + maxj/2) / maxj);
+ 256:fltk-1.3.4-1/jpeg/jquant1.c **** }
+ 257:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 258:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 259:fltk-1.3.4-1/jpeg/jquant1.c **** LOCAL(int)
+ 260:fltk-1.3.4-1/jpeg/jquant1.c **** largest_input_value (j_decompress_ptr cinfo, int ci, int j, int maxj)
+ 261:fltk-1.3.4-1/jpeg/jquant1.c **** /* Return largest input value that should map to j'th output value */
+ 262:fltk-1.3.4-1/jpeg/jquant1.c **** /* Must have largest(j=0) >= 0, and largest(j=maxj) >= MAXJSAMPLE */
+ 263:fltk-1.3.4-1/jpeg/jquant1.c **** {
+ 264:fltk-1.3.4-1/jpeg/jquant1.c ****   /* Breakpoints are halfway between values returned by output_value */
+ 265:fltk-1.3.4-1/jpeg/jquant1.c ****   return (int) (((INT32) (2*j + 1) * MAXJSAMPLE + maxj) / (2*maxj));
+ 266:fltk-1.3.4-1/jpeg/jquant1.c **** }
+ 267:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 268:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 269:fltk-1.3.4-1/jpeg/jquant1.c **** /*
+ 270:fltk-1.3.4-1/jpeg/jquant1.c ****  * Create the colormap.
+ 271:fltk-1.3.4-1/jpeg/jquant1.c ****  */
+ 272:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 273:fltk-1.3.4-1/jpeg/jquant1.c **** LOCAL(void)
+ 274:fltk-1.3.4-1/jpeg/jquant1.c **** create_colormap (j_decompress_ptr cinfo)
+ 275:fltk-1.3.4-1/jpeg/jquant1.c **** {
+ 276:fltk-1.3.4-1/jpeg/jquant1.c ****   my_cquantize_ptr cquantize = (my_cquantize_ptr) cinfo->cquantize;
+ 277:fltk-1.3.4-1/jpeg/jquant1.c ****   JSAMPARRAY colormap;		/* Created colormap */
+ 278:fltk-1.3.4-1/jpeg/jquant1.c ****   int total_colors;		/* Number of distinct output colors */
+ 279:fltk-1.3.4-1/jpeg/jquant1.c ****   int i,j,k, nci, blksize, blkdist, ptr, val;
+ 280:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 281:fltk-1.3.4-1/jpeg/jquant1.c ****   /* Select number of colors for each component */
+ 282:fltk-1.3.4-1/jpeg/jquant1.c ****   total_colors = select_ncolors(cinfo, cquantize->Ncolors);
+ 283:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 284:fltk-1.3.4-1/jpeg/jquant1.c ****   /* Report selected color counts */
+ 285:fltk-1.3.4-1/jpeg/jquant1.c ****   if (cinfo->out_color_components == 3)
+ 286:fltk-1.3.4-1/jpeg/jquant1.c ****     TRACEMS4(cinfo, 1, JTRC_QUANT_3_NCOLORS,
+ 287:fltk-1.3.4-1/jpeg/jquant1.c **** 	     total_colors, cquantize->Ncolors[0],
+ 288:fltk-1.3.4-1/jpeg/jquant1.c **** 	     cquantize->Ncolors[1], cquantize->Ncolors[2]);
+ 289:fltk-1.3.4-1/jpeg/jquant1.c ****   else
+ 290:fltk-1.3.4-1/jpeg/jquant1.c ****     TRACEMS1(cinfo, 1, JTRC_QUANT_NCOLORS, total_colors);
+ 291:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 292:fltk-1.3.4-1/jpeg/jquant1.c ****   /* Allocate and fill in the colormap. */
+ 293:fltk-1.3.4-1/jpeg/jquant1.c ****   /* The colors are ordered in the map in standard row-major order, */
+ 294:fltk-1.3.4-1/jpeg/jquant1.c ****   /* i.e. rightmost (highest-indexed) color changes most rapidly. */
+ 295:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 296:fltk-1.3.4-1/jpeg/jquant1.c ****   colormap = (*cinfo->mem->alloc_sarray)
+ 297:fltk-1.3.4-1/jpeg/jquant1.c ****     ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 298:fltk-1.3.4-1/jpeg/jquant1.c ****      (JDIMENSION) total_colors, (JDIMENSION) cinfo->out_color_components);
+ 299:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 300:fltk-1.3.4-1/jpeg/jquant1.c ****   /* blksize is number of adjacent repeated entries for a component */
+ 301:fltk-1.3.4-1/jpeg/jquant1.c ****   /* blkdist is distance between groups of identical entries for a component */
+ 302:fltk-1.3.4-1/jpeg/jquant1.c ****   blkdist = total_colors;
+ 303:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 304:fltk-1.3.4-1/jpeg/jquant1.c ****   for (i = 0; i < cinfo->out_color_components; i++) {
+ 305:fltk-1.3.4-1/jpeg/jquant1.c ****     /* fill in colormap entries for i'th color component */
+ 306:fltk-1.3.4-1/jpeg/jquant1.c ****     nci = cquantize->Ncolors[i]; /* # of distinct values for this color */
+ 307:fltk-1.3.4-1/jpeg/jquant1.c ****     blksize = blkdist / nci;
+ 308:fltk-1.3.4-1/jpeg/jquant1.c ****     for (j = 0; j < nci; j++) {
+ 309:fltk-1.3.4-1/jpeg/jquant1.c ****       /* Compute j'th output value (out of nci) for component */
+ 310:fltk-1.3.4-1/jpeg/jquant1.c ****       val = output_value(cinfo, i, j, nci-1);
+ 311:fltk-1.3.4-1/jpeg/jquant1.c ****       /* Fill in all colormap entries that have this value of this component */
+ 312:fltk-1.3.4-1/jpeg/jquant1.c ****       for (ptr = j * blksize; ptr < total_colors; ptr += blkdist) {
+ 313:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* fill in blksize entries beginning at ptr */
+ 314:fltk-1.3.4-1/jpeg/jquant1.c **** 	for (k = 0; k < blksize; k++)
+ 315:fltk-1.3.4-1/jpeg/jquant1.c **** 	  colormap[i][ptr+k] = (JSAMPLE) val;
+ 316:fltk-1.3.4-1/jpeg/jquant1.c ****       }
+ 317:fltk-1.3.4-1/jpeg/jquant1.c ****     }
+ 318:fltk-1.3.4-1/jpeg/jquant1.c ****     blkdist = blksize;		/* blksize of this color is blkdist of next */
+ 319:fltk-1.3.4-1/jpeg/jquant1.c ****   }
+ 320:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 321:fltk-1.3.4-1/jpeg/jquant1.c ****   /* Save the colormap in private storage,
+ 322:fltk-1.3.4-1/jpeg/jquant1.c ****    * where it will survive color quantization mode changes.
+ 323:fltk-1.3.4-1/jpeg/jquant1.c ****    */
+ 324:fltk-1.3.4-1/jpeg/jquant1.c ****   cquantize->sv_colormap = colormap;
+ 325:fltk-1.3.4-1/jpeg/jquant1.c ****   cquantize->sv_actual = total_colors;
+ 326:fltk-1.3.4-1/jpeg/jquant1.c **** }
+ 327:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 328:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 329:fltk-1.3.4-1/jpeg/jquant1.c **** /*
+ 330:fltk-1.3.4-1/jpeg/jquant1.c ****  * Create the color index table.
+ 331:fltk-1.3.4-1/jpeg/jquant1.c ****  */
+ 332:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 333:fltk-1.3.4-1/jpeg/jquant1.c **** LOCAL(void)
+ 334:fltk-1.3.4-1/jpeg/jquant1.c **** create_colorindex (j_decompress_ptr cinfo)
+ 335:fltk-1.3.4-1/jpeg/jquant1.c **** {
+  16              		.loc 1 335 0
+  17              		.cfi_startproc
+  18              	.LVL0:
+  19 0000 4157     		pushq	%r15
+  20              		.cfi_def_cfa_offset 16
+  21              		.cfi_offset 15, -16
+  22 0002 4156     		pushq	%r14
+  23              		.cfi_def_cfa_offset 24
+  24              		.cfi_offset 14, -24
+  25 0004 4155     		pushq	%r13
+  26              		.cfi_def_cfa_offset 32
+  27              		.cfi_offset 13, -32
+  28 0006 4154     		pushq	%r12
+  29              		.cfi_def_cfa_offset 40
+  30              		.cfi_offset 12, -40
+  31 0008 55       		pushq	%rbp
+  32              		.cfi_def_cfa_offset 48
+  33              		.cfi_offset 6, -48
+  34 0009 53       		pushq	%rbx
+  35              		.cfi_def_cfa_offset 56
+  36              		.cfi_offset 3, -56
+  37 000a 4889FD   		movq	%rdi, %rbp
+  38 000d 4883EC18 		subq	$24, %rsp
+  39              		.cfi_def_cfa_offset 80
+ 336:fltk-1.3.4-1/jpeg/jquant1.c ****   my_cquantize_ptr cquantize = (my_cquantize_ptr) cinfo->cquantize;
+ 337:fltk-1.3.4-1/jpeg/jquant1.c ****   JSAMPROW indexptr;
+ 338:fltk-1.3.4-1/jpeg/jquant1.c ****   int i,j,k, nci, blksize, val, pad;
+ 339:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 340:fltk-1.3.4-1/jpeg/jquant1.c ****   /* For ordered dither, we pad the color index tables by MAXJSAMPLE in
+ 341:fltk-1.3.4-1/jpeg/jquant1.c ****    * each direction (input index values can be -MAXJSAMPLE .. 2*MAXJSAMPLE).
+ 342:fltk-1.3.4-1/jpeg/jquant1.c ****    * This is not necessary in the other dithering modes.  However, we
+ 343:fltk-1.3.4-1/jpeg/jquant1.c ****    * flag whether it was done in case user changes dithering mode.
+ 344:fltk-1.3.4-1/jpeg/jquant1.c ****    */
+ 345:fltk-1.3.4-1/jpeg/jquant1.c ****   if (cinfo->dither_mode == JDITHER_ORDERED) {
+  40              		.loc 1 345 0
+  41 0011 837F7001 		cmpl	$1, 112(%rdi)
+ 336:fltk-1.3.4-1/jpeg/jquant1.c ****   my_cquantize_ptr cquantize = (my_cquantize_ptr) cinfo->cquantize;
+  42              		.loc 1 336 0
+  43 0015 488B9F90 		movq	656(%rdi), %rbx
+  43      020000
+  44              	.LVL1:
+  45              		.loc 1 345 0
+  46 001c 0F845E01 		je	.L23
+  46      0000
+  47              	.LVL2:
+ 346:fltk-1.3.4-1/jpeg/jquant1.c ****     pad = MAXJSAMPLE*2;
+ 347:fltk-1.3.4-1/jpeg/jquant1.c ****     cquantize->is_padded = TRUE;
+ 348:fltk-1.3.4-1/jpeg/jquant1.c ****   } else {
+ 349:fltk-1.3.4-1/jpeg/jquant1.c ****     pad = 0;
+ 350:fltk-1.3.4-1/jpeg/jquant1.c ****     cquantize->is_padded = FALSE;
+  48              		.loc 1 350 0
+  49 0022 C7433800 		movl	$0, 56(%rbx)
+  49      000000
+  50 0029 BA000100 		movl	$256, %edx
+  50      00
+ 349:fltk-1.3.4-1/jpeg/jquant1.c ****     cquantize->is_padded = FALSE;
+  51              		.loc 1 349 0
+  52 002e 4531E4   		xorl	%r12d, %r12d
+  53              	.LVL3:
+  54              	.L3:
+ 351:fltk-1.3.4-1/jpeg/jquant1.c ****   }
+ 352:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 353:fltk-1.3.4-1/jpeg/jquant1.c ****   cquantize->colorindex = (*cinfo->mem->alloc_sarray)
+  55              		.loc 1 353 0
+  56 0031 488B4508 		movq	8(%rbp), %rax
+  57 0035 BE010000 		movl	$1, %esi
+  57      00
+  58 003a 8B8D9000 		movl	144(%rbp), %ecx
+  58      0000
+  59 0040 4889EF   		movq	%rbp, %rdi
+  60              	.LVL4:
+  61 0043 FF5010   		call	*16(%rax)
+  62              	.LVL5:
+  63 0046 48894330 		movq	%rax, 48(%rbx)
+  64 004a 4889C6   		movq	%rax, %rsi
+ 354:fltk-1.3.4-1/jpeg/jquant1.c ****     ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 355:fltk-1.3.4-1/jpeg/jquant1.c ****      (JDIMENSION) (MAXJSAMPLE+1 + pad),
+ 356:fltk-1.3.4-1/jpeg/jquant1.c ****      (JDIMENSION) cinfo->out_color_components);
+ 357:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 358:fltk-1.3.4-1/jpeg/jquant1.c ****   /* blksize is number of adjacent repeated entries for a component */
+ 359:fltk-1.3.4-1/jpeg/jquant1.c ****   blksize = cquantize->sv_actual;
+  65              		.loc 1 359 0
+  66 004d 8B4328   		movl	40(%rbx), %eax
+  67 0050 89442404 		movl	%eax, 4(%rsp)
+  68              	.LVL6:
+ 360:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 361:fltk-1.3.4-1/jpeg/jquant1.c ****   for (i = 0; i < cinfo->out_color_components; i++) {
+  69              		.loc 1 361 0
+  70 0054 8B859000 		movl	144(%rbp), %eax
+  70      0000
+  71              	.LVL7:
+  72 005a 85C0     		testl	%eax, %eax
+  73 005c 0F8E0F01 		jle	.L1
+  73      0000
+  74 0062 488D433C 		leaq	60(%rbx), %rax
+  75 0066 4531FF   		xorl	%r15d, %r15d
+  76 0069 C7042400 		movl	$0, (%rsp)
+  76      000000
+  77 0070 48894424 		movq	%rax, 8(%rsp)
+  77      08
+  78              	.LVL8:
+  79              	.L5:
+ 362:fltk-1.3.4-1/jpeg/jquant1.c ****     /* fill in colorindex entries for i'th color component */
+ 363:fltk-1.3.4-1/jpeg/jquant1.c ****     nci = cquantize->Ncolors[i]; /* # of distinct values for this color */
+  80              		.loc 1 363 0
+  81 0075 488B4424 		movq	8(%rsp), %rax
+  81      08
+  82 007a 8B08     		movl	(%rax), %ecx
+  83              	.LVL9:
+ 364:fltk-1.3.4-1/jpeg/jquant1.c ****     blksize = blksize / nci;
+  84              		.loc 1 364 0
+  85 007c 8B442404 		movl	4(%rsp), %eax
+  86 0080 99       		cltd
+  87 0081 F7F9     		idivl	%ecx
+ 365:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 366:fltk-1.3.4-1/jpeg/jquant1.c ****     /* adjust colorindex pointers to provide padding at negative indexes. */
+ 367:fltk-1.3.4-1/jpeg/jquant1.c ****     if (pad)
+  88              		.loc 1 367 0
+  89 0083 4585E4   		testl	%r12d, %r12d
+ 364:fltk-1.3.4-1/jpeg/jquant1.c ****     blksize = blksize / nci;
+  90              		.loc 1 364 0
+  91 0086 4189C5   		movl	%eax, %r13d
+  92 0089 89442404 		movl	%eax, 4(%rsp)
+  93              	.LVL10:
+  94              		.loc 1 367 0
+  95 008d 740C     		je	.L6
+ 368:fltk-1.3.4-1/jpeg/jquant1.c ****       cquantize->colorindex[i] += MAXJSAMPLE;
+  96              		.loc 1 368 0
+  97 008f 4A81043E 		addq	$255, (%rsi,%r15)
+  97      FF000000 
+  98 0097 488B7330 		movq	48(%rbx), %rsi
+  99              	.L6:
+ 369:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 370:fltk-1.3.4-1/jpeg/jquant1.c ****     /* in loop, val = index of current output value, */
+ 371:fltk-1.3.4-1/jpeg/jquant1.c ****     /* and k = largest j that maps to current val */
+ 372:fltk-1.3.4-1/jpeg/jquant1.c ****     indexptr = cquantize->colorindex[i];
+ 373:fltk-1.3.4-1/jpeg/jquant1.c ****     val = 0;
+ 374:fltk-1.3.4-1/jpeg/jquant1.c ****     k = largest_input_value(cinfo, i, 0, nci-1);
+ 100              		.loc 1 374 0
+ 101 009b 83E901   		subl	$1, %ecx
+ 102              	.LVL11:
+ 372:fltk-1.3.4-1/jpeg/jquant1.c ****     val = 0;
+ 103              		.loc 1 372 0
+ 104 009e 4E8B1C3E 		movq	(%rsi,%r15), %r11
+ 105              	.LVL12:
+ 106              	.LBB21:
+ 107              	.LBB22:
+ 265:fltk-1.3.4-1/jpeg/jquant1.c **** }
+ 108              		.loc 1 265 0
+ 109 00a2 4531D2   		xorl	%r10d, %r10d
+ 110 00a5 4C63F1   		movslq	%ecx, %r14
+ 111 00a8 01C9     		addl	%ecx, %ecx
+ 112              	.LVL13:
+ 113              	.LBE22:
+ 114              	.LBE21:
+ 373:fltk-1.3.4-1/jpeg/jquant1.c ****     k = largest_input_value(cinfo, i, 0, nci-1);
+ 115              		.loc 1 373 0
+ 116 00aa 31F6     		xorl	%esi, %esi
+ 117              	.LBB24:
+ 118              	.LBB23:
+ 265:fltk-1.3.4-1/jpeg/jquant1.c **** }
+ 119              		.loc 1 265 0
+ 120 00ac 498D86FF 		leaq	255(%r14), %rax
+ 120      000000
+ 121              	.LVL14:
+ 122 00b3 4863F9   		movslq	%ecx, %rdi
+ 123 00b6 4899     		cqto
+ 124 00b8 48F7FF   		idivq	%rdi
+ 125 00bb 4989C0   		movq	%rax, %r8
+ 126              	.LVL15:
+ 127 00be 6690     		.p2align 4,,10
+ 128              		.p2align 3
+ 129              	.L7:
+ 130              	.LBE23:
+ 131              	.LBE24:
+ 375:fltk-1.3.4-1/jpeg/jquant1.c ****     for (j = 0; j <= MAXJSAMPLE; j++) {
+ 376:fltk-1.3.4-1/jpeg/jquant1.c ****       while (j > k)		/* advance val if past boundary */
+ 132              		.loc 1 376 0
+ 133 00c0 4539D0   		cmpl	%r10d, %r8d
+ 134 00c3 4589D1   		movl	%r10d, %r9d
+ 135              	.LVL16:
+ 136 00c6 7D3A     		jge	.L11
+ 137 00c8 4863C6   		movslq	%esi, %rax
+ 138 00cb 4883C001 		addq	$1, %rax
+ 139 00cf 488D1400 		leaq	(%rax,%rax), %rdx
+ 140 00d3 48C1E009 		salq	$9, %rax
+ 141 00d7 4829D0   		subq	%rdx, %rax
+ 142 00da 498D8C06 		leaq	255(%r14,%rax), %rcx
+ 142      FF000000 
+ 143              		.p2align 4,,10
+ 144 00e2 660F1F44 		.p2align 3
+ 144      0000
+ 145              	.L8:
+ 146              	.LBB25:
+ 147              	.LBB26:
+ 265:fltk-1.3.4-1/jpeg/jquant1.c **** }
+ 148              		.loc 1 265 0
+ 149 00e8 4889C8   		movq	%rcx, %rax
+ 150              	.LBE26:
+ 151              	.LBE25:
+ 377:fltk-1.3.4-1/jpeg/jquant1.c **** 	k = largest_input_value(cinfo, i, ++val, nci-1);
+ 152              		.loc 1 377 0
+ 153 00eb 83C601   		addl	$1, %esi
+ 154              	.LVL17:
+ 155 00ee 4881C1FE 		addq	$510, %rcx
+ 155      010000
+ 156              	.LBB29:
+ 157              	.LBB27:
+ 265:fltk-1.3.4-1/jpeg/jquant1.c **** }
+ 158              		.loc 1 265 0
+ 159 00f5 4899     		cqto
+ 160 00f7 48F7FF   		idivq	%rdi
+ 161              	.LVL18:
+ 162              	.LBE27:
+ 163              	.LBE29:
+ 376:fltk-1.3.4-1/jpeg/jquant1.c **** 	k = largest_input_value(cinfo, i, ++val, nci-1);
+ 164              		.loc 1 376 0
+ 165 00fa 4139C1   		cmpl	%eax, %r9d
+ 166              	.LBB30:
+ 167              	.LBB28:
+ 265:fltk-1.3.4-1/jpeg/jquant1.c **** }
+ 168              		.loc 1 265 0
+ 169 00fd 4189C0   		movl	%eax, %r8d
+ 170              	.LVL19:
+ 171              	.LBE28:
+ 172              	.LBE30:
+ 376:fltk-1.3.4-1/jpeg/jquant1.c **** 	k = largest_input_value(cinfo, i, ++val, nci-1);
+ 173              		.loc 1 376 0
+ 174 0100 7FE6     		jg	.L8
+ 175              	.LVL20:
+ 176              	.L11:
+ 378:fltk-1.3.4-1/jpeg/jquant1.c ****       /* premultiply so that no multiplication needed in main processing */
+ 379:fltk-1.3.4-1/jpeg/jquant1.c ****       indexptr[j] = (JSAMPLE) (val * blksize);
+ 177              		.loc 1 379 0 discriminator 2
+ 178 0102 4489E8   		movl	%r13d, %eax
+ 179 0105 0FAFC6   		imull	%esi, %eax
+ 180 0108 43880413 		movb	%al, (%r11,%r10)
+ 181              	.LVL21:
+ 182 010c 4983C201 		addq	$1, %r10
+ 375:fltk-1.3.4-1/jpeg/jquant1.c ****       while (j > k)		/* advance val if past boundary */
+ 183              		.loc 1 375 0 discriminator 2
+ 184 0110 4981FA00 		cmpq	$256, %r10
+ 184      010000
+ 185 0117 75A7     		jne	.L7
+ 380:fltk-1.3.4-1/jpeg/jquant1.c ****     }
+ 381:fltk-1.3.4-1/jpeg/jquant1.c ****     /* Pad at both ends if necessary */
+ 382:fltk-1.3.4-1/jpeg/jquant1.c ****     if (pad)
+ 186              		.loc 1 382 0
+ 187 0119 4585E4   		testl	%r12d, %r12d
+ 188 011c 7431     		je	.L15
+ 189 011e 498D53FF 		leaq	-1(%r11), %rdx
+ 190 0122 498D8300 		leaq	256(%r11), %rax
+ 190      010000
+ 191 0129 498DB3FF 		leaq	511(%r11), %rsi
+ 191      010000
+ 192              	.LVL22:
+ 193              		.p2align 4,,10
+ 194              		.p2align 3
+ 195              	.L14:
+ 383:fltk-1.3.4-1/jpeg/jquant1.c ****       for (j = 1; j <= MAXJSAMPLE; j++) {
+ 384:fltk-1.3.4-1/jpeg/jquant1.c **** 	indexptr[-j] = indexptr[0];
+ 196              		.loc 1 384 0 discriminator 3
+ 197 0130 410FB60B 		movzbl	(%r11), %ecx
+ 198 0134 4883C001 		addq	$1, %rax
+ 199              	.LVL23:
+ 200 0138 4883EA01 		subq	$1, %rdx
+ 201 013c 884A01   		movb	%cl, 1(%rdx)
+ 385:fltk-1.3.4-1/jpeg/jquant1.c **** 	indexptr[MAXJSAMPLE+j] = indexptr[MAXJSAMPLE];
+ 202              		.loc 1 385 0 discriminator 3
+ 203 013f 410FB68B 		movzbl	255(%r11), %ecx
+ 203      FF000000 
+ 204 0147 8848FF   		movb	%cl, -1(%rax)
+ 383:fltk-1.3.4-1/jpeg/jquant1.c ****       for (j = 1; j <= MAXJSAMPLE; j++) {
+ 205              		.loc 1 383 0 discriminator 3
+ 206 014a 4839C6   		cmpq	%rax, %rsi
+ 207 014d 75E1     		jne	.L14
+ 208              	.L15:
+ 361:fltk-1.3.4-1/jpeg/jquant1.c ****     /* fill in colorindex entries for i'th color component */
+ 209              		.loc 1 361 0
+ 210 014f 83042401 		addl	$1, (%rsp)
+ 211              	.LVL24:
+ 212 0153 48834424 		addq	$4, 8(%rsp)
+ 212      0804
+ 213 0159 4983C708 		addq	$8, %r15
+ 214 015d 8B0424   		movl	(%rsp), %eax
+ 215              	.LVL25:
+ 216 0160 39859000 		cmpl	%eax, 144(%rbp)
+ 216      0000
+ 217 0166 7E09     		jle	.L1
+ 218 0168 488B7330 		movq	48(%rbx), %rsi
+ 219 016c E904FFFF 		jmp	.L5
+ 219      FF
+ 220              	.LVL26:
+ 221              	.L1:
+ 386:fltk-1.3.4-1/jpeg/jquant1.c ****       }
+ 387:fltk-1.3.4-1/jpeg/jquant1.c ****   }
+ 388:fltk-1.3.4-1/jpeg/jquant1.c **** }
+ 222              		.loc 1 388 0
+ 223 0171 4883C418 		addq	$24, %rsp
+ 224              		.cfi_remember_state
+ 225              		.cfi_def_cfa_offset 56
+ 226 0175 5B       		popq	%rbx
+ 227              		.cfi_def_cfa_offset 48
+ 228              	.LVL27:
+ 229 0176 5D       		popq	%rbp
+ 230              		.cfi_def_cfa_offset 40
+ 231              	.LVL28:
+ 232 0177 415C     		popq	%r12
+ 233              		.cfi_def_cfa_offset 32
+ 234              	.LVL29:
+ 235 0179 415D     		popq	%r13
+ 236              		.cfi_def_cfa_offset 24
+ 237 017b 415E     		popq	%r14
+ 238              		.cfi_def_cfa_offset 16
+ 239 017d 415F     		popq	%r15
+ 240              		.cfi_def_cfa_offset 8
+ 241 017f C3       		ret
+ 242              	.LVL30:
+ 243              	.L23:
+ 244              		.cfi_restore_state
+ 347:fltk-1.3.4-1/jpeg/jquant1.c ****   } else {
+ 245              		.loc 1 347 0
+ 246 0180 C7433801 		movl	$1, 56(%rbx)
+ 246      000000
+ 247 0187 BAFE0200 		movl	$766, %edx
+ 247      00
+ 346:fltk-1.3.4-1/jpeg/jquant1.c ****     cquantize->is_padded = TRUE;
+ 248              		.loc 1 346 0
+ 249 018c 41BCFE01 		movl	$510, %r12d
+ 249      0000
+ 250 0192 E99AFEFF 		jmp	.L3
+ 250      FF
+ 251              		.cfi_endproc
+ 252              	.LFE65:
+ 254              		.section	.text.unlikely.create_colorindex
+ 255              	.LCOLDE0:
+ 256              		.section	.text.create_colorindex
+ 257              	.LHOTE0:
+ 258              		.section	.text.unlikely.color_quantize,"ax",@progbits
+ 259              	.LCOLDB1:
+ 260              		.section	.text.color_quantize,"ax",@progbits
+ 261              	.LHOTB1:
+ 262              		.p2align 4,,15
+ 264              	color_quantize:
+ 265              	.LFB68:
+ 389:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 390:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 391:fltk-1.3.4-1/jpeg/jquant1.c **** /*
+ 392:fltk-1.3.4-1/jpeg/jquant1.c ****  * Create an ordered-dither array for a component having ncolors
+ 393:fltk-1.3.4-1/jpeg/jquant1.c ****  * distinct output values.
+ 394:fltk-1.3.4-1/jpeg/jquant1.c ****  */
+ 395:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 396:fltk-1.3.4-1/jpeg/jquant1.c **** LOCAL(ODITHER_MATRIX_PTR)
+ 397:fltk-1.3.4-1/jpeg/jquant1.c **** make_odither_array (j_decompress_ptr cinfo, int ncolors)
+ 398:fltk-1.3.4-1/jpeg/jquant1.c **** {
+ 399:fltk-1.3.4-1/jpeg/jquant1.c ****   ODITHER_MATRIX_PTR odither;
+ 400:fltk-1.3.4-1/jpeg/jquant1.c ****   int j,k;
+ 401:fltk-1.3.4-1/jpeg/jquant1.c ****   INT32 num,den;
+ 402:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 403:fltk-1.3.4-1/jpeg/jquant1.c ****   odither = (ODITHER_MATRIX_PTR)
+ 404:fltk-1.3.4-1/jpeg/jquant1.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 405:fltk-1.3.4-1/jpeg/jquant1.c **** 				SIZEOF(ODITHER_MATRIX));
+ 406:fltk-1.3.4-1/jpeg/jquant1.c ****   /* The inter-value distance for this color is MAXJSAMPLE/(ncolors-1).
+ 407:fltk-1.3.4-1/jpeg/jquant1.c ****    * Hence the dither value for the matrix cell with fill order f
+ 408:fltk-1.3.4-1/jpeg/jquant1.c ****    * (f=0..N-1) should be (N-1-2*f)/(2*N) * MAXJSAMPLE/(ncolors-1).
+ 409:fltk-1.3.4-1/jpeg/jquant1.c ****    * On 16-bit-int machine, be careful to avoid overflow.
+ 410:fltk-1.3.4-1/jpeg/jquant1.c ****    */
+ 411:fltk-1.3.4-1/jpeg/jquant1.c ****   den = 2 * ODITHER_CELLS * ((INT32) (ncolors - 1));
+ 412:fltk-1.3.4-1/jpeg/jquant1.c ****   for (j = 0; j < ODITHER_SIZE; j++) {
+ 413:fltk-1.3.4-1/jpeg/jquant1.c ****     for (k = 0; k < ODITHER_SIZE; k++) {
+ 414:fltk-1.3.4-1/jpeg/jquant1.c ****       num = ((INT32) (ODITHER_CELLS-1 - 2*((int)base_dither_matrix[j][k])))
+ 415:fltk-1.3.4-1/jpeg/jquant1.c **** 	    * MAXJSAMPLE;
+ 416:fltk-1.3.4-1/jpeg/jquant1.c ****       /* Ensure round towards zero despite C's lack of consistency
+ 417:fltk-1.3.4-1/jpeg/jquant1.c ****        * about rounding negative values in integer division...
+ 418:fltk-1.3.4-1/jpeg/jquant1.c ****        */
+ 419:fltk-1.3.4-1/jpeg/jquant1.c ****       odither[j][k] = (int) (num<0 ? -((-num)/den) : num/den);
+ 420:fltk-1.3.4-1/jpeg/jquant1.c ****     }
+ 421:fltk-1.3.4-1/jpeg/jquant1.c ****   }
+ 422:fltk-1.3.4-1/jpeg/jquant1.c ****   return odither;
+ 423:fltk-1.3.4-1/jpeg/jquant1.c **** }
+ 424:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 425:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 426:fltk-1.3.4-1/jpeg/jquant1.c **** /*
+ 427:fltk-1.3.4-1/jpeg/jquant1.c ****  * Create the ordered-dither tables.
+ 428:fltk-1.3.4-1/jpeg/jquant1.c ****  * Components having the same number of representative colors may 
+ 429:fltk-1.3.4-1/jpeg/jquant1.c ****  * share a dither table.
+ 430:fltk-1.3.4-1/jpeg/jquant1.c ****  */
+ 431:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 432:fltk-1.3.4-1/jpeg/jquant1.c **** LOCAL(void)
+ 433:fltk-1.3.4-1/jpeg/jquant1.c **** create_odither_tables (j_decompress_ptr cinfo)
+ 434:fltk-1.3.4-1/jpeg/jquant1.c **** {
+ 435:fltk-1.3.4-1/jpeg/jquant1.c ****   my_cquantize_ptr cquantize = (my_cquantize_ptr) cinfo->cquantize;
+ 436:fltk-1.3.4-1/jpeg/jquant1.c ****   ODITHER_MATRIX_PTR odither;
+ 437:fltk-1.3.4-1/jpeg/jquant1.c ****   int i, j, nci;
+ 438:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 439:fltk-1.3.4-1/jpeg/jquant1.c ****   for (i = 0; i < cinfo->out_color_components; i++) {
+ 440:fltk-1.3.4-1/jpeg/jquant1.c ****     nci = cquantize->Ncolors[i]; /* # of distinct values for this color */
+ 441:fltk-1.3.4-1/jpeg/jquant1.c ****     odither = NULL;		/* search for matching prior component */
+ 442:fltk-1.3.4-1/jpeg/jquant1.c ****     for (j = 0; j < i; j++) {
+ 443:fltk-1.3.4-1/jpeg/jquant1.c ****       if (nci == cquantize->Ncolors[j]) {
+ 444:fltk-1.3.4-1/jpeg/jquant1.c **** 	odither = cquantize->odither[j];
+ 445:fltk-1.3.4-1/jpeg/jquant1.c **** 	break;
+ 446:fltk-1.3.4-1/jpeg/jquant1.c ****       }
+ 447:fltk-1.3.4-1/jpeg/jquant1.c ****     }
+ 448:fltk-1.3.4-1/jpeg/jquant1.c ****     if (odither == NULL)	/* need a new table? */
+ 449:fltk-1.3.4-1/jpeg/jquant1.c ****       odither = make_odither_array(cinfo, nci);
+ 450:fltk-1.3.4-1/jpeg/jquant1.c ****     cquantize->odither[i] = odither;
+ 451:fltk-1.3.4-1/jpeg/jquant1.c ****   }
+ 452:fltk-1.3.4-1/jpeg/jquant1.c **** }
+ 453:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 454:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 455:fltk-1.3.4-1/jpeg/jquant1.c **** /*
+ 456:fltk-1.3.4-1/jpeg/jquant1.c ****  * Map some rows of pixels to the output colormapped representation.
+ 457:fltk-1.3.4-1/jpeg/jquant1.c ****  */
+ 458:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 459:fltk-1.3.4-1/jpeg/jquant1.c **** METHODDEF(void)
+ 460:fltk-1.3.4-1/jpeg/jquant1.c **** color_quantize (j_decompress_ptr cinfo, JSAMPARRAY input_buf,
+ 461:fltk-1.3.4-1/jpeg/jquant1.c **** 		JSAMPARRAY output_buf, int num_rows)
+ 462:fltk-1.3.4-1/jpeg/jquant1.c **** /* General case, no dithering */
+ 463:fltk-1.3.4-1/jpeg/jquant1.c **** {
+ 266              		.loc 1 463 0
+ 267              		.cfi_startproc
+ 268              	.LVL31:
+ 269 0000 4157     		pushq	%r15
+ 270              		.cfi_def_cfa_offset 16
+ 271              		.cfi_offset 15, -16
+ 272              	.LVL32:
+ 273 0002 4156     		pushq	%r14
+ 274              		.cfi_def_cfa_offset 24
+ 275              		.cfi_offset 14, -24
+ 464:fltk-1.3.4-1/jpeg/jquant1.c ****   my_cquantize_ptr cquantize = (my_cquantize_ptr) cinfo->cquantize;
+ 465:fltk-1.3.4-1/jpeg/jquant1.c ****   JSAMPARRAY colorindex = cquantize->colorindex;
+ 466:fltk-1.3.4-1/jpeg/jquant1.c ****   register int pixcode, ci;
+ 467:fltk-1.3.4-1/jpeg/jquant1.c ****   register JSAMPROW ptrin, ptrout;
+ 468:fltk-1.3.4-1/jpeg/jquant1.c ****   int row;
+ 469:fltk-1.3.4-1/jpeg/jquant1.c ****   JDIMENSION col;
+ 470:fltk-1.3.4-1/jpeg/jquant1.c ****   JDIMENSION width = cinfo->output_width;
+ 471:fltk-1.3.4-1/jpeg/jquant1.c ****   register int nc = cinfo->out_color_components;
+ 472:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 473:fltk-1.3.4-1/jpeg/jquant1.c ****   for (row = 0; row < num_rows; row++) {
+ 276              		.loc 1 473 0
+ 277 0004 85C9     		testl	%ecx, %ecx
+ 463:fltk-1.3.4-1/jpeg/jquant1.c ****   my_cquantize_ptr cquantize = (my_cquantize_ptr) cinfo->cquantize;
+ 278              		.loc 1 463 0
+ 279 0006 4155     		pushq	%r13
+ 280              		.cfi_def_cfa_offset 32
+ 281              		.cfi_offset 13, -32
+ 282 0008 4154     		pushq	%r12
+ 283              		.cfi_def_cfa_offset 40
+ 284              		.cfi_offset 12, -40
+ 285 000a 4989D6   		movq	%rdx, %r14
+ 286 000d 55       		pushq	%rbp
+ 287              		.cfi_def_cfa_offset 48
+ 288              		.cfi_offset 6, -48
+ 289 000e 53       		pushq	%rbx
+ 290              		.cfi_def_cfa_offset 56
+ 291              		.cfi_offset 3, -56
+ 465:fltk-1.3.4-1/jpeg/jquant1.c ****   register int pixcode, ci;
+ 292              		.loc 1 465 0
+ 293 000f 488B8790 		movq	656(%rdi), %rax
+ 293      020000
+ 470:fltk-1.3.4-1/jpeg/jquant1.c ****   register int nc = cinfo->out_color_components;
+ 294              		.loc 1 470 0
+ 295 0016 448BA788 		movl	136(%rdi), %r12d
+ 295      000000
+ 471:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 296              		.loc 1 471 0
+ 297 001d 448B9F90 		movl	144(%rdi), %r11d
+ 297      000000
+ 465:fltk-1.3.4-1/jpeg/jquant1.c ****   register int pixcode, ci;
+ 298              		.loc 1 465 0
+ 299 0024 488B5030 		movq	48(%rax), %rdx
+ 300              	.LVL33:
+ 301              		.loc 1 473 0
+ 302 0028 7E72     		jle	.L24
+ 303 002a 418D4424 		leal	-1(%r12), %eax
+ 303      FF
+ 304 002f 418D5BFF 		leal	-1(%r11), %ebx
+ 305 0033 4989F5   		movq	%rsi, %r13
+ 306 0036 31ED     		xorl	%ebp, %ebp
+ 307 0038 89CF     		movl	%ecx, %edi
+ 308              	.LVL34:
+ 309 003a 4C8D4801 		leaq	1(%rax), %r9
+ 310 003e 4883C301 		addq	$1, %rbx
+ 311              	.LVL35:
+ 312              	.L34:
+ 474:fltk-1.3.4-1/jpeg/jquant1.c ****     ptrin = input_buf[row];
+ 475:fltk-1.3.4-1/jpeg/jquant1.c ****     ptrout = output_buf[row];
+ 313              		.loc 1 475 0
+ 314 0042 4D8B14EE 		movq	(%r14,%rbp,8), %r10
+ 476:fltk-1.3.4-1/jpeg/jquant1.c ****     for (col = width; col > 0; col--) {
+ 315              		.loc 1 476 0
+ 316 0046 4585E4   		testl	%r12d, %r12d
+ 474:fltk-1.3.4-1/jpeg/jquant1.c ****     ptrin = input_buf[row];
+ 317              		.loc 1 474 0
+ 318 0049 4D8B44ED 		movq	0(%r13,%rbp,8), %r8
+ 318      00
+ 319              	.LVL36:
+ 320 004e 4F8D3C0A 		leaq	(%r10,%r9), %r15
+ 321              		.loc 1 476 0
+ 322 0052 7440     		je	.L27
+ 323              	.LVL37:
+ 324              		.p2align 4,,10
+ 325 0054 0F1F4000 		.p2align 3
+ 326              	.L29:
+ 477:fltk-1.3.4-1/jpeg/jquant1.c ****       pixcode = 0;
+ 478:fltk-1.3.4-1/jpeg/jquant1.c ****       for (ci = 0; ci < nc; ci++) {
+ 327              		.loc 1 478 0 discriminator 1
+ 328 0058 31C0     		xorl	%eax, %eax
+ 329 005a 31C9     		xorl	%ecx, %ecx
+ 330 005c 4585DB   		testl	%r11d, %r11d
+ 331 005f 7E26     		jle	.L31
+ 332 0061 897C24FC 		movl	%edi, -4(%rsp)
+ 333              	.LVL38:
+ 334              		.p2align 4,,10
+ 335 0065 0F1F00   		.p2align 3
+ 336              	.L35:
+ 479:fltk-1.3.4-1/jpeg/jquant1.c **** 	pixcode += GETJSAMPLE(colorindex[ci][GETJSAMPLE(*ptrin++)]);
+ 337              		.loc 1 479 0 discriminator 3
+ 338 0068 410FB634 		movzbl	(%r8,%rax), %esi
+ 338      00
+ 339 006d 488B3CC2 		movq	(%rdx,%rax,8), %rdi
+ 340 0071 4883C001 		addq	$1, %rax
+ 341              	.LVL39:
+ 342 0075 0FB63437 		movzbl	(%rdi,%rsi), %esi
+ 343 0079 01F1     		addl	%esi, %ecx
+ 344              	.LVL40:
+ 478:fltk-1.3.4-1/jpeg/jquant1.c **** 	pixcode += GETJSAMPLE(colorindex[ci][GETJSAMPLE(*ptrin++)]);
+ 345              		.loc 1 478 0 discriminator 3
+ 346 007b 4139C3   		cmpl	%eax, %r11d
+ 347 007e 7FE8     		jg	.L35
+ 348 0080 8B7C24FC 		movl	-4(%rsp), %edi
+ 349 0084 4901D8   		addq	%rbx, %r8
+ 350              	.LVL41:
+ 351              	.L31:
+ 480:fltk-1.3.4-1/jpeg/jquant1.c ****       }
+ 481:fltk-1.3.4-1/jpeg/jquant1.c ****       *ptrout++ = (JSAMPLE) pixcode;
+ 352              		.loc 1 481 0 discriminator 2
+ 353 0087 4983C201 		addq	$1, %r10
+ 354              	.LVL42:
+ 355 008b 41884AFF 		movb	%cl, -1(%r10)
+ 356              	.LVL43:
+ 476:fltk-1.3.4-1/jpeg/jquant1.c ****       pixcode = 0;
+ 357              		.loc 1 476 0 discriminator 2
+ 358 008f 4D39FA   		cmpq	%r15, %r10
+ 359 0092 75C4     		jne	.L29
+ 360              	.LVL44:
+ 361              	.L27:
+ 362 0094 4883C501 		addq	$1, %rbp
+ 363              	.LVL45:
+ 473:fltk-1.3.4-1/jpeg/jquant1.c ****     ptrin = input_buf[row];
+ 364              		.loc 1 473 0
+ 365 0098 39EF     		cmpl	%ebp, %edi
+ 366 009a 7FA6     		jg	.L34
+ 367              	.LVL46:
+ 368              	.L24:
+ 482:fltk-1.3.4-1/jpeg/jquant1.c ****     }
+ 483:fltk-1.3.4-1/jpeg/jquant1.c ****   }
+ 484:fltk-1.3.4-1/jpeg/jquant1.c **** }
+ 369              		.loc 1 484 0
+ 370 009c 5B       		popq	%rbx
+ 371              		.cfi_def_cfa_offset 48
+ 372 009d 5D       		popq	%rbp
+ 373              		.cfi_def_cfa_offset 40
+ 374 009e 415C     		popq	%r12
+ 375              		.cfi_def_cfa_offset 32
+ 376              	.LVL47:
+ 377 00a0 415D     		popq	%r13
+ 378              		.cfi_def_cfa_offset 24
+ 379 00a2 415E     		popq	%r14
+ 380              		.cfi_def_cfa_offset 16
+ 381              	.LVL48:
+ 382 00a4 415F     		popq	%r15
+ 383              		.cfi_def_cfa_offset 8
+ 384 00a6 C3       		ret
+ 385              		.cfi_endproc
+ 386              	.LFE68:
+ 388              		.section	.text.unlikely.color_quantize
+ 389              	.LCOLDE1:
+ 390              		.section	.text.color_quantize
+ 391              	.LHOTE1:
+ 392              		.section	.text.unlikely.color_quantize3,"ax",@progbits
+ 393              	.LCOLDB2:
+ 394              		.section	.text.color_quantize3,"ax",@progbits
+ 395              	.LHOTB2:
+ 396              		.p2align 4,,15
+ 398              	color_quantize3:
+ 399              	.LFB69:
+ 485:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 486:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 487:fltk-1.3.4-1/jpeg/jquant1.c **** METHODDEF(void)
+ 488:fltk-1.3.4-1/jpeg/jquant1.c **** color_quantize3 (j_decompress_ptr cinfo, JSAMPARRAY input_buf,
+ 489:fltk-1.3.4-1/jpeg/jquant1.c **** 		 JSAMPARRAY output_buf, int num_rows)
+ 490:fltk-1.3.4-1/jpeg/jquant1.c **** /* Fast path for out_color_components==3, no dithering */
+ 491:fltk-1.3.4-1/jpeg/jquant1.c **** {
+ 400              		.loc 1 491 0
+ 401              		.cfi_startproc
+ 402              	.LVL49:
+ 403 0000 4156     		pushq	%r14
+ 404              		.cfi_def_cfa_offset 16
+ 405              		.cfi_offset 14, -16
+ 406              	.LVL50:
+ 407 0002 4155     		pushq	%r13
+ 408              		.cfi_def_cfa_offset 24
+ 409              		.cfi_offset 13, -24
+ 410 0004 4154     		pushq	%r12
+ 411              		.cfi_def_cfa_offset 32
+ 412              		.cfi_offset 12, -32
+ 413 0006 55       		pushq	%rbp
+ 414              		.cfi_def_cfa_offset 40
+ 415              		.cfi_offset 6, -40
+ 416 0007 53       		pushq	%rbx
+ 417              		.cfi_def_cfa_offset 48
+ 418              		.cfi_offset 3, -48
+ 492:fltk-1.3.4-1/jpeg/jquant1.c ****   my_cquantize_ptr cquantize = (my_cquantize_ptr) cinfo->cquantize;
+ 493:fltk-1.3.4-1/jpeg/jquant1.c ****   register int pixcode;
+ 494:fltk-1.3.4-1/jpeg/jquant1.c ****   register JSAMPROW ptrin, ptrout;
+ 495:fltk-1.3.4-1/jpeg/jquant1.c ****   JSAMPROW colorindex0 = cquantize->colorindex[0];
+ 419              		.loc 1 495 0
+ 420 0008 488B8790 		movq	656(%rdi), %rax
+ 420      020000
+ 496:fltk-1.3.4-1/jpeg/jquant1.c ****   JSAMPROW colorindex1 = cquantize->colorindex[1];
+ 497:fltk-1.3.4-1/jpeg/jquant1.c ****   JSAMPROW colorindex2 = cquantize->colorindex[2];
+ 498:fltk-1.3.4-1/jpeg/jquant1.c ****   int row;
+ 499:fltk-1.3.4-1/jpeg/jquant1.c ****   JDIMENSION col;
+ 500:fltk-1.3.4-1/jpeg/jquant1.c ****   JDIMENSION width = cinfo->output_width;
+ 421              		.loc 1 500 0
+ 422 000f 448BAF88 		movl	136(%rdi), %r13d
+ 422      000000
+ 495:fltk-1.3.4-1/jpeg/jquant1.c ****   JSAMPROW colorindex1 = cquantize->colorindex[1];
+ 423              		.loc 1 495 0
+ 424 0016 488B4030 		movq	48(%rax), %rax
+ 425 001a 458D65FF 		leal	-1(%r13), %r12d
+ 426 001e 4983C401 		addq	$1, %r12
+ 501:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 502:fltk-1.3.4-1/jpeg/jquant1.c ****   for (row = 0; row < num_rows; row++) {
+ 427              		.loc 1 502 0
+ 428 0022 85C9     		testl	%ecx, %ecx
+ 495:fltk-1.3.4-1/jpeg/jquant1.c ****   JSAMPROW colorindex1 = cquantize->colorindex[1];
+ 429              		.loc 1 495 0
+ 430 0024 488B18   		movq	(%rax), %rbx
+ 431              	.LVL51:
+ 496:fltk-1.3.4-1/jpeg/jquant1.c ****   JSAMPROW colorindex2 = cquantize->colorindex[2];
+ 432              		.loc 1 496 0
+ 433 0027 4C8B5808 		movq	8(%rax), %r11
+ 434              	.LVL52:
+ 497:fltk-1.3.4-1/jpeg/jquant1.c ****   int row;
+ 435              		.loc 1 497 0
+ 436 002b 4C8B5010 		movq	16(%rax), %r10
+ 437              	.LVL53:
+ 438              		.loc 1 502 0
+ 439 002f 7E59     		jle	.L43
+ 440 0031 31ED     		xorl	%ebp, %ebp
+ 441              	.LVL54:
+ 442              		.p2align 4,,10
+ 443 0033 0F1F4400 		.p2align 3
+ 443      00
+ 444              	.L50:
+ 503:fltk-1.3.4-1/jpeg/jquant1.c ****     ptrin = input_buf[row];
+ 504:fltk-1.3.4-1/jpeg/jquant1.c ****     ptrout = output_buf[row];
+ 445              		.loc 1 504 0
+ 446 0038 4C8B04EA 		movq	(%rdx,%rbp,8), %r8
+ 505:fltk-1.3.4-1/jpeg/jquant1.c ****     for (col = width; col > 0; col--) {
+ 447              		.loc 1 505 0
+ 448 003c 4585ED   		testl	%r13d, %r13d
+ 503:fltk-1.3.4-1/jpeg/jquant1.c ****     ptrin = input_buf[row];
+ 449              		.loc 1 503 0
+ 450 003f 488B3CEE 		movq	(%rsi,%rbp,8), %rdi
+ 451              	.LVL55:
+ 452 0043 4F8D0C20 		leaq	(%r8,%r12), %r9
+ 453              		.loc 1 505 0
+ 454 0047 7439     		je	.L49
+ 455              	.LVL56:
+ 456 0049 0F1F8000 		.p2align 4,,10
+ 456      000000
+ 457              		.p2align 3
+ 458              	.L48:
+ 506:fltk-1.3.4-1/jpeg/jquant1.c ****       pixcode  = GETJSAMPLE(colorindex0[GETJSAMPLE(*ptrin++)]);
+ 459              		.loc 1 506 0 discriminator 3
+ 460 0050 0FB607   		movzbl	(%rdi), %eax
+ 507:fltk-1.3.4-1/jpeg/jquant1.c ****       pixcode += GETJSAMPLE(colorindex1[GETJSAMPLE(*ptrin++)]);
+ 461              		.loc 1 507 0 discriminator 3
+ 462 0053 440FB677 		movzbl	1(%rdi), %r14d
+ 462      01
+ 463 0058 4883C703 		addq	$3, %rdi
+ 464              	.LVL57:
+ 508:fltk-1.3.4-1/jpeg/jquant1.c ****       pixcode += GETJSAMPLE(colorindex2[GETJSAMPLE(*ptrin++)]);
+ 509:fltk-1.3.4-1/jpeg/jquant1.c ****       *ptrout++ = (JSAMPLE) pixcode;
+ 465              		.loc 1 509 0 discriminator 3
+ 466 005c 4983C001 		addq	$1, %r8
+ 467              	.LVL58:
+ 507:fltk-1.3.4-1/jpeg/jquant1.c ****       pixcode += GETJSAMPLE(colorindex1[GETJSAMPLE(*ptrin++)]);
+ 468              		.loc 1 507 0 discriminator 3
+ 469 0060 470FB634 		movzbl	(%r11,%r14), %r14d
+ 469      33
+ 506:fltk-1.3.4-1/jpeg/jquant1.c ****       pixcode += GETJSAMPLE(colorindex1[GETJSAMPLE(*ptrin++)]);
+ 470              		.loc 1 506 0 discriminator 3
+ 471 0065 0FB60403 		movzbl	(%rbx,%rax), %eax
+ 472              	.LVL59:
+ 507:fltk-1.3.4-1/jpeg/jquant1.c ****       pixcode += GETJSAMPLE(colorindex1[GETJSAMPLE(*ptrin++)]);
+ 473              		.loc 1 507 0 discriminator 3
+ 474 0069 4401F0   		addl	%r14d, %eax
+ 475              	.LVL60:
+ 508:fltk-1.3.4-1/jpeg/jquant1.c ****       pixcode += GETJSAMPLE(colorindex2[GETJSAMPLE(*ptrin++)]);
+ 476              		.loc 1 508 0 discriminator 3
+ 477 006c 440FB677 		movzbl	-1(%rdi), %r14d
+ 477      FF
+ 478              	.LVL61:
+ 479              		.loc 1 509 0 discriminator 3
+ 480 0071 470FB634 		movzbl	(%r10,%r14), %r14d
+ 480      32
+ 481              	.LVL62:
+ 482 0076 4401F0   		addl	%r14d, %eax
+ 483              	.LVL63:
+ 505:fltk-1.3.4-1/jpeg/jquant1.c ****       pixcode  = GETJSAMPLE(colorindex0[GETJSAMPLE(*ptrin++)]);
+ 484              		.loc 1 505 0 discriminator 3
+ 485 0079 4D39C8   		cmpq	%r9, %r8
+ 486              		.loc 1 509 0 discriminator 3
+ 487 007c 418840FF 		movb	%al, -1(%r8)
+ 488              	.LVL64:
+ 505:fltk-1.3.4-1/jpeg/jquant1.c ****       pixcode  = GETJSAMPLE(colorindex0[GETJSAMPLE(*ptrin++)]);
+ 489              		.loc 1 505 0 discriminator 3
+ 490 0080 75CE     		jne	.L48
+ 491              	.L49:
+ 492              	.LVL65:
+ 493 0082 4883C501 		addq	$1, %rbp
+ 494              	.LVL66:
+ 502:fltk-1.3.4-1/jpeg/jquant1.c ****     ptrin = input_buf[row];
+ 495              		.loc 1 502 0
+ 496 0086 39E9     		cmpl	%ebp, %ecx
+ 497 0088 7FAE     		jg	.L50
+ 498              	.LVL67:
+ 499              	.L43:
+ 510:fltk-1.3.4-1/jpeg/jquant1.c ****     }
+ 511:fltk-1.3.4-1/jpeg/jquant1.c ****   }
+ 512:fltk-1.3.4-1/jpeg/jquant1.c **** }
+ 500              		.loc 1 512 0
+ 501 008a 5B       		popq	%rbx
+ 502              		.cfi_def_cfa_offset 40
+ 503              	.LVL68:
+ 504 008b 5D       		popq	%rbp
+ 505              		.cfi_def_cfa_offset 32
+ 506 008c 415C     		popq	%r12
+ 507              		.cfi_def_cfa_offset 24
+ 508 008e 415D     		popq	%r13
+ 509              		.cfi_def_cfa_offset 16
+ 510              	.LVL69:
+ 511 0090 415E     		popq	%r14
+ 512              		.cfi_def_cfa_offset 8
+ 513 0092 C3       		ret
+ 514              		.cfi_endproc
+ 515              	.LFE69:
+ 517              		.section	.text.unlikely.color_quantize3
+ 518              	.LCOLDE2:
+ 519              		.section	.text.color_quantize3
+ 520              	.LHOTE2:
+ 521              		.section	.text.unlikely.quantize3_ord_dither,"ax",@progbits
+ 522              	.LCOLDB3:
+ 523              		.section	.text.quantize3_ord_dither,"ax",@progbits
+ 524              	.LHOTB3:
+ 525              		.p2align 4,,15
+ 527              	quantize3_ord_dither:
+ 528              	.LFB71:
+ 513:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 514:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 515:fltk-1.3.4-1/jpeg/jquant1.c **** METHODDEF(void)
+ 516:fltk-1.3.4-1/jpeg/jquant1.c **** quantize_ord_dither (j_decompress_ptr cinfo, JSAMPARRAY input_buf,
+ 517:fltk-1.3.4-1/jpeg/jquant1.c **** 		     JSAMPARRAY output_buf, int num_rows)
+ 518:fltk-1.3.4-1/jpeg/jquant1.c **** /* General case, with ordered dithering */
+ 519:fltk-1.3.4-1/jpeg/jquant1.c **** {
+ 520:fltk-1.3.4-1/jpeg/jquant1.c ****   my_cquantize_ptr cquantize = (my_cquantize_ptr) cinfo->cquantize;
+ 521:fltk-1.3.4-1/jpeg/jquant1.c ****   register JSAMPROW input_ptr;
+ 522:fltk-1.3.4-1/jpeg/jquant1.c ****   register JSAMPROW output_ptr;
+ 523:fltk-1.3.4-1/jpeg/jquant1.c ****   JSAMPROW colorindex_ci;
+ 524:fltk-1.3.4-1/jpeg/jquant1.c ****   int * dither;			/* points to active row of dither matrix */
+ 525:fltk-1.3.4-1/jpeg/jquant1.c ****   int row_index, col_index;	/* current indexes into dither matrix */
+ 526:fltk-1.3.4-1/jpeg/jquant1.c ****   int nc = cinfo->out_color_components;
+ 527:fltk-1.3.4-1/jpeg/jquant1.c ****   int ci;
+ 528:fltk-1.3.4-1/jpeg/jquant1.c ****   int row;
+ 529:fltk-1.3.4-1/jpeg/jquant1.c ****   JDIMENSION col;
+ 530:fltk-1.3.4-1/jpeg/jquant1.c ****   JDIMENSION width = cinfo->output_width;
+ 531:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 532:fltk-1.3.4-1/jpeg/jquant1.c ****   for (row = 0; row < num_rows; row++) {
+ 533:fltk-1.3.4-1/jpeg/jquant1.c ****     /* Initialize output values to 0 so can process components separately */
+ 534:fltk-1.3.4-1/jpeg/jquant1.c ****     FMEMZERO((void FAR *) output_buf[row],
+ 535:fltk-1.3.4-1/jpeg/jquant1.c **** 	     (size_t) (width * SIZEOF(JSAMPLE)));
+ 536:fltk-1.3.4-1/jpeg/jquant1.c ****     row_index = cquantize->row_index;
+ 537:fltk-1.3.4-1/jpeg/jquant1.c ****     for (ci = 0; ci < nc; ci++) {
+ 538:fltk-1.3.4-1/jpeg/jquant1.c ****       input_ptr = input_buf[row] + ci;
+ 539:fltk-1.3.4-1/jpeg/jquant1.c ****       output_ptr = output_buf[row];
+ 540:fltk-1.3.4-1/jpeg/jquant1.c ****       colorindex_ci = cquantize->colorindex[ci];
+ 541:fltk-1.3.4-1/jpeg/jquant1.c ****       dither = cquantize->odither[ci][row_index];
+ 542:fltk-1.3.4-1/jpeg/jquant1.c ****       col_index = 0;
+ 543:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 544:fltk-1.3.4-1/jpeg/jquant1.c ****       for (col = width; col > 0; col--) {
+ 545:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* Form pixel value + dither, range-limit to 0..MAXJSAMPLE,
+ 546:fltk-1.3.4-1/jpeg/jquant1.c **** 	 * select output value, accumulate into output code for this pixel.
+ 547:fltk-1.3.4-1/jpeg/jquant1.c **** 	 * Range-limiting need not be done explicitly, as we have extended
+ 548:fltk-1.3.4-1/jpeg/jquant1.c **** 	 * the colorindex table to produce the right answers for out-of-range
+ 549:fltk-1.3.4-1/jpeg/jquant1.c **** 	 * inputs.  The maximum dither is +- MAXJSAMPLE; this sets the
+ 550:fltk-1.3.4-1/jpeg/jquant1.c **** 	 * required amount of padding.
+ 551:fltk-1.3.4-1/jpeg/jquant1.c **** 	 */
+ 552:fltk-1.3.4-1/jpeg/jquant1.c **** 	*output_ptr += colorindex_ci[GETJSAMPLE(*input_ptr)+dither[col_index]];
+ 553:fltk-1.3.4-1/jpeg/jquant1.c **** 	input_ptr += nc;
+ 554:fltk-1.3.4-1/jpeg/jquant1.c **** 	output_ptr++;
+ 555:fltk-1.3.4-1/jpeg/jquant1.c **** 	col_index = (col_index + 1) & ODITHER_MASK;
+ 556:fltk-1.3.4-1/jpeg/jquant1.c ****       }
+ 557:fltk-1.3.4-1/jpeg/jquant1.c ****     }
+ 558:fltk-1.3.4-1/jpeg/jquant1.c ****     /* Advance row index for next row */
+ 559:fltk-1.3.4-1/jpeg/jquant1.c ****     row_index = (row_index + 1) & ODITHER_MASK;
+ 560:fltk-1.3.4-1/jpeg/jquant1.c ****     cquantize->row_index = row_index;
+ 561:fltk-1.3.4-1/jpeg/jquant1.c ****   }
+ 562:fltk-1.3.4-1/jpeg/jquant1.c **** }
+ 563:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 564:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 565:fltk-1.3.4-1/jpeg/jquant1.c **** METHODDEF(void)
+ 566:fltk-1.3.4-1/jpeg/jquant1.c **** quantize3_ord_dither (j_decompress_ptr cinfo, JSAMPARRAY input_buf,
+ 567:fltk-1.3.4-1/jpeg/jquant1.c **** 		      JSAMPARRAY output_buf, int num_rows)
+ 568:fltk-1.3.4-1/jpeg/jquant1.c **** /* Fast path for out_color_components==3, with ordered dithering */
+ 569:fltk-1.3.4-1/jpeg/jquant1.c **** {
+ 529              		.loc 1 569 0
+ 530              		.cfi_startproc
+ 531              	.LVL70:
+ 532 0000 4157     		pushq	%r15
+ 533              		.cfi_def_cfa_offset 16
+ 534              		.cfi_offset 15, -16
+ 535 0002 4156     		pushq	%r14
+ 536              		.cfi_def_cfa_offset 24
+ 537              		.cfi_offset 14, -24
+ 570:fltk-1.3.4-1/jpeg/jquant1.c ****   my_cquantize_ptr cquantize = (my_cquantize_ptr) cinfo->cquantize;
+ 571:fltk-1.3.4-1/jpeg/jquant1.c ****   register int pixcode;
+ 572:fltk-1.3.4-1/jpeg/jquant1.c ****   register JSAMPROW input_ptr;
+ 573:fltk-1.3.4-1/jpeg/jquant1.c ****   register JSAMPROW output_ptr;
+ 574:fltk-1.3.4-1/jpeg/jquant1.c ****   JSAMPROW colorindex0 = cquantize->colorindex[0];
+ 575:fltk-1.3.4-1/jpeg/jquant1.c ****   JSAMPROW colorindex1 = cquantize->colorindex[1];
+ 576:fltk-1.3.4-1/jpeg/jquant1.c ****   JSAMPROW colorindex2 = cquantize->colorindex[2];
+ 577:fltk-1.3.4-1/jpeg/jquant1.c ****   int * dither0;		/* points to active row of dither matrix */
+ 578:fltk-1.3.4-1/jpeg/jquant1.c ****   int * dither1;
+ 579:fltk-1.3.4-1/jpeg/jquant1.c ****   int * dither2;
+ 580:fltk-1.3.4-1/jpeg/jquant1.c ****   int row_index, col_index;	/* current indexes into dither matrix */
+ 581:fltk-1.3.4-1/jpeg/jquant1.c ****   int row;
+ 582:fltk-1.3.4-1/jpeg/jquant1.c ****   JDIMENSION col;
+ 583:fltk-1.3.4-1/jpeg/jquant1.c ****   JDIMENSION width = cinfo->output_width;
+ 584:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 585:fltk-1.3.4-1/jpeg/jquant1.c ****   for (row = 0; row < num_rows; row++) {
+ 538              		.loc 1 585 0
+ 539 0004 85C9     		testl	%ecx, %ecx
+ 569:fltk-1.3.4-1/jpeg/jquant1.c ****   my_cquantize_ptr cquantize = (my_cquantize_ptr) cinfo->cquantize;
+ 540              		.loc 1 569 0
+ 541 0006 4155     		pushq	%r13
+ 542              		.cfi_def_cfa_offset 32
+ 543              		.cfi_offset 13, -32
+ 544 0008 4154     		pushq	%r12
+ 545              		.cfi_def_cfa_offset 40
+ 546              		.cfi_offset 12, -40
+ 547 000a 55       		pushq	%rbp
+ 548              		.cfi_def_cfa_offset 48
+ 549              		.cfi_offset 6, -48
+ 550 000b 53       		pushq	%rbx
+ 551              		.cfi_def_cfa_offset 56
+ 552              		.cfi_offset 3, -56
+ 570:fltk-1.3.4-1/jpeg/jquant1.c ****   my_cquantize_ptr cquantize = (my_cquantize_ptr) cinfo->cquantize;
+ 553              		.loc 1 570 0
+ 554 000c 4C8BB790 		movq	656(%rdi), %r14
+ 554      020000
+ 555              	.LVL71:
+ 569:fltk-1.3.4-1/jpeg/jquant1.c ****   my_cquantize_ptr cquantize = (my_cquantize_ptr) cinfo->cquantize;
+ 556              		.loc 1 569 0
+ 557 0013 48897424 		movq	%rsi, -32(%rsp)
+ 557      E0
+ 558 0018 48895424 		movq	%rdx, -24(%rsp)
+ 558      E8
+ 559 001d 894C24F4 		movl	%ecx, -12(%rsp)
+ 574:fltk-1.3.4-1/jpeg/jquant1.c ****   JSAMPROW colorindex1 = cquantize->colorindex[1];
+ 560              		.loc 1 574 0
+ 561 0021 498B4630 		movq	48(%r14), %rax
+ 562 0025 488B28   		movq	(%rax), %rbp
+ 563              	.LVL72:
+ 575:fltk-1.3.4-1/jpeg/jquant1.c ****   JSAMPROW colorindex2 = cquantize->colorindex[2];
+ 564              		.loc 1 575 0
+ 565 0028 4C8B6008 		movq	8(%rax), %r12
+ 566              	.LVL73:
+ 576:fltk-1.3.4-1/jpeg/jquant1.c ****   int * dither0;		/* points to active row of dither matrix */
+ 567              		.loc 1 576 0
+ 568 002c 4C8B6810 		movq	16(%rax), %r13
+ 569              	.LVL74:
+ 583:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 570              		.loc 1 583 0
+ 571 0030 8B878800 		movl	136(%rdi), %eax
+ 571      0000
+ 572 0036 894424F0 		movl	%eax, -16(%rsp)
+ 573              	.LVL75:
+ 574              		.loc 1 585 0
+ 575 003a 0F8ED800 		jle	.L54
+ 575      0000
+ 576 0040 418B5E4C 		movl	76(%r14), %ebx
+ 577 0044 83E801   		subl	$1, %eax
+ 578              	.LVL76:
+ 579 0047 48C74424 		movq	$0, -48(%rsp)
+ 579      D0000000 
+ 579      00
+ 580 0050 4883C001 		addq	$1, %rax
+ 581 0054 48894424 		movq	%rax, -8(%rsp)
+ 581      F8
+ 582 0059 895C24DC 		movl	%ebx, -36(%rsp)
+ 583              	.LVL77:
+ 584 005d 0F1F00   		.p2align 4,,10
+ 585              		.p2align 3
+ 586              	.L57:
+ 586:fltk-1.3.4-1/jpeg/jquant1.c ****     row_index = cquantize->row_index;
+ 587:fltk-1.3.4-1/jpeg/jquant1.c ****     input_ptr = input_buf[row];
+ 587              		.loc 1 587 0
+ 588 0060 488B4424 		movq	-48(%rsp), %rax
+ 588      D0
+ 589 0065 488B5C24 		movq	-32(%rsp), %rbx
+ 589      E0
+ 588:fltk-1.3.4-1/jpeg/jquant1.c ****     output_ptr = output_buf[row];
+ 589:fltk-1.3.4-1/jpeg/jquant1.c ****     dither0 = cquantize->odither[0][row_index];
+ 590:fltk-1.3.4-1/jpeg/jquant1.c ****     dither1 = cquantize->odither[1][row_index];
+ 591:fltk-1.3.4-1/jpeg/jquant1.c ****     dither2 = cquantize->odither[2][row_index];
+ 592:fltk-1.3.4-1/jpeg/jquant1.c ****     col_index = 0;
+ 593:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 594:fltk-1.3.4-1/jpeg/jquant1.c ****     for (col = width; col > 0; col--) {
+ 590              		.loc 1 594 0
+ 591 006a 31D2     		xorl	%edx, %edx
+ 589:fltk-1.3.4-1/jpeg/jquant1.c ****     dither1 = cquantize->odither[1][row_index];
+ 592              		.loc 1 589 0
+ 593 006c 4C634424 		movslq	-36(%rsp), %r8
+ 593      DC
+ 590:fltk-1.3.4-1/jpeg/jquant1.c ****     dither2 = cquantize->odither[2][row_index];
+ 594              		.loc 1 590 0
+ 595 0071 4D8B5E58 		movq	88(%r14), %r11
+ 591:fltk-1.3.4-1/jpeg/jquant1.c ****     col_index = 0;
+ 596              		.loc 1 591 0
+ 597 0075 4D8B5660 		movq	96(%r14), %r10
+ 587:fltk-1.3.4-1/jpeg/jquant1.c ****     output_ptr = output_buf[row];
+ 598              		.loc 1 587 0
+ 599 0079 488B0CC3 		movq	(%rbx,%rax,8), %rcx
+ 600              	.LVL78:
+ 588:fltk-1.3.4-1/jpeg/jquant1.c ****     dither0 = cquantize->odither[0][row_index];
+ 601              		.loc 1 588 0
+ 602 007d 488B5C24 		movq	-24(%rsp), %rbx
+ 602      E8
+ 589:fltk-1.3.4-1/jpeg/jquant1.c ****     dither1 = cquantize->odither[1][row_index];
+ 603              		.loc 1 589 0
+ 604 0082 49C1E006 		salq	$6, %r8
+ 588:fltk-1.3.4-1/jpeg/jquant1.c ****     dither0 = cquantize->odither[0][row_index];
+ 605              		.loc 1 588 0
+ 606 0086 488B34C3 		movq	(%rbx,%rax,8), %rsi
+ 607              	.LVL79:
+ 608 008a 488B4424 		movq	-8(%rsp), %rax
+ 608      F8
+ 589:fltk-1.3.4-1/jpeg/jquant1.c ****     dither1 = cquantize->odither[1][row_index];
+ 609              		.loc 1 589 0
+ 610 008f 498B5E50 		movq	80(%r14), %rbx
+ 611              	.LVL80:
+ 612 0093 4C8D0C06 		leaq	(%rsi,%rax), %r9
+ 613              		.loc 1 594 0
+ 614 0097 8B4424F0 		movl	-16(%rsp), %eax
+ 615 009b 85C0     		testl	%eax, %eax
+ 616 009d 7452     		je	.L60
+ 617              	.LVL81:
+ 618 009f 90       		.p2align 4,,10
+ 619              		.p2align 3
+ 620              	.L59:
+ 621 00a0 4863C2   		movslq	%edx, %rax
+ 595:fltk-1.3.4-1/jpeg/jquant1.c ****       pixcode  = GETJSAMPLE(colorindex0[GETJSAMPLE(*input_ptr++) +
+ 596:fltk-1.3.4-1/jpeg/jquant1.c **** 					dither0[col_index]]);
+ 597:fltk-1.3.4-1/jpeg/jquant1.c ****       pixcode += GETJSAMPLE(colorindex1[GETJSAMPLE(*input_ptr++) +
+ 622              		.loc 1 597 0 discriminator 3
+ 623 00a3 0FB67901 		movzbl	1(%rcx), %edi
+ 624 00a7 4883C103 		addq	$3, %rcx
+ 625              	.LVL82:
+ 626 00ab 4D8D3C80 		leaq	(%r8,%rax,4), %r15
+ 595:fltk-1.3.4-1/jpeg/jquant1.c ****       pixcode  = GETJSAMPLE(colorindex0[GETJSAMPLE(*input_ptr++) +
+ 627              		.loc 1 595 0 discriminator 3
+ 628 00af 0FB641FD 		movzbl	-3(%rcx), %eax
+ 598:fltk-1.3.4-1/jpeg/jquant1.c **** 					dither1[col_index]]);
+ 599:fltk-1.3.4-1/jpeg/jquant1.c ****       pixcode += GETJSAMPLE(colorindex2[GETJSAMPLE(*input_ptr++) +
+ 600:fltk-1.3.4-1/jpeg/jquant1.c **** 					dither2[col_index]]);
+ 601:fltk-1.3.4-1/jpeg/jquant1.c ****       *output_ptr++ = (JSAMPLE) pixcode;
+ 629              		.loc 1 601 0 discriminator 3
+ 630 00b3 4883C601 		addq	$1, %rsi
+ 631              	.LVL83:
+ 602:fltk-1.3.4-1/jpeg/jquant1.c ****       col_index = (col_index + 1) & ODITHER_MASK;
+ 632              		.loc 1 602 0 discriminator 3
+ 633 00b7 83C201   		addl	$1, %edx
+ 634              	.LVL84:
+ 595:fltk-1.3.4-1/jpeg/jquant1.c ****       pixcode  = GETJSAMPLE(colorindex0[GETJSAMPLE(*input_ptr++) +
+ 635              		.loc 1 595 0 discriminator 3
+ 636 00ba 4203043B 		addl	(%rbx,%r15), %eax
+ 597:fltk-1.3.4-1/jpeg/jquant1.c **** 					dither1[col_index]]);
+ 637              		.loc 1 597 0 discriminator 3
+ 638 00be 43033C3B 		addl	(%r11,%r15), %edi
+ 639              		.loc 1 602 0 discriminator 3
+ 640 00c2 83E20F   		andl	$15, %edx
+ 641              	.LVL85:
+ 595:fltk-1.3.4-1/jpeg/jquant1.c **** 					dither0[col_index]]);
+ 642              		.loc 1 595 0 discriminator 3
+ 643 00c5 4898     		cltq
+ 597:fltk-1.3.4-1/jpeg/jquant1.c **** 					dither1[col_index]]);
+ 644              		.loc 1 597 0 discriminator 3
+ 645 00c7 4863FF   		movslq	%edi, %rdi
+ 646 00ca 410FB63C 		movzbl	(%r12,%rdi), %edi
+ 646      3C
+ 595:fltk-1.3.4-1/jpeg/jquant1.c **** 					dither0[col_index]]);
+ 647              		.loc 1 595 0 discriminator 3
+ 648 00cf 0FB64405 		movzbl	0(%rbp,%rax), %eax
+ 648      00
+ 649              	.LVL86:
+ 597:fltk-1.3.4-1/jpeg/jquant1.c **** 					dither1[col_index]]);
+ 650              		.loc 1 597 0 discriminator 3
+ 651 00d4 01F8     		addl	%edi, %eax
+ 652              	.LVL87:
+ 599:fltk-1.3.4-1/jpeg/jquant1.c **** 					dither2[col_index]]);
+ 653              		.loc 1 599 0 discriminator 3
+ 654 00d6 0FB679FF 		movzbl	-1(%rcx), %edi
+ 655 00da 43033C3A 		addl	(%r10,%r15), %edi
+ 656 00de 4863FF   		movslq	%edi, %rdi
+ 601:fltk-1.3.4-1/jpeg/jquant1.c ****       col_index = (col_index + 1) & ODITHER_MASK;
+ 657              		.loc 1 601 0 discriminator 3
+ 658 00e1 410FB67C 		movzbl	0(%r13,%rdi), %edi
+ 658      3D00
+ 659 00e7 01F8     		addl	%edi, %eax
+ 660              	.LVL88:
+ 594:fltk-1.3.4-1/jpeg/jquant1.c ****       pixcode  = GETJSAMPLE(colorindex0[GETJSAMPLE(*input_ptr++) +
+ 661              		.loc 1 594 0 discriminator 3
+ 662 00e9 4C39CE   		cmpq	%r9, %rsi
+ 601:fltk-1.3.4-1/jpeg/jquant1.c ****       col_index = (col_index + 1) & ODITHER_MASK;
+ 663              		.loc 1 601 0 discriminator 3
+ 664 00ec 8846FF   		movb	%al, -1(%rsi)
+ 665              	.LVL89:
+ 594:fltk-1.3.4-1/jpeg/jquant1.c ****       pixcode  = GETJSAMPLE(colorindex0[GETJSAMPLE(*input_ptr++) +
+ 666              		.loc 1 594 0 discriminator 3
+ 667 00ef 75AF     		jne	.L59
+ 668              	.LVL90:
+ 669              	.L60:
+ 603:fltk-1.3.4-1/jpeg/jquant1.c ****     }
+ 604:fltk-1.3.4-1/jpeg/jquant1.c ****     row_index = (row_index + 1) & ODITHER_MASK;
+ 670              		.loc 1 604 0
+ 671 00f1 8B4424DC 		movl	-36(%rsp), %eax
+ 672 00f5 48834424 		addq	$1, -48(%rsp)
+ 672      D001
+ 673              	.LVL91:
+ 674 00fb 488B5C24 		movq	-48(%rsp), %rbx
+ 674      D0
+ 675              	.LVL92:
+ 676 0100 83C001   		addl	$1, %eax
+ 677 0103 83E00F   		andl	$15, %eax
+ 678              	.LVL93:
+ 585:fltk-1.3.4-1/jpeg/jquant1.c ****     row_index = cquantize->row_index;
+ 679              		.loc 1 585 0
+ 680 0106 395C24F4 		cmpl	%ebx, -12(%rsp)
+ 605:fltk-1.3.4-1/jpeg/jquant1.c ****     cquantize->row_index = row_index;
+ 681              		.loc 1 605 0
+ 682 010a 4189464C 		movl	%eax, 76(%r14)
+ 683 010e 894424DC 		movl	%eax, -36(%rsp)
+ 585:fltk-1.3.4-1/jpeg/jquant1.c ****     row_index = cquantize->row_index;
+ 684              		.loc 1 585 0
+ 685 0112 0F8F48FF 		jg	.L57
+ 685      FFFF
+ 686              	.LVL94:
+ 687              	.L54:
+ 606:fltk-1.3.4-1/jpeg/jquant1.c ****   }
+ 607:fltk-1.3.4-1/jpeg/jquant1.c **** }
+ 688              		.loc 1 607 0
+ 689 0118 5B       		popq	%rbx
+ 690              		.cfi_def_cfa_offset 48
+ 691 0119 5D       		popq	%rbp
+ 692              		.cfi_def_cfa_offset 40
+ 693              	.LVL95:
+ 694 011a 415C     		popq	%r12
+ 695              		.cfi_def_cfa_offset 32
+ 696              	.LVL96:
+ 697 011c 415D     		popq	%r13
+ 698              		.cfi_def_cfa_offset 24
+ 699              	.LVL97:
+ 700 011e 415E     		popq	%r14
+ 701              		.cfi_def_cfa_offset 16
+ 702              	.LVL98:
+ 703 0120 415F     		popq	%r15
+ 704              		.cfi_def_cfa_offset 8
+ 705 0122 C3       		ret
+ 706              		.cfi_endproc
+ 707              	.LFE71:
+ 709              		.section	.text.unlikely.quantize3_ord_dither
+ 710              	.LCOLDE3:
+ 711              		.section	.text.quantize3_ord_dither
+ 712              	.LHOTE3:
+ 713              		.section	.text.unlikely.finish_pass_1_quant,"ax",@progbits
+ 714              	.LCOLDB4:
+ 715              		.section	.text.finish_pass_1_quant,"ax",@progbits
+ 716              	.LHOTB4:
+ 717              		.p2align 4,,15
+ 719              	finish_pass_1_quant:
+ 720              	.LFB75:
+ 608:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 609:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 610:fltk-1.3.4-1/jpeg/jquant1.c **** METHODDEF(void)
+ 611:fltk-1.3.4-1/jpeg/jquant1.c **** quantize_fs_dither (j_decompress_ptr cinfo, JSAMPARRAY input_buf,
+ 612:fltk-1.3.4-1/jpeg/jquant1.c **** 		    JSAMPARRAY output_buf, int num_rows)
+ 613:fltk-1.3.4-1/jpeg/jquant1.c **** /* General case, with Floyd-Steinberg dithering */
+ 614:fltk-1.3.4-1/jpeg/jquant1.c **** {
+ 615:fltk-1.3.4-1/jpeg/jquant1.c ****   my_cquantize_ptr cquantize = (my_cquantize_ptr) cinfo->cquantize;
+ 616:fltk-1.3.4-1/jpeg/jquant1.c ****   register LOCFSERROR cur;	/* current error or pixel value */
+ 617:fltk-1.3.4-1/jpeg/jquant1.c ****   LOCFSERROR belowerr;		/* error for pixel below cur */
+ 618:fltk-1.3.4-1/jpeg/jquant1.c ****   LOCFSERROR bpreverr;		/* error for below/prev col */
+ 619:fltk-1.3.4-1/jpeg/jquant1.c ****   LOCFSERROR bnexterr;		/* error for below/next col */
+ 620:fltk-1.3.4-1/jpeg/jquant1.c ****   LOCFSERROR delta;
+ 621:fltk-1.3.4-1/jpeg/jquant1.c ****   register FSERRPTR errorptr;	/* => fserrors[] at column before current */
+ 622:fltk-1.3.4-1/jpeg/jquant1.c ****   register JSAMPROW input_ptr;
+ 623:fltk-1.3.4-1/jpeg/jquant1.c ****   register JSAMPROW output_ptr;
+ 624:fltk-1.3.4-1/jpeg/jquant1.c ****   JSAMPROW colorindex_ci;
+ 625:fltk-1.3.4-1/jpeg/jquant1.c ****   JSAMPROW colormap_ci;
+ 626:fltk-1.3.4-1/jpeg/jquant1.c ****   int pixcode;
+ 627:fltk-1.3.4-1/jpeg/jquant1.c ****   int nc = cinfo->out_color_components;
+ 628:fltk-1.3.4-1/jpeg/jquant1.c ****   int dir;			/* 1 for left-to-right, -1 for right-to-left */
+ 629:fltk-1.3.4-1/jpeg/jquant1.c ****   int dirnc;			/* dir * nc */
+ 630:fltk-1.3.4-1/jpeg/jquant1.c ****   int ci;
+ 631:fltk-1.3.4-1/jpeg/jquant1.c ****   int row;
+ 632:fltk-1.3.4-1/jpeg/jquant1.c ****   JDIMENSION col;
+ 633:fltk-1.3.4-1/jpeg/jquant1.c ****   JDIMENSION width = cinfo->output_width;
+ 634:fltk-1.3.4-1/jpeg/jquant1.c ****   JSAMPLE *range_limit = cinfo->sample_range_limit;
+ 635:fltk-1.3.4-1/jpeg/jquant1.c ****   SHIFT_TEMPS
+ 636:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 637:fltk-1.3.4-1/jpeg/jquant1.c ****   for (row = 0; row < num_rows; row++) {
+ 638:fltk-1.3.4-1/jpeg/jquant1.c ****     /* Initialize output values to 0 so can process components separately */
+ 639:fltk-1.3.4-1/jpeg/jquant1.c ****     FMEMZERO((void FAR *) output_buf[row],
+ 640:fltk-1.3.4-1/jpeg/jquant1.c **** 	     (size_t) (width * SIZEOF(JSAMPLE)));
+ 641:fltk-1.3.4-1/jpeg/jquant1.c ****     for (ci = 0; ci < nc; ci++) {
+ 642:fltk-1.3.4-1/jpeg/jquant1.c ****       input_ptr = input_buf[row] + ci;
+ 643:fltk-1.3.4-1/jpeg/jquant1.c ****       output_ptr = output_buf[row];
+ 644:fltk-1.3.4-1/jpeg/jquant1.c ****       if (cquantize->on_odd_row) {
+ 645:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* work right to left in this row */
+ 646:fltk-1.3.4-1/jpeg/jquant1.c **** 	input_ptr += (width-1) * nc; /* so point to rightmost pixel */
+ 647:fltk-1.3.4-1/jpeg/jquant1.c **** 	output_ptr += width-1;
+ 648:fltk-1.3.4-1/jpeg/jquant1.c **** 	dir = -1;
+ 649:fltk-1.3.4-1/jpeg/jquant1.c **** 	dirnc = -nc;
+ 650:fltk-1.3.4-1/jpeg/jquant1.c **** 	errorptr = cquantize->fserrors[ci] + (width+1); /* => entry after last column */
+ 651:fltk-1.3.4-1/jpeg/jquant1.c ****       } else {
+ 652:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* work left to right in this row */
+ 653:fltk-1.3.4-1/jpeg/jquant1.c **** 	dir = 1;
+ 654:fltk-1.3.4-1/jpeg/jquant1.c **** 	dirnc = nc;
+ 655:fltk-1.3.4-1/jpeg/jquant1.c **** 	errorptr = cquantize->fserrors[ci]; /* => entry before first column */
+ 656:fltk-1.3.4-1/jpeg/jquant1.c ****       }
+ 657:fltk-1.3.4-1/jpeg/jquant1.c ****       colorindex_ci = cquantize->colorindex[ci];
+ 658:fltk-1.3.4-1/jpeg/jquant1.c ****       colormap_ci = cquantize->sv_colormap[ci];
+ 659:fltk-1.3.4-1/jpeg/jquant1.c ****       /* Preset error values: no error propagated to first pixel from left */
+ 660:fltk-1.3.4-1/jpeg/jquant1.c ****       cur = 0;
+ 661:fltk-1.3.4-1/jpeg/jquant1.c ****       /* and no error propagated to row below yet */
+ 662:fltk-1.3.4-1/jpeg/jquant1.c ****       belowerr = bpreverr = 0;
+ 663:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 664:fltk-1.3.4-1/jpeg/jquant1.c ****       for (col = width; col > 0; col--) {
+ 665:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* cur holds the error propagated from the previous pixel on the
+ 666:fltk-1.3.4-1/jpeg/jquant1.c **** 	 * current line.  Add the error propagated from the previous line
+ 667:fltk-1.3.4-1/jpeg/jquant1.c **** 	 * to form the complete error correction term for this pixel, and
+ 668:fltk-1.3.4-1/jpeg/jquant1.c **** 	 * round the error term (which is expressed * 16) to an integer.
+ 669:fltk-1.3.4-1/jpeg/jquant1.c **** 	 * RIGHT_SHIFT rounds towards minus infinity, so adding 8 is correct
+ 670:fltk-1.3.4-1/jpeg/jquant1.c **** 	 * for either sign of the error value.
+ 671:fltk-1.3.4-1/jpeg/jquant1.c **** 	 * Note: errorptr points to *previous* column's array entry.
+ 672:fltk-1.3.4-1/jpeg/jquant1.c **** 	 */
+ 673:fltk-1.3.4-1/jpeg/jquant1.c **** 	cur = RIGHT_SHIFT(cur + errorptr[dir] + 8, 4);
+ 674:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* Form pixel value + error, and range-limit to 0..MAXJSAMPLE.
+ 675:fltk-1.3.4-1/jpeg/jquant1.c **** 	 * The maximum error is +- MAXJSAMPLE; this sets the required size
+ 676:fltk-1.3.4-1/jpeg/jquant1.c **** 	 * of the range_limit array.
+ 677:fltk-1.3.4-1/jpeg/jquant1.c **** 	 */
+ 678:fltk-1.3.4-1/jpeg/jquant1.c **** 	cur += GETJSAMPLE(*input_ptr);
+ 679:fltk-1.3.4-1/jpeg/jquant1.c **** 	cur = GETJSAMPLE(range_limit[cur]);
+ 680:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* Select output value, accumulate into output code for this pixel */
+ 681:fltk-1.3.4-1/jpeg/jquant1.c **** 	pixcode = GETJSAMPLE(colorindex_ci[cur]);
+ 682:fltk-1.3.4-1/jpeg/jquant1.c **** 	*output_ptr += (JSAMPLE) pixcode;
+ 683:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* Compute actual representation error at this pixel */
+ 684:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* Note: we can do this even though we don't have the final */
+ 685:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* pixel code, because the colormap is orthogonal. */
+ 686:fltk-1.3.4-1/jpeg/jquant1.c **** 	cur -= GETJSAMPLE(colormap_ci[pixcode]);
+ 687:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* Compute error fractions to be propagated to adjacent pixels.
+ 688:fltk-1.3.4-1/jpeg/jquant1.c **** 	 * Add these into the running sums, and simultaneously shift the
+ 689:fltk-1.3.4-1/jpeg/jquant1.c **** 	 * next-line error sums left by 1 column.
+ 690:fltk-1.3.4-1/jpeg/jquant1.c **** 	 */
+ 691:fltk-1.3.4-1/jpeg/jquant1.c **** 	bnexterr = cur;
+ 692:fltk-1.3.4-1/jpeg/jquant1.c **** 	delta = cur * 2;
+ 693:fltk-1.3.4-1/jpeg/jquant1.c **** 	cur += delta;		/* form error * 3 */
+ 694:fltk-1.3.4-1/jpeg/jquant1.c **** 	errorptr[0] = (FSERROR) (bpreverr + cur);
+ 695:fltk-1.3.4-1/jpeg/jquant1.c **** 	cur += delta;		/* form error * 5 */
+ 696:fltk-1.3.4-1/jpeg/jquant1.c **** 	bpreverr = belowerr + cur;
+ 697:fltk-1.3.4-1/jpeg/jquant1.c **** 	belowerr = bnexterr;
+ 698:fltk-1.3.4-1/jpeg/jquant1.c **** 	cur += delta;		/* form error * 7 */
+ 699:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* At this point cur contains the 7/16 error value to be propagated
+ 700:fltk-1.3.4-1/jpeg/jquant1.c **** 	 * to the next pixel on the current line, and all the errors for the
+ 701:fltk-1.3.4-1/jpeg/jquant1.c **** 	 * next line have been shifted over. We are therefore ready to move on.
+ 702:fltk-1.3.4-1/jpeg/jquant1.c **** 	 */
+ 703:fltk-1.3.4-1/jpeg/jquant1.c **** 	input_ptr += dirnc;	/* advance input ptr to next column */
+ 704:fltk-1.3.4-1/jpeg/jquant1.c **** 	output_ptr += dir;	/* advance output ptr to next column */
+ 705:fltk-1.3.4-1/jpeg/jquant1.c **** 	errorptr += dir;	/* advance errorptr to current column */
+ 706:fltk-1.3.4-1/jpeg/jquant1.c ****       }
+ 707:fltk-1.3.4-1/jpeg/jquant1.c ****       /* Post-loop cleanup: we must unload the final error value into the
+ 708:fltk-1.3.4-1/jpeg/jquant1.c ****        * final fserrors[] entry.  Note we need not unload belowerr because
+ 709:fltk-1.3.4-1/jpeg/jquant1.c ****        * it is for the dummy column before or after the actual array.
+ 710:fltk-1.3.4-1/jpeg/jquant1.c ****        */
+ 711:fltk-1.3.4-1/jpeg/jquant1.c ****       errorptr[0] = (FSERROR) bpreverr; /* unload prev err into array */
+ 712:fltk-1.3.4-1/jpeg/jquant1.c ****     }
+ 713:fltk-1.3.4-1/jpeg/jquant1.c ****     cquantize->on_odd_row = (cquantize->on_odd_row ? FALSE : TRUE);
+ 714:fltk-1.3.4-1/jpeg/jquant1.c ****   }
+ 715:fltk-1.3.4-1/jpeg/jquant1.c **** }
+ 716:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 717:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 718:fltk-1.3.4-1/jpeg/jquant1.c **** /*
+ 719:fltk-1.3.4-1/jpeg/jquant1.c ****  * Allocate workspace for Floyd-Steinberg errors.
+ 720:fltk-1.3.4-1/jpeg/jquant1.c ****  */
+ 721:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 722:fltk-1.3.4-1/jpeg/jquant1.c **** LOCAL(void)
+ 723:fltk-1.3.4-1/jpeg/jquant1.c **** alloc_fs_workspace (j_decompress_ptr cinfo)
+ 724:fltk-1.3.4-1/jpeg/jquant1.c **** {
+ 725:fltk-1.3.4-1/jpeg/jquant1.c ****   my_cquantize_ptr cquantize = (my_cquantize_ptr) cinfo->cquantize;
+ 726:fltk-1.3.4-1/jpeg/jquant1.c ****   size_t arraysize;
+ 727:fltk-1.3.4-1/jpeg/jquant1.c ****   int i;
+ 728:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 729:fltk-1.3.4-1/jpeg/jquant1.c ****   arraysize = (size_t) ((cinfo->output_width + 2) * SIZEOF(FSERROR));
+ 730:fltk-1.3.4-1/jpeg/jquant1.c ****   for (i = 0; i < cinfo->out_color_components; i++) {
+ 731:fltk-1.3.4-1/jpeg/jquant1.c ****     cquantize->fserrors[i] = (FSERRPTR)
+ 732:fltk-1.3.4-1/jpeg/jquant1.c ****       (*cinfo->mem->alloc_large)((j_common_ptr) cinfo, JPOOL_IMAGE, arraysize);
+ 733:fltk-1.3.4-1/jpeg/jquant1.c ****   }
+ 734:fltk-1.3.4-1/jpeg/jquant1.c **** }
+ 735:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 736:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 737:fltk-1.3.4-1/jpeg/jquant1.c **** /*
+ 738:fltk-1.3.4-1/jpeg/jquant1.c ****  * Initialize for one-pass color quantization.
+ 739:fltk-1.3.4-1/jpeg/jquant1.c ****  */
+ 740:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 741:fltk-1.3.4-1/jpeg/jquant1.c **** METHODDEF(void)
+ 742:fltk-1.3.4-1/jpeg/jquant1.c **** start_pass_1_quant (j_decompress_ptr cinfo, boolean is_pre_scan)
+ 743:fltk-1.3.4-1/jpeg/jquant1.c **** {
+ 744:fltk-1.3.4-1/jpeg/jquant1.c ****   my_cquantize_ptr cquantize = (my_cquantize_ptr) cinfo->cquantize;
+ 745:fltk-1.3.4-1/jpeg/jquant1.c ****   size_t arraysize;
+ 746:fltk-1.3.4-1/jpeg/jquant1.c ****   int i;
+ 747:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 748:fltk-1.3.4-1/jpeg/jquant1.c ****   /* Install my colormap. */
+ 749:fltk-1.3.4-1/jpeg/jquant1.c ****   cinfo->colormap = cquantize->sv_colormap;
+ 750:fltk-1.3.4-1/jpeg/jquant1.c ****   cinfo->actual_number_of_colors = cquantize->sv_actual;
+ 751:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 752:fltk-1.3.4-1/jpeg/jquant1.c ****   /* Initialize for desired dithering mode. */
+ 753:fltk-1.3.4-1/jpeg/jquant1.c ****   switch (cinfo->dither_mode) {
+ 754:fltk-1.3.4-1/jpeg/jquant1.c ****   case JDITHER_NONE:
+ 755:fltk-1.3.4-1/jpeg/jquant1.c ****     if (cinfo->out_color_components == 3)
+ 756:fltk-1.3.4-1/jpeg/jquant1.c ****       cquantize->pub.color_quantize = color_quantize3;
+ 757:fltk-1.3.4-1/jpeg/jquant1.c ****     else
+ 758:fltk-1.3.4-1/jpeg/jquant1.c ****       cquantize->pub.color_quantize = color_quantize;
+ 759:fltk-1.3.4-1/jpeg/jquant1.c ****     break;
+ 760:fltk-1.3.4-1/jpeg/jquant1.c ****   case JDITHER_ORDERED:
+ 761:fltk-1.3.4-1/jpeg/jquant1.c ****     if (cinfo->out_color_components == 3)
+ 762:fltk-1.3.4-1/jpeg/jquant1.c ****       cquantize->pub.color_quantize = quantize3_ord_dither;
+ 763:fltk-1.3.4-1/jpeg/jquant1.c ****     else
+ 764:fltk-1.3.4-1/jpeg/jquant1.c ****       cquantize->pub.color_quantize = quantize_ord_dither;
+ 765:fltk-1.3.4-1/jpeg/jquant1.c ****     cquantize->row_index = 0;	/* initialize state for ordered dither */
+ 766:fltk-1.3.4-1/jpeg/jquant1.c ****     /* If user changed to ordered dither from another mode,
+ 767:fltk-1.3.4-1/jpeg/jquant1.c ****      * we must recreate the color index table with padding.
+ 768:fltk-1.3.4-1/jpeg/jquant1.c ****      * This will cost extra space, but probably isn't very likely.
+ 769:fltk-1.3.4-1/jpeg/jquant1.c ****      */
+ 770:fltk-1.3.4-1/jpeg/jquant1.c ****     if (! cquantize->is_padded)
+ 771:fltk-1.3.4-1/jpeg/jquant1.c ****       create_colorindex(cinfo);
+ 772:fltk-1.3.4-1/jpeg/jquant1.c ****     /* Create ordered-dither tables if we didn't already. */
+ 773:fltk-1.3.4-1/jpeg/jquant1.c ****     if (cquantize->odither[0] == NULL)
+ 774:fltk-1.3.4-1/jpeg/jquant1.c ****       create_odither_tables(cinfo);
+ 775:fltk-1.3.4-1/jpeg/jquant1.c ****     break;
+ 776:fltk-1.3.4-1/jpeg/jquant1.c ****   case JDITHER_FS:
+ 777:fltk-1.3.4-1/jpeg/jquant1.c ****     cquantize->pub.color_quantize = quantize_fs_dither;
+ 778:fltk-1.3.4-1/jpeg/jquant1.c ****     cquantize->on_odd_row = FALSE; /* initialize state for F-S dither */
+ 779:fltk-1.3.4-1/jpeg/jquant1.c ****     /* Allocate Floyd-Steinberg workspace if didn't already. */
+ 780:fltk-1.3.4-1/jpeg/jquant1.c ****     if (cquantize->fserrors[0] == NULL)
+ 781:fltk-1.3.4-1/jpeg/jquant1.c ****       alloc_fs_workspace(cinfo);
+ 782:fltk-1.3.4-1/jpeg/jquant1.c ****     /* Initialize the propagated errors to zero. */
+ 783:fltk-1.3.4-1/jpeg/jquant1.c ****     arraysize = (size_t) ((cinfo->output_width + 2) * SIZEOF(FSERROR));
+ 784:fltk-1.3.4-1/jpeg/jquant1.c ****     for (i = 0; i < cinfo->out_color_components; i++)
+ 785:fltk-1.3.4-1/jpeg/jquant1.c ****       FMEMZERO((void FAR *) cquantize->fserrors[i], arraysize);
+ 786:fltk-1.3.4-1/jpeg/jquant1.c ****     break;
+ 787:fltk-1.3.4-1/jpeg/jquant1.c ****   default:
+ 788:fltk-1.3.4-1/jpeg/jquant1.c ****     ERREXIT(cinfo, JERR_NOT_COMPILED);
+ 789:fltk-1.3.4-1/jpeg/jquant1.c ****     break;
+ 790:fltk-1.3.4-1/jpeg/jquant1.c ****   }
+ 791:fltk-1.3.4-1/jpeg/jquant1.c **** }
+ 792:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 793:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 794:fltk-1.3.4-1/jpeg/jquant1.c **** /*
+ 795:fltk-1.3.4-1/jpeg/jquant1.c ****  * Finish up at the end of the pass.
+ 796:fltk-1.3.4-1/jpeg/jquant1.c ****  */
+ 797:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 798:fltk-1.3.4-1/jpeg/jquant1.c **** METHODDEF(void)
+ 799:fltk-1.3.4-1/jpeg/jquant1.c **** finish_pass_1_quant (j_decompress_ptr cinfo)
+ 800:fltk-1.3.4-1/jpeg/jquant1.c **** {
+ 721              		.loc 1 800 0
+ 722              		.cfi_startproc
+ 723              	.LVL99:
+ 724 0000 F3C3     		rep ret
+ 725              		.cfi_endproc
+ 726              	.LFE75:
+ 728              		.section	.text.unlikely.finish_pass_1_quant
+ 729              	.LCOLDE4:
+ 730              		.section	.text.finish_pass_1_quant
+ 731              	.LHOTE4:
+ 732              		.section	.text.unlikely.new_color_map_1_quant,"ax",@progbits
+ 733              	.LCOLDB5:
+ 734              		.section	.text.new_color_map_1_quant,"ax",@progbits
+ 735              	.LHOTB5:
+ 736              		.p2align 4,,15
+ 738              	new_color_map_1_quant:
+ 739              	.LFB76:
+ 801:fltk-1.3.4-1/jpeg/jquant1.c ****   /* no work in 1-pass case */
+ 802:fltk-1.3.4-1/jpeg/jquant1.c **** }
+ 803:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 804:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 805:fltk-1.3.4-1/jpeg/jquant1.c **** /*
+ 806:fltk-1.3.4-1/jpeg/jquant1.c ****  * Switch to a new external colormap between output passes.
+ 807:fltk-1.3.4-1/jpeg/jquant1.c ****  * Shouldn't get to this module!
+ 808:fltk-1.3.4-1/jpeg/jquant1.c ****  */
+ 809:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 810:fltk-1.3.4-1/jpeg/jquant1.c **** METHODDEF(void)
+ 811:fltk-1.3.4-1/jpeg/jquant1.c **** new_color_map_1_quant (j_decompress_ptr cinfo)
+ 812:fltk-1.3.4-1/jpeg/jquant1.c **** {
+ 740              		.loc 1 812 0
+ 741              		.cfi_startproc
+ 742              	.LVL100:
+ 813:fltk-1.3.4-1/jpeg/jquant1.c ****   ERREXIT(cinfo, JERR_MODE_CHANGE);
+ 743              		.loc 1 813 0
+ 744 0000 488B07   		movq	(%rdi), %rax
+ 745 0003 C740282F 		movl	$47, 40(%rax)
+ 745      000000
+ 746 000a 488B07   		movq	(%rdi), %rax
+ 747 000d FF20     		jmp	*(%rax)
+ 748              	.LVL101:
+ 749              		.cfi_endproc
+ 750              	.LFE76:
+ 752              		.section	.text.unlikely.new_color_map_1_quant
+ 753              	.LCOLDE5:
+ 754              		.section	.text.new_color_map_1_quant
+ 755              	.LHOTE5:
+ 756              		.section	.text.unlikely.quantize_ord_dither,"ax",@progbits
+ 757              	.LCOLDB6:
+ 758              		.section	.text.quantize_ord_dither,"ax",@progbits
+ 759              	.LHOTB6:
+ 760              		.p2align 4,,15
+ 762              	quantize_ord_dither:
+ 763              	.LFB70:
+ 519:fltk-1.3.4-1/jpeg/jquant1.c ****   my_cquantize_ptr cquantize = (my_cquantize_ptr) cinfo->cquantize;
+ 764              		.loc 1 519 0
+ 765              		.cfi_startproc
+ 766              	.LVL102:
+ 767 0000 4157     		pushq	%r15
+ 768              		.cfi_def_cfa_offset 16
+ 769              		.cfi_offset 15, -16
+ 770 0002 4156     		pushq	%r14
+ 771              		.cfi_def_cfa_offset 24
+ 772              		.cfi_offset 14, -24
+ 773 0004 4155     		pushq	%r13
+ 774              		.cfi_def_cfa_offset 32
+ 775              		.cfi_offset 13, -32
+ 776 0006 4154     		pushq	%r12
+ 777              		.cfi_def_cfa_offset 40
+ 778              		.cfi_offset 12, -40
+ 779 0008 55       		pushq	%rbp
+ 780              		.cfi_def_cfa_offset 48
+ 781              		.cfi_offset 6, -48
+ 782 0009 53       		pushq	%rbx
+ 783              		.cfi_def_cfa_offset 56
+ 784              		.cfi_offset 3, -56
+ 785 000a 4883EC28 		subq	$40, %rsp
+ 786              		.cfi_def_cfa_offset 96
+ 526:fltk-1.3.4-1/jpeg/jquant1.c ****   int ci;
+ 787              		.loc 1 526 0
+ 788 000e 8B879000 		movl	144(%rdi), %eax
+ 788      0000
+ 532:fltk-1.3.4-1/jpeg/jquant1.c ****     /* Initialize output values to 0 so can process components separately */
+ 789              		.loc 1 532 0
+ 790 0014 85C9     		testl	%ecx, %ecx
+ 520:fltk-1.3.4-1/jpeg/jquant1.c ****   register JSAMPROW input_ptr;
+ 791              		.loc 1 520 0
+ 792 0016 488BAF90 		movq	656(%rdi), %rbp
+ 792      020000
+ 793              	.LVL103:
+ 526:fltk-1.3.4-1/jpeg/jquant1.c ****   int ci;
+ 794              		.loc 1 526 0
+ 795 001d 89C3     		movl	%eax, %ebx
+ 796 001f 89442404 		movl	%eax, 4(%rsp)
+ 797              	.LVL104:
+ 530:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 798              		.loc 1 530 0
+ 799 0023 8B878800 		movl	136(%rdi), %eax
+ 799      0000
+ 800              	.LVL105:
+ 801 0029 89442408 		movl	%eax, 8(%rsp)
+ 802              	.LVL106:
+ 532:fltk-1.3.4-1/jpeg/jquant1.c ****     /* Initialize output values to 0 so can process components separately */
+ 803              		.loc 1 532 0
+ 804 002d 0F8ED900 		jle	.L67
+ 804      0000
+ 805 0033 89C7     		movl	%eax, %edi
+ 806              	.LVL107:
+ 807 0035 48894424 		movq	%rax, 24(%rsp)
+ 807      18
+ 808 003a 8D41FF   		leal	-1(%rcx), %eax
+ 809              	.LVL108:
+ 810 003d 4989D4   		movq	%rdx, %r12
+ 811 0040 4989F5   		movq	%rsi, %r13
+ 812 0043 4863DB   		movslq	%ebx, %rbx
+ 813              	.LVL109:
+ 814 0046 488D44C2 		leaq	8(%rdx,%rax,8), %rax
+ 814      08
+ 815 004b 48894424 		movq	%rax, 16(%rsp)
+ 815      10
+ 816 0050 89F8     		movl	%edi, %eax
+ 817 0052 83E801   		subl	$1, %eax
+ 818 0055 4883C001 		addq	$1, %rax
+ 819 0059 4989C6   		movq	%rax, %r14
+ 820              	.LVL110:
+ 821 005c 0F1F4000 		.p2align 4,,10
+ 822              		.p2align 3
+ 823              	.L70:
+ 824              	.LBB31:
+ 825              	.LBB32:
+ 826              		.file 2 "/usr/include/x86_64-linux-gnu/bits/string3.h"
+   1:/usr/include/x86_64-linux-gnu/bits/string3.h **** /* Copyright (C) 2004-2016 Free Software Foundation, Inc.
+   2:/usr/include/x86_64-linux-gnu/bits/string3.h ****    This file is part of the GNU C Library.
+   3:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+   4:/usr/include/x86_64-linux-gnu/bits/string3.h ****    The GNU C Library is free software; you can redistribute it and/or
+   5:/usr/include/x86_64-linux-gnu/bits/string3.h ****    modify it under the terms of the GNU Lesser General Public
+   6:/usr/include/x86_64-linux-gnu/bits/string3.h ****    License as published by the Free Software Foundation; either
+   7:/usr/include/x86_64-linux-gnu/bits/string3.h ****    version 2.1 of the License, or (at your option) any later version.
+   8:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+   9:/usr/include/x86_64-linux-gnu/bits/string3.h ****    The GNU C Library is distributed in the hope that it will be useful,
+  10:/usr/include/x86_64-linux-gnu/bits/string3.h ****    but WITHOUT ANY WARRANTY; without even the implied warranty of
+  11:/usr/include/x86_64-linux-gnu/bits/string3.h ****    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  12:/usr/include/x86_64-linux-gnu/bits/string3.h ****    Lesser General Public License for more details.
+  13:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  14:/usr/include/x86_64-linux-gnu/bits/string3.h ****    You should have received a copy of the GNU Lesser General Public
+  15:/usr/include/x86_64-linux-gnu/bits/string3.h ****    License along with the GNU C Library; if not, see
+  16:/usr/include/x86_64-linux-gnu/bits/string3.h ****    <http://www.gnu.org/licenses/>.  */
+  17:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  18:/usr/include/x86_64-linux-gnu/bits/string3.h **** #ifndef _STRING_H
+  19:/usr/include/x86_64-linux-gnu/bits/string3.h **** # error "Never use <bits/string3.h> directly; include <string.h> instead."
+  20:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  21:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  22:/usr/include/x86_64-linux-gnu/bits/string3.h **** #if !__GNUC_PREREQ (5,0)
+  23:/usr/include/x86_64-linux-gnu/bits/string3.h **** __warndecl (__warn_memset_zero_len,
+  24:/usr/include/x86_64-linux-gnu/bits/string3.h **** 	    "memset used with constant zero length parameter; this could be due to transposed parameters")
+  25:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  26:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  27:/usr/include/x86_64-linux-gnu/bits/string3.h **** #ifndef __cplusplus
+  28:/usr/include/x86_64-linux-gnu/bits/string3.h **** /* XXX This is temporarily.  We should not redefine any of the symbols
+  29:/usr/include/x86_64-linux-gnu/bits/string3.h ****    and instead integrate the error checking into the original
+  30:/usr/include/x86_64-linux-gnu/bits/string3.h ****    definitions.  */
+  31:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memcpy
+  32:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memmove
+  33:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memset
+  34:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strcat
+  35:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strcpy
+  36:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strncat
+  37:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strncpy
+  38:/usr/include/x86_64-linux-gnu/bits/string3.h **** # ifdef __USE_GNU
+  39:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef mempcpy
+  40:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef stpcpy
+  41:/usr/include/x86_64-linux-gnu/bits/string3.h **** # endif
+  42:/usr/include/x86_64-linux-gnu/bits/string3.h **** # ifdef __USE_MISC
+  43:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef bcopy
+  44:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef bzero
+  45:/usr/include/x86_64-linux-gnu/bits/string3.h **** # endif
+  46:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  47:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  48:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  49:/usr/include/x86_64-linux-gnu/bits/string3.h **** __fortify_function void *
+  50:/usr/include/x86_64-linux-gnu/bits/string3.h **** __NTH (memcpy (void *__restrict __dest, const void *__restrict __src,
+  51:/usr/include/x86_64-linux-gnu/bits/string3.h **** 	       size_t __len))
+  52:/usr/include/x86_64-linux-gnu/bits/string3.h **** {
+  53:/usr/include/x86_64-linux-gnu/bits/string3.h ****   return __builtin___memcpy_chk (__dest, __src, __len, __bos0 (__dest));
+  54:/usr/include/x86_64-linux-gnu/bits/string3.h **** }
+  55:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  56:/usr/include/x86_64-linux-gnu/bits/string3.h **** __fortify_function void *
+  57:/usr/include/x86_64-linux-gnu/bits/string3.h **** __NTH (memmove (void *__dest, const void *__src, size_t __len))
+  58:/usr/include/x86_64-linux-gnu/bits/string3.h **** {
+  59:/usr/include/x86_64-linux-gnu/bits/string3.h ****   return __builtin___memmove_chk (__dest, __src, __len, __bos0 (__dest));
+  60:/usr/include/x86_64-linux-gnu/bits/string3.h **** }
+  61:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  62:/usr/include/x86_64-linux-gnu/bits/string3.h **** #ifdef __USE_GNU
+  63:/usr/include/x86_64-linux-gnu/bits/string3.h **** __fortify_function void *
+  64:/usr/include/x86_64-linux-gnu/bits/string3.h **** __NTH (mempcpy (void *__restrict __dest, const void *__restrict __src,
+  65:/usr/include/x86_64-linux-gnu/bits/string3.h **** 		size_t __len))
+  66:/usr/include/x86_64-linux-gnu/bits/string3.h **** {
+  67:/usr/include/x86_64-linux-gnu/bits/string3.h ****   return __builtin___mempcpy_chk (__dest, __src, __len, __bos0 (__dest));
+  68:/usr/include/x86_64-linux-gnu/bits/string3.h **** }
+  69:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  70:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  71:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  72:/usr/include/x86_64-linux-gnu/bits/string3.h **** /* The first two tests here help to catch a somewhat common problem
+  73:/usr/include/x86_64-linux-gnu/bits/string3.h ****    where the second and third parameter are transposed.  This is
+  74:/usr/include/x86_64-linux-gnu/bits/string3.h ****    especially problematic if the intended fill value is zero.  In this
+  75:/usr/include/x86_64-linux-gnu/bits/string3.h ****    case no work is done at all.  We detect these problems by referring
+  76:/usr/include/x86_64-linux-gnu/bits/string3.h ****    non-existing functions.  */
+  77:/usr/include/x86_64-linux-gnu/bits/string3.h **** __fortify_function void *
+  78:/usr/include/x86_64-linux-gnu/bits/string3.h **** __NTH (memset (void *__dest, int __ch, size_t __len))
+  79:/usr/include/x86_64-linux-gnu/bits/string3.h **** {
+  80:/usr/include/x86_64-linux-gnu/bits/string3.h ****   /* GCC-5.0 and newer implements these checks in the compiler, so we don't
+  81:/usr/include/x86_64-linux-gnu/bits/string3.h ****      need them here.  */
+  82:/usr/include/x86_64-linux-gnu/bits/string3.h **** #if !__GNUC_PREREQ (5,0)
+  83:/usr/include/x86_64-linux-gnu/bits/string3.h ****   if (__builtin_constant_p (__len) && __len == 0
+  84:/usr/include/x86_64-linux-gnu/bits/string3.h ****       && (!__builtin_constant_p (__ch) || __ch != 0))
+  85:/usr/include/x86_64-linux-gnu/bits/string3.h ****     {
+  86:/usr/include/x86_64-linux-gnu/bits/string3.h ****       __warn_memset_zero_len ();
+  87:/usr/include/x86_64-linux-gnu/bits/string3.h ****       return __dest;
+  88:/usr/include/x86_64-linux-gnu/bits/string3.h ****     }
+  89:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  90:/usr/include/x86_64-linux-gnu/bits/string3.h ****   return __builtin___memset_chk (__dest, __ch, __len, __bos0 (__dest));
+ 827              		.loc 2 90 0
+ 828 0060 488B5424 		movq	24(%rsp), %rdx
+ 828      18
+ 829 0065 498B3C24 		movq	(%r12), %rdi
+ 830 0069 31F6     		xorl	%esi, %esi
+ 831 006b E8000000 		call	memset
+ 831      00
+ 832              	.LVL111:
+ 833              	.LBE32:
+ 834              	.LBE31:
+ 537:fltk-1.3.4-1/jpeg/jquant1.c ****       input_ptr = input_buf[row] + ci;
+ 835              		.loc 1 537 0
+ 836 0070 8B542404 		movl	4(%rsp), %edx
+ 536:fltk-1.3.4-1/jpeg/jquant1.c ****     for (ci = 0; ci < nc; ci++) {
+ 837              		.loc 1 536 0
+ 838 0074 8B454C   		movl	76(%rbp), %eax
+ 537:fltk-1.3.4-1/jpeg/jquant1.c ****       input_ptr = input_buf[row] + ci;
+ 839              		.loc 1 537 0
+ 840 0077 85D2     		testl	%edx, %edx
+ 536:fltk-1.3.4-1/jpeg/jquant1.c ****     for (ci = 0; ci < nc; ci++) {
+ 841              		.loc 1 536 0
+ 842 0079 8944240C 		movl	%eax, 12(%rsp)
+ 843              	.LVL112:
+ 537:fltk-1.3.4-1/jpeg/jquant1.c ****       input_ptr = input_buf[row] + ci;
+ 844              		.loc 1 537 0
+ 845 007d 7E6D     		jle	.L74
+ 846 007f 4C635C24 		movslq	12(%rsp), %r11
+ 846      0C
+ 847 0084 4531FF   		xorl	%r15d, %r15d
+ 848 0087 49C1E306 		salq	$6, %r11
+ 849              	.LVL113:
+ 850              	.L73:
+ 540:fltk-1.3.4-1/jpeg/jquant1.c ****       dither = cquantize->odither[ci][row_index];
+ 851              		.loc 1 540 0
+ 852 008b 488B4530 		movq	48(%rbp), %rax
+ 539:fltk-1.3.4-1/jpeg/jquant1.c ****       colorindex_ci = cquantize->colorindex[ci];
+ 853              		.loc 1 539 0
+ 854 008f 498B1424 		movq	(%r12), %rdx
+ 538:fltk-1.3.4-1/jpeg/jquant1.c ****       output_ptr = output_buf[row];
+ 855              		.loc 1 538 0
+ 856 0093 4C89FE   		movq	%r15, %rsi
+ 544:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* Form pixel value + dither, range-limit to 0..MAXJSAMPLE,
+ 857              		.loc 1 544 0
+ 858 0096 31C9     		xorl	%ecx, %ecx
+ 538:fltk-1.3.4-1/jpeg/jquant1.c ****       output_ptr = output_buf[row];
+ 859              		.loc 1 538 0
+ 860 0098 49037500 		addq	0(%r13), %rsi
+ 861              	.LVL114:
+ 541:fltk-1.3.4-1/jpeg/jquant1.c ****       col_index = 0;
+ 862              		.loc 1 541 0
+ 863 009c 4E8B4CFD 		movq	80(%rbp,%r15,8), %r9
+ 863      50
+ 540:fltk-1.3.4-1/jpeg/jquant1.c ****       dither = cquantize->odither[ci][row_index];
+ 864              		.loc 1 540 0
+ 865 00a1 4E8B14F8 		movq	(%rax,%r15,8), %r10
+ 866              	.LVL115:
+ 544:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* Form pixel value + dither, range-limit to 0..MAXJSAMPLE,
+ 867              		.loc 1 544 0
+ 868 00a5 8B442408 		movl	8(%rsp), %eax
+ 869 00a9 4E8D0432 		leaq	(%rdx,%r14), %r8
+ 870 00ad 85C0     		testl	%eax, %eax
+ 871 00af 7430     		je	.L76
+ 872              	.LVL116:
+ 873              		.p2align 4,,10
+ 874 00b1 0F1F8000 		.p2align 3
+ 874      000000
+ 875              	.L75:
+ 552:fltk-1.3.4-1/jpeg/jquant1.c **** 	input_ptr += nc;
+ 876              		.loc 1 552 0 discriminator 3
+ 877 00b8 4863C1   		movslq	%ecx, %rax
+ 555:fltk-1.3.4-1/jpeg/jquant1.c ****       }
+ 878              		.loc 1 555 0 discriminator 3
+ 879 00bb 83C101   		addl	$1, %ecx
+ 880              	.LVL117:
+ 552:fltk-1.3.4-1/jpeg/jquant1.c **** 	input_ptr += nc;
+ 881              		.loc 1 552 0 discriminator 3
+ 882 00be 498D3C81 		leaq	(%r9,%rax,4), %rdi
+ 883 00c2 0FB606   		movzbl	(%rsi), %eax
+ 555:fltk-1.3.4-1/jpeg/jquant1.c ****       }
+ 884              		.loc 1 555 0 discriminator 3
+ 885 00c5 83E10F   		andl	$15, %ecx
+ 886              	.LVL118:
+ 553:fltk-1.3.4-1/jpeg/jquant1.c **** 	output_ptr++;
+ 887              		.loc 1 553 0 discriminator 3
+ 888 00c8 4801DE   		addq	%rbx, %rsi
+ 889              	.LVL119:
+ 552:fltk-1.3.4-1/jpeg/jquant1.c **** 	input_ptr += nc;
+ 890              		.loc 1 552 0 discriminator 3
+ 891 00cb 4203041F 		addl	(%rdi,%r11), %eax
+ 892 00cf 4898     		cltq
+ 893 00d1 410FB604 		movzbl	(%r10,%rax), %eax
+ 893      02
+ 894 00d6 0002     		addb	%al, (%rdx)
+ 554:fltk-1.3.4-1/jpeg/jquant1.c **** 	col_index = (col_index + 1) & ODITHER_MASK;
+ 895              		.loc 1 554 0 discriminator 3
+ 896 00d8 4883C201 		addq	$1, %rdx
+ 897              	.LVL120:
+ 544:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* Form pixel value + dither, range-limit to 0..MAXJSAMPLE,
+ 898              		.loc 1 544 0 discriminator 3
+ 899 00dc 4C39C2   		cmpq	%r8, %rdx
+ 900 00df 75D7     		jne	.L75
+ 901              	.LVL121:
+ 902              	.L76:
+ 903 00e1 4983C701 		addq	$1, %r15
+ 904              	.LVL122:
+ 537:fltk-1.3.4-1/jpeg/jquant1.c ****       input_ptr = input_buf[row] + ci;
+ 905              		.loc 1 537 0
+ 906 00e5 44397C24 		cmpl	%r15d, 4(%rsp)
+ 906      04
+ 907 00ea 7F9F     		jg	.L73
+ 908              	.LVL123:
+ 909              	.L74:
+ 559:fltk-1.3.4-1/jpeg/jquant1.c ****     cquantize->row_index = row_index;
+ 910              		.loc 1 559 0
+ 911 00ec 8B44240C 		movl	12(%rsp), %eax
+ 912 00f0 4983C408 		addq	$8, %r12
+ 913 00f4 4983C508 		addq	$8, %r13
+ 914 00f8 83C001   		addl	$1, %eax
+ 915              	.LVL124:
+ 560:fltk-1.3.4-1/jpeg/jquant1.c ****   }
+ 916              		.loc 1 560 0
+ 917 00fb 83E00F   		andl	$15, %eax
+ 918              	.LVL125:
+ 532:fltk-1.3.4-1/jpeg/jquant1.c ****     /* Initialize output values to 0 so can process components separately */
+ 919              		.loc 1 532 0
+ 920 00fe 4C3B6424 		cmpq	16(%rsp), %r12
+ 920      10
+ 560:fltk-1.3.4-1/jpeg/jquant1.c ****   }
+ 921              		.loc 1 560 0
+ 922 0103 89454C   		movl	%eax, 76(%rbp)
+ 532:fltk-1.3.4-1/jpeg/jquant1.c ****     /* Initialize output values to 0 so can process components separately */
+ 923              		.loc 1 532 0
+ 924 0106 0F8554FF 		jne	.L70
+ 924      FFFF
+ 925              	.LVL126:
+ 926              	.L67:
+ 562:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 927              		.loc 1 562 0
+ 928 010c 4883C428 		addq	$40, %rsp
+ 929              		.cfi_def_cfa_offset 56
+ 930 0110 5B       		popq	%rbx
+ 931              		.cfi_def_cfa_offset 48
+ 932 0111 5D       		popq	%rbp
+ 933              		.cfi_def_cfa_offset 40
+ 934              	.LVL127:
+ 935 0112 415C     		popq	%r12
+ 936              		.cfi_def_cfa_offset 32
+ 937 0114 415D     		popq	%r13
+ 938              		.cfi_def_cfa_offset 24
+ 939 0116 415E     		popq	%r14
+ 940              		.cfi_def_cfa_offset 16
+ 941 0118 415F     		popq	%r15
+ 942              		.cfi_def_cfa_offset 8
+ 943 011a C3       		ret
+ 944              		.cfi_endproc
+ 945              	.LFE70:
+ 947              		.section	.text.unlikely.quantize_ord_dither
+ 948              	.LCOLDE6:
+ 949              		.section	.text.quantize_ord_dither
+ 950              	.LHOTE6:
+ 951              		.section	.text.unlikely.quantize_fs_dither,"ax",@progbits
+ 952              	.LCOLDB7:
+ 953              		.section	.text.quantize_fs_dither,"ax",@progbits
+ 954              	.LHOTB7:
+ 955              		.p2align 4,,15
+ 957              	quantize_fs_dither:
+ 958              	.LFB72:
+ 614:fltk-1.3.4-1/jpeg/jquant1.c ****   my_cquantize_ptr cquantize = (my_cquantize_ptr) cinfo->cquantize;
+ 959              		.loc 1 614 0
+ 960              		.cfi_startproc
+ 961              	.LVL128:
+ 962 0000 4157     		pushq	%r15
+ 963              		.cfi_def_cfa_offset 16
+ 964              		.cfi_offset 15, -16
+ 965 0002 4156     		pushq	%r14
+ 966              		.cfi_def_cfa_offset 24
+ 967              		.cfi_offset 14, -24
+ 968 0004 4155     		pushq	%r13
+ 969              		.cfi_def_cfa_offset 32
+ 970              		.cfi_offset 13, -32
+ 971 0006 4154     		pushq	%r12
+ 972              		.cfi_def_cfa_offset 40
+ 973              		.cfi_offset 12, -40
+ 974 0008 55       		pushq	%rbp
+ 975              		.cfi_def_cfa_offset 48
+ 976              		.cfi_offset 6, -48
+ 977 0009 53       		pushq	%rbx
+ 978              		.cfi_def_cfa_offset 56
+ 979              		.cfi_offset 3, -56
+ 980 000a 4883EC78 		subq	$120, %rsp
+ 981              		.cfi_def_cfa_offset 176
+ 615:fltk-1.3.4-1/jpeg/jquant1.c ****   register LOCFSERROR cur;	/* current error or pixel value */
+ 982              		.loc 1 615 0
+ 983 000e 488B8790 		movq	656(%rdi), %rax
+ 983      020000
+ 637:fltk-1.3.4-1/jpeg/jquant1.c ****     /* Initialize output values to 0 so can process components separately */
+ 984              		.loc 1 637 0
+ 985 0015 85C9     		testl	%ecx, %ecx
+ 615:fltk-1.3.4-1/jpeg/jquant1.c ****   register LOCFSERROR cur;	/* current error or pixel value */
+ 986              		.loc 1 615 0
+ 987 0017 48894424 		movq	%rax, 24(%rsp)
+ 987      18
+ 988              	.LVL129:
+ 627:fltk-1.3.4-1/jpeg/jquant1.c ****   int dir;			/* 1 for left-to-right, -1 for right-to-left */
+ 989              		.loc 1 627 0
+ 990 001c 8B879000 		movl	144(%rdi), %eax
+ 990      0000
+ 991              	.LVL130:
+ 992 0022 89C3     		movl	%eax, %ebx
+ 993 0024 89442424 		movl	%eax, 36(%rsp)
+ 994              	.LVL131:
+ 633:fltk-1.3.4-1/jpeg/jquant1.c ****   JSAMPLE *range_limit = cinfo->sample_range_limit;
+ 995              		.loc 1 633 0
+ 996 0028 8B878800 		movl	136(%rdi), %eax
+ 996      0000
+ 997              	.LVL132:
+ 634:fltk-1.3.4-1/jpeg/jquant1.c ****   SHIFT_TEMPS
+ 998              		.loc 1 634 0
+ 999 002e 488BBFB8 		movq	440(%rdi), %rdi
+ 999      010000
+ 1000              	.LVL133:
+ 633:fltk-1.3.4-1/jpeg/jquant1.c ****   JSAMPLE *range_limit = cinfo->sample_range_limit;
+ 1001              		.loc 1 633 0
+ 1002 0035 89442458 		movl	%eax, 88(%rsp)
+ 1003              	.LVL134:
+ 634:fltk-1.3.4-1/jpeg/jquant1.c ****   SHIFT_TEMPS
+ 1004              		.loc 1 634 0
+ 1005 0039 48893C24 		movq	%rdi, (%rsp)
+ 1006              	.LVL135:
+ 637:fltk-1.3.4-1/jpeg/jquant1.c ****     /* Initialize output values to 0 so can process components separately */
+ 1007              		.loc 1 637 0
+ 1008 003d 0F8ECD01 		jle	.L82
+ 1008      0000
+ 1009 0043 89C7     		movl	%eax, %edi
+ 1010              	.LVL136:
+ 1011 0045 48895424 		movq	%rdx, 40(%rsp)
+ 1011      28
+ 646:fltk-1.3.4-1/jpeg/jquant1.c **** 	output_ptr += width-1;
+ 1012              		.loc 1 646 0
+ 1013 004a 4189DA   		movl	%ebx, %r10d
+ 1014 004d 48897C24 		movq	%rdi, 104(%rsp)
+ 1014      68
+ 1015 0052 89C7     		movl	%eax, %edi
+ 1016 0054 83E801   		subl	$1, %eax
+ 1017              	.LVL137:
+ 650:fltk-1.3.4-1/jpeg/jquant1.c ****       } else {
+ 1018              		.loc 1 650 0
+ 1019 0057 83C701   		addl	$1, %edi
+ 1020              	.LVL138:
+ 647:fltk-1.3.4-1/jpeg/jquant1.c **** 	dir = -1;
+ 1021              		.loc 1 647 0
+ 1022 005a 48894424 		movq	%rax, 80(%rsp)
+ 1022      50
+ 1023 005f 48897424 		movq	%rsi, 48(%rsp)
+ 1023      30
+ 650:fltk-1.3.4-1/jpeg/jquant1.c ****       } else {
+ 1024              		.loc 1 650 0
+ 1025 0064 4801FF   		addq	%rdi, %rdi
+ 1026 0067 48897C24 		movq	%rdi, 72(%rsp)
+ 1026      48
+ 1027 006c 4889D7   		movq	%rdx, %rdi
+ 1028 006f 8D51FF   		leal	-1(%rcx), %edx
+ 1029              	.LVL139:
+ 646:fltk-1.3.4-1/jpeg/jquant1.c **** 	output_ptr += width-1;
+ 1030              		.loc 1 646 0
+ 1031 0072 440FAFD0 		imull	%eax, %r10d
+ 1032 0076 488D7CD7 		leaq	8(%rdi,%rdx,8), %rdi
+ 1032      08
+ 1033              	.LVL140:
+ 1034 007b 48897C24 		movq	%rdi, 96(%rsp)
+ 1034      60
+ 647:fltk-1.3.4-1/jpeg/jquant1.c **** 	dir = -1;
+ 1035              		.loc 1 647 0
+ 1036 0080 4889C7   		movq	%rax, %rdi
+ 649:fltk-1.3.4-1/jpeg/jquant1.c **** 	errorptr = cquantize->fserrors[ci] + (width+1); /* => entry after last column */
+ 1037              		.loc 1 649 0
+ 1038 0083 89D8     		movl	%ebx, %eax
+ 1039 0085 F7D8     		negl	%eax
+ 646:fltk-1.3.4-1/jpeg/jquant1.c **** 	output_ptr += width-1;
+ 1040              		.loc 1 646 0
+ 1041 0087 4C895424 		movq	%r10, 64(%rsp)
+ 1041      40
+ 649:fltk-1.3.4-1/jpeg/jquant1.c **** 	errorptr = cquantize->fserrors[ci] + (width+1); /* => entry after last column */
+ 1042              		.loc 1 649 0
+ 1043 008c 8944245C 		movl	%eax, 92(%rsp)
+ 1044 0090 4889F8   		movq	%rdi, %rax
+ 1045 0093 4883C001 		addq	$1, %rax
+ 1046 0097 48894424 		movq	%rax, 56(%rsp)
+ 1046      38
+ 1047              	.LVL141:
+ 1048              	.L85:
+ 1049              	.LBB33:
+ 1050              	.LBB34:
+ 1051              		.loc 2 90 0
+ 1052 009c 488B4424 		movq	40(%rsp), %rax
+ 1052      28
+ 1053 00a1 488B5424 		movq	104(%rsp), %rdx
+ 1053      68
+ 1054 00a6 31F6     		xorl	%esi, %esi
+ 1055 00a8 488B38   		movq	(%rax), %rdi
+ 1056 00ab E8000000 		call	memset
+ 1056      00
+ 1057              	.LVL142:
+ 1058              	.LBE34:
+ 1059              	.LBE33:
+ 641:fltk-1.3.4-1/jpeg/jquant1.c ****       input_ptr = input_buf[row] + ci;
+ 1060              		.loc 1 641 0
+ 1061 00b0 8B742424 		movl	36(%rsp), %esi
+ 1062 00b4 48C74424 		movq	$0, 8(%rsp)
+ 1062      08000000 
+ 1062      00
+ 1063 00bd 85F6     		testl	%esi, %esi
+ 1064 00bf 0F8E1701 		jle	.L92
+ 1064      0000
+ 1065              	.LVL143:
+ 1066              		.p2align 4,,10
+ 1067 00c5 0F1F00   		.p2align 3
+ 1068              	.L94:
+ 644:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* work right to left in this row */
+ 1069              		.loc 1 644 0
+ 1070 00c8 488B5C24 		movq	24(%rsp), %rbx
+ 1070      18
+ 642:fltk-1.3.4-1/jpeg/jquant1.c ****       output_ptr = output_buf[row];
+ 1071              		.loc 1 642 0
+ 1072 00cd 488B7C24 		movq	48(%rsp), %rdi
+ 1072      30
+ 1073 00d2 488B4424 		movq	8(%rsp), %rax
+ 1073      08
+ 644:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* work right to left in this row */
+ 1074              		.loc 1 644 0
+ 1075 00d7 8B939000 		movl	144(%rbx), %edx
+ 1075      0000
+ 642:fltk-1.3.4-1/jpeg/jquant1.c ****       output_ptr = output_buf[row];
+ 1076              		.loc 1 642 0
+ 1077 00dd 4989C1   		movq	%rax, %r9
+ 1078 00e0 4C030F   		addq	(%rdi), %r9
+ 1079              	.LVL144:
+ 643:fltk-1.3.4-1/jpeg/jquant1.c ****       if (cquantize->on_odd_row) {
+ 1080              		.loc 1 643 0
+ 1081 00e3 488B7C24 		movq	40(%rsp), %rdi
+ 1081      28
+ 644:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* work right to left in this row */
+ 1082              		.loc 1 644 0
+ 1083 00e8 85D2     		testl	%edx, %edx
+ 643:fltk-1.3.4-1/jpeg/jquant1.c ****       if (cquantize->on_odd_row) {
+ 1084              		.loc 1 643 0
+ 1085 00ea 488B3F   		movq	(%rdi), %rdi
+ 1086              	.LVL145:
+ 644:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* work right to left in this row */
+ 1087              		.loc 1 644 0
+ 1088 00ed 0F842D01 		je	.L87
+ 1088      0000
+ 650:fltk-1.3.4-1/jpeg/jquant1.c ****       } else {
+ 1089              		.loc 1 650 0
+ 1090 00f3 488B7424 		movq	72(%rsp), %rsi
+ 1090      48
+ 1091 00f8 480374C3 		addq	112(%rbx,%rax,8), %rsi
+ 1091      70
+ 648:fltk-1.3.4-1/jpeg/jquant1.c **** 	dirnc = -nc;
+ 1092              		.loc 1 648 0
+ 1093 00fd 48C7C5FF 		movq	$-1, %rbp
+ 1093      FFFFFF
+ 646:fltk-1.3.4-1/jpeg/jquant1.c **** 	output_ptr += width-1;
+ 1094              		.loc 1 646 0
+ 1095 0104 4C034C24 		addq	64(%rsp), %r9
+ 1095      40
+ 1096              	.LVL146:
+ 647:fltk-1.3.4-1/jpeg/jquant1.c **** 	dir = -1;
+ 1097              		.loc 1 647 0
+ 1098 0109 48037C24 		addq	80(%rsp), %rdi
+ 1098      50
+ 1099              	.LVL147:
+ 649:fltk-1.3.4-1/jpeg/jquant1.c **** 	errorptr = cquantize->fserrors[ci] + (width+1); /* => entry after last column */
+ 1100              		.loc 1 649 0
+ 1101 010e 4C636424 		movslq	92(%rsp), %r12
+ 1101      5C
+ 1102              	.LVL148:
+ 650:fltk-1.3.4-1/jpeg/jquant1.c ****       } else {
+ 1103              		.loc 1 650 0
+ 1104 0113 48897424 		movq	%rsi, 16(%rsp)
+ 1104      10
+ 1105              	.LVL149:
+ 1106              	.L88:
+ 657:fltk-1.3.4-1/jpeg/jquant1.c ****       colormap_ci = cquantize->sv_colormap[ci];
+ 1107              		.loc 1 657 0
+ 1108 0118 488B5C24 		movq	24(%rsp), %rbx
+ 1108      18
+ 1109 011d 488B7424 		movq	8(%rsp), %rsi
+ 1109      08
+ 1110 0122 488B4330 		movq	48(%rbx), %rax
+ 1111 0126 4C8B2CF0 		movq	(%rax,%rsi,8), %r13
+ 1112              	.LVL150:
+ 658:fltk-1.3.4-1/jpeg/jquant1.c ****       /* Preset error values: no error propagated to first pixel from left */
+ 1113              		.loc 1 658 0
+ 1114 012a 488B4320 		movq	32(%rbx), %rax
+ 1115 012e 4C8B34F0 		movq	(%rax,%rsi,8), %r14
+ 1116              	.LVL151:
+ 664:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* cur holds the error propagated from the previous pixel on the
+ 1117              		.loc 1 664 0
+ 1118 0132 8B442458 		movl	88(%rsp), %eax
+ 1119 0136 85C0     		testl	%eax, %eax
+ 1120 0138 0F840501 		je	.L93
+ 1120      0000
+ 1121 013e 488D5C2D 		leaq	(%rbp,%rbp), %rbx
+ 1121      00
+ 1122 0143 4C8B4424 		movq	16(%rsp), %r8
+ 1122      10
+ 1123 0148 4189C2   		movl	%eax, %r10d
+ 1124 014b 31F6     		xorl	%esi, %esi
+ 1125 014d 4531DB   		xorl	%r11d, %r11d
+ 1126 0150 31C0     		xorl	%eax, %eax
+ 694:fltk-1.3.4-1/jpeg/jquant1.c **** 	cur += delta;		/* form error * 5 */
+ 1127              		.loc 1 694 0
+ 1128 0152 4989DF   		movq	%rbx, %r15
+ 1129 0155 49F7DF   		negq	%r15
+ 1130              	.LVL152:
+ 1131 0158 0F1F8400 		.p2align 4,,10
+ 1131      00000000 
+ 1132              		.p2align 3
+ 1133              	.L90:
+ 673:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* Form pixel value + error, and range-limit to 0..MAXJSAMPLE.
+ 1134              		.loc 1 673 0 discriminator 3
+ 1135 0160 4901D8   		addq	%rbx, %r8
+ 1136              	.LVL153:
+ 679:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* Select output value, accumulate into output code for this pixel */
+ 1137              		.loc 1 679 0 discriminator 3
+ 1138 0163 488B0C24 		movq	(%rsp), %rcx
+ 673:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* Form pixel value + error, and range-limit to 0..MAXJSAMPLE.
+ 1139              		.loc 1 673 0 discriminator 3
+ 1140 0167 410FBF10 		movswl	(%r8), %edx
+ 1141 016b 8D441008 		leal	8(%rax,%rdx), %eax
+ 1142              	.LVL154:
+ 679:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* Select output value, accumulate into output code for this pixel */
+ 1143              		.loc 1 679 0 discriminator 3
+ 1144 016f 410FB611 		movzbl	(%r9), %edx
+ 703:fltk-1.3.4-1/jpeg/jquant1.c **** 	output_ptr += dir;	/* advance output ptr to next column */
+ 1145              		.loc 1 703 0 discriminator 3
+ 1146 0173 4D01E1   		addq	%r12, %r9
+ 1147              	.LVL155:
+ 673:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* Form pixel value + error, and range-limit to 0..MAXJSAMPLE.
+ 1148              		.loc 1 673 0 discriminator 3
+ 1149 0176 C1F804   		sarl	$4, %eax
+ 679:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* Select output value, accumulate into output code for this pixel */
+ 1150              		.loc 1 679 0 discriminator 3
+ 1151 0179 01D0     		addl	%edx, %eax
+ 1152 017b 4898     		cltq
+ 1153 017d 0FB60401 		movzbl	(%rcx,%rax), %eax
+ 1154 0181 4889C2   		movq	%rax, %rdx
+ 1155              	.LVL156:
+ 681:fltk-1.3.4-1/jpeg/jquant1.c **** 	*output_ptr += (JSAMPLE) pixcode;
+ 1156              		.loc 1 681 0 discriminator 3
+ 1157 0184 410FB644 		movzbl	0(%r13,%rax), %eax
+ 1157      0500
+ 1158              	.LVL157:
+ 682:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* Compute actual representation error at this pixel */
+ 1159              		.loc 1 682 0 discriminator 3
+ 1160 018a 0007     		addb	%al, (%rdi)
+ 704:fltk-1.3.4-1/jpeg/jquant1.c **** 	errorptr += dir;	/* advance errorptr to current column */
+ 1161              		.loc 1 704 0 discriminator 3
+ 1162 018c 4801EF   		addq	%rbp, %rdi
+ 1163              	.LVL158:
+ 686:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* Compute error fractions to be propagated to adjacent pixels.
+ 1164              		.loc 1 686 0 discriminator 3
+ 1165 018f 410FB604 		movzbl	(%r14,%rax), %eax
+ 1165      06
+ 1166              	.LVL159:
+ 1167 0194 29C2     		subl	%eax, %edx
+ 1168              	.LVL160:
+ 692:fltk-1.3.4-1/jpeg/jquant1.c **** 	cur += delta;		/* form error * 3 */
+ 1169              		.loc 1 692 0 discriminator 3
+ 1170 0196 8D0C12   		leal	(%rdx,%rdx), %ecx
+ 1171              	.LVL161:
+ 693:fltk-1.3.4-1/jpeg/jquant1.c **** 	errorptr[0] = (FSERROR) (bpreverr + cur);
+ 1172              		.loc 1 693 0 discriminator 3
+ 1173 0199 8D040A   		leal	(%rdx,%rcx), %eax
+ 1174              	.LVL162:
+ 694:fltk-1.3.4-1/jpeg/jquant1.c **** 	cur += delta;		/* form error * 5 */
+ 1175              		.loc 1 694 0 discriminator 3
+ 1176 019c 01C6     		addl	%eax, %esi
+ 1177              	.LVL163:
+ 695:fltk-1.3.4-1/jpeg/jquant1.c **** 	bpreverr = belowerr + cur;
+ 1178              		.loc 1 695 0 discriminator 3
+ 1179 019e 01C8     		addl	%ecx, %eax
+ 1180              	.LVL164:
+ 694:fltk-1.3.4-1/jpeg/jquant1.c **** 	cur += delta;		/* form error * 5 */
+ 1181              		.loc 1 694 0 discriminator 3
+ 1182 01a0 66438934 		movw	%si, (%r8,%r15)
+ 1182      38
+ 696:fltk-1.3.4-1/jpeg/jquant1.c **** 	belowerr = bnexterr;
+ 1183              		.loc 1 696 0 discriminator 3
+ 1184 01a5 428D3418 		leal	(%rax,%r11), %esi
+ 1185              	.LVL165:
+ 698:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* At this point cur contains the 7/16 error value to be propagated
+ 1186              		.loc 1 698 0 discriminator 3
+ 1187 01a9 01C8     		addl	%ecx, %eax
+ 1188              	.LVL166:
+ 664:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* cur holds the error propagated from the previous pixel on the
+ 1189              		.loc 1 664 0 discriminator 3
+ 1190 01ab 4183EA01 		subl	$1, %r10d
+ 1191              	.LVL167:
+ 697:fltk-1.3.4-1/jpeg/jquant1.c **** 	cur += delta;		/* form error * 7 */
+ 1192              		.loc 1 697 0 discriminator 3
+ 1193 01af 4189D3   		movl	%edx, %r11d
+ 664:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* cur holds the error propagated from the previous pixel on the
+ 1194              		.loc 1 664 0 discriminator 3
+ 1195 01b2 75AC     		jne	.L90
+ 1196 01b4 480FAF5C 		imulq	56(%rsp), %rbx
+ 1196      2438
+ 1197 01ba 48015C24 		addq	%rbx, 16(%rsp)
+ 1197      10
+ 1198              	.LVL168:
+ 1199              	.L89:
+ 711:fltk-1.3.4-1/jpeg/jquant1.c ****     }
+ 1200              		.loc 1 711 0 discriminator 2
+ 1201 01bf 488B4424 		movq	16(%rsp), %rax
+ 1201      10
+ 1202 01c4 48834424 		addq	$1, 8(%rsp)
+ 1202      0801
+ 1203              	.LVL169:
+ 1204 01ca 668930   		movw	%si, (%rax)
+ 1205 01cd 488B4424 		movq	8(%rsp), %rax
+ 1205      08
+ 641:fltk-1.3.4-1/jpeg/jquant1.c ****       input_ptr = input_buf[row] + ci;
+ 1206              		.loc 1 641 0 discriminator 2
+ 1207 01d2 39442424 		cmpl	%eax, 36(%rsp)
+ 1208 01d6 0F8FECFE 		jg	.L94
+ 1208      FFFF
+ 1209              	.LVL170:
+ 1210              	.L92:
+ 713:fltk-1.3.4-1/jpeg/jquant1.c ****   }
+ 1211              		.loc 1 713 0
+ 1212 01dc 488B7C24 		movq	24(%rsp), %rdi
+ 1212      18
+ 1213 01e1 31C0     		xorl	%eax, %eax
+ 1214 01e3 8B8F9000 		movl	144(%rdi), %ecx
+ 1214      0000
+ 1215 01e9 85C9     		testl	%ecx, %ecx
+ 1216 01eb 0F94C0   		sete	%al
+ 1217 01ee 48834424 		addq	$8, 40(%rsp)
+ 1217      2808
+ 1218 01f4 48834424 		addq	$8, 48(%rsp)
+ 1218      3008
+ 1219 01fa 89879000 		movl	%eax, 144(%rdi)
+ 1219      0000
+ 1220 0200 488B4424 		movq	40(%rsp), %rax
+ 1220      28
+ 637:fltk-1.3.4-1/jpeg/jquant1.c ****     /* Initialize output values to 0 so can process components separately */
+ 1221              		.loc 1 637 0
+ 1222 0205 483B4424 		cmpq	96(%rsp), %rax
+ 1222      60
+ 1223 020a 0F858CFE 		jne	.L85
+ 1223      FFFF
+ 1224              	.L82:
+ 715:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 1225              		.loc 1 715 0
+ 1226 0210 4883C478 		addq	$120, %rsp
+ 1227              		.cfi_remember_state
+ 1228              		.cfi_def_cfa_offset 56
+ 1229              	.LVL171:
+ 1230 0214 5B       		popq	%rbx
+ 1231              		.cfi_def_cfa_offset 48
+ 1232 0215 5D       		popq	%rbp
+ 1233              		.cfi_def_cfa_offset 40
+ 1234 0216 415C     		popq	%r12
+ 1235              		.cfi_def_cfa_offset 32
+ 1236 0218 415D     		popq	%r13
+ 1237              		.cfi_def_cfa_offset 24
+ 1238 021a 415E     		popq	%r14
+ 1239              		.cfi_def_cfa_offset 16
+ 1240 021c 415F     		popq	%r15
+ 1241              		.cfi_def_cfa_offset 8
+ 1242 021e C3       		ret
+ 1243              	.LVL172:
+ 1244 021f 90       		.p2align 4,,10
+ 1245              		.p2align 3
+ 1246              	.L87:
+ 1247              		.cfi_restore_state
+ 655:fltk-1.3.4-1/jpeg/jquant1.c ****       }
+ 1248              		.loc 1 655 0
+ 1249 0220 488B4424 		movq	24(%rsp), %rax
+ 1249      18
+ 1250 0225 488B5C24 		movq	8(%rsp), %rbx
+ 1250      08
+ 653:fltk-1.3.4-1/jpeg/jquant1.c **** 	dirnc = nc;
+ 1251              		.loc 1 653 0
+ 1252 022a BD010000 		movl	$1, %ebp
+ 1252      00
+ 655:fltk-1.3.4-1/jpeg/jquant1.c ****       }
+ 1253              		.loc 1 655 0
+ 1254 022f 4C636424 		movslq	36(%rsp), %r12
+ 1254      24
+ 1255 0234 488B44D8 		movq	112(%rax,%rbx,8), %rax
+ 1255      70
+ 1256 0239 48894424 		movq	%rax, 16(%rsp)
+ 1256      10
+ 1257              	.LVL173:
+ 1258 023e E9D5FEFF 		jmp	.L88
+ 1258      FF
+ 1259              	.LVL174:
+ 1260              	.L93:
+ 664:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* cur holds the error propagated from the previous pixel on the
+ 1261              		.loc 1 664 0
+ 1262 0243 31F6     		xorl	%esi, %esi
+ 1263 0245 E975FFFF 		jmp	.L89
+ 1263      FF
+ 1264              		.cfi_endproc
+ 1265              	.LFE72:
+ 1267              		.section	.text.unlikely.quantize_fs_dither
+ 1268              	.LCOLDE7:
+ 1269              		.section	.text.quantize_fs_dither
+ 1270              	.LHOTE7:
+ 1271              		.section	.text.unlikely.start_pass_1_quant,"ax",@progbits
+ 1272              	.LCOLDB8:
+ 1273              		.section	.text.start_pass_1_quant,"ax",@progbits
+ 1274              	.LHOTB8:
+ 1275              		.p2align 4,,15
+ 1277              	start_pass_1_quant:
+ 1278              	.LFB74:
+ 743:fltk-1.3.4-1/jpeg/jquant1.c ****   my_cquantize_ptr cquantize = (my_cquantize_ptr) cinfo->cquantize;
+ 1279              		.loc 1 743 0
+ 1280              		.cfi_startproc
+ 1281              	.LVL175:
+ 1282 0000 4157     		pushq	%r15
+ 1283              		.cfi_def_cfa_offset 16
+ 1284              		.cfi_offset 15, -16
+ 1285 0002 4156     		pushq	%r14
+ 1286              		.cfi_def_cfa_offset 24
+ 1287              		.cfi_offset 14, -24
+ 1288 0004 4155     		pushq	%r13
+ 1289              		.cfi_def_cfa_offset 32
+ 1290              		.cfi_offset 13, -32
+ 1291 0006 4154     		pushq	%r12
+ 1292              		.cfi_def_cfa_offset 40
+ 1293              		.cfi_offset 12, -40
+ 1294 0008 55       		pushq	%rbp
+ 1295              		.cfi_def_cfa_offset 48
+ 1296              		.cfi_offset 6, -48
+ 1297 0009 53       		pushq	%rbx
+ 1298              		.cfi_def_cfa_offset 56
+ 1299              		.cfi_offset 3, -56
+ 1300 000a 4889FB   		movq	%rdi, %rbx
+ 1301 000d 4883EC08 		subq	$8, %rsp
+ 1302              		.cfi_def_cfa_offset 64
+ 744:fltk-1.3.4-1/jpeg/jquant1.c ****   size_t arraysize;
+ 1303              		.loc 1 744 0
+ 1304 0011 488BAF90 		movq	656(%rdi), %rbp
+ 1304      020000
+ 1305              	.LVL176:
+ 749:fltk-1.3.4-1/jpeg/jquant1.c ****   cinfo->actual_number_of_colors = cquantize->sv_actual;
+ 1306              		.loc 1 749 0
+ 1307 0018 488B4520 		movq	32(%rbp), %rax
+ 1308 001c 488987A0 		movq	%rax, 160(%rdi)
+ 1308      000000
+ 750:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 1309              		.loc 1 750 0
+ 1310 0023 8B4528   		movl	40(%rbp), %eax
+ 1311 0026 89879C00 		movl	%eax, 156(%rdi)
+ 1311      0000
+ 753:fltk-1.3.4-1/jpeg/jquant1.c ****   case JDITHER_NONE:
+ 1312              		.loc 1 753 0
+ 1313 002c 8B4770   		movl	112(%rdi), %eax
+ 1314 002f 83F801   		cmpl	$1, %eax
+ 1315 0032 0F84C800 		je	.L101
+ 1315      0000
+ 1316 0038 0F829200 		jb	.L102
+ 1316      0000
+ 1317 003e 83F802   		cmpl	$2, %eax
+ 1318 0041 756D     		jne	.L143
+ 780:fltk-1.3.4-1/jpeg/jquant1.c ****       alloc_fs_workspace(cinfo);
+ 1319              		.loc 1 780 0
+ 1320 0043 48837D70 		cmpq	$0, 112(%rbp)
+ 1320      00
+ 777:fltk-1.3.4-1/jpeg/jquant1.c ****     cquantize->on_odd_row = FALSE; /* initialize state for F-S dither */
+ 1321              		.loc 1 777 0
+ 1322 0048 48C74508 		movq	$quantize_fs_dither, 8(%rbp)
+ 1322      00000000 
+ 778:fltk-1.3.4-1/jpeg/jquant1.c ****     /* Allocate Floyd-Steinberg workspace if didn't already. */
+ 1323              		.loc 1 778 0
+ 1324 0050 C7859000 		movl	$0, 144(%rbp)
+ 1324      00000000 
+ 1324      0000
+ 780:fltk-1.3.4-1/jpeg/jquant1.c ****       alloc_fs_workspace(cinfo);
+ 1325              		.loc 1 780 0
+ 1326 005a 0F841002 		je	.L123
+ 1326      0000
+ 1327 0060 8B879000 		movl	144(%rdi), %eax
+ 1327      0000
+ 1328              	.LVL177:
+ 1329              	.L124:
+ 783:fltk-1.3.4-1/jpeg/jquant1.c ****     for (i = 0; i < cinfo->out_color_components; i++)
+ 1330              		.loc 1 783 0
+ 1331 0066 8B938800 		movl	136(%rbx), %edx
+ 1331      0000
+ 1332 006c 448D6A02 		leal	2(%rdx), %r13d
+ 1333 0070 4D01ED   		addq	%r13, %r13
+ 1334              	.LVL178:
+ 784:fltk-1.3.4-1/jpeg/jquant1.c ****       FMEMZERO((void FAR *) cquantize->fserrors[i], arraysize);
+ 1335              		.loc 1 784 0
+ 1336 0073 85C0     		testl	%eax, %eax
+ 1337 0075 7E26     		jle	.L99
+ 1338 0077 4883C570 		addq	$112, %rbp
+ 1339              	.LVL179:
+ 784:fltk-1.3.4-1/jpeg/jquant1.c ****       FMEMZERO((void FAR *) cquantize->fserrors[i], arraysize);
+ 1340              		.loc 1 784 0 is_stmt 0 discriminator 3
+ 1341 007b 4531E4   		xorl	%r12d, %r12d
+ 1342              	.LVL180:
+ 1343              	.L126:
+ 1344              	.LBB43:
+ 1345              	.LBB44:
+ 1346              		.loc 2 90 0 is_stmt 1 discriminator 3
+ 1347 007e 488B7D00 		movq	0(%rbp), %rdi
+ 1348 0082 31F6     		xorl	%esi, %esi
+ 1349 0084 4C89EA   		movq	%r13, %rdx
+ 1350              	.LBE44:
+ 1351              	.LBE43:
+ 784:fltk-1.3.4-1/jpeg/jquant1.c ****       FMEMZERO((void FAR *) cquantize->fserrors[i], arraysize);
+ 1352              		.loc 1 784 0 discriminator 3
+ 1353 0087 4183C401 		addl	$1, %r12d
+ 1354              	.LVL181:
+ 1355 008b 4883C508 		addq	$8, %rbp
+ 1356              	.LVL182:
+ 1357              	.LBB46:
+ 1358              	.LBB45:
+ 1359              		.loc 2 90 0 discriminator 3
+ 1360 008f E8000000 		call	memset
+ 1360      00
+ 1361              	.LVL183:
+ 1362              	.LBE45:
+ 1363              	.LBE46:
+ 784:fltk-1.3.4-1/jpeg/jquant1.c ****       FMEMZERO((void FAR *) cquantize->fserrors[i], arraysize);
+ 1364              		.loc 1 784 0 discriminator 3
+ 1365 0094 4439A390 		cmpl	%r12d, 144(%rbx)
+ 1365      000000
+ 1366 009b 7FE1     		jg	.L126
+ 1367              	.LVL184:
+ 1368              	.L99:
+ 791:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 1369              		.loc 1 791 0
+ 1370 009d 4883C408 		addq	$8, %rsp
+ 1371              		.cfi_remember_state
+ 1372              		.cfi_def_cfa_offset 56
+ 1373 00a1 5B       		popq	%rbx
+ 1374              		.cfi_def_cfa_offset 48
+ 1375              	.LVL185:
+ 1376 00a2 5D       		popq	%rbp
+ 1377              		.cfi_def_cfa_offset 40
+ 1378 00a3 415C     		popq	%r12
+ 1379              		.cfi_def_cfa_offset 32
+ 1380 00a5 415D     		popq	%r13
+ 1381              		.cfi_def_cfa_offset 24
+ 1382 00a7 415E     		popq	%r14
+ 1383              		.cfi_def_cfa_offset 16
+ 1384 00a9 415F     		popq	%r15
+ 1385              		.cfi_def_cfa_offset 8
+ 1386 00ab C3       		ret
+ 1387              	.LVL186:
+ 1388 00ac 0F1F4000 		.p2align 4,,10
+ 1389              		.p2align 3
+ 1390              	.L143:
+ 1391              		.cfi_restore_state
+ 788:fltk-1.3.4-1/jpeg/jquant1.c ****     break;
+ 1392              		.loc 1 788 0
+ 1393 00b0 488B07   		movq	(%rdi), %rax
+ 1394 00b3 C7402831 		movl	$49, 40(%rax)
+ 1394      000000
+ 1395 00ba 488B07   		movq	(%rdi), %rax
+ 1396 00bd 488B00   		movq	(%rax), %rax
+ 791:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 1397              		.loc 1 791 0
+ 1398 00c0 4883C408 		addq	$8, %rsp
+ 1399              		.cfi_remember_state
+ 1400              		.cfi_def_cfa_offset 56
+ 1401 00c4 5B       		popq	%rbx
+ 1402              		.cfi_def_cfa_offset 48
+ 1403              	.LVL187:
+ 1404 00c5 5D       		popq	%rbp
+ 1405              		.cfi_def_cfa_offset 40
+ 1406              	.LVL188:
+ 1407 00c6 415C     		popq	%r12
+ 1408              		.cfi_def_cfa_offset 32
+ 1409 00c8 415D     		popq	%r13
+ 1410              		.cfi_def_cfa_offset 24
+ 1411 00ca 415E     		popq	%r14
+ 1412              		.cfi_def_cfa_offset 16
+ 1413 00cc 415F     		popq	%r15
+ 1414              		.cfi_def_cfa_offset 8
+ 788:fltk-1.3.4-1/jpeg/jquant1.c ****     break;
+ 1415              		.loc 1 788 0
+ 1416 00ce FFE0     		jmp	*%rax
+ 1417              	.LVL189:
+ 1418              		.p2align 4,,10
+ 1419              		.p2align 3
+ 1420              	.L102:
+ 1421              		.cfi_restore_state
+ 756:fltk-1.3.4-1/jpeg/jquant1.c ****     else
+ 1422              		.loc 1 756 0
+ 1423 00d0 83BF9000 		cmpl	$3, 144(%rdi)
+ 1423      000003
+ 1424 00d7 BA000000 		movl	$color_quantize3, %edx
+ 1424      00
+ 1425 00dc B8000000 		movl	$color_quantize, %eax
+ 1425      00
+ 1426 00e1 480F44C2 		cmove	%rdx, %rax
+ 1427 00e5 48894508 		movq	%rax, 8(%rbp)
+ 791:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 1428              		.loc 1 791 0
+ 1429 00e9 4883C408 		addq	$8, %rsp
+ 1430              		.cfi_remember_state
+ 1431              		.cfi_def_cfa_offset 56
+ 1432 00ed 5B       		popq	%rbx
+ 1433              		.cfi_def_cfa_offset 48
+ 1434              	.LVL190:
+ 1435 00ee 5D       		popq	%rbp
+ 1436              		.cfi_def_cfa_offset 40
+ 1437              	.LVL191:
+ 1438 00ef 415C     		popq	%r12
+ 1439              		.cfi_def_cfa_offset 32
+ 1440 00f1 415D     		popq	%r13
+ 1441              		.cfi_def_cfa_offset 24
+ 1442 00f3 415E     		popq	%r14
+ 1443              		.cfi_def_cfa_offset 16
+ 1444 00f5 415F     		popq	%r15
+ 1445              		.cfi_def_cfa_offset 8
+ 1446 00f7 C3       		ret
+ 1447              	.LVL192:
+ 1448 00f8 0F1F8400 		.p2align 4,,10
+ 1448      00000000 
+ 1449              		.p2align 3
+ 1450              	.L101:
+ 1451              		.cfi_restore_state
+ 762:fltk-1.3.4-1/jpeg/jquant1.c ****     else
+ 1452              		.loc 1 762 0
+ 1453 0100 83BF9000 		cmpl	$3, 144(%rdi)
+ 1453      000003
+ 770:fltk-1.3.4-1/jpeg/jquant1.c ****       create_colorindex(cinfo);
+ 1454              		.loc 1 770 0
+ 1455 0107 8B4D38   		movl	56(%rbp), %ecx
+ 762:fltk-1.3.4-1/jpeg/jquant1.c ****     else
+ 1456              		.loc 1 762 0
+ 1457 010a BA000000 		movl	$quantize3_ord_dither, %edx
+ 1457      00
+ 1458 010f B8000000 		movl	$quantize_ord_dither, %eax
+ 1458      00
+ 765:fltk-1.3.4-1/jpeg/jquant1.c ****     /* If user changed to ordered dither from another mode,
+ 1459              		.loc 1 765 0
+ 1460 0114 C7454C00 		movl	$0, 76(%rbp)
+ 1460      000000
+ 762:fltk-1.3.4-1/jpeg/jquant1.c ****     else
+ 1461              		.loc 1 762 0
+ 1462 011b 480F44C2 		cmove	%rdx, %rax
+ 770:fltk-1.3.4-1/jpeg/jquant1.c ****       create_colorindex(cinfo);
+ 1463              		.loc 1 770 0
+ 1464 011f 85C9     		testl	%ecx, %ecx
+ 762:fltk-1.3.4-1/jpeg/jquant1.c ****     else
+ 1465              		.loc 1 762 0
+ 1466 0121 48894508 		movq	%rax, 8(%rbp)
+ 770:fltk-1.3.4-1/jpeg/jquant1.c ****       create_colorindex(cinfo);
+ 1467              		.loc 1 770 0
+ 1468 0125 0F84E500 		je	.L144
+ 1468      0000
+ 1469              	.LVL193:
+ 1470              	.L108:
+ 773:fltk-1.3.4-1/jpeg/jquant1.c ****       create_odither_tables(cinfo);
+ 1471              		.loc 1 773 0
+ 1472 012b 48837D50 		cmpq	$0, 80(%rbp)
+ 1472      00
+ 1473 0130 0F8567FF 		jne	.L99
+ 1473      FFFF
+ 1474              	.LVL194:
+ 1475              	.LBB47:
+ 1476              	.LBB48:
+ 439:fltk-1.3.4-1/jpeg/jquant1.c ****     nci = cquantize->Ncolors[i]; /* # of distinct values for this color */
+ 1477              		.loc 1 439 0
+ 1478 0136 8B939000 		movl	144(%rbx), %edx
+ 1478      0000
+ 1479 013c 85D2     		testl	%edx, %edx
+ 1480 013e 0F8E59FF 		jle	.L99
+ 1480      FFFF
+ 435:fltk-1.3.4-1/jpeg/jquant1.c ****   ODITHER_MATRIX_PTR odither;
+ 1481              		.loc 1 435 0
+ 1482 0144 4C8BAB90 		movq	656(%rbx), %r13
+ 1482      020000
+ 1483 014b 31ED     		xorl	%ebp, %ebp
+ 1484              	.LVL195:
+ 450:fltk-1.3.4-1/jpeg/jquant1.c ****   }
+ 1485              		.loc 1 450 0
+ 1486 014d 4D89EE   		movq	%r13, %r14
+ 435:fltk-1.3.4-1/jpeg/jquant1.c ****   ODITHER_MATRIX_PTR odither;
+ 1487              		.loc 1 435 0
+ 1488 0150 4D89EC   		movq	%r13, %r12
+ 450:fltk-1.3.4-1/jpeg/jquant1.c ****   }
+ 1489              		.loc 1 450 0
+ 1490 0153 49F7DE   		negq	%r14
+ 1491              	.LVL196:
+ 1492 0156 662E0F1F 		.p2align 4,,10
+ 1492      84000000 
+ 1492      0000
+ 1493              		.p2align 3
+ 1494              	.L122:
+ 442:fltk-1.3.4-1/jpeg/jquant1.c ****       if (nci == cquantize->Ncolors[j]) {
+ 1495              		.loc 1 442 0
+ 1496 0160 85ED     		testl	%ebp, %ebp
+ 440:fltk-1.3.4-1/jpeg/jquant1.c ****     odither = NULL;		/* search for matching prior component */
+ 1497              		.loc 1 440 0
+ 1498 0162 458B7C24 		movl	60(%r12), %r15d
+ 1498      3C
+ 1499              	.LVL197:
+ 442:fltk-1.3.4-1/jpeg/jquant1.c ****       if (nci == cquantize->Ncolors[j]) {
+ 1500              		.loc 1 442 0
+ 1501 0167 7E2C     		jle	.L111
+ 443:fltk-1.3.4-1/jpeg/jquant1.c **** 	odither = cquantize->odither[j];
+ 1502              		.loc 1 443 0
+ 1503 0169 31C0     		xorl	%eax, %eax
+ 1504 016b 453B7D3C 		cmpl	60(%r13), %r15d
+ 1505 016f 498D5540 		leaq	64(%r13), %rdx
+ 1506 0173 7519     		jne	.L114
+ 1507 0175 E9C00000 		jmp	.L145
+ 1507      00
+ 1508              	.LVL198:
+ 1509 017a 660F1F44 		.p2align 4,,10
+ 1509      0000
+ 1510              		.p2align 3
+ 1511              	.L116:
+ 1512 0180 4883C204 		addq	$4, %rdx
+ 1513 0184 443B7AFC 		cmpl	-4(%rdx), %r15d
+ 1514 0188 0F84B200 		je	.L112
+ 1514      0000
+ 1515              	.LVL199:
+ 1516              	.L114:
+ 442:fltk-1.3.4-1/jpeg/jquant1.c ****       if (nci == cquantize->Ncolors[j]) {
+ 1517              		.loc 1 442 0
+ 1518 018e 83C001   		addl	$1, %eax
+ 1519              	.LVL200:
+ 1520 0191 39E8     		cmpl	%ebp, %eax
+ 1521 0193 75EB     		jne	.L116
+ 1522              	.LVL201:
+ 1523              	.L111:
+ 1524              	.LBB49:
+ 1525              	.LBB50:
+ 404:fltk-1.3.4-1/jpeg/jquant1.c **** 				SIZEOF(ODITHER_MATRIX));
+ 1526              		.loc 1 404 0
+ 1527 0195 488B4308 		movq	8(%rbx), %rax
+ 403:fltk-1.3.4-1/jpeg/jquant1.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 1528              		.loc 1 403 0
+ 1529 0199 BE010000 		movl	$1, %esi
+ 1529      00
+ 1530 019e 4889DF   		movq	%rbx, %rdi
+ 1531 01a1 BA000400 		movl	$1024, %edx
+ 1531      00
+ 1532 01a6 FF10     		call	*(%rax)
+ 1533              	.LVL202:
+ 411:fltk-1.3.4-1/jpeg/jquant1.c ****   for (j = 0; j < ODITHER_SIZE; j++) {
+ 1534              		.loc 1 411 0
+ 1535 01a8 418D77FF 		leal	-1(%r15), %esi
+ 403:fltk-1.3.4-1/jpeg/jquant1.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 1536              		.loc 1 403 0
+ 1537 01ac 4989C1   		movq	%rax, %r9
+ 1538              	.LVL203:
+ 1539 01af 4989C0   		movq	%rax, %r8
+ 411:fltk-1.3.4-1/jpeg/jquant1.c ****   for (j = 0; j < ODITHER_SIZE; j++) {
+ 1540              		.loc 1 411 0
+ 1541 01b2 31FF     		xorl	%edi, %edi
+ 1542 01b4 31C0     		xorl	%eax, %eax
+ 1543              	.LVL204:
+ 1544 01b6 4863F6   		movslq	%esi, %rsi
+ 1545 01b9 48C1E609 		salq	$9, %rsi
+ 1546              	.LVL205:
+ 1547 01bd 0F1F00   		.p2align 4,,10
+ 1548              		.p2align 3
+ 1549              	.L117:
+ 1550              	.LBE50:
+ 1551              	.LBE49:
+ 443:fltk-1.3.4-1/jpeg/jquant1.c **** 	odither = cquantize->odither[j];
+ 1552              		.loc 1 443 0
+ 1553 01c0 31C9     		xorl	%ecx, %ecx
+ 1554 01c2 EB1F     		jmp	.L121
+ 1555              	.LVL206:
+ 1556              		.p2align 4,,10
+ 1557 01c4 0F1F4000 		.p2align 3
+ 1558              	.L118:
+ 1559              	.LBB53:
+ 1560              	.LBB51:
+ 419:fltk-1.3.4-1/jpeg/jquant1.c ****     }
+ 1561              		.loc 1 419 0
+ 1562 01c8 4899     		cqto
+ 1563 01ca 48F7FE   		idivq	%rsi
+ 1564              	.LVL207:
+ 1565              	.L119:
+ 1566 01cd 41890488 		movl	%eax, (%r8,%rcx,4)
+ 1567              	.LVL208:
+ 1568 01d1 4883C101 		addq	$1, %rcx
+ 1569              	.LVL209:
+ 413:fltk-1.3.4-1/jpeg/jquant1.c ****       num = ((INT32) (ODITHER_CELLS-1 - 2*((int)base_dither_matrix[j][k])))
+ 1570              		.loc 1 413 0
+ 1571 01d5 4883F910 		cmpq	$16, %rcx
+ 1572 01d9 7445     		je	.L146
+ 1573 01db 0FB6840F 		movzbl	base_dither_matrix(%rdi,%rcx), %eax
+ 1573      00000000 
+ 1574              	.L121:
+ 1575              	.LVL210:
+ 414:fltk-1.3.4-1/jpeg/jquant1.c **** 	    * MAXJSAMPLE;
+ 1576              		.loc 1 414 0
+ 1577 01e3 4889C2   		movq	%rax, %rdx
+ 1578 01e6 48F7DA   		negq	%rdx
+ 1579 01e9 48C1E208 		salq	$8, %rdx
+ 1580 01ed 4801D0   		addq	%rdx, %rax
+ 1581 01f0 488D8400 		leaq	65025(%rax,%rax), %rax
+ 1581      01FE0000 
+ 1582              	.LVL211:
+ 419:fltk-1.3.4-1/jpeg/jquant1.c ****     }
+ 1583              		.loc 1 419 0
+ 1584 01f8 4885C0   		testq	%rax, %rax
+ 1585 01fb 79CB     		jns	.L118
+ 1586 01fd 48F7D8   		negq	%rax
+ 1587              	.LVL212:
+ 1588 0200 4899     		cqto
+ 1589 0202 48F7FE   		idivq	%rsi
+ 1590              	.LVL213:
+ 1591 0205 F7D8     		negl	%eax
+ 1592 0207 EBC4     		jmp	.L119
+ 1593              	.LVL214:
+ 1594 0209 0F1F8000 		.p2align 4,,10
+ 1594      000000
+ 1595              		.p2align 3
+ 1596              	.L144:
+ 1597              	.LBE51:
+ 1598              	.LBE53:
+ 1599              	.LBE48:
+ 1600              	.LBE47:
+ 771:fltk-1.3.4-1/jpeg/jquant1.c ****     /* Create ordered-dither tables if we didn't already. */
+ 1601              		.loc 1 771 0
+ 1602 0210 E8000000 		call	create_colorindex
+ 1602      00
+ 1603              	.LVL215:
+ 1604 0215 E911FFFF 		jmp	.L108
+ 1604      FF
+ 1605              	.LVL216:
+ 1606 021a 660F1F44 		.p2align 4,,10
+ 1606      0000
+ 1607              		.p2align 3
+ 1608              	.L146:
+ 1609 0220 4883C710 		addq	$16, %rdi
+ 1610 0224 4983C040 		addq	$64, %r8
+ 1611              	.LBB56:
+ 1612              	.LBB55:
+ 1613              	.LBB54:
+ 1614              	.LBB52:
+ 412:fltk-1.3.4-1/jpeg/jquant1.c ****     for (k = 0; k < ODITHER_SIZE; k++) {
+ 1615              		.loc 1 412 0
+ 1616 0228 4881FF00 		cmpq	$256, %rdi
+ 1616      010000
+ 1617 022f 741F     		je	.L115
+ 1618 0231 0FB68700 		movzbl	base_dither_matrix(%rdi), %eax
+ 1618      000000
+ 1619 0238 EB86     		jmp	.L117
+ 1620              	.LVL217:
+ 1621              	.L145:
+ 1622              	.LBE52:
+ 1623              	.LBE54:
+ 442:fltk-1.3.4-1/jpeg/jquant1.c ****       if (nci == cquantize->Ncolors[j]) {
+ 1624              		.loc 1 442 0
+ 1625 023a 31C0     		xorl	%eax, %eax
+ 1626              	.LVL218:
+ 1627 023c 0F1F4000 		.p2align 4,,10
+ 1628              		.p2align 3
+ 1629              	.L112:
+ 444:fltk-1.3.4-1/jpeg/jquant1.c **** 	break;
+ 1630              		.loc 1 444 0
+ 1631 0240 4898     		cltq
+ 1632 0242 4D8B4CC5 		movq	80(%r13,%rax,8), %r9
+ 1632      50
+ 1633              	.LVL219:
+ 448:fltk-1.3.4-1/jpeg/jquant1.c ****       odither = make_odither_array(cinfo, nci);
+ 1634              		.loc 1 448 0
+ 1635 0247 4D85C9   		testq	%r9, %r9
+ 1636 024a 0F8445FF 		je	.L111
+ 1636      FFFF
+ 1637              	.LVL220:
+ 1638              	.L115:
+ 450:fltk-1.3.4-1/jpeg/jquant1.c ****   }
+ 1639              		.loc 1 450 0
+ 1640 0250 4F894C66 		movq	%r9, 80(%r14,%r12,2)
+ 1640      50
+ 439:fltk-1.3.4-1/jpeg/jquant1.c ****     nci = cquantize->Ncolors[i]; /* # of distinct values for this color */
+ 1641              		.loc 1 439 0
+ 1642 0255 83C501   		addl	$1, %ebp
+ 1643              	.LVL221:
+ 1644 0258 4983C404 		addq	$4, %r12
+ 1645 025c 3BAB9000 		cmpl	144(%rbx), %ebp
+ 1645      0000
+ 1646 0262 0F8CF8FE 		jl	.L122
+ 1646      FFFF
+ 1647 0268 E930FEFF 		jmp	.L99
+ 1647      FF
+ 1648              	.LVL222:
+ 1649 026d 0F1F00   		.p2align 4,,10
+ 1650              		.p2align 3
+ 1651              	.L123:
+ 1652              	.LBE55:
+ 1653              	.LBE56:
+ 1654              	.LBB57:
+ 1655              	.LBB58:
+ 729:fltk-1.3.4-1/jpeg/jquant1.c ****   for (i = 0; i < cinfo->out_color_components; i++) {
+ 1656              		.loc 1 729 0
+ 1657 0270 8B878800 		movl	136(%rdi), %eax
+ 1657      0000
+ 1658 0276 448D7002 		leal	2(%rax), %r14d
+ 730:fltk-1.3.4-1/jpeg/jquant1.c ****     cquantize->fserrors[i] = (FSERRPTR)
+ 1659              		.loc 1 730 0
+ 1660 027a 8B879000 		movl	144(%rdi), %eax
+ 1660      0000
+ 729:fltk-1.3.4-1/jpeg/jquant1.c ****   for (i = 0; i < cinfo->out_color_components; i++) {
+ 1661              		.loc 1 729 0
+ 1662 0280 4D01F6   		addq	%r14, %r14
+ 1663              	.LVL223:
+ 730:fltk-1.3.4-1/jpeg/jquant1.c ****     cquantize->fserrors[i] = (FSERRPTR)
+ 1664              		.loc 1 730 0
+ 1665 0283 85C0     		testl	%eax, %eax
+ 1666 0285 0F8E12FE 		jle	.L99
+ 1666      FFFF
+ 1667 028b 488B8790 		movq	656(%rdi), %rax
+ 1667      020000
+ 725:fltk-1.3.4-1/jpeg/jquant1.c ****   size_t arraysize;
+ 1668              		.loc 1 725 0
+ 1669 0292 4531ED   		xorl	%r13d, %r13d
+ 1670 0295 4C8D6070 		leaq	112(%rax), %r12
+ 1671              	.LVL224:
+ 1672              	.L125:
+ 732:fltk-1.3.4-1/jpeg/jquant1.c ****   }
+ 1673              		.loc 1 732 0
+ 1674 0299 488B4308 		movq	8(%rbx), %rax
+ 1675 029d 4C89F2   		movq	%r14, %rdx
+ 1676 02a0 BE010000 		movl	$1, %esi
+ 1676      00
+ 1677 02a5 4889DF   		movq	%rbx, %rdi
+ 730:fltk-1.3.4-1/jpeg/jquant1.c ****     cquantize->fserrors[i] = (FSERRPTR)
+ 1678              		.loc 1 730 0
+ 1679 02a8 4183C501 		addl	$1, %r13d
+ 1680              	.LVL225:
+ 1681 02ac 4983C408 		addq	$8, %r12
+ 732:fltk-1.3.4-1/jpeg/jquant1.c ****   }
+ 1682              		.loc 1 732 0
+ 1683 02b0 FF5008   		call	*8(%rax)
+ 1684              	.LVL226:
+ 731:fltk-1.3.4-1/jpeg/jquant1.c ****       (*cinfo->mem->alloc_large)((j_common_ptr) cinfo, JPOOL_IMAGE, arraysize);
+ 1685              		.loc 1 731 0
+ 1686 02b3 49894424 		movq	%rax, -8(%r12)
+ 1686      F8
+ 730:fltk-1.3.4-1/jpeg/jquant1.c ****     cquantize->fserrors[i] = (FSERRPTR)
+ 1687              		.loc 1 730 0
+ 1688 02b8 8B839000 		movl	144(%rbx), %eax
+ 1688      0000
+ 1689 02be 4139C5   		cmpl	%eax, %r13d
+ 1690 02c1 7CD6     		jl	.L125
+ 1691 02c3 E99EFDFF 		jmp	.L124
+ 1691      FF
+ 1692              	.LBE58:
+ 1693              	.LBE57:
+ 1694              		.cfi_endproc
+ 1695              	.LFE74:
+ 1697              		.section	.text.unlikely.start_pass_1_quant
+ 1698              	.LCOLDE8:
+ 1699              		.section	.text.start_pass_1_quant
+ 1700              	.LHOTE8:
+ 1701              		.section	.text.unlikely.jinit_1pass_quantizer,"ax",@progbits
+ 1702              	.LCOLDB9:
+ 1703              		.section	.text.jinit_1pass_quantizer,"ax",@progbits
+ 1704              	.LHOTB9:
+ 1705              		.p2align 4,,15
+ 1706              		.globl	jinit_1pass_quantizer
+ 1708              	jinit_1pass_quantizer:
+ 1709              	.LFB77:
+ 814:fltk-1.3.4-1/jpeg/jquant1.c **** }
+ 815:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 816:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 817:fltk-1.3.4-1/jpeg/jquant1.c **** /*
+ 818:fltk-1.3.4-1/jpeg/jquant1.c ****  * Module initialization routine for 1-pass color quantization.
+ 819:fltk-1.3.4-1/jpeg/jquant1.c ****  */
+ 820:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 821:fltk-1.3.4-1/jpeg/jquant1.c **** GLOBAL(void)
+ 822:fltk-1.3.4-1/jpeg/jquant1.c **** jinit_1pass_quantizer (j_decompress_ptr cinfo)
+ 823:fltk-1.3.4-1/jpeg/jquant1.c **** {
+ 1710              		.loc 1 823 0
+ 1711              		.cfi_startproc
+ 1712              	.LVL227:
+ 1713 0000 4157     		pushq	%r15
+ 1714              		.cfi_def_cfa_offset 16
+ 1715              		.cfi_offset 15, -16
+ 1716 0002 4156     		pushq	%r14
+ 1717              		.cfi_def_cfa_offset 24
+ 1718              		.cfi_offset 14, -24
+ 824:fltk-1.3.4-1/jpeg/jquant1.c ****   my_cquantize_ptr cquantize;
+ 825:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 826:fltk-1.3.4-1/jpeg/jquant1.c ****   cquantize = (my_cquantize_ptr)
+ 1719              		.loc 1 826 0
+ 1720 0004 BA980000 		movl	$152, %edx
+ 1720      00
+ 823:fltk-1.3.4-1/jpeg/jquant1.c ****   my_cquantize_ptr cquantize;
+ 1721              		.loc 1 823 0
+ 1722 0009 4155     		pushq	%r13
+ 1723              		.cfi_def_cfa_offset 32
+ 1724              		.cfi_offset 13, -32
+ 1725 000b 4154     		pushq	%r12
+ 1726              		.cfi_def_cfa_offset 40
+ 1727              		.cfi_offset 12, -40
+ 1728 000d 4989FD   		movq	%rdi, %r13
+ 1729 0010 55       		pushq	%rbp
+ 1730              		.cfi_def_cfa_offset 48
+ 1731              		.cfi_offset 6, -48
+ 1732 0011 53       		pushq	%rbx
+ 1733              		.cfi_def_cfa_offset 56
+ 1734              		.cfi_offset 3, -56
+ 1735              		.loc 1 826 0
+ 1736 0012 BE010000 		movl	$1, %esi
+ 1736      00
+ 823:fltk-1.3.4-1/jpeg/jquant1.c ****   my_cquantize_ptr cquantize;
+ 1737              		.loc 1 823 0
+ 1738 0017 4883EC48 		subq	$72, %rsp
+ 1739              		.cfi_def_cfa_offset 128
+ 827:fltk-1.3.4-1/jpeg/jquant1.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 1740              		.loc 1 827 0
+ 1741 001b 488B4708 		movq	8(%rdi), %rax
+ 826:fltk-1.3.4-1/jpeg/jquant1.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 1742              		.loc 1 826 0
+ 1743 001f FF10     		call	*(%rax)
+ 1744              	.LVL228:
+ 828:fltk-1.3.4-1/jpeg/jquant1.c **** 				SIZEOF(my_cquantizer));
+ 829:fltk-1.3.4-1/jpeg/jquant1.c ****   cinfo->cquantize = (struct jpeg_color_quantizer *) cquantize;
+ 1745              		.loc 1 829 0
+ 1746 0021 49898590 		movq	%rax, 656(%r13)
+ 1746      020000
+ 830:fltk-1.3.4-1/jpeg/jquant1.c ****   cquantize->pub.start_pass = start_pass_1_quant;
+ 1747              		.loc 1 830 0
+ 1748 0028 48C70000 		movq	$start_pass_1_quant, (%rax)
+ 1748      000000
+ 831:fltk-1.3.4-1/jpeg/jquant1.c ****   cquantize->pub.finish_pass = finish_pass_1_quant;
+ 1749              		.loc 1 831 0
+ 1750 002f 48C74010 		movq	$finish_pass_1_quant, 16(%rax)
+ 1750      00000000 
+ 832:fltk-1.3.4-1/jpeg/jquant1.c ****   cquantize->pub.new_color_map = new_color_map_1_quant;
+ 1751              		.loc 1 832 0
+ 1752 0037 48C74018 		movq	$new_color_map_1_quant, 24(%rax)
+ 1752      00000000 
+ 833:fltk-1.3.4-1/jpeg/jquant1.c ****   cquantize->fserrors[0] = NULL; /* Flag FS workspace not allocated */
+ 1753              		.loc 1 833 0
+ 1754 003f 48C74070 		movq	$0, 112(%rax)
+ 1754      00000000 
+ 834:fltk-1.3.4-1/jpeg/jquant1.c ****   cquantize->odither[0] = NULL;	/* Also flag odither arrays not allocated */
+ 1755              		.loc 1 834 0
+ 1756 0047 48C74050 		movq	$0, 80(%rax)
+ 1756      00000000 
+ 835:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 836:fltk-1.3.4-1/jpeg/jquant1.c ****   /* Make sure my internal arrays won't overflow */
+ 837:fltk-1.3.4-1/jpeg/jquant1.c ****   if (cinfo->out_color_components > MAX_Q_COMPS)
+ 1757              		.loc 1 837 0
+ 1758 004f 4183BD90 		cmpl	$4, 144(%r13)
+ 1758      00000004 
+ 1759 0057 7E1F     		jle	.L148
+ 838:fltk-1.3.4-1/jpeg/jquant1.c ****     ERREXIT1(cinfo, JERR_QUANT_COMPONENTS, MAX_Q_COMPS);
+ 1760              		.loc 1 838 0
+ 1761 0059 498B4500 		movq	0(%r13), %rax
+ 1762              	.LVL229:
+ 1763 005d 4C89EF   		movq	%r13, %rdi
+ 1764 0060 C7402839 		movl	$57, 40(%rax)
+ 1764      000000
+ 1765 0067 498B4500 		movq	0(%r13), %rax
+ 1766 006b C7402C04 		movl	$4, 44(%rax)
+ 1766      000000
+ 1767 0072 498B4500 		movq	0(%r13), %rax
+ 1768 0076 FF10     		call	*(%rax)
+ 1769              	.LVL230:
+ 1770              	.L148:
+ 839:fltk-1.3.4-1/jpeg/jquant1.c ****   /* Make sure colormap indexes can be represented by JSAMPLEs */
+ 840:fltk-1.3.4-1/jpeg/jquant1.c ****   if (cinfo->desired_number_of_colors > (MAXJSAMPLE+1))
+ 1771              		.loc 1 840 0
+ 1772 0078 49636D78 		movslq	120(%r13), %rbp
+ 1773 007c 81FD0001 		cmpl	$256, %ebp
+ 1773      0000
+ 1774 0082 7E23     		jle	.L149
+ 841:fltk-1.3.4-1/jpeg/jquant1.c ****     ERREXIT1(cinfo, JERR_QUANT_MANY_COLORS, MAXJSAMPLE+1);
+ 1775              		.loc 1 841 0
+ 1776 0084 498B4500 		movq	0(%r13), %rax
+ 1777 0088 4C89EF   		movq	%r13, %rdi
+ 1778 008b C740283B 		movl	$59, 40(%rax)
+ 1778      000000
+ 1779 0092 498B4500 		movq	0(%r13), %rax
+ 1780 0096 C7402C00 		movl	$256, 44(%rax)
+ 1780      010000
+ 1781 009d 498B4500 		movq	0(%r13), %rax
+ 1782 00a1 FF10     		call	*(%rax)
+ 1783              	.LVL231:
+ 1784 00a3 49636D78 		movslq	120(%r13), %rbp
+ 1785              	.L149:
+ 1786              	.LVL232:
+ 1787              	.LBB68:
+ 1788              	.LBB69:
+ 276:fltk-1.3.4-1/jpeg/jquant1.c ****   JSAMPARRAY colormap;		/* Created colormap */
+ 1789              		.loc 1 276 0
+ 1790 00a7 498B8590 		movq	656(%r13), %rax
+ 1790      020000
+ 1791              	.LBB70:
+ 1792              	.LBB71:
+ 192:fltk-1.3.4-1/jpeg/jquant1.c ****   int max_colors = cinfo->desired_number_of_colors;
+ 1793              		.loc 1 192 0
+ 1794 00ae 418B9D90 		movl	144(%r13), %ebx
+ 1794      000000
+ 1795 00b5 B9020000 		movl	$2, %ecx
+ 1795      00
+ 201:fltk-1.3.4-1/jpeg/jquant1.c ****   do {
+ 1796              		.loc 1 201 0
+ 1797 00ba 41BF0100 		movl	$1, %r15d
+ 1797      0000
+ 1798              	.LBE71:
+ 1799              	.LBE70:
+ 282:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 1800              		.loc 1 282 0
+ 1801 00c0 4C8D703C 		leaq	60(%rax), %r14
+ 276:fltk-1.3.4-1/jpeg/jquant1.c ****   JSAMPARRAY colormap;		/* Created colormap */
+ 1802              		.loc 1 276 0
+ 1803 00c4 48894424 		movq	%rax, 40(%rsp)
+ 1803      28
+ 1804              	.LVL233:
+ 1805              	.L152:
+ 1806              	.LBB74:
+ 1807              	.LBB72:
+ 205:fltk-1.3.4-1/jpeg/jquant1.c ****       temp *= iroot;
+ 1808              		.loc 1 205 0
+ 1809 00c9 83FB01   		cmpl	$1, %ebx
+ 203:fltk-1.3.4-1/jpeg/jquant1.c ****     temp = iroot;		/* set temp = iroot ** nc */
+ 1810              		.loc 1 203 0
+ 1811 00cc 418D7701 		leal	1(%r15), %esi
+ 1812              	.LVL234:
+ 205:fltk-1.3.4-1/jpeg/jquant1.c ****       temp *= iroot;
+ 1813              		.loc 1 205 0
+ 1814 00d0 4889CA   		movq	%rcx, %rdx
+ 1815 00d3 7E16     		jle	.L150
+ 1816 00d5 B8010000 		movl	$1, %eax
+ 1816      00
+ 1817              	.LVL235:
+ 1818 00da 660F1F44 		.p2align 4,,10
+ 1818      0000
+ 1819              		.p2align 3
+ 1820              	.L151:
+ 1821 00e0 83C001   		addl	$1, %eax
+ 1822              	.LVL236:
+ 206:fltk-1.3.4-1/jpeg/jquant1.c ****   } while (temp <= (long) max_colors); /* repeat till iroot exceeds root */
+ 1823              		.loc 1 206 0
+ 1824 00e3 480FAFD1 		imulq	%rcx, %rdx
+ 1825              	.LVL237:
+ 205:fltk-1.3.4-1/jpeg/jquant1.c ****       temp *= iroot;
+ 1826              		.loc 1 205 0
+ 1827 00e7 39C3     		cmpl	%eax, %ebx
+ 1828 00e9 75F5     		jne	.L151
+ 1829              	.LVL238:
+ 1830              	.L150:
+ 1831 00eb 4883C101 		addq	$1, %rcx
+ 207:fltk-1.3.4-1/jpeg/jquant1.c ****   iroot--;			/* now iroot = floor(root) */
+ 1832              		.loc 1 207 0
+ 1833 00ef 4839EA   		cmpq	%rbp, %rdx
+ 1834 00f2 7F05     		jg	.L194
+ 203:fltk-1.3.4-1/jpeg/jquant1.c ****     temp = iroot;		/* set temp = iroot ** nc */
+ 1835              		.loc 1 203 0
+ 1836 00f4 4189F7   		movl	%esi, %r15d
+ 1837 00f7 EBD0     		jmp	.L152
+ 1838              	.L194:
+ 1839              	.LVL239:
+ 211:fltk-1.3.4-1/jpeg/jquant1.c ****     ERREXIT1(cinfo, JERR_QUANT_FEW_COLORS, (int) temp);
+ 1840              		.loc 1 211 0
+ 1841 00f9 4183FF01 		cmpl	$1, %r15d
+ 1842 00fd 0F848602 		je	.L195
+ 1842      0000
+ 1843              	.LVL240:
+ 216:fltk-1.3.4-1/jpeg/jquant1.c ****     Ncolors[i] = iroot;
+ 1844              		.loc 1 216 0
+ 1845 0103 85DB     		testl	%ebx, %ebx
+ 1846 0105 0F8EA102 		jle	.L179
+ 1846      0000
+ 1847              	.LVL241:
+ 1848              	.L198:
+ 1849 010b 8D53FF   		leal	-1(%rbx), %edx
+ 1850 010e 4C89F0   		movq	%r14, %rax
+ 1851 0111 41BC0100 		movl	$1, %r12d
+ 1851      0000
+ 1852 0117 498D5496 		leaq	4(%r14,%rdx,4), %rdx
+ 1852      04
+ 1853              	.LVL242:
+ 1854              	.L155:
+ 217:fltk-1.3.4-1/jpeg/jquant1.c ****     total_colors *= iroot;
+ 1855              		.loc 1 217 0
+ 1856 011c 448938   		movl	%r15d, (%rax)
+ 1857 011f 4883C004 		addq	$4, %rax
+ 218:fltk-1.3.4-1/jpeg/jquant1.c ****   }
+ 1858              		.loc 1 218 0
+ 1859 0123 450FAFE7 		imull	%r15d, %r12d
+ 1860              	.LVL243:
+ 216:fltk-1.3.4-1/jpeg/jquant1.c ****     Ncolors[i] = iroot;
+ 1861              		.loc 1 216 0
+ 1862 0127 4839D0   		cmpq	%rdx, %rax
+ 1863 012a 75F0     		jne	.L155
+ 1864              	.LVL244:
+ 1865              	.L156:
+ 1866 012c 31F6     		xorl	%esi, %esi
+ 1867 012e 31FF     		xorl	%edi, %edi
+ 1868 0130 EB31     		jmp	.L159
+ 1869              	.LVL245:
+ 1870              	.L157:
+ 231:fltk-1.3.4-1/jpeg/jquant1.c ****       temp *= Ncolors[j]+1;	/* done in long arith to avoid oflo */
+ 1871              		.loc 1 231 0
+ 1872 0132 4D8D0486 		leaq	(%r14,%rax,4), %r8
+ 1873 0136 4489E0   		movl	%r12d, %eax
+ 1874              	.LVL246:
+ 1875 0139 99       		cltd
+ 1876 013a 418B08   		movl	(%r8), %ecx
+ 1877 013d F7F9     		idivl	%ecx
+ 232:fltk-1.3.4-1/jpeg/jquant1.c ****       if (temp > (long) max_colors)
+ 1878              		.loc 1 232 0
+ 1879 013f 83C101   		addl	$1, %ecx
+ 1880 0142 4863D1   		movslq	%ecx, %rdx
+ 231:fltk-1.3.4-1/jpeg/jquant1.c ****       temp *= Ncolors[j]+1;	/* done in long arith to avoid oflo */
+ 1881              		.loc 1 231 0
+ 1882 0145 4898     		cltq
+ 1883              	.LVL247:
+ 232:fltk-1.3.4-1/jpeg/jquant1.c ****       if (temp > (long) max_colors)
+ 1884              		.loc 1 232 0
+ 1885 0147 480FAFC2 		imulq	%rdx, %rax
+ 1886              	.LVL248:
+ 233:fltk-1.3.4-1/jpeg/jquant1.c **** 	break;			/* won't fit, done with this pass */
+ 1887              		.loc 1 233 0
+ 1888 014b 4839E8   		cmpq	%rbp, %rax
+ 1889 014e 7F27     		jg	.L158
+ 1890 0150 4883C601 		addq	$1, %rsi
+ 1891              	.LVL249:
+ 235:fltk-1.3.4-1/jpeg/jquant1.c ****       total_colors = (int) temp;
+ 1892              		.loc 1 235 0
+ 1893 0154 418908   		movl	%ecx, (%r8)
+ 236:fltk-1.3.4-1/jpeg/jquant1.c ****       changed = TRUE;
+ 1894              		.loc 1 236 0
+ 1895 0157 4189C4   		movl	%eax, %r12d
+ 1896              	.LVL250:
+ 228:fltk-1.3.4-1/jpeg/jquant1.c ****       j = (cinfo->out_color_space == JCS_RGB ? RGB_order[i] : i);
+ 1897              		.loc 1 228 0
+ 1898 015a 39F3     		cmpl	%esi, %ebx
+ 237:fltk-1.3.4-1/jpeg/jquant1.c ****     }
+ 1899              		.loc 1 237 0
+ 1900 015c BF010000 		movl	$1, %edi
+ 1900      00
+ 228:fltk-1.3.4-1/jpeg/jquant1.c ****       j = (cinfo->out_color_space == JCS_RGB ? RGB_order[i] : i);
+ 1901              		.loc 1 228 0
+ 1902 0161 7EC9     		jle	.L156
+ 1903              	.LVL251:
+ 1904              	.L159:
+ 229:fltk-1.3.4-1/jpeg/jquant1.c ****       /* calculate new total_colors if Ncolors[j] is incremented */
+ 1905              		.loc 1 229 0
+ 1906 0163 41837D40 		cmpl	$2, 64(%r13)
+ 1906      02
+ 1907 0168 4863C6   		movslq	%esi, %rax
+ 1908              	.LVL252:
+ 1909 016b 75C5     		jne	.L157
+ 1910 016d 486304B5 		movslq	RGB_order.4547(,%rsi,4), %rax
+ 1910      00000000 
+ 1911 0175 EBBB     		jmp	.L157
+ 1912              	.LVL253:
+ 1913              	.L158:
+ 239:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 1914              		.loc 1 239 0
+ 1915 0177 85FF     		testl	%edi, %edi
+ 1916 0179 75B1     		jne	.L156
+ 1917              	.LVL254:
+ 1918              	.L154:
+ 1919              	.LBE72:
+ 1920              	.LBE74:
+ 285:fltk-1.3.4-1/jpeg/jquant1.c ****     TRACEMS4(cinfo, 1, JTRC_QUANT_3_NCOLORS,
+ 1921              		.loc 1 285 0
+ 1922 017b 4183BD90 		cmpl	$3, 144(%r13)
+ 1922      00000003 
+ 1923              	.LBB75:
+ 286:fltk-1.3.4-1/jpeg/jquant1.c **** 	     total_colors, cquantize->Ncolors[0],
+ 1924              		.loc 1 286 0
+ 1925 0183 498B4500 		movq	0(%r13), %rax
+ 1926              	.LBE75:
+ 285:fltk-1.3.4-1/jpeg/jquant1.c ****     TRACEMS4(cinfo, 1, JTRC_QUANT_3_NCOLORS,
+ 1927              		.loc 1 285 0
+ 1928 0187 0F846701 		je	.L196
+ 1928      0000
+ 290:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 1929              		.loc 1 290 0
+ 1930 018d C7402861 		movl	$97, 40(%rax)
+ 1930      000000
+ 1931 0194 498B4500 		movq	0(%r13), %rax
+ 1932 0198 BE010000 		movl	$1, %esi
+ 1932      00
+ 1933 019d 4C89EF   		movq	%r13, %rdi
+ 1934 01a0 4489602C 		movl	%r12d, 44(%rax)
+ 1935 01a4 498B4500 		movq	0(%r13), %rax
+ 1936 01a8 FF5008   		call	*8(%rax)
+ 1937              	.LVL255:
+ 1938              	.L162:
+ 296:fltk-1.3.4-1/jpeg/jquant1.c ****     ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 1939              		.loc 1 296 0
+ 1940 01ab 498B4508 		movq	8(%r13), %rax
+ 1941 01af 4489E2   		movl	%r12d, %edx
+ 1942 01b2 418B8D90 		movl	144(%r13), %ecx
+ 1942      000000
+ 1943 01b9 BE010000 		movl	$1, %esi
+ 1943      00
+ 1944 01be 4C89EF   		movq	%r13, %rdi
+ 1945 01c1 FF5010   		call	*16(%rax)
+ 1946              	.LVL256:
+ 304:fltk-1.3.4-1/jpeg/jquant1.c ****     /* fill in colormap entries for i'th color component */
+ 1947              		.loc 1 304 0
+ 1948 01c4 418B9590 		movl	144(%r13), %edx
+ 1948      000000
+ 296:fltk-1.3.4-1/jpeg/jquant1.c ****     ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 1949              		.loc 1 296 0
+ 1950 01cb 4989C0   		movq	%rax, %r8
+ 1951              	.LVL257:
+ 304:fltk-1.3.4-1/jpeg/jquant1.c ****     /* fill in colormap entries for i'th color component */
+ 1952              		.loc 1 304 0
+ 1953 01ce 85D2     		testl	%edx, %edx
+ 1954 01d0 0F8EF300 		jle	.L168
+ 1954      0000
+ 1955 01d6 4489E1   		movl	%r12d, %ecx
+ 1956 01d9 31FF     		xorl	%edi, %edi
+ 1957 01db C7442434 		movl	$0, 52(%rsp)
+ 1957      00000000 
+ 1958 01e3 4C896C24 		movq	%r13, 56(%rsp)
+ 1958      38
+ 1959              	.LVL258:
+ 1960              	.L167:
+ 306:fltk-1.3.4-1/jpeg/jquant1.c ****     blksize = blkdist / nci;
+ 1961              		.loc 1 306 0
+ 1962 01e8 488B4424 		movq	40(%rsp), %rax
+ 1962      28
+ 1963 01ed 8B74383C 		movl	60(%rax,%rdi), %esi
+ 1964              	.LVL259:
+ 307:fltk-1.3.4-1/jpeg/jquant1.c ****     for (j = 0; j < nci; j++) {
+ 1965              		.loc 1 307 0
+ 1966 01f1 89C8     		movl	%ecx, %eax
+ 1967 01f3 99       		cltd
+ 1968 01f4 F7FE     		idivl	%esi
+ 308:fltk-1.3.4-1/jpeg/jquant1.c ****       /* Compute j'th output value (out of nci) for component */
+ 1969              		.loc 1 308 0
+ 1970 01f6 85F6     		testl	%esi, %esi
+ 307:fltk-1.3.4-1/jpeg/jquant1.c ****     for (j = 0; j < nci; j++) {
+ 1971              		.loc 1 307 0
+ 1972 01f8 4189C2   		movl	%eax, %r10d
+ 1973              	.LVL260:
+ 308:fltk-1.3.4-1/jpeg/jquant1.c ****       /* Compute j'th output value (out of nci) for component */
+ 1974              		.loc 1 308 0
+ 1975 01fb 0F8EA400 		jle	.L175
+ 1975      0000
+ 1976 0201 83EE01   		subl	$1, %esi
+ 1977              	.LVL261:
+ 1978 0204 4531ED   		xorl	%r13d, %r13d
+ 1979 0207 31ED     		xorl	%ebp, %ebp
+ 1980 0209 4863DE   		movslq	%esi, %rbx
+ 1981 020c 89F0     		movl	%esi, %eax
+ 1982              	.LVL262:
+ 1983 020e 89F6     		movl	%esi, %esi
+ 1984 0210 488D5601 		leaq	1(%rsi), %rdx
+ 1985 0214 48895C24 		movq	%rbx, 16(%rsp)
+ 1985      10
+ 1986 0219 4963DA   		movslq	%r10d, %rbx
+ 1987 021c D1F8     		sarl	%eax
+ 1988 021e 48895C24 		movq	%rbx, 8(%rsp)
+ 1988      08
+ 1989 0223 418D5AFF 		leal	-1(%r10), %ebx
+ 1990 0227 4889D6   		movq	%rdx, %rsi
+ 1991 022a 4898     		cltq
+ 1992 022c 4C63D9   		movslq	%ecx, %r11
+ 1993 022f 48C1E608 		salq	$8, %rsi
+ 1994 0233 48894424 		movq	%rax, 32(%rsp)
+ 1994      20
+ 1995 0238 4883C301 		addq	$1, %rbx
+ 1996 023c 4829D6   		subq	%rdx, %rsi
+ 1997 023f 48897424 		movq	%rsi, 24(%rsp)
+ 1997      18
+ 1998 0244 31F6     		xorl	%esi, %esi
+ 1999              	.LVL263:
+ 2000              	.L174:
+ 2001              	.LBB76:
+ 2002              	.LBB77:
+ 255:fltk-1.3.4-1/jpeg/jquant1.c **** }
+ 2003              		.loc 1 255 0
+ 2004 0246 488B4424 		movq	32(%rsp), %rax
+ 2004      20
+ 2005              	.LBE77:
+ 2006              	.LBE76:
+ 312:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* fill in blksize entries beginning at ptr */
+ 2007              		.loc 1 312 0
+ 2008 024b 4589EF   		movl	%r13d, %r15d
+ 2009 024e 4989F6   		movq	%rsi, %r14
+ 2010              	.LBB79:
+ 2011              	.LBB78:
+ 255:fltk-1.3.4-1/jpeg/jquant1.c **** }
+ 2012              		.loc 1 255 0
+ 2013 0251 4801E8   		addq	%rbp, %rax
+ 2014 0254 4899     		cqto
+ 2015 0256 48F77C24 		idivq	16(%rsp)
+ 2015      10
+ 2016              	.LVL264:
+ 2017              	.LBE78:
+ 2018              	.LBE79:
+ 312:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* fill in blksize entries beginning at ptr */
+ 2019              		.loc 1 312 0
+ 2020 025b 4539E5   		cmpl	%r12d, %r13d
+ 2021 025e 7D2F     		jge	.L170
+ 2022              	.LVL265:
+ 2023              		.p2align 4,,10
+ 2024              		.p2align 3
+ 2025              	.L180:
+ 314:fltk-1.3.4-1/jpeg/jquant1.c **** 	  colormap[i][ptr+k] = (JSAMPLE) val;
+ 2026              		.loc 1 314 0
+ 2027 0260 4585D2   		testl	%r10d, %r10d
+ 2028 0263 7E1F     		jle	.L173
+ 2029 0265 4E8D0C33 		leaq	(%rbx,%r14), %r9
+ 2030 0269 4C89F2   		movq	%r14, %rdx
+ 2031 026c 894C2430 		movl	%ecx, 48(%rsp)
+ 2032              	.LVL266:
+ 2033              		.p2align 4,,10
+ 2034              		.p2align 3
+ 2035              	.L171:
+ 315:fltk-1.3.4-1/jpeg/jquant1.c ****       }
+ 2036              		.loc 1 315 0
+ 2037 0270 498B0C78 		movq	(%r8,%rdi,2), %rcx
+ 2038 0274 880411   		movb	%al, (%rcx,%rdx)
+ 2039              	.LVL267:
+ 2040 0277 4883C201 		addq	$1, %rdx
+ 2041              	.LVL268:
+ 314:fltk-1.3.4-1/jpeg/jquant1.c **** 	  colormap[i][ptr+k] = (JSAMPLE) val;
+ 2042              		.loc 1 314 0
+ 2043 027b 4939D1   		cmpq	%rdx, %r9
+ 2044 027e 75F0     		jne	.L171
+ 2045 0280 8B4C2430 		movl	48(%rsp), %ecx
+ 2046              	.L173:
+ 312:fltk-1.3.4-1/jpeg/jquant1.c **** 	/* fill in blksize entries beginning at ptr */
+ 2047              		.loc 1 312 0
+ 2048 0284 4101CF   		addl	%ecx, %r15d
+ 2049              	.LVL269:
+ 2050 0287 4D01DE   		addq	%r11, %r14
+ 2051 028a 4539E7   		cmpl	%r12d, %r15d
+ 2052 028d 7CD1     		jl	.L180
+ 2053              	.L170:
+ 2054 028f 4881C5FF 		addq	$255, %rbp
+ 2054      000000
+ 2055 0296 4501D5   		addl	%r10d, %r13d
+ 2056 0299 48037424 		addq	8(%rsp), %rsi
+ 2056      08
+ 308:fltk-1.3.4-1/jpeg/jquant1.c ****       /* Compute j'th output value (out of nci) for component */
+ 2057              		.loc 1 308 0
+ 2058 029e 483B6C24 		cmpq	24(%rsp), %rbp
+ 2058      18
+ 2059 02a3 75A1     		jne	.L174
+ 2060              	.LVL270:
+ 2061              	.L175:
+ 304:fltk-1.3.4-1/jpeg/jquant1.c ****     /* fill in colormap entries for i'th color component */
+ 2062              		.loc 1 304 0
+ 2063 02a5 488B7424 		movq	56(%rsp), %rsi
+ 2063      38
+ 2064 02aa 83442434 		addl	$1, 52(%rsp)
+ 2064      01
+ 2065              	.LVL271:
+ 2066 02af 4883C704 		addq	$4, %rdi
+ 2067 02b3 8B442434 		movl	52(%rsp), %eax
+ 2068              	.LVL272:
+ 307:fltk-1.3.4-1/jpeg/jquant1.c ****     for (j = 0; j < nci; j++) {
+ 2069              		.loc 1 307 0
+ 2070 02b7 4489D1   		movl	%r10d, %ecx
+ 304:fltk-1.3.4-1/jpeg/jquant1.c ****     /* fill in colormap entries for i'th color component */
+ 2071              		.loc 1 304 0
+ 2072 02ba 3B869000 		cmpl	144(%rsi), %eax
+ 2072      0000
+ 2073 02c0 0F8C22FF 		jl	.L167
+ 2073      FFFF
+ 2074              	.LVL273:
+ 2075 02c6 4989F5   		movq	%rsi, %r13
+ 2076              	.LVL274:
+ 2077              	.L168:
+ 324:fltk-1.3.4-1/jpeg/jquant1.c ****   cquantize->sv_actual = total_colors;
+ 2078              		.loc 1 324 0
+ 2079 02c9 488B4424 		movq	40(%rsp), %rax
+ 2079      28
+ 2080              	.LBE69:
+ 2081              	.LBE68:
+ 842:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 843:fltk-1.3.4-1/jpeg/jquant1.c ****   /* Create the colormap and color index table. */
+ 844:fltk-1.3.4-1/jpeg/jquant1.c ****   create_colormap(cinfo);
+ 845:fltk-1.3.4-1/jpeg/jquant1.c ****   create_colorindex(cinfo);
+ 2082              		.loc 1 845 0
+ 2083 02ce 4C89EF   		movq	%r13, %rdi
+ 2084              	.LBB85:
+ 2085              	.LBB82:
+ 324:fltk-1.3.4-1/jpeg/jquant1.c ****   cquantize->sv_actual = total_colors;
+ 2086              		.loc 1 324 0
+ 2087 02d1 4C894020 		movq	%r8, 32(%rax)
+ 325:fltk-1.3.4-1/jpeg/jquant1.c **** }
+ 2088              		.loc 1 325 0
+ 2089 02d5 44896028 		movl	%r12d, 40(%rax)
+ 2090              	.LVL275:
+ 2091              	.LBE82:
+ 2092              	.LBE85:
+ 2093              		.loc 1 845 0
+ 2094 02d9 E8000000 		call	create_colorindex
+ 2094      00
+ 2095              	.LVL276:
+ 846:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 847:fltk-1.3.4-1/jpeg/jquant1.c ****   /* Allocate Floyd-Steinberg workspace now if requested.
+ 848:fltk-1.3.4-1/jpeg/jquant1.c ****    * We do this now since it is FAR storage and may affect the memory
+ 849:fltk-1.3.4-1/jpeg/jquant1.c ****    * manager's space calculations.  If the user changes to FS dither
+ 850:fltk-1.3.4-1/jpeg/jquant1.c ****    * mode in a later pass, we will allocate the space then, and will
+ 851:fltk-1.3.4-1/jpeg/jquant1.c ****    * possibly overrun the max_memory_to_use setting.
+ 852:fltk-1.3.4-1/jpeg/jquant1.c ****    */
+ 853:fltk-1.3.4-1/jpeg/jquant1.c ****   if (cinfo->dither_mode == JDITHER_FS)
+ 2096              		.loc 1 853 0
+ 2097 02de 41837D70 		cmpl	$2, 112(%r13)
+ 2097      02
+ 2098 02e3 7449     		je	.L197
+ 2099              	.L147:
+ 854:fltk-1.3.4-1/jpeg/jquant1.c ****     alloc_fs_workspace(cinfo);
+ 855:fltk-1.3.4-1/jpeg/jquant1.c **** }
+ 2100              		.loc 1 855 0
+ 2101 02e5 4883C448 		addq	$72, %rsp
+ 2102              		.cfi_remember_state
+ 2103              		.cfi_def_cfa_offset 56
+ 2104 02e9 5B       		popq	%rbx
+ 2105              		.cfi_def_cfa_offset 48
+ 2106 02ea 5D       		popq	%rbp
+ 2107              		.cfi_def_cfa_offset 40
+ 2108 02eb 415C     		popq	%r12
+ 2109              		.cfi_def_cfa_offset 32
+ 2110 02ed 415D     		popq	%r13
+ 2111              		.cfi_def_cfa_offset 24
+ 2112 02ef 415E     		popq	%r14
+ 2113              		.cfi_def_cfa_offset 16
+ 2114 02f1 415F     		popq	%r15
+ 2115              		.cfi_def_cfa_offset 8
+ 2116 02f3 C3       		ret
+ 2117              	.LVL277:
+ 2118              	.L196:
+ 2119              		.cfi_restore_state
+ 2120              	.LBB86:
+ 2121              	.LBB83:
+ 2122              	.LBB80:
+ 286:fltk-1.3.4-1/jpeg/jquant1.c **** 	     total_colors, cquantize->Ncolors[0],
+ 2123              		.loc 1 286 0
+ 2124 02f4 488B7424 		movq	40(%rsp), %rsi
+ 2124      28
+ 2125 02f9 4489602C 		movl	%r12d, 44(%rax)
+ 2126 02fd 4C89EF   		movq	%r13, %rdi
+ 2127 0300 8B563C   		movl	60(%rsi), %edx
+ 2128 0303 895030   		movl	%edx, 48(%rax)
+ 2129 0306 8B5640   		movl	64(%rsi), %edx
+ 2130 0309 895034   		movl	%edx, 52(%rax)
+ 2131 030c 8B5644   		movl	68(%rsi), %edx
+ 2132 030f BE010000 		movl	$1, %esi
+ 2132      00
+ 2133 0314 895038   		movl	%edx, 56(%rax)
+ 2134 0317 498B4500 		movq	0(%r13), %rax
+ 2135              	.LVL278:
+ 2136 031b C7402860 		movl	$96, 40(%rax)
+ 2136      000000
+ 2137 0322 498B4500 		movq	0(%r13), %rax
+ 2138 0326 FF5008   		call	*8(%rax)
+ 2139              	.LVL279:
+ 2140 0329 E97DFEFF 		jmp	.L162
+ 2140      FF
+ 2141              	.LVL280:
+ 2142              	.L197:
+ 2143              	.LBE80:
+ 2144              	.LBE83:
+ 2145              	.LBE86:
+ 2146              	.LBB87:
+ 2147              	.LBB88:
+ 729:fltk-1.3.4-1/jpeg/jquant1.c ****   for (i = 0; i < cinfo->out_color_components; i++) {
+ 2148              		.loc 1 729 0
+ 2149 032e 418B8588 		movl	136(%r13), %eax
+ 2149      000000
+ 725:fltk-1.3.4-1/jpeg/jquant1.c ****   size_t arraysize;
+ 2150              		.loc 1 725 0
+ 2151 0335 498B9D90 		movq	656(%r13), %rbx
+ 2151      020000
+ 2152              	.LVL281:
+ 729:fltk-1.3.4-1/jpeg/jquant1.c ****   for (i = 0; i < cinfo->out_color_components; i++) {
+ 2153              		.loc 1 729 0
+ 2154 033c 448D6002 		leal	2(%rax), %r12d
+ 730:fltk-1.3.4-1/jpeg/jquant1.c ****     cquantize->fserrors[i] = (FSERRPTR)
+ 2155              		.loc 1 730 0
+ 2156 0340 418B8590 		movl	144(%r13), %eax
+ 2156      000000
+ 729:fltk-1.3.4-1/jpeg/jquant1.c ****   for (i = 0; i < cinfo->out_color_components; i++) {
+ 2157              		.loc 1 729 0
+ 2158 0347 4D01E4   		addq	%r12, %r12
+ 2159              	.LVL282:
+ 730:fltk-1.3.4-1/jpeg/jquant1.c ****     cquantize->fserrors[i] = (FSERRPTR)
+ 2160              		.loc 1 730 0
+ 2161 034a 85C0     		testl	%eax, %eax
+ 2162 034c 7E97     		jle	.L147
+ 2163 034e 4883C370 		addq	$112, %rbx
+ 2164              	.LVL283:
+ 2165 0352 31ED     		xorl	%ebp, %ebp
+ 2166              	.LVL284:
+ 2167              	.L176:
+ 732:fltk-1.3.4-1/jpeg/jquant1.c ****   }
+ 2168              		.loc 1 732 0
+ 2169 0354 498B4508 		movq	8(%r13), %rax
+ 2170 0358 4C89E2   		movq	%r12, %rdx
+ 2171 035b BE010000 		movl	$1, %esi
+ 2171      00
+ 2172 0360 4C89EF   		movq	%r13, %rdi
+ 730:fltk-1.3.4-1/jpeg/jquant1.c ****     cquantize->fserrors[i] = (FSERRPTR)
+ 2173              		.loc 1 730 0
+ 2174 0363 83C501   		addl	$1, %ebp
+ 2175              	.LVL285:
+ 2176 0366 4883C308 		addq	$8, %rbx
+ 732:fltk-1.3.4-1/jpeg/jquant1.c ****   }
+ 2177              		.loc 1 732 0
+ 2178 036a FF5008   		call	*8(%rax)
+ 2179              	.LVL286:
+ 731:fltk-1.3.4-1/jpeg/jquant1.c ****       (*cinfo->mem->alloc_large)((j_common_ptr) cinfo, JPOOL_IMAGE, arraysize);
+ 2180              		.loc 1 731 0
+ 2181 036d 488943F8 		movq	%rax, -8(%rbx)
+ 730:fltk-1.3.4-1/jpeg/jquant1.c ****     cquantize->fserrors[i] = (FSERRPTR)
+ 2182              		.loc 1 730 0
+ 2183 0371 413BAD90 		cmpl	144(%r13), %ebp
+ 2183      000000
+ 2184 0378 7CDA     		jl	.L176
+ 2185              	.LBE88:
+ 2186              	.LBE87:
+ 2187              		.loc 1 855 0
+ 2188 037a 4883C448 		addq	$72, %rsp
+ 2189              		.cfi_remember_state
+ 2190              		.cfi_def_cfa_offset 56
+ 2191 037e 5B       		popq	%rbx
+ 2192              		.cfi_def_cfa_offset 48
+ 2193 037f 5D       		popq	%rbp
+ 2194              		.cfi_def_cfa_offset 40
+ 2195              	.LVL287:
+ 2196 0380 415C     		popq	%r12
+ 2197              		.cfi_def_cfa_offset 32
+ 2198              	.LVL288:
+ 2199 0382 415D     		popq	%r13
+ 2200              		.cfi_def_cfa_offset 24
+ 2201              	.LVL289:
+ 2202 0384 415E     		popq	%r14
+ 2203              		.cfi_def_cfa_offset 16
+ 2204 0386 415F     		popq	%r15
+ 2205              		.cfi_def_cfa_offset 8
+ 2206 0388 C3       		ret
+ 2207              	.LVL290:
+ 2208              	.L195:
+ 2209              		.cfi_restore_state
+ 2210              	.LBB89:
+ 2211              	.LBB84:
+ 2212              	.LBB81:
+ 2213              	.LBB73:
+ 212:fltk-1.3.4-1/jpeg/jquant1.c **** 
+ 2214              		.loc 1 212 0
+ 2215 0389 498B4500 		movq	0(%r13), %rax
+ 2216 038d 4C89EF   		movq	%r13, %rdi
+ 2217 0390 C740283A 		movl	$58, 40(%rax)
+ 2217      000000
+ 2218              	.LVL291:
+ 2219 0397 498B4500 		movq	0(%r13), %rax
+ 2220 039b 89502C   		movl	%edx, 44(%rax)
+ 2221 039e 498B4500 		movq	0(%r13), %rax
+ 2222 03a2 FF10     		call	*(%rax)
+ 2223              	.LVL292:
+ 216:fltk-1.3.4-1/jpeg/jquant1.c ****     Ncolors[i] = iroot;
+ 2224              		.loc 1 216 0
+ 2225 03a4 85DB     		testl	%ebx, %ebx
+ 2226 03a6 0F8F5FFD 		jg	.L198
+ 2226      FFFF
+ 2227              	.L179:
+ 2228 03ac 41BC0100 		movl	$1, %r12d
+ 2228      0000
+ 2229 03b2 E9C4FDFF 		jmp	.L154
+ 2229      FF
+ 2230              	.LBE73:
+ 2231              	.LBE81:
+ 2232              	.LBE84:
+ 2233              	.LBE89:
+ 2234              		.cfi_endproc
+ 2235              	.LFE77:
+ 2237              		.section	.text.unlikely.jinit_1pass_quantizer
+ 2238              	.LCOLDE9:
+ 2239              		.section	.text.jinit_1pass_quantizer
+ 2240              	.LHOTE9:
+ 2241              		.section	.rodata.RGB_order.4547,"a",@progbits
+ 2242              		.align 8
+ 2245              	RGB_order.4547:
+ 2246 0000 01000000 		.long	1
+ 2247 0004 00000000 		.long	0
+ 2248 0008 02000000 		.long	2
+ 2249              		.section	.rodata.base_dither_matrix,"a",@progbits
+ 2250              		.align 32
+ 2253              	base_dither_matrix:
+ 2254 0000 00       		.byte	0
+ 2255 0001 C0       		.byte	-64
+ 2256 0002 30       		.byte	48
+ 2257 0003 F0       		.byte	-16
+ 2258 0004 0C       		.byte	12
+ 2259 0005 CC       		.byte	-52
+ 2260 0006 3C       		.byte	60
+ 2261 0007 FC       		.byte	-4
+ 2262 0008 03       		.byte	3
+ 2263 0009 C3       		.byte	-61
+ 2264 000a 33       		.byte	51
+ 2265 000b F3       		.byte	-13
+ 2266 000c 0F       		.byte	15
+ 2267 000d CF       		.byte	-49
+ 2268 000e 3F       		.byte	63
+ 2269 000f FF       		.byte	-1
+ 2270 0010 80       		.byte	-128
+ 2271 0011 40       		.byte	64
+ 2272 0012 B0       		.byte	-80
+ 2273 0013 70       		.byte	112
+ 2274 0014 8C       		.byte	-116
+ 2275 0015 4C       		.byte	76
+ 2276 0016 BC       		.byte	-68
+ 2277 0017 7C       		.byte	124
+ 2278 0018 83       		.byte	-125
+ 2279 0019 43       		.byte	67
+ 2280 001a B3       		.byte	-77
+ 2281 001b 73       		.byte	115
+ 2282 001c 8F       		.byte	-113
+ 2283 001d 4F       		.byte	79
+ 2284 001e BF       		.byte	-65
+ 2285 001f 7F       		.byte	127
+ 2286 0020 20       		.byte	32
+ 2287 0021 E0       		.byte	-32
+ 2288 0022 10       		.byte	16
+ 2289 0023 D0       		.byte	-48
+ 2290 0024 2C       		.byte	44
+ 2291 0025 EC       		.byte	-20
+ 2292 0026 1C       		.byte	28
+ 2293 0027 DC       		.byte	-36
+ 2294 0028 23       		.byte	35
+ 2295 0029 E3       		.byte	-29
+ 2296 002a 13       		.byte	19
+ 2297 002b D3       		.byte	-45
+ 2298 002c 2F       		.byte	47
+ 2299 002d EF       		.byte	-17
+ 2300 002e 1F       		.byte	31
+ 2301 002f DF       		.byte	-33
+ 2302 0030 A0       		.byte	-96
+ 2303 0031 60       		.byte	96
+ 2304 0032 90       		.byte	-112
+ 2305 0033 50       		.byte	80
+ 2306 0034 AC       		.byte	-84
+ 2307 0035 6C       		.byte	108
+ 2308 0036 9C       		.byte	-100
+ 2309 0037 5C       		.byte	92
+ 2310 0038 A3       		.byte	-93
+ 2311 0039 63       		.byte	99
+ 2312 003a 93       		.byte	-109
+ 2313 003b 53       		.byte	83
+ 2314 003c AF       		.byte	-81
+ 2315 003d 6F       		.byte	111
+ 2316 003e 9F       		.byte	-97
+ 2317 003f 5F       		.byte	95
+ 2318 0040 08       		.byte	8
+ 2319 0041 C8       		.byte	-56
+ 2320 0042 38       		.byte	56
+ 2321 0043 F8       		.byte	-8
+ 2322 0044 04       		.byte	4
+ 2323 0045 C4       		.byte	-60
+ 2324 0046 34       		.byte	52
+ 2325 0047 F4       		.byte	-12
+ 2326 0048 0B       		.byte	11
+ 2327 0049 CB       		.byte	-53
+ 2328 004a 3B       		.byte	59
+ 2329 004b FB       		.byte	-5
+ 2330 004c 07       		.byte	7
+ 2331 004d C7       		.byte	-57
+ 2332 004e 37       		.byte	55
+ 2333 004f F7       		.byte	-9
+ 2334 0050 88       		.byte	-120
+ 2335 0051 48       		.byte	72
+ 2336 0052 B8       		.byte	-72
+ 2337 0053 78       		.byte	120
+ 2338 0054 84       		.byte	-124
+ 2339 0055 44       		.byte	68
+ 2340 0056 B4       		.byte	-76
+ 2341 0057 74       		.byte	116
+ 2342 0058 8B       		.byte	-117
+ 2343 0059 4B       		.byte	75
+ 2344 005a BB       		.byte	-69
+ 2345 005b 7B       		.byte	123
+ 2346 005c 87       		.byte	-121
+ 2347 005d 47       		.byte	71
+ 2348 005e B7       		.byte	-73
+ 2349 005f 77       		.byte	119
+ 2350 0060 28       		.byte	40
+ 2351 0061 E8       		.byte	-24
+ 2352 0062 18       		.byte	24
+ 2353 0063 D8       		.byte	-40
+ 2354 0064 24       		.byte	36
+ 2355 0065 E4       		.byte	-28
+ 2356 0066 14       		.byte	20
+ 2357 0067 D4       		.byte	-44
+ 2358 0068 2B       		.byte	43
+ 2359 0069 EB       		.byte	-21
+ 2360 006a 1B       		.byte	27
+ 2361 006b DB       		.byte	-37
+ 2362 006c 27       		.byte	39
+ 2363 006d E7       		.byte	-25
+ 2364 006e 17       		.byte	23
+ 2365 006f D7       		.byte	-41
+ 2366 0070 A8       		.byte	-88
+ 2367 0071 68       		.byte	104
+ 2368 0072 98       		.byte	-104
+ 2369 0073 58       		.byte	88
+ 2370 0074 A4       		.byte	-92
+ 2371 0075 64       		.byte	100
+ 2372 0076 94       		.byte	-108
+ 2373 0077 54       		.byte	84
+ 2374 0078 AB       		.byte	-85
+ 2375 0079 6B       		.byte	107
+ 2376 007a 9B       		.byte	-101
+ 2377 007b 5B       		.byte	91
+ 2378 007c A7       		.byte	-89
+ 2379 007d 67       		.byte	103
+ 2380 007e 97       		.byte	-105
+ 2381 007f 57       		.byte	87
+ 2382 0080 02       		.byte	2
+ 2383 0081 C2       		.byte	-62
+ 2384 0082 32       		.byte	50
+ 2385 0083 F2       		.byte	-14
+ 2386 0084 0E       		.byte	14
+ 2387 0085 CE       		.byte	-50
+ 2388 0086 3E       		.byte	62
+ 2389 0087 FE       		.byte	-2
+ 2390 0088 01       		.byte	1
+ 2391 0089 C1       		.byte	-63
+ 2392 008a 31       		.byte	49
+ 2393 008b F1       		.byte	-15
+ 2394 008c 0D       		.byte	13
+ 2395 008d CD       		.byte	-51
+ 2396 008e 3D       		.byte	61
+ 2397 008f FD       		.byte	-3
+ 2398 0090 82       		.byte	-126
+ 2399 0091 42       		.byte	66
+ 2400 0092 B2       		.byte	-78
+ 2401 0093 72       		.byte	114
+ 2402 0094 8E       		.byte	-114
+ 2403 0095 4E       		.byte	78
+ 2404 0096 BE       		.byte	-66
+ 2405 0097 7E       		.byte	126
+ 2406 0098 81       		.byte	-127
+ 2407 0099 41       		.byte	65
+ 2408 009a B1       		.byte	-79
+ 2409 009b 71       		.byte	113
+ 2410 009c 8D       		.byte	-115
+ 2411 009d 4D       		.byte	77
+ 2412 009e BD       		.byte	-67
+ 2413 009f 7D       		.byte	125
+ 2414 00a0 22       		.byte	34
+ 2415 00a1 E2       		.byte	-30
+ 2416 00a2 12       		.byte	18
+ 2417 00a3 D2       		.byte	-46
+ 2418 00a4 2E       		.byte	46
+ 2419 00a5 EE       		.byte	-18
+ 2420 00a6 1E       		.byte	30
+ 2421 00a7 DE       		.byte	-34
+ 2422 00a8 21       		.byte	33
+ 2423 00a9 E1       		.byte	-31
+ 2424 00aa 11       		.byte	17
+ 2425 00ab D1       		.byte	-47
+ 2426 00ac 2D       		.byte	45
+ 2427 00ad ED       		.byte	-19
+ 2428 00ae 1D       		.byte	29
+ 2429 00af DD       		.byte	-35
+ 2430 00b0 A2       		.byte	-94
+ 2431 00b1 62       		.byte	98
+ 2432 00b2 92       		.byte	-110
+ 2433 00b3 52       		.byte	82
+ 2434 00b4 AE       		.byte	-82
+ 2435 00b5 6E       		.byte	110
+ 2436 00b6 9E       		.byte	-98
+ 2437 00b7 5E       		.byte	94
+ 2438 00b8 A1       		.byte	-95
+ 2439 00b9 61       		.byte	97
+ 2440 00ba 91       		.byte	-111
+ 2441 00bb 51       		.byte	81
+ 2442 00bc AD       		.byte	-83
+ 2443 00bd 6D       		.byte	109
+ 2444 00be 9D       		.byte	-99
+ 2445 00bf 5D       		.byte	93
+ 2446 00c0 0A       		.byte	10
+ 2447 00c1 CA       		.byte	-54
+ 2448 00c2 3A       		.byte	58
+ 2449 00c3 FA       		.byte	-6
+ 2450 00c4 06       		.byte	6
+ 2451 00c5 C6       		.byte	-58
+ 2452 00c6 36       		.byte	54
+ 2453 00c7 F6       		.byte	-10
+ 2454 00c8 09       		.byte	9
+ 2455 00c9 C9       		.byte	-55
+ 2456 00ca 39       		.byte	57
+ 2457 00cb F9       		.byte	-7
+ 2458 00cc 05       		.byte	5
+ 2459 00cd C5       		.byte	-59
+ 2460 00ce 35       		.byte	53
+ 2461 00cf F5       		.byte	-11
+ 2462 00d0 8A       		.byte	-118
+ 2463 00d1 4A       		.byte	74
+ 2464 00d2 BA       		.byte	-70
+ 2465 00d3 7A       		.byte	122
+ 2466 00d4 86       		.byte	-122
+ 2467 00d5 46       		.byte	70
+ 2468 00d6 B6       		.byte	-74
+ 2469 00d7 76       		.byte	118
+ 2470 00d8 89       		.byte	-119
+ 2471 00d9 49       		.byte	73
+ 2472 00da B9       		.byte	-71
+ 2473 00db 79       		.byte	121
+ 2474 00dc 85       		.byte	-123
+ 2475 00dd 45       		.byte	69
+ 2476 00de B5       		.byte	-75
+ 2477 00df 75       		.byte	117
+ 2478 00e0 2A       		.byte	42
+ 2479 00e1 EA       		.byte	-22
+ 2480 00e2 1A       		.byte	26
+ 2481 00e3 DA       		.byte	-38
+ 2482 00e4 26       		.byte	38
+ 2483 00e5 E6       		.byte	-26
+ 2484 00e6 16       		.byte	22
+ 2485 00e7 D6       		.byte	-42
+ 2486 00e8 29       		.byte	41
+ 2487 00e9 E9       		.byte	-23
+ 2488 00ea 19       		.byte	25
+ 2489 00eb D9       		.byte	-39
+ 2490 00ec 25       		.byte	37
+ 2491 00ed E5       		.byte	-27
+ 2492 00ee 15       		.byte	21
+ 2493 00ef D5       		.byte	-43
+ 2494 00f0 AA       		.byte	-86
+ 2495 00f1 6A       		.byte	106
+ 2496 00f2 9A       		.byte	-102
+ 2497 00f3 5A       		.byte	90
+ 2498 00f4 A6       		.byte	-90
+ 2499 00f5 66       		.byte	102
+ 2500 00f6 96       		.byte	-106
+ 2501 00f7 56       		.byte	86
+ 2502 00f8 A9       		.byte	-87
+ 2503 00f9 69       		.byte	105
+ 2504 00fa 99       		.byte	-103
+ 2505 00fb 59       		.byte	89
+ 2506 00fc A5       		.byte	-91
+ 2507 00fd 65       		.byte	101
+ 2508 00fe 95       		.byte	-107
+ 2509 00ff 55       		.byte	85
+ 2510              		.text
+ 2511              	.Letext0:
+ 2512              		.section	.text.unlikely.create_colorindex
+ 2513              	.Letext_cold0:
+ 2514              		.file 3 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
+ 2515              		.file 4 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 2516              		.file 5 "/usr/include/libio.h"
+ 2517              		.file 6 "fltk-1.3.4-1/jpeg/jmorecfg.h"
+ 2518              		.file 7 "fltk-1.3.4-1/jpeg/jpeglib.h"
+ 2519              		.file 8 "fltk-1.3.4-1/jpeg/jpegint.h"
+ 2520              		.file 9 "fltk-1.3.4-1/jpeg/jerror.h"
+ 2521              		.file 10 "/usr/include/stdio.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 jquant1.c
+     /tmp/ccWW19Mr.s:13     .text.create_colorindex:0000000000000000 create_colorindex
+     /tmp/ccWW19Mr.s:264    .text.color_quantize:0000000000000000 color_quantize
+     /tmp/ccWW19Mr.s:398    .text.color_quantize3:0000000000000000 color_quantize3
+     /tmp/ccWW19Mr.s:527    .text.quantize3_ord_dither:0000000000000000 quantize3_ord_dither
+     /tmp/ccWW19Mr.s:719    .text.finish_pass_1_quant:0000000000000000 finish_pass_1_quant
+     /tmp/ccWW19Mr.s:738    .text.new_color_map_1_quant:0000000000000000 new_color_map_1_quant
+     /tmp/ccWW19Mr.s:762    .text.quantize_ord_dither:0000000000000000 quantize_ord_dither
+     /tmp/ccWW19Mr.s:957    .text.quantize_fs_dither:0000000000000000 quantize_fs_dither
+     /tmp/ccWW19Mr.s:1277   .text.start_pass_1_quant:0000000000000000 start_pass_1_quant
+     /tmp/ccWW19Mr.s:2253   .rodata.base_dither_matrix:0000000000000000 base_dither_matrix
+     /tmp/ccWW19Mr.s:1708   .text.jinit_1pass_quantizer:0000000000000000 jinit_1pass_quantizer
+     /tmp/ccWW19Mr.s:2245   .rodata.RGB_order.4547:0000000000000000 RGB_order.4547
+                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
+                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+                           .group:0000000000000000 wm4.jconfig.h.10.247fc3ff67998f3074970b1373c70333
+                           .group:0000000000000000 wm4.features.h.19.24da27e0a4d0d521fd057013d982b8b5
+                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
+                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
+                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
+                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
+                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
+                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
+                           .group:0000000000000000 wm4.waitflags.h.25.e401b8bcfee800b540b27abd7cc78de9
+                           .group:0000000000000000 wm4.waitstatus.h.28.93f167f49d64e2b9b99f98d1162a93bf
+                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
+                           .group:0000000000000000 wm4.endian.h.41.24cced64aef71195a51d4daa8e4f4a95
+                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
+                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
+                           .group:0000000000000000 wm4.byteswap.h.38.11ee5fdc0f6cc53a16c505b9233cecef
+                           .group:0000000000000000 wm4.endian.h.63.97272d7c64d5db8020003b32e9289502
+                           .group:0000000000000000 wm4.waitstatus.h.99.408b6270fa6eb71377201a241ef15f79
+                           .group:0000000000000000 wm4.stdlib.h.50.84aeca2ac6f37d40e1e9b3cef757ba2d
+                           .group:0000000000000000 wm4.types.h.23.f6dcbaa72f8f71361acef09804d45a5e
+                           .group:0000000000000000 wm4.time.h.53.beb46e650cd406cb917b6b96b45e640a
+                           .group:0000000000000000 wm4.stddef.h.238.847b6907dabda77be90a9ab7ad789e2e
+                           .group:0000000000000000 wm4.types.h.187.bd5a05039b505b3620e6973f1b2ffeb1
+                           .group:0000000000000000 wm4.select.h.28.eb2f3debdbcffd1442ebddaebc4fb6ff
+                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
+                           .group:0000000000000000 wm4.select.h.36.f76c3b9e55c871743863013cc4cc14c9
+                           .group:0000000000000000 wm4.time.h.66.e70ce69790c975f0efb369340c432e0b
+                           .group:0000000000000000 wm4.time.h.25.ae5284cdff565e87a9198d819340325d
+                           .group:0000000000000000 wm4.select.h.49.e9d2041e5035cc68ebd1a20f7dbc8514
+                           .group:0000000000000000 wm4.select2.h.27.f95f2ab0ffee66dc1b6575014894b21a
+                           .group:0000000000000000 wm4.sysmacros.h.20.8a0c33ff175cd9b434a86c0aaa36f0a2
+                           .group:0000000000000000 wm4.types.h.229.67b3f66bd74b06b451caec392a72a945
+                           .group:0000000000000000 wm4.pthreadtypes.h.25.6892b1493314fcf446bbc76e7362acba
+                           .group:0000000000000000 wm4.alloca.h.19.edefa922a76c1cbaaf1e416903ba2d1c
+                           .group:0000000000000000 wm4.alloca.h.29.156e12058824cc23d961c4d3b13031f6
+                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
+                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
+                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
+                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
+                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
+                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
+                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
+                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
+                           .group:0000000000000000 wm4.stdio.h.80.17b7dd1ca72d8a61987532cb1d80194a
+                           .group:0000000000000000 wm4.stdio_lim.h.23.557290a6cddeba0587f574f29e3a5fb9
+                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
+                           .group:0000000000000000 wm4.stdio.h.26.cae64f7ada9bb8327a89dba6a5e93655
+                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
+                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
+                           .group:0000000000000000 wm4.string2.h.45.00535b99420fc3014c2da41d6645330d
+                           .group:0000000000000000 wm4.string3.h.31.0c4b9301b754a2db05eaafef869657d2
+                           .group:0000000000000000 wm4.jinclude.h.67.b19f941ec97c4845fa4609292c7e2db4
+                           .group:0000000000000000 wm4.jmorecfg.h.33.3b4c5f9cc07b3737823b06caf24d5b05
+                           .group:0000000000000000 wm4.jpeglib.h.40.4f111c27252a38df39328d65454e82f4
+                           .group:0000000000000000 wm4.jpegint.h.26.5219ef5d4e4921371d38e77b6091fd20
+                           .group:0000000000000000 wm4.jerror.h.25.1dbd8674e70ab5215bc0037320e5c2a2
+
+UNDEFINED SYMBOLS
+memset

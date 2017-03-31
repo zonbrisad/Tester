@@ -1,0 +1,1838 @@
+   1              		.file	"jcprepct.c"
+   2              		.text
+   3              	.Ltext0:
+   4              		.section	.text.unlikely.start_pass_prep,"ax",@progbits
+   5              	.LCOLDB0:
+   6              		.section	.text.start_pass_prep,"ax",@progbits
+   7              	.LHOTB0:
+   8              		.p2align 4,,15
+   9              		.section	.text.unlikely.start_pass_prep
+  10              	.Ltext_cold0:
+  11              		.section	.text.start_pass_prep
+  13              	start_pass_prep:
+  14              	.LFB61:
+  15              		.file 1 "fltk-1.3.4-1/jpeg/jcprepct.c"
+   1:fltk-1.3.4-1/jpeg/jcprepct.c **** /*
+   2:fltk-1.3.4-1/jpeg/jcprepct.c ****  * jcprepct.c
+   3:fltk-1.3.4-1/jpeg/jcprepct.c ****  *
+   4:fltk-1.3.4-1/jpeg/jcprepct.c ****  * Copyright (C) 1994-1996, Thomas G. Lane.
+   5:fltk-1.3.4-1/jpeg/jcprepct.c ****  * This file is part of the Independent JPEG Group's software.
+   6:fltk-1.3.4-1/jpeg/jcprepct.c ****  * For conditions of distribution and use, see the accompanying README file.
+   7:fltk-1.3.4-1/jpeg/jcprepct.c ****  *
+   8:fltk-1.3.4-1/jpeg/jcprepct.c ****  * This file contains the compression preprocessing controller.
+   9:fltk-1.3.4-1/jpeg/jcprepct.c ****  * This controller manages the color conversion, downsampling,
+  10:fltk-1.3.4-1/jpeg/jcprepct.c ****  * and edge expansion steps.
+  11:fltk-1.3.4-1/jpeg/jcprepct.c ****  *
+  12:fltk-1.3.4-1/jpeg/jcprepct.c ****  * Most of the complexity here is associated with buffering input rows
+  13:fltk-1.3.4-1/jpeg/jcprepct.c ****  * as required by the downsampler.  See the comments at the head of
+  14:fltk-1.3.4-1/jpeg/jcprepct.c ****  * jcsample.c for the downsampler's needs.
+  15:fltk-1.3.4-1/jpeg/jcprepct.c ****  */
+  16:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+  17:fltk-1.3.4-1/jpeg/jcprepct.c **** #define JPEG_INTERNALS
+  18:fltk-1.3.4-1/jpeg/jcprepct.c **** #include "jinclude.h"
+  19:fltk-1.3.4-1/jpeg/jcprepct.c **** #include "jpeglib.h"
+  20:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+  21:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+  22:fltk-1.3.4-1/jpeg/jcprepct.c **** /* At present, jcsample.c can request context rows only for smoothing.
+  23:fltk-1.3.4-1/jpeg/jcprepct.c ****  * In the future, we might also need context rows for CCIR601 sampling
+  24:fltk-1.3.4-1/jpeg/jcprepct.c ****  * or other more-complex downsampling procedures.  The code to support
+  25:fltk-1.3.4-1/jpeg/jcprepct.c ****  * context rows should be compiled only if needed.
+  26:fltk-1.3.4-1/jpeg/jcprepct.c ****  */
+  27:fltk-1.3.4-1/jpeg/jcprepct.c **** #ifdef INPUT_SMOOTHING_SUPPORTED
+  28:fltk-1.3.4-1/jpeg/jcprepct.c **** #define CONTEXT_ROWS_SUPPORTED
+  29:fltk-1.3.4-1/jpeg/jcprepct.c **** #endif
+  30:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+  31:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+  32:fltk-1.3.4-1/jpeg/jcprepct.c **** /*
+  33:fltk-1.3.4-1/jpeg/jcprepct.c ****  * For the simple (no-context-row) case, we just need to buffer one
+  34:fltk-1.3.4-1/jpeg/jcprepct.c ****  * row group's worth of pixels for the downsampling step.  At the bottom of
+  35:fltk-1.3.4-1/jpeg/jcprepct.c ****  * the image, we pad to a full row group by replicating the last pixel row.
+  36:fltk-1.3.4-1/jpeg/jcprepct.c ****  * The downsampler's last output row is then replicated if needed to pad
+  37:fltk-1.3.4-1/jpeg/jcprepct.c ****  * out to a full iMCU row.
+  38:fltk-1.3.4-1/jpeg/jcprepct.c ****  *
+  39:fltk-1.3.4-1/jpeg/jcprepct.c ****  * When providing context rows, we must buffer three row groups' worth of
+  40:fltk-1.3.4-1/jpeg/jcprepct.c ****  * pixels.  Three row groups are physically allocated, but the row pointer
+  41:fltk-1.3.4-1/jpeg/jcprepct.c ****  * arrays are made five row groups high, with the extra pointers above and
+  42:fltk-1.3.4-1/jpeg/jcprepct.c ****  * below "wrapping around" to point to the last and first real row groups.
+  43:fltk-1.3.4-1/jpeg/jcprepct.c ****  * This allows the downsampler to access the proper context rows.
+  44:fltk-1.3.4-1/jpeg/jcprepct.c ****  * At the top and bottom of the image, we create dummy context rows by
+  45:fltk-1.3.4-1/jpeg/jcprepct.c ****  * copying the first or last real pixel row.  This copying could be avoided
+  46:fltk-1.3.4-1/jpeg/jcprepct.c ****  * by pointer hacking as is done in jdmainct.c, but it doesn't seem worth the
+  47:fltk-1.3.4-1/jpeg/jcprepct.c ****  * trouble on the compression side.
+  48:fltk-1.3.4-1/jpeg/jcprepct.c ****  */
+  49:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+  50:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+  51:fltk-1.3.4-1/jpeg/jcprepct.c **** /* Private buffer controller object */
+  52:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+  53:fltk-1.3.4-1/jpeg/jcprepct.c **** typedef struct {
+  54:fltk-1.3.4-1/jpeg/jcprepct.c ****   struct jpeg_c_prep_controller pub; /* public fields */
+  55:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+  56:fltk-1.3.4-1/jpeg/jcprepct.c ****   /* Downsampling input buffer.  This buffer holds color-converted data
+  57:fltk-1.3.4-1/jpeg/jcprepct.c ****    * until we have enough to do a downsample step.
+  58:fltk-1.3.4-1/jpeg/jcprepct.c ****    */
+  59:fltk-1.3.4-1/jpeg/jcprepct.c ****   JSAMPARRAY color_buf[MAX_COMPONENTS];
+  60:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+  61:fltk-1.3.4-1/jpeg/jcprepct.c ****   JDIMENSION rows_to_go;	/* counts rows remaining in source image */
+  62:fltk-1.3.4-1/jpeg/jcprepct.c ****   int next_buf_row;		/* index of next row to store in color_buf */
+  63:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+  64:fltk-1.3.4-1/jpeg/jcprepct.c **** #ifdef CONTEXT_ROWS_SUPPORTED	/* only needed for context case */
+  65:fltk-1.3.4-1/jpeg/jcprepct.c ****   int this_row_group;		/* starting row index of group to process */
+  66:fltk-1.3.4-1/jpeg/jcprepct.c ****   int next_buf_stop;		/* downsample when we reach this index */
+  67:fltk-1.3.4-1/jpeg/jcprepct.c **** #endif
+  68:fltk-1.3.4-1/jpeg/jcprepct.c **** } my_prep_controller;
+  69:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+  70:fltk-1.3.4-1/jpeg/jcprepct.c **** typedef my_prep_controller * my_prep_ptr;
+  71:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+  72:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+  73:fltk-1.3.4-1/jpeg/jcprepct.c **** /*
+  74:fltk-1.3.4-1/jpeg/jcprepct.c ****  * Initialize for a processing pass.
+  75:fltk-1.3.4-1/jpeg/jcprepct.c ****  */
+  76:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+  77:fltk-1.3.4-1/jpeg/jcprepct.c **** METHODDEF(void)
+  78:fltk-1.3.4-1/jpeg/jcprepct.c **** start_pass_prep (j_compress_ptr cinfo, J_BUF_MODE pass_mode)
+  79:fltk-1.3.4-1/jpeg/jcprepct.c **** {
+  16              		.loc 1 79 0
+  17              		.cfi_startproc
+  18              	.LVL0:
+  19 0000 55       		pushq	%rbp
+  20              		.cfi_def_cfa_offset 16
+  21              		.cfi_offset 6, -16
+  22 0001 53       		pushq	%rbx
+  23              		.cfi_def_cfa_offset 24
+  24              		.cfi_offset 3, -24
+  25 0002 4889FB   		movq	%rdi, %rbx
+  26 0005 4883EC08 		subq	$8, %rsp
+  27              		.cfi_def_cfa_offset 32
+  80:fltk-1.3.4-1/jpeg/jcprepct.c ****   my_prep_ptr prep = (my_prep_ptr) cinfo->prep;
+  81:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+  82:fltk-1.3.4-1/jpeg/jcprepct.c ****   if (pass_mode != JBUF_PASS_THRU)
+  28              		.loc 1 82 0
+  29 0009 85F6     		testl	%esi, %esi
+  80:fltk-1.3.4-1/jpeg/jcprepct.c ****   my_prep_ptr prep = (my_prep_ptr) cinfo->prep;
+  30              		.loc 1 80 0
+  31 000b 488BAF00 		movq	512(%rdi), %rbp
+  31      020000
+  32              	.LVL1:
+  33              		.loc 1 82 0
+  34 0012 740F     		je	.L2
+  83:fltk-1.3.4-1/jpeg/jcprepct.c ****     ERREXIT(cinfo, JERR_BAD_BUFFER_MODE);
+  35              		.loc 1 83 0
+  36 0014 488B07   		movq	(%rdi), %rax
+  37 0017 C7402803 		movl	$3, 40(%rax)
+  37      000000
+  38 001e 488B07   		movq	(%rdi), %rax
+  39 0021 FF10     		call	*(%rax)
+  40              	.LVL2:
+  41              	.L2:
+  84:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+  85:fltk-1.3.4-1/jpeg/jcprepct.c ****   /* Initialize total-height counter for detecting bottom of image */
+  86:fltk-1.3.4-1/jpeg/jcprepct.c ****   prep->rows_to_go = cinfo->image_height;
+  42              		.loc 1 86 0
+  43 0023 8B4334   		movl	52(%rbx), %eax
+  87:fltk-1.3.4-1/jpeg/jcprepct.c ****   /* Mark the conversion buffer empty */
+  88:fltk-1.3.4-1/jpeg/jcprepct.c ****   prep->next_buf_row = 0;
+  44              		.loc 1 88 0
+  45 0026 C7456400 		movl	$0, 100(%rbp)
+  45      000000
+  89:fltk-1.3.4-1/jpeg/jcprepct.c **** #ifdef CONTEXT_ROWS_SUPPORTED
+  90:fltk-1.3.4-1/jpeg/jcprepct.c ****   /* Preset additional state variables for context mode.
+  91:fltk-1.3.4-1/jpeg/jcprepct.c ****    * These aren't used in non-context mode, so we needn't test which mode.
+  92:fltk-1.3.4-1/jpeg/jcprepct.c ****    */
+  93:fltk-1.3.4-1/jpeg/jcprepct.c ****   prep->this_row_group = 0;
+  46              		.loc 1 93 0
+  47 002d C7456800 		movl	$0, 104(%rbp)
+  47      000000
+  86:fltk-1.3.4-1/jpeg/jcprepct.c ****   /* Mark the conversion buffer empty */
+  48              		.loc 1 86 0
+  49 0034 894560   		movl	%eax, 96(%rbp)
+  94:fltk-1.3.4-1/jpeg/jcprepct.c ****   /* Set next_buf_stop to stop after two row groups have been read in. */
+  95:fltk-1.3.4-1/jpeg/jcprepct.c ****   prep->next_buf_stop = 2 * cinfo->max_v_samp_factor;
+  50              		.loc 1 95 0
+  51 0037 8B836401 		movl	356(%rbx), %eax
+  51      0000
+  52 003d 01C0     		addl	%eax, %eax
+  53 003f 89456C   		movl	%eax, 108(%rbp)
+  96:fltk-1.3.4-1/jpeg/jcprepct.c **** #endif
+  97:fltk-1.3.4-1/jpeg/jcprepct.c **** }
+  54              		.loc 1 97 0
+  55 0042 4883C408 		addq	$8, %rsp
+  56              		.cfi_def_cfa_offset 24
+  57 0046 5B       		popq	%rbx
+  58              		.cfi_def_cfa_offset 16
+  59              	.LVL3:
+  60 0047 5D       		popq	%rbp
+  61              		.cfi_def_cfa_offset 8
+  62              	.LVL4:
+  63 0048 C3       		ret
+  64              		.cfi_endproc
+  65              	.LFE61:
+  67              		.section	.text.unlikely.start_pass_prep
+  68              	.LCOLDE0:
+  69              		.section	.text.start_pass_prep
+  70              	.LHOTE0:
+  71              		.section	.text.unlikely.pre_process_data,"ax",@progbits
+  72              	.LCOLDB1:
+  73              		.section	.text.pre_process_data,"ax",@progbits
+  74              	.LHOTB1:
+  75              		.p2align 4,,15
+  77              	pre_process_data:
+  78              	.LFB63:
+  98:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+  99:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+ 100:fltk-1.3.4-1/jpeg/jcprepct.c **** /*
+ 101:fltk-1.3.4-1/jpeg/jcprepct.c ****  * Expand an image vertically from height input_rows to height output_rows,
+ 102:fltk-1.3.4-1/jpeg/jcprepct.c ****  * by duplicating the bottom row.
+ 103:fltk-1.3.4-1/jpeg/jcprepct.c ****  */
+ 104:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+ 105:fltk-1.3.4-1/jpeg/jcprepct.c **** LOCAL(void)
+ 106:fltk-1.3.4-1/jpeg/jcprepct.c **** expand_bottom_edge (JSAMPARRAY image_data, JDIMENSION num_cols,
+ 107:fltk-1.3.4-1/jpeg/jcprepct.c **** 		    int input_rows, int output_rows)
+ 108:fltk-1.3.4-1/jpeg/jcprepct.c **** {
+ 109:fltk-1.3.4-1/jpeg/jcprepct.c ****   register int row;
+ 110:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+ 111:fltk-1.3.4-1/jpeg/jcprepct.c ****   for (row = input_rows; row < output_rows; row++) {
+ 112:fltk-1.3.4-1/jpeg/jcprepct.c ****     jcopy_sample_rows(image_data, input_rows-1, image_data, row,
+ 113:fltk-1.3.4-1/jpeg/jcprepct.c **** 		      1, num_cols);
+ 114:fltk-1.3.4-1/jpeg/jcprepct.c ****   }
+ 115:fltk-1.3.4-1/jpeg/jcprepct.c **** }
+ 116:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+ 117:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+ 118:fltk-1.3.4-1/jpeg/jcprepct.c **** /*
+ 119:fltk-1.3.4-1/jpeg/jcprepct.c ****  * Process some data in the simple no-context case.
+ 120:fltk-1.3.4-1/jpeg/jcprepct.c ****  *
+ 121:fltk-1.3.4-1/jpeg/jcprepct.c ****  * Preprocessor output data is counted in "row groups".  A row group
+ 122:fltk-1.3.4-1/jpeg/jcprepct.c ****  * is defined to be v_samp_factor sample rows of each component.
+ 123:fltk-1.3.4-1/jpeg/jcprepct.c ****  * Downsampling will produce this much data from each max_v_samp_factor
+ 124:fltk-1.3.4-1/jpeg/jcprepct.c ****  * input rows.
+ 125:fltk-1.3.4-1/jpeg/jcprepct.c ****  */
+ 126:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+ 127:fltk-1.3.4-1/jpeg/jcprepct.c **** METHODDEF(void)
+ 128:fltk-1.3.4-1/jpeg/jcprepct.c **** pre_process_data (j_compress_ptr cinfo,
+ 129:fltk-1.3.4-1/jpeg/jcprepct.c **** 		  JSAMPARRAY input_buf, JDIMENSION *in_row_ctr,
+ 130:fltk-1.3.4-1/jpeg/jcprepct.c **** 		  JDIMENSION in_rows_avail,
+ 131:fltk-1.3.4-1/jpeg/jcprepct.c **** 		  JSAMPIMAGE output_buf, JDIMENSION *out_row_group_ctr,
+ 132:fltk-1.3.4-1/jpeg/jcprepct.c **** 		  JDIMENSION out_row_groups_avail)
+ 133:fltk-1.3.4-1/jpeg/jcprepct.c **** {
+  79              		.loc 1 133 0
+  80              		.cfi_startproc
+  81              	.LVL5:
+  82 0000 4157     		pushq	%r15
+  83              		.cfi_def_cfa_offset 16
+  84              		.cfi_offset 15, -16
+  85 0002 4156     		pushq	%r14
+  86              		.cfi_def_cfa_offset 24
+  87              		.cfi_offset 14, -24
+  88 0004 4989FF   		movq	%rdi, %r15
+  89 0007 4155     		pushq	%r13
+  90              		.cfi_def_cfa_offset 32
+  91              		.cfi_offset 13, -32
+  92 0009 4154     		pushq	%r12
+  93              		.cfi_def_cfa_offset 40
+  94              		.cfi_offset 12, -40
+  95 000b 55       		pushq	%rbp
+  96              		.cfi_def_cfa_offset 48
+  97              		.cfi_offset 6, -48
+  98 000c 53       		pushq	%rbx
+  99              		.cfi_def_cfa_offset 56
+ 100              		.cfi_offset 3, -56
+ 101 000d 4883EC48 		subq	$72, %rsp
+ 102              		.cfi_def_cfa_offset 128
+ 134:fltk-1.3.4-1/jpeg/jcprepct.c ****   my_prep_ptr prep = (my_prep_ptr) cinfo->prep;
+ 103              		.loc 1 134 0
+ 104 0011 488B8700 		movq	512(%rdi), %rax
+ 104      020000
+ 133:fltk-1.3.4-1/jpeg/jcprepct.c ****   my_prep_ptr prep = (my_prep_ptr) cinfo->prep;
+ 105              		.loc 1 133 0
+ 106 0018 48897424 		movq	%rsi, 48(%rsp)
+ 106      30
+ 107 001d 48895424 		movq	%rdx, 16(%rsp)
+ 107      10
+ 108 0022 894C241C 		movl	%ecx, 28(%rsp)
+ 109 0026 4C894424 		movq	%r8, 56(%rsp)
+ 109      38
+ 110              		.loc 1 134 0
+ 111 002b 48894424 		movq	%rax, 8(%rsp)
+ 111      08
+ 112              	.LVL6:
+ 135:fltk-1.3.4-1/jpeg/jcprepct.c ****   int numrows, ci;
+ 136:fltk-1.3.4-1/jpeg/jcprepct.c ****   JDIMENSION inrows;
+ 137:fltk-1.3.4-1/jpeg/jcprepct.c ****   jpeg_component_info * compptr;
+ 138:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+ 139:fltk-1.3.4-1/jpeg/jcprepct.c ****   while (*in_row_ctr < in_rows_avail &&
+ 140:fltk-1.3.4-1/jpeg/jcprepct.c **** 	 *out_row_group_ctr < out_row_groups_avail) {
+ 141:fltk-1.3.4-1/jpeg/jcprepct.c ****     /* Do color conversion to fill the conversion buffer. */
+ 142:fltk-1.3.4-1/jpeg/jcprepct.c ****     inrows = in_rows_avail - *in_row_ctr;
+ 143:fltk-1.3.4-1/jpeg/jcprepct.c ****     numrows = cinfo->max_v_samp_factor - prep->next_buf_row;
+ 144:fltk-1.3.4-1/jpeg/jcprepct.c ****     numrows = (int) MIN((JDIMENSION) numrows, inrows);
+ 145:fltk-1.3.4-1/jpeg/jcprepct.c ****     (*cinfo->cconvert->color_convert) (cinfo, input_buf + *in_row_ctr,
+ 146:fltk-1.3.4-1/jpeg/jcprepct.c **** 				       prep->color_buf,
+ 113              		.loc 1 146 0
+ 114 0030 4883C010 		addq	$16, %rax
+ 115              	.LVL7:
+ 133:fltk-1.3.4-1/jpeg/jcprepct.c ****   my_prep_ptr prep = (my_prep_ptr) cinfo->prep;
+ 116              		.loc 1 133 0
+ 117 0034 4C894C24 		movq	%r9, 32(%rsp)
+ 117      20
+ 118              		.loc 1 146 0
+ 119 0039 48894424 		movq	%rax, 40(%rsp)
+ 119      28
+ 120              	.LVL8:
+ 121 003e 6690     		.p2align 4,,10
+ 122              		.p2align 3
+ 123              	.L9:
+ 139:fltk-1.3.4-1/jpeg/jcprepct.c **** 	 *out_row_group_ctr < out_row_groups_avail) {
+ 124              		.loc 1 139 0
+ 125 0040 488B4424 		movq	16(%rsp), %rax
+ 125      10
+ 126 0045 8B00     		movl	(%rax), %eax
+ 127 0047 3B44241C 		cmpl	28(%rsp), %eax
+ 128 004b 0F836D02 		jnb	.L8
+ 128      0000
+ 139:fltk-1.3.4-1/jpeg/jcprepct.c **** 	 *out_row_group_ctr < out_row_groups_avail) {
+ 129              		.loc 1 139 0 is_stmt 0 discriminator 1
+ 130 0051 488B4C24 		movq	32(%rsp), %rcx
+ 130      20
+ 131 0056 8BBC2480 		movl	128(%rsp), %edi
+ 131      000000
+ 132 005d 3939     		cmpl	%edi, (%rcx)
+ 133 005f 0F835902 		jnb	.L8
+ 133      0000
+ 134              	.LVL9:
+ 143:fltk-1.3.4-1/jpeg/jcprepct.c ****     numrows = (int) MIN((JDIMENSION) numrows, inrows);
+ 135              		.loc 1 143 0 is_stmt 1
+ 136 0065 4C8B7424 		movq	8(%rsp), %r14
+ 136      08
+ 145:fltk-1.3.4-1/jpeg/jcprepct.c **** 				       prep->color_buf,
+ 137              		.loc 1 145 0
+ 138 006a 488B7C24 		movq	48(%rsp), %rdi
+ 138      30
+ 144:fltk-1.3.4-1/jpeg/jcprepct.c ****     (*cinfo->cconvert->color_convert) (cinfo, input_buf + *in_row_ctr,
+ 139              		.loc 1 144 0
+ 140 006f 418B9764 		movl	356(%r15), %edx
+ 140      010000
+ 141 0076 8B5C241C 		movl	28(%rsp), %ebx
+ 145:fltk-1.3.4-1/jpeg/jcprepct.c **** 				       prep->color_buf,
+ 142              		.loc 1 145 0
+ 143 007a 4C8B6C24 		movq	40(%rsp), %r13
+ 143      28
+ 143:fltk-1.3.4-1/jpeg/jcprepct.c ****     numrows = (int) MIN((JDIMENSION) numrows, inrows);
+ 144              		.loc 1 143 0
+ 145 007f 418B4E64 		movl	100(%r14), %ecx
+ 146              	.LVL10:
+ 145:fltk-1.3.4-1/jpeg/jcprepct.c **** 				       prep->color_buf,
+ 147              		.loc 1 145 0
+ 148 0083 488D34C7 		leaq	(%rdi,%rax,8), %rsi
+ 149 0087 4C89FF   		movq	%r15, %rdi
+ 144:fltk-1.3.4-1/jpeg/jcprepct.c ****     (*cinfo->cconvert->color_convert) (cinfo, input_buf + *in_row_ctr,
+ 150              		.loc 1 144 0
+ 151 008a 29C3     		subl	%eax, %ebx
+ 152              	.LVL11:
+ 145:fltk-1.3.4-1/jpeg/jcprepct.c **** 				       prep->color_buf,
+ 153              		.loc 1 145 0
+ 154 008c 498B8718 		movq	536(%r15), %rax
+ 154      020000
+ 144:fltk-1.3.4-1/jpeg/jcprepct.c ****     (*cinfo->cconvert->color_convert) (cinfo, input_buf + *in_row_ctr,
+ 155              		.loc 1 144 0
+ 156 0093 29CA     		subl	%ecx, %edx
+ 157              	.LVL12:
+ 158 0095 39DA     		cmpl	%ebx, %edx
+ 159 0097 0F46DA   		cmovbe	%edx, %ebx
+ 160              	.LVL13:
+ 145:fltk-1.3.4-1/jpeg/jcprepct.c **** 				       prep->color_buf,
+ 161              		.loc 1 145 0
+ 162 009a 4C89EA   		movq	%r13, %rdx
+ 163 009d 4189D8   		movl	%ebx, %r8d
+ 164 00a0 FF5008   		call	*8(%rax)
+ 165              	.LVL14:
+ 147:fltk-1.3.4-1/jpeg/jcprepct.c **** 				       (JDIMENSION) prep->next_buf_row,
+ 148:fltk-1.3.4-1/jpeg/jcprepct.c **** 				       numrows);
+ 149:fltk-1.3.4-1/jpeg/jcprepct.c ****     *in_row_ctr += numrows;
+ 166              		.loc 1 149 0
+ 167 00a3 488B4424 		movq	16(%rsp), %rax
+ 167      10
+ 168 00a8 0118     		addl	%ebx, (%rax)
+ 150:fltk-1.3.4-1/jpeg/jcprepct.c ****     prep->next_buf_row += numrows;
+ 151:fltk-1.3.4-1/jpeg/jcprepct.c ****     prep->rows_to_go -= numrows;
+ 169              		.loc 1 151 0
+ 170 00aa 418B4E60 		movl	96(%r14), %ecx
+ 150:fltk-1.3.4-1/jpeg/jcprepct.c ****     prep->next_buf_row += numrows;
+ 171              		.loc 1 150 0
+ 172 00ae 418B4664 		movl	100(%r14), %eax
+ 173              		.loc 1 151 0
+ 174 00b2 89CA     		movl	%ecx, %edx
+ 150:fltk-1.3.4-1/jpeg/jcprepct.c ****     prep->next_buf_row += numrows;
+ 175              		.loc 1 150 0
+ 176 00b4 01D8     		addl	%ebx, %eax
+ 177              		.loc 1 151 0
+ 178 00b6 894C2418 		movl	%ecx, 24(%rsp)
+ 179 00ba 29DA     		subl	%ebx, %edx
+ 150:fltk-1.3.4-1/jpeg/jcprepct.c ****     prep->next_buf_row += numrows;
+ 180              		.loc 1 150 0
+ 181 00bc 41894664 		movl	%eax, 100(%r14)
+ 152:fltk-1.3.4-1/jpeg/jcprepct.c ****     /* If at bottom of image, pad to fill the conversion buffer. */
+ 153:fltk-1.3.4-1/jpeg/jcprepct.c ****     if (prep->rows_to_go == 0 &&
+ 182              		.loc 1 153 0
+ 183 00c0 85D2     		testl	%edx, %edx
+ 151:fltk-1.3.4-1/jpeg/jcprepct.c ****     /* If at bottom of image, pad to fill the conversion buffer. */
+ 184              		.loc 1 151 0
+ 185 00c2 41895660 		movl	%edx, 96(%r14)
+ 186              		.loc 1 153 0
+ 187 00c6 0F859C00 		jne	.L10
+ 187      0000
+ 154:fltk-1.3.4-1/jpeg/jcprepct.c **** 	prep->next_buf_row < cinfo->max_v_samp_factor) {
+ 188              		.loc 1 154 0 discriminator 1
+ 189 00cc 418BAF64 		movl	356(%r15), %ebp
+ 189      010000
+ 153:fltk-1.3.4-1/jpeg/jcprepct.c **** 	prep->next_buf_row < cinfo->max_v_samp_factor) {
+ 190              		.loc 1 153 0 discriminator 1
+ 191 00d3 39E8     		cmpl	%ebp, %eax
+ 192 00d5 0F8DC201 		jge	.L11
+ 192      0000
+ 193              	.LVL15:
+ 155:fltk-1.3.4-1/jpeg/jcprepct.c ****       for (ci = 0; ci < cinfo->num_components; ci++) {
+ 194              		.loc 1 155 0 discriminator 1
+ 195 00db 418B775C 		movl	92(%r15), %esi
+ 196 00df 85F6     		testl	%esi, %esi
+ 197 00e1 0F8E9C01 		jle	.L12
+ 197      0000
+ 198 00e7 4C892C24 		movq	%r13, (%rsp)
+ 199              		.loc 1 155 0 is_stmt 0 discriminator 3
+ 200 00eb 4189C6   		movl	%eax, %r14d
+ 201 00ee C7442418 		movl	$0, 24(%rsp)
+ 201      00000000 
+ 202              	.LVL16:
+ 203 00f6 662E0F1F 		.p2align 4,,10
+ 203      84000000 
+ 203      0000
+ 204              		.p2align 3
+ 205              	.L15:
+ 156:fltk-1.3.4-1/jpeg/jcprepct.c **** 	expand_bottom_edge(prep->color_buf[ci], cinfo->image_width,
+ 206              		.loc 1 156 0 is_stmt 1 discriminator 3
+ 207 0100 488B0424 		movq	(%rsp), %rax
+ 208              	.LBB11:
+ 209              	.LBB12:
+ 111:fltk-1.3.4-1/jpeg/jcprepct.c ****     jcopy_sample_rows(image_data, input_rows-1, image_data, row,
+ 210              		.loc 1 111 0 discriminator 3
+ 211 0104 4439F5   		cmpl	%r14d, %ebp
+ 212              	.LBE12:
+ 213              	.LBE11:
+ 214              		.loc 1 156 0 discriminator 3
+ 215 0107 458B6730 		movl	48(%r15), %r12d
+ 216 010b 488B18   		movq	(%rax), %rbx
+ 217              	.LVL17:
+ 218              	.LBB14:
+ 219              	.LBB13:
+ 111:fltk-1.3.4-1/jpeg/jcprepct.c ****     jcopy_sample_rows(image_data, input_rows-1, image_data, row,
+ 220              		.loc 1 111 0 discriminator 3
+ 221 010e 7E32     		jle	.L13
+ 222 0110 458D6EFF 		leal	-1(%r14), %r13d
+ 223              	.LVL18:
+ 224              		.p2align 4,,10
+ 225 0114 0F1F4000 		.p2align 3
+ 226              	.L14:
+ 112:fltk-1.3.4-1/jpeg/jcprepct.c **** 		      1, num_cols);
+ 227              		.loc 1 112 0
+ 228 0118 4489F1   		movl	%r14d, %ecx
+ 229 011b 4589E1   		movl	%r12d, %r9d
+ 230 011e 41B80100 		movl	$1, %r8d
+ 230      0000
+ 231 0124 4889DA   		movq	%rbx, %rdx
+ 232 0127 4489EE   		movl	%r13d, %esi
+ 233 012a 4889DF   		movq	%rbx, %rdi
+ 111:fltk-1.3.4-1/jpeg/jcprepct.c ****     jcopy_sample_rows(image_data, input_rows-1, image_data, row,
+ 234              		.loc 1 111 0
+ 235 012d 4183C601 		addl	$1, %r14d
+ 236              	.LVL19:
+ 112:fltk-1.3.4-1/jpeg/jcprepct.c **** 		      1, num_cols);
+ 237              		.loc 1 112 0
+ 238 0131 E8000000 		call	jcopy_sample_rows
+ 238      00
+ 239              	.LVL20:
+ 111:fltk-1.3.4-1/jpeg/jcprepct.c ****     jcopy_sample_rows(image_data, input_rows-1, image_data, row,
+ 240              		.loc 1 111 0
+ 241 0136 4139EE   		cmpl	%ebp, %r14d
+ 242 0139 75DD     		jne	.L14
+ 243 013b 418BAF64 		movl	356(%r15), %ebp
+ 243      010000
+ 244              	.LVL21:
+ 245              	.L13:
+ 246              	.LBE13:
+ 247              	.LBE14:
+ 155:fltk-1.3.4-1/jpeg/jcprepct.c **** 	expand_bottom_edge(prep->color_buf[ci], cinfo->image_width,
+ 248              		.loc 1 155 0 discriminator 3
+ 249 0142 83442418 		addl	$1, 24(%rsp)
+ 249      01
+ 250              	.LVL22:
+ 251 0147 48830424 		addq	$8, (%rsp)
+ 251      08
+ 252 014c 8B442418 		movl	24(%rsp), %eax
+ 253              	.LVL23:
+ 254 0150 4139475C 		cmpl	%eax, 92(%r15)
+ 255 0154 0F8E2901 		jle	.L12
+ 255      0000
+ 256 015a 488B4424 		movq	8(%rsp), %rax
+ 256      08
+ 257              	.LVL24:
+ 258 015f 448B7064 		movl	100(%rax), %r14d
+ 259 0163 EB9B     		jmp	.L15
+ 260              	.LVL25:
+ 261              		.p2align 4,,10
+ 262 0165 0F1F00   		.p2align 3
+ 263              	.L10:
+ 157:fltk-1.3.4-1/jpeg/jcprepct.c **** 			   prep->next_buf_row, cinfo->max_v_samp_factor);
+ 158:fltk-1.3.4-1/jpeg/jcprepct.c ****       }
+ 159:fltk-1.3.4-1/jpeg/jcprepct.c ****       prep->next_buf_row = cinfo->max_v_samp_factor;
+ 160:fltk-1.3.4-1/jpeg/jcprepct.c ****     }
+ 161:fltk-1.3.4-1/jpeg/jcprepct.c ****     /* If we've filled the conversion buffer, empty it. */
+ 162:fltk-1.3.4-1/jpeg/jcprepct.c ****     if (prep->next_buf_row == cinfo->max_v_samp_factor) {
+ 264              		.loc 1 162 0
+ 265 0168 413B8764 		cmpl	356(%r15), %eax
+ 265      010000
+ 266 016f 0F85CBFE 		jne	.L9
+ 266      FFFF
+ 267              	.LVL26:
+ 268              	.L26:
+ 163:fltk-1.3.4-1/jpeg/jcprepct.c ****       (*cinfo->downsample->downsample) (cinfo,
+ 269              		.loc 1 163 0
+ 270 0175 488B5C24 		movq	32(%rsp), %rbx
+ 270      20
+ 271 017a 498B8720 		movq	544(%r15), %rax
+ 271      020000
+ 272 0181 31D2     		xorl	%edx, %edx
+ 273 0183 488B4C24 		movq	56(%rsp), %rcx
+ 273      38
+ 274 0188 488B7424 		movq	40(%rsp), %rsi
+ 274      28
+ 275 018d 4C89FF   		movq	%r15, %rdi
+ 276 0190 448B03   		movl	(%rbx), %r8d
+ 277 0193 FF5008   		call	*8(%rax)
+ 278              	.LVL27:
+ 164:fltk-1.3.4-1/jpeg/jcprepct.c **** 					prep->color_buf, (JDIMENSION) 0,
+ 165:fltk-1.3.4-1/jpeg/jcprepct.c **** 					output_buf, *out_row_group_ctr);
+ 166:fltk-1.3.4-1/jpeg/jcprepct.c ****       prep->next_buf_row = 0;
+ 279              		.loc 1 166 0
+ 280 0196 488B4424 		movq	8(%rsp), %rax
+ 280      08
+ 281 019b C7406400 		movl	$0, 100(%rax)
+ 281      000000
+ 167:fltk-1.3.4-1/jpeg/jcprepct.c ****       (*out_row_group_ctr)++;
+ 282              		.loc 1 167 0
+ 283 01a2 830301   		addl	$1, (%rbx)
+ 284              	.L16:
+ 168:fltk-1.3.4-1/jpeg/jcprepct.c ****     }
+ 169:fltk-1.3.4-1/jpeg/jcprepct.c ****     /* If at bottom of image, pad the output to a full iMCU height.
+ 170:fltk-1.3.4-1/jpeg/jcprepct.c ****      * Note we assume the caller is providing a one-iMCU-height output buffer!
+ 171:fltk-1.3.4-1/jpeg/jcprepct.c ****      */
+ 172:fltk-1.3.4-1/jpeg/jcprepct.c ****     if (prep->rows_to_go == 0 &&
+ 285              		.loc 1 172 0
+ 286 01a5 488B4424 		movq	8(%rsp), %rax
+ 286      08
+ 287 01aa 8B4860   		movl	96(%rax), %ecx
+ 288 01ad 85C9     		testl	%ecx, %ecx
+ 289 01af 0F858BFE 		jne	.L9
+ 289      FFFF
+ 290              	.L27:
+ 173:fltk-1.3.4-1/jpeg/jcprepct.c **** 	*out_row_group_ctr < out_row_groups_avail) {
+ 291              		.loc 1 173 0
+ 292 01b5 488B4424 		movq	32(%rsp), %rax
+ 292      20
+ 293 01ba 8B08     		movl	(%rax), %ecx
+ 172:fltk-1.3.4-1/jpeg/jcprepct.c **** 	*out_row_group_ctr < out_row_groups_avail) {
+ 294              		.loc 1 172 0
+ 295 01bc 398C2480 		cmpl	%ecx, 128(%rsp)
+ 295      000000
+ 296 01c3 0F8677FE 		jbe	.L9
+ 296      FFFF
+ 297              	.LVL28:
+ 174:fltk-1.3.4-1/jpeg/jcprepct.c ****       for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
+ 298              		.loc 1 174 0
+ 299 01c9 418B575C 		movl	92(%r15), %edx
+ 300 01cd 498B4768 		movq	104(%r15), %rax
+ 301              	.LVL29:
+ 302 01d1 85D2     		testl	%edx, %edx
+ 303 01d3 0F8ED700 		jle	.L18
+ 303      0000
+ 304 01d9 488B7C24 		movq	56(%rsp), %rdi
+ 304      38
+ 305 01de C7442418 		movl	$0, 24(%rsp)
+ 305      00000000 
+ 306 01e6 4989C6   		movq	%rax, %r14
+ 307 01e9 4C897C24 		movq	%r15, 8(%rsp)
+ 307      08
+ 308              	.LVL30:
+ 309 01ee 48893C24 		movq	%rdi, (%rsp)
+ 310              	.LVL31:
+ 311              	.L19:
+ 175:fltk-1.3.4-1/jpeg/jcprepct.c **** 	   ci++, compptr++) {
+ 176:fltk-1.3.4-1/jpeg/jcprepct.c **** 	numrows = (compptr->v_samp_factor * compptr->DCT_v_scaled_size) /
+ 177:fltk-1.3.4-1/jpeg/jcprepct.c **** 		  cinfo->min_DCT_v_scaled_size;
+ 178:fltk-1.3.4-1/jpeg/jcprepct.c **** 	expand_bottom_edge(output_buf[ci],
+ 179:fltk-1.3.4-1/jpeg/jcprepct.c **** 			   compptr->width_in_blocks * compptr->DCT_h_scaled_size,
+ 180:fltk-1.3.4-1/jpeg/jcprepct.c **** 			   (int) (*out_row_group_ctr * numrows),
+ 181:fltk-1.3.4-1/jpeg/jcprepct.c **** 			   (int) (out_row_groups_avail * numrows));
+ 312              		.loc 1 181 0
+ 313 01f2 418B460C 		movl	12(%r14), %eax
+ 314 01f6 488B7C24 		movq	8(%rsp), %rdi
+ 314      08
+ 315 01fb 410FAF46 		imull	40(%r14), %eax
+ 315      28
+ 178:fltk-1.3.4-1/jpeg/jcprepct.c **** 			   compptr->width_in_blocks * compptr->DCT_h_scaled_size,
+ 316              		.loc 1 178 0
+ 317 0200 448BA424 		movl	128(%rsp), %r12d
+ 317      80000000 
+ 318 0208 418B6E1C 		movl	28(%r14), %ebp
+ 319 020c 410FAF6E 		imull	36(%r14), %ebp
+ 319      24
+ 320              		.loc 1 181 0
+ 321 0211 99       		cltd
+ 322 0212 F7BF6C01 		idivl	364(%rdi)
+ 322      0000
+ 323              	.LVL32:
+ 178:fltk-1.3.4-1/jpeg/jcprepct.c **** 			   compptr->width_in_blocks * compptr->DCT_h_scaled_size,
+ 324              		.loc 1 178 0
+ 325 0218 440FAFE0 		imull	%eax, %r12d
+ 326 021c 0FAFC1   		imull	%ecx, %eax
+ 327              	.LVL33:
+ 328 021f 4189C7   		movl	%eax, %r15d
+ 329 0222 488B0424 		movq	(%rsp), %rax
+ 330              	.LBB15:
+ 331              	.LBB16:
+ 111:fltk-1.3.4-1/jpeg/jcprepct.c ****     jcopy_sample_rows(image_data, input_rows-1, image_data, row,
+ 332              		.loc 1 111 0
+ 333 0226 4539FC   		cmpl	%r15d, %r12d
+ 334 0229 458D6FFF 		leal	-1(%r15), %r13d
+ 335              	.LBE16:
+ 336              	.LBE15:
+ 178:fltk-1.3.4-1/jpeg/jcprepct.c **** 			   compptr->width_in_blocks * compptr->DCT_h_scaled_size,
+ 337              		.loc 1 178 0
+ 338 022d 488B18   		movq	(%rax), %rbx
+ 339              	.LVL34:
+ 340              	.LBB18:
+ 341              	.LBB17:
+ 111:fltk-1.3.4-1/jpeg/jcprepct.c ****     jcopy_sample_rows(image_data, input_rows-1, image_data, row,
+ 342              		.loc 1 111 0
+ 343 0230 7E29     		jle	.L24
+ 344              	.LVL35:
+ 345              		.p2align 4,,10
+ 346 0232 660F1F44 		.p2align 3
+ 346      0000
+ 347              	.L28:
+ 112:fltk-1.3.4-1/jpeg/jcprepct.c **** 		      1, num_cols);
+ 348              		.loc 1 112 0
+ 349 0238 4489F9   		movl	%r15d, %ecx
+ 350 023b 4189E9   		movl	%ebp, %r9d
+ 351 023e 41B80100 		movl	$1, %r8d
+ 351      0000
+ 352 0244 4889DA   		movq	%rbx, %rdx
+ 353 0247 4489EE   		movl	%r13d, %esi
+ 354 024a 4889DF   		movq	%rbx, %rdi
+ 111:fltk-1.3.4-1/jpeg/jcprepct.c ****     jcopy_sample_rows(image_data, input_rows-1, image_data, row,
+ 355              		.loc 1 111 0
+ 356 024d 4183C701 		addl	$1, %r15d
+ 357              	.LVL36:
+ 112:fltk-1.3.4-1/jpeg/jcprepct.c **** 		      1, num_cols);
+ 358              		.loc 1 112 0
+ 359 0251 E8000000 		call	jcopy_sample_rows
+ 359      00
+ 360              	.LVL37:
+ 111:fltk-1.3.4-1/jpeg/jcprepct.c ****     jcopy_sample_rows(image_data, input_rows-1, image_data, row,
+ 361              		.loc 1 111 0
+ 362 0256 4539FC   		cmpl	%r15d, %r12d
+ 363 0259 75DD     		jne	.L28
+ 364              	.L24:
+ 365              	.LVL38:
+ 366              	.LBE17:
+ 367              	.LBE18:
+ 174:fltk-1.3.4-1/jpeg/jcprepct.c **** 	   ci++, compptr++) {
+ 368              		.loc 1 174 0
+ 369 025b 488B7C24 		movq	8(%rsp), %rdi
+ 369      08
+ 175:fltk-1.3.4-1/jpeg/jcprepct.c **** 	numrows = (compptr->v_samp_factor * compptr->DCT_v_scaled_size) /
+ 370              		.loc 1 175 0
+ 371 0260 83442418 		addl	$1, 24(%rsp)
+ 371      01
+ 372              	.LVL39:
+ 373 0265 4983C660 		addq	$96, %r14
+ 374              	.LVL40:
+ 375 0269 8B442418 		movl	24(%rsp), %eax
+ 376              	.LVL41:
+ 377 026d 48830424 		addq	$8, (%rsp)
+ 377      08
+ 174:fltk-1.3.4-1/jpeg/jcprepct.c **** 	   ci++, compptr++) {
+ 378              		.loc 1 174 0
+ 379 0272 39475C   		cmpl	%eax, 92(%rdi)
+ 380 0275 7E39     		jle	.L18
+ 381 0277 488B4424 		movq	32(%rsp), %rax
+ 381      20
+ 382              	.LVL42:
+ 383 027c 8B08     		movl	(%rax), %ecx
+ 384 027e E96FFFFF 		jmp	.L19
+ 384      FF
+ 385              	.LVL43:
+ 386              	.L12:
+ 159:fltk-1.3.4-1/jpeg/jcprepct.c ****     }
+ 387              		.loc 1 159 0
+ 388 0283 488B4424 		movq	8(%rsp), %rax
+ 388      08
+ 389 0288 896864   		movl	%ebp, 100(%rax)
+ 162:fltk-1.3.4-1/jpeg/jcprepct.c ****       (*cinfo->downsample->downsample) (cinfo,
+ 390              		.loc 1 162 0
+ 391 028b 4139AF64 		cmpl	%ebp, 356(%r15)
+ 391      010000
+ 392 0292 0F850DFF 		jne	.L16
+ 392      FFFF
+ 393 0298 E9D8FEFF 		jmp	.L26
+ 393      FF
+ 394              	.LVL44:
+ 395              	.L11:
+ 396 029d 0F8512FF 		jne	.L27
+ 396      FFFF
+ 397 02a3 E9CDFEFF 		jmp	.L26
+ 397      FF
+ 398              	.LVL45:
+ 399 02a8 0F1F8400 		.p2align 4,,10
+ 399      00000000 
+ 400              		.p2align 3
+ 401              	.L18:
+ 182:fltk-1.3.4-1/jpeg/jcprepct.c ****       }
+ 183:fltk-1.3.4-1/jpeg/jcprepct.c ****       *out_row_group_ctr = out_row_groups_avail;
+ 402              		.loc 1 183 0
+ 403 02b0 488B4424 		movq	32(%rsp), %rax
+ 403      20
+ 404 02b5 8B8C2480 		movl	128(%rsp), %ecx
+ 404      000000
+ 405 02bc 8908     		movl	%ecx, (%rax)
+ 406              	.L8:
+ 184:fltk-1.3.4-1/jpeg/jcprepct.c ****       break;			/* can exit outer loop without test */
+ 185:fltk-1.3.4-1/jpeg/jcprepct.c ****     }
+ 186:fltk-1.3.4-1/jpeg/jcprepct.c ****   }
+ 187:fltk-1.3.4-1/jpeg/jcprepct.c **** }
+ 407              		.loc 1 187 0
+ 408 02be 4883C448 		addq	$72, %rsp
+ 409              		.cfi_def_cfa_offset 56
+ 410 02c2 5B       		popq	%rbx
+ 411              		.cfi_def_cfa_offset 48
+ 412 02c3 5D       		popq	%rbp
+ 413              		.cfi_def_cfa_offset 40
+ 414 02c4 415C     		popq	%r12
+ 415              		.cfi_def_cfa_offset 32
+ 416 02c6 415D     		popq	%r13
+ 417              		.cfi_def_cfa_offset 24
+ 418 02c8 415E     		popq	%r14
+ 419              		.cfi_def_cfa_offset 16
+ 420 02ca 415F     		popq	%r15
+ 421              		.cfi_def_cfa_offset 8
+ 422 02cc C3       		ret
+ 423              		.cfi_endproc
+ 424              	.LFE63:
+ 426              		.section	.text.unlikely.pre_process_data
+ 427              	.LCOLDE1:
+ 428              		.section	.text.pre_process_data
+ 429              	.LHOTE1:
+ 430              		.section	.text.unlikely.pre_process_context,"ax",@progbits
+ 431              	.LCOLDB2:
+ 432              		.section	.text.pre_process_context,"ax",@progbits
+ 433              	.LHOTB2:
+ 434              		.p2align 4,,15
+ 436              	pre_process_context:
+ 437              	.LFB64:
+ 188:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+ 189:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+ 190:fltk-1.3.4-1/jpeg/jcprepct.c **** #ifdef CONTEXT_ROWS_SUPPORTED
+ 191:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+ 192:fltk-1.3.4-1/jpeg/jcprepct.c **** /*
+ 193:fltk-1.3.4-1/jpeg/jcprepct.c ****  * Process some data in the context case.
+ 194:fltk-1.3.4-1/jpeg/jcprepct.c ****  */
+ 195:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+ 196:fltk-1.3.4-1/jpeg/jcprepct.c **** METHODDEF(void)
+ 197:fltk-1.3.4-1/jpeg/jcprepct.c **** pre_process_context (j_compress_ptr cinfo,
+ 198:fltk-1.3.4-1/jpeg/jcprepct.c **** 		     JSAMPARRAY input_buf, JDIMENSION *in_row_ctr,
+ 199:fltk-1.3.4-1/jpeg/jcprepct.c **** 		     JDIMENSION in_rows_avail,
+ 200:fltk-1.3.4-1/jpeg/jcprepct.c **** 		     JSAMPIMAGE output_buf, JDIMENSION *out_row_group_ctr,
+ 201:fltk-1.3.4-1/jpeg/jcprepct.c **** 		     JDIMENSION out_row_groups_avail)
+ 202:fltk-1.3.4-1/jpeg/jcprepct.c **** {
+ 438              		.loc 1 202 0
+ 439              		.cfi_startproc
+ 440              	.LVL46:
+ 441 0000 4157     		pushq	%r15
+ 442              		.cfi_def_cfa_offset 16
+ 443              		.cfi_offset 15, -16
+ 444 0002 4156     		pushq	%r14
+ 445              		.cfi_def_cfa_offset 24
+ 446              		.cfi_offset 14, -24
+ 447 0004 4989FF   		movq	%rdi, %r15
+ 448 0007 4155     		pushq	%r13
+ 449              		.cfi_def_cfa_offset 32
+ 450              		.cfi_offset 13, -32
+ 451 0009 4154     		pushq	%r12
+ 452              		.cfi_def_cfa_offset 40
+ 453              		.cfi_offset 12, -40
+ 454 000b 55       		pushq	%rbp
+ 455              		.cfi_def_cfa_offset 48
+ 456              		.cfi_offset 6, -48
+ 457 000c 53       		pushq	%rbx
+ 458              		.cfi_def_cfa_offset 56
+ 459              		.cfi_offset 3, -56
+ 460 000d 4883EC58 		subq	$88, %rsp
+ 461              		.cfi_def_cfa_offset 144
+ 203:fltk-1.3.4-1/jpeg/jcprepct.c ****   my_prep_ptr prep = (my_prep_ptr) cinfo->prep;
+ 462              		.loc 1 203 0
+ 463 0011 488B8700 		movq	512(%rdi), %rax
+ 463      020000
+ 202:fltk-1.3.4-1/jpeg/jcprepct.c ****   my_prep_ptr prep = (my_prep_ptr) cinfo->prep;
+ 464              		.loc 1 202 0
+ 465 0018 48895424 		movq	%rdx, 32(%rsp)
+ 465      20
+ 466 001d 48897424 		movq	%rsi, 56(%rsp)
+ 466      38
+ 467 0022 894C2448 		movl	%ecx, 72(%rsp)
+ 468 0026 4C894424 		movq	%r8, 64(%rsp)
+ 468      40
+ 469              		.loc 1 203 0
+ 470 002b 4889C2   		movq	%rax, %rdx
+ 471              	.LVL47:
+ 472 002e 48894424 		movq	%rax, 24(%rsp)
+ 472      18
+ 473              	.LVL48:
+ 204:fltk-1.3.4-1/jpeg/jcprepct.c ****   int numrows, ci;
+ 205:fltk-1.3.4-1/jpeg/jcprepct.c ****   int buf_height = cinfo->max_v_samp_factor * 3;
+ 474              		.loc 1 205 0
+ 475 0033 8B876401 		movl	356(%rdi), %eax
+ 475      0000
+ 476              	.LVL49:
+ 202:fltk-1.3.4-1/jpeg/jcprepct.c ****   my_prep_ptr prep = (my_prep_ptr) cinfo->prep;
+ 477              		.loc 1 202 0
+ 478 0039 4C894C24 		movq	%r9, 40(%rsp)
+ 478      28
+ 479              		.loc 1 205 0
+ 480 003e 8D0440   		leal	(%rax,%rax,2), %eax
+ 481 0041 8944244C 		movl	%eax, 76(%rsp)
+ 482              	.LVL50:
+ 206:fltk-1.3.4-1/jpeg/jcprepct.c ****   JDIMENSION inrows;
+ 207:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+ 208:fltk-1.3.4-1/jpeg/jcprepct.c ****   while (*out_row_group_ctr < out_row_groups_avail) {
+ 209:fltk-1.3.4-1/jpeg/jcprepct.c ****     if (*in_row_ctr < in_rows_avail) {
+ 210:fltk-1.3.4-1/jpeg/jcprepct.c ****       /* Do color conversion to fill the conversion buffer. */
+ 211:fltk-1.3.4-1/jpeg/jcprepct.c ****       inrows = in_rows_avail - *in_row_ctr;
+ 212:fltk-1.3.4-1/jpeg/jcprepct.c ****       numrows = prep->next_buf_stop - prep->next_buf_row;
+ 213:fltk-1.3.4-1/jpeg/jcprepct.c ****       numrows = (int) MIN((JDIMENSION) numrows, inrows);
+ 214:fltk-1.3.4-1/jpeg/jcprepct.c ****       (*cinfo->cconvert->color_convert) (cinfo, input_buf + *in_row_ctr,
+ 215:fltk-1.3.4-1/jpeg/jcprepct.c **** 					 prep->color_buf,
+ 483              		.loc 1 215 0
+ 484 0045 4889D0   		movq	%rdx, %rax
+ 485              	.LVL51:
+ 486 0048 4883C010 		addq	$16, %rax
+ 487 004c 48894424 		movq	%rax, 48(%rsp)
+ 487      30
+ 488              	.LVL52:
+ 489              	.L35:
+ 490 0051 488B4424 		movq	40(%rsp), %rax
+ 490      28
+ 491 0056 488B5C24 		movq	24(%rsp), %rbx
+ 491      18
+ 492 005b 448B00   		movl	(%rax), %r8d
+ 208:fltk-1.3.4-1/jpeg/jcprepct.c ****     if (*in_row_ctr < in_rows_avail) {
+ 493              		.loc 1 208 0
+ 494 005e 44398424 		cmpl	%r8d, 144(%rsp)
+ 494      90000000 
+ 495 0066 0F862A01 		jbe	.L34
+ 495      0000
+ 496 006c 0F1F4000 		.p2align 4,,10
+ 497              		.p2align 3
+ 498              	.L54:
+ 209:fltk-1.3.4-1/jpeg/jcprepct.c ****       /* Do color conversion to fill the conversion buffer. */
+ 499              		.loc 1 209 0
+ 500 0070 488B4424 		movq	32(%rsp), %rax
+ 500      20
+ 501 0075 8B00     		movl	(%rax), %eax
+ 502 0077 3B442448 		cmpl	72(%rsp), %eax
+ 503 007b 0F82A800 		jb	.L68
+ 503      0000
+ 216:fltk-1.3.4-1/jpeg/jcprepct.c **** 					 (JDIMENSION) prep->next_buf_row,
+ 217:fltk-1.3.4-1/jpeg/jcprepct.c **** 					 numrows);
+ 218:fltk-1.3.4-1/jpeg/jcprepct.c ****       /* Pad at top of image, if first time through */
+ 219:fltk-1.3.4-1/jpeg/jcprepct.c ****       if (prep->rows_to_go == cinfo->image_height) {
+ 220:fltk-1.3.4-1/jpeg/jcprepct.c **** 	for (ci = 0; ci < cinfo->num_components; ci++) {
+ 221:fltk-1.3.4-1/jpeg/jcprepct.c **** 	  int row;
+ 222:fltk-1.3.4-1/jpeg/jcprepct.c **** 	  for (row = 1; row <= cinfo->max_v_samp_factor; row++) {
+ 223:fltk-1.3.4-1/jpeg/jcprepct.c **** 	    jcopy_sample_rows(prep->color_buf[ci], 0,
+ 224:fltk-1.3.4-1/jpeg/jcprepct.c **** 			      prep->color_buf[ci], -row,
+ 225:fltk-1.3.4-1/jpeg/jcprepct.c **** 			      1, cinfo->image_width);
+ 226:fltk-1.3.4-1/jpeg/jcprepct.c **** 	  }
+ 227:fltk-1.3.4-1/jpeg/jcprepct.c **** 	}
+ 228:fltk-1.3.4-1/jpeg/jcprepct.c ****       }
+ 229:fltk-1.3.4-1/jpeg/jcprepct.c ****       *in_row_ctr += numrows;
+ 230:fltk-1.3.4-1/jpeg/jcprepct.c ****       prep->next_buf_row += numrows;
+ 231:fltk-1.3.4-1/jpeg/jcprepct.c ****       prep->rows_to_go -= numrows;
+ 232:fltk-1.3.4-1/jpeg/jcprepct.c ****     } else {
+ 233:fltk-1.3.4-1/jpeg/jcprepct.c ****       /* Return for more data, unless we are at the bottom of the image. */
+ 234:fltk-1.3.4-1/jpeg/jcprepct.c ****       if (prep->rows_to_go != 0)
+ 504              		.loc 1 234 0
+ 505 0081 8B4B60   		movl	96(%rbx), %ecx
+ 506 0084 85C9     		testl	%ecx, %ecx
+ 507 0086 0F850A01 		jne	.L34
+ 507      0000
+ 235:fltk-1.3.4-1/jpeg/jcprepct.c **** 	break;
+ 236:fltk-1.3.4-1/jpeg/jcprepct.c ****       /* When at bottom of image, pad to fill the conversion buffer. */
+ 237:fltk-1.3.4-1/jpeg/jcprepct.c ****       if (prep->next_buf_row < prep->next_buf_stop) {
+ 508              		.loc 1 237 0
+ 509 008c 8B4364   		movl	100(%rbx), %eax
+ 510 008f 8B6B6C   		movl	108(%rbx), %ebp
+ 511 0092 39E8     		cmpl	%ebp, %eax
+ 512 0094 0F8DEA00 		jge	.L43
+ 512      0000
+ 513              	.LVL53:
+ 238:fltk-1.3.4-1/jpeg/jcprepct.c **** 	for (ci = 0; ci < cinfo->num_components; ci++) {
+ 514              		.loc 1 238 0 discriminator 1
+ 515 009a 418B575C 		movl	92(%r15), %edx
+ 516 009e 85D2     		testl	%edx, %edx
+ 517 00a0 0F8E0401 		jle	.L45
+ 517      0000
+ 518 00a6 488B5424 		movq	48(%rsp), %rdx
+ 518      30
+ 519              		.loc 1 238 0 is_stmt 0 discriminator 3
+ 520 00ab 4C897C24 		movq	%r15, 16(%rsp)
+ 520      10
+ 237:fltk-1.3.4-1/jpeg/jcprepct.c **** 	for (ci = 0; ci < cinfo->num_components; ci++) {
+ 521              		.loc 1 237 0 is_stmt 1 discriminator 3
+ 522 00b0 4189C6   		movl	%eax, %r14d
+ 523              		.loc 1 238 0 discriminator 3
+ 524 00b3 C744240C 		movl	$0, 12(%rsp)
+ 524      00000000 
+ 525 00bb 4989D7   		movq	%rdx, %r15
+ 526              	.LVL54:
+ 527 00be 6690     		.p2align 4,,10
+ 528              		.p2align 3
+ 529              	.L48:
+ 239:fltk-1.3.4-1/jpeg/jcprepct.c **** 	  expand_bottom_edge(prep->color_buf[ci], cinfo->image_width,
+ 530              		.loc 1 239 0 discriminator 3
+ 531 00c0 488B4424 		movq	16(%rsp), %rax
+ 531      10
+ 532              	.LBB19:
+ 533              	.LBB20:
+ 111:fltk-1.3.4-1/jpeg/jcprepct.c ****     jcopy_sample_rows(image_data, input_rows-1, image_data, row,
+ 534              		.loc 1 111 0 discriminator 3
+ 535 00c5 4439F5   		cmpl	%r14d, %ebp
+ 536              	.LBE20:
+ 537              	.LBE19:
+ 538              		.loc 1 239 0 discriminator 3
+ 539 00c8 498B1F   		movq	(%r15), %rbx
+ 540              	.LVL55:
+ 541 00cb 448B6030 		movl	48(%rax), %r12d
+ 542              	.LVL56:
+ 543              	.LBB22:
+ 544              	.LBB21:
+ 111:fltk-1.3.4-1/jpeg/jcprepct.c ****     jcopy_sample_rows(image_data, input_rows-1, image_data, row,
+ 545              		.loc 1 111 0 discriminator 3
+ 546 00cf 7E32     		jle	.L46
+ 547 00d1 458D6EFF 		leal	-1(%r14), %r13d
+ 548              	.LVL57:
+ 549              		.p2align 4,,10
+ 550 00d5 0F1F00   		.p2align 3
+ 551              	.L47:
+ 112:fltk-1.3.4-1/jpeg/jcprepct.c **** 		      1, num_cols);
+ 552              		.loc 1 112 0
+ 553 00d8 4489F1   		movl	%r14d, %ecx
+ 554 00db 4589E1   		movl	%r12d, %r9d
+ 555 00de 41B80100 		movl	$1, %r8d
+ 555      0000
+ 556 00e4 4889DA   		movq	%rbx, %rdx
+ 557 00e7 4489EE   		movl	%r13d, %esi
+ 558 00ea 4889DF   		movq	%rbx, %rdi
+ 111:fltk-1.3.4-1/jpeg/jcprepct.c ****     jcopy_sample_rows(image_data, input_rows-1, image_data, row,
+ 559              		.loc 1 111 0
+ 560 00ed 4183C601 		addl	$1, %r14d
+ 561              	.LVL58:
+ 112:fltk-1.3.4-1/jpeg/jcprepct.c **** 		      1, num_cols);
+ 562              		.loc 1 112 0
+ 563 00f1 E8000000 		call	jcopy_sample_rows
+ 563      00
+ 564              	.LVL59:
+ 111:fltk-1.3.4-1/jpeg/jcprepct.c ****     jcopy_sample_rows(image_data, input_rows-1, image_data, row,
+ 565              		.loc 1 111 0
+ 566 00f6 4139EE   		cmpl	%ebp, %r14d
+ 567 00f9 75DD     		jne	.L47
+ 568 00fb 488B4424 		movq	24(%rsp), %rax
+ 568      18
+ 569 0100 8B686C   		movl	108(%rax), %ebp
+ 570              	.LVL60:
+ 571              	.L46:
+ 572              	.LBE21:
+ 573              	.LBE22:
+ 238:fltk-1.3.4-1/jpeg/jcprepct.c **** 	  expand_bottom_edge(prep->color_buf[ci], cinfo->image_width,
+ 574              		.loc 1 238 0 discriminator 3
+ 575 0103 488B7424 		movq	16(%rsp), %rsi
+ 575      10
+ 576 0108 8344240C 		addl	$1, 12(%rsp)
+ 576      01
+ 577              	.LVL61:
+ 578 010d 4983C708 		addq	$8, %r15
+ 579 0111 8B44240C 		movl	12(%rsp), %eax
+ 580              	.LVL62:
+ 581 0115 39465C   		cmpl	%eax, 92(%rsi)
+ 582 0118 0F8E8700 		jle	.L65
+ 582      0000
+ 583 011e 488B4424 		movq	24(%rsp), %rax
+ 583      18
+ 584              	.LVL63:
+ 585 0123 448B7064 		movl	100(%rax), %r14d
+ 586 0127 EB97     		jmp	.L48
+ 587              	.LVL64:
+ 588              	.L68:
+ 212:fltk-1.3.4-1/jpeg/jcprepct.c ****       numrows = (int) MIN((JDIMENSION) numrows, inrows);
+ 589              		.loc 1 212 0
+ 590 0129 8B4B64   		movl	100(%rbx), %ecx
+ 591              	.LVL65:
+ 213:fltk-1.3.4-1/jpeg/jcprepct.c ****       (*cinfo->cconvert->color_convert) (cinfo, input_buf + *in_row_ctr,
+ 592              		.loc 1 213 0
+ 593 012c 8B536C   		movl	108(%rbx), %edx
+ 214:fltk-1.3.4-1/jpeg/jcprepct.c **** 					 prep->color_buf,
+ 594              		.loc 1 214 0
+ 595 012f 4C89FF   		movq	%r15, %rdi
+ 213:fltk-1.3.4-1/jpeg/jcprepct.c ****       (*cinfo->cconvert->color_convert) (cinfo, input_buf + *in_row_ctr,
+ 596              		.loc 1 213 0
+ 597 0132 8B6C2448 		movl	72(%rsp), %ebp
+ 598 0136 29CA     		subl	%ecx, %edx
+ 599              	.LVL66:
+ 600 0138 29C5     		subl	%eax, %ebp
+ 601              	.LVL67:
+ 602 013a 39EA     		cmpl	%ebp, %edx
+ 603 013c 0F46EA   		cmovbe	%edx, %ebp
+ 604              	.LVL68:
+ 214:fltk-1.3.4-1/jpeg/jcprepct.c **** 					 prep->color_buf,
+ 605              		.loc 1 214 0
+ 606 013f 488B5424 		movq	56(%rsp), %rdx
+ 606      38
+ 607 0144 4189E8   		movl	%ebp, %r8d
+ 608 0147 488D34C2 		leaq	(%rdx,%rax,8), %rsi
+ 609 014b 498B8718 		movq	536(%r15), %rax
+ 609      020000
+ 610              	.LVL69:
+ 611 0152 488B5424 		movq	48(%rsp), %rdx
+ 611      30
+ 612 0157 FF5008   		call	*8(%rax)
+ 613              	.LVL70:
+ 219:fltk-1.3.4-1/jpeg/jcprepct.c **** 	for (ci = 0; ci < cinfo->num_components; ci++) {
+ 614              		.loc 1 219 0
+ 615 015a 418B4734 		movl	52(%r15), %eax
+ 616 015e 394360   		cmpl	%eax, 96(%rbx)
+ 617 0161 0F84B900 		je	.L69
+ 617      0000
+ 618              	.L37:
+ 229:fltk-1.3.4-1/jpeg/jcprepct.c ****       prep->next_buf_row += numrows;
+ 619              		.loc 1 229 0
+ 620 0167 488B4424 		movq	32(%rsp), %rax
+ 620      20
+ 621 016c 488B5424 		movq	40(%rsp), %rdx
+ 621      28
+ 622 0171 0128     		addl	%ebp, (%rax)
+ 230:fltk-1.3.4-1/jpeg/jcprepct.c ****       prep->rows_to_go -= numrows;
+ 623              		.loc 1 230 0
+ 624 0173 8B4364   		movl	100(%rbx), %eax
+ 231:fltk-1.3.4-1/jpeg/jcprepct.c ****     } else {
+ 625              		.loc 1 231 0
+ 626 0176 296B60   		subl	%ebp, 96(%rbx)
+ 230:fltk-1.3.4-1/jpeg/jcprepct.c ****       prep->rows_to_go -= numrows;
+ 627              		.loc 1 230 0
+ 628 0179 01E8     		addl	%ebp, %eax
+ 629 017b 894364   		movl	%eax, 100(%rbx)
+ 630 017e 8B6B6C   		movl	108(%rbx), %ebp
+ 631              	.LVL71:
+ 632 0181 448B02   		movl	(%rdx), %r8d
+ 633              	.L43:
+ 240:fltk-1.3.4-1/jpeg/jcprepct.c **** 			     prep->next_buf_row, prep->next_buf_stop);
+ 241:fltk-1.3.4-1/jpeg/jcprepct.c **** 	}
+ 242:fltk-1.3.4-1/jpeg/jcprepct.c **** 	prep->next_buf_row = prep->next_buf_stop;
+ 243:fltk-1.3.4-1/jpeg/jcprepct.c ****       }
+ 244:fltk-1.3.4-1/jpeg/jcprepct.c ****     }
+ 245:fltk-1.3.4-1/jpeg/jcprepct.c ****     /* If we've gotten enough data, downsample a row group. */
+ 246:fltk-1.3.4-1/jpeg/jcprepct.c ****     if (prep->next_buf_row == prep->next_buf_stop) {
+ 634              		.loc 1 246 0
+ 635 0184 39E8     		cmpl	%ebp, %eax
+ 636 0186 7432     		je	.L49
+ 208:fltk-1.3.4-1/jpeg/jcprepct.c ****     if (*in_row_ctr < in_rows_avail) {
+ 637              		.loc 1 208 0
+ 638 0188 44398424 		cmpl	%r8d, 144(%rsp)
+ 638      90000000 
+ 639 0190 0F87DAFE 		ja	.L54
+ 639      FFFF
+ 640              	.L34:
+ 247:fltk-1.3.4-1/jpeg/jcprepct.c ****       (*cinfo->downsample->downsample) (cinfo,
+ 248:fltk-1.3.4-1/jpeg/jcprepct.c **** 					prep->color_buf,
+ 249:fltk-1.3.4-1/jpeg/jcprepct.c **** 					(JDIMENSION) prep->this_row_group,
+ 250:fltk-1.3.4-1/jpeg/jcprepct.c **** 					output_buf, *out_row_group_ctr);
+ 251:fltk-1.3.4-1/jpeg/jcprepct.c ****       (*out_row_group_ctr)++;
+ 252:fltk-1.3.4-1/jpeg/jcprepct.c ****       /* Advance pointers with wraparound as necessary. */
+ 253:fltk-1.3.4-1/jpeg/jcprepct.c ****       prep->this_row_group += cinfo->max_v_samp_factor;
+ 254:fltk-1.3.4-1/jpeg/jcprepct.c ****       if (prep->this_row_group >= buf_height)
+ 255:fltk-1.3.4-1/jpeg/jcprepct.c **** 	prep->this_row_group = 0;
+ 256:fltk-1.3.4-1/jpeg/jcprepct.c ****       if (prep->next_buf_row >= buf_height)
+ 257:fltk-1.3.4-1/jpeg/jcprepct.c **** 	prep->next_buf_row = 0;
+ 258:fltk-1.3.4-1/jpeg/jcprepct.c ****       prep->next_buf_stop = prep->next_buf_row + cinfo->max_v_samp_factor;
+ 259:fltk-1.3.4-1/jpeg/jcprepct.c ****     }
+ 260:fltk-1.3.4-1/jpeg/jcprepct.c ****   }
+ 261:fltk-1.3.4-1/jpeg/jcprepct.c **** }
+ 641              		.loc 1 261 0
+ 642 0196 4883C458 		addq	$88, %rsp
+ 643              		.cfi_remember_state
+ 644              		.cfi_def_cfa_offset 56
+ 645 019a 5B       		popq	%rbx
+ 646              		.cfi_def_cfa_offset 48
+ 647 019b 5D       		popq	%rbp
+ 648              		.cfi_def_cfa_offset 40
+ 649 019c 415C     		popq	%r12
+ 650              		.cfi_def_cfa_offset 32
+ 651 019e 415D     		popq	%r13
+ 652              		.cfi_def_cfa_offset 24
+ 653 01a0 415E     		popq	%r14
+ 654              		.cfi_def_cfa_offset 16
+ 655 01a2 415F     		popq	%r15
+ 656              		.cfi_def_cfa_offset 8
+ 657 01a4 C3       		ret
+ 658              	.LVL72:
+ 659              	.L65:
+ 660              		.cfi_restore_state
+ 661 01a5 4C8B7C24 		movq	16(%rsp), %r15
+ 661      10
+ 662              	.LVL73:
+ 663              	.L45:
+ 242:fltk-1.3.4-1/jpeg/jcprepct.c ****       }
+ 664              		.loc 1 242 0
+ 665 01aa 488B4424 		movq	24(%rsp), %rax
+ 665      18
+ 666 01af 896864   		movl	%ebp, 100(%rax)
+ 667 01b2 488B4424 		movq	40(%rsp), %rax
+ 667      28
+ 668 01b7 448B00   		movl	(%rax), %r8d
+ 669              	.L49:
+ 247:fltk-1.3.4-1/jpeg/jcprepct.c ****       (*cinfo->downsample->downsample) (cinfo,
+ 670              		.loc 1 247 0
+ 671 01ba 488B5C24 		movq	24(%rsp), %rbx
+ 671      18
+ 672 01bf 498B8720 		movq	544(%r15), %rax
+ 672      020000
+ 673 01c6 4C89FF   		movq	%r15, %rdi
+ 674 01c9 488B4C24 		movq	64(%rsp), %rcx
+ 674      40
+ 675 01ce 488B7424 		movq	48(%rsp), %rsi
+ 675      30
+ 676 01d3 8B5368   		movl	104(%rbx), %edx
+ 677 01d6 FF5008   		call	*8(%rax)
+ 678              	.LVL74:
+ 251:fltk-1.3.4-1/jpeg/jcprepct.c ****       /* Advance pointers with wraparound as necessary. */
+ 679              		.loc 1 251 0
+ 680 01d9 488B4424 		movq	40(%rsp), %rax
+ 680      28
+ 253:fltk-1.3.4-1/jpeg/jcprepct.c ****       if (prep->this_row_group >= buf_height)
+ 681              		.loc 1 253 0
+ 682 01de 8B7C244C 		movl	76(%rsp), %edi
+ 683 01e2 BA000000 		movl	$0, %edx
+ 683      00
+ 251:fltk-1.3.4-1/jpeg/jcprepct.c ****       /* Advance pointers with wraparound as necessary. */
+ 684              		.loc 1 251 0
+ 685 01e7 830001   		addl	$1, (%rax)
+ 253:fltk-1.3.4-1/jpeg/jcprepct.c ****       if (prep->this_row_group >= buf_height)
+ 686              		.loc 1 253 0
+ 687 01ea 418B8764 		movl	356(%r15), %eax
+ 687      010000
+ 688 01f1 034368   		addl	104(%rbx), %eax
+ 689 01f4 39C7     		cmpl	%eax, %edi
+ 690 01f6 0F4EC2   		cmovle	%edx, %eax
+ 691 01f9 894368   		movl	%eax, 104(%rbx)
+ 256:fltk-1.3.4-1/jpeg/jcprepct.c **** 	prep->next_buf_row = 0;
+ 692              		.loc 1 256 0
+ 693 01fc 8B4364   		movl	100(%rbx), %eax
+ 694 01ff 39C7     		cmpl	%eax, %edi
+ 695 0201 7F09     		jg	.L53
+ 257:fltk-1.3.4-1/jpeg/jcprepct.c ****       prep->next_buf_stop = prep->next_buf_row + cinfo->max_v_samp_factor;
+ 696              		.loc 1 257 0
+ 697 0203 C7436400 		movl	$0, 100(%rbx)
+ 697      000000
+ 698 020a 31C0     		xorl	%eax, %eax
+ 699              	.L53:
+ 258:fltk-1.3.4-1/jpeg/jcprepct.c ****     }
+ 700              		.loc 1 258 0
+ 701 020c 41038764 		addl	356(%r15), %eax
+ 701      010000
+ 702 0213 488B5424 		movq	24(%rsp), %rdx
+ 702      18
+ 703 0218 89426C   		movl	%eax, 108(%rdx)
+ 704 021b E931FEFF 		jmp	.L35
+ 704      FF
+ 705              	.LVL75:
+ 706              	.L69:
+ 220:fltk-1.3.4-1/jpeg/jcprepct.c **** 	  int row;
+ 707              		.loc 1 220 0 discriminator 1
+ 708 0220 418B7F5C 		movl	92(%r15), %edi
+ 709 0224 4531E4   		xorl	%r12d, %r12d
+ 710 0227 4C8B7424 		movq	48(%rsp), %r14
+ 710      30
+ 711 022c 85FF     		testl	%edi, %edi
+ 712 022e 0F8E33FF 		jle	.L37
+ 712      FFFF
+ 713              	.LVL76:
+ 714              		.p2align 4,,10
+ 715 0234 0F1F4000 		.p2align 3
+ 716              	.L56:
+ 717              	.LBB23:
+ 222:fltk-1.3.4-1/jpeg/jcprepct.c **** 	    jcopy_sample_rows(prep->color_buf[ci], 0,
+ 718              		.loc 1 222 0 discriminator 1
+ 719 0238 418BB764 		movl	356(%r15), %esi
+ 719      010000
+ 720 023f 41BD0100 		movl	$1, %r13d
+ 720      0000
+ 721 0245 85F6     		testl	%esi, %esi
+ 722 0247 7E30     		jle	.L42
+ 723              	.LVL77:
+ 724 0249 0F1F8000 		.p2align 4,,10
+ 724      000000
+ 725              		.p2align 3
+ 726              	.L57:
+ 223:fltk-1.3.4-1/jpeg/jcprepct.c **** 			      prep->color_buf[ci], -row,
+ 727              		.loc 1 223 0 discriminator 3
+ 728 0250 498B3E   		movq	(%r14), %rdi
+ 729 0253 458B4F30 		movl	48(%r15), %r9d
+ 730 0257 4489E9   		movl	%r13d, %ecx
+ 731 025a F7D9     		negl	%ecx
+ 732 025c 31F6     		xorl	%esi, %esi
+ 733 025e 41B80100 		movl	$1, %r8d
+ 733      0000
+ 222:fltk-1.3.4-1/jpeg/jcprepct.c **** 	    jcopy_sample_rows(prep->color_buf[ci], 0,
+ 734              		.loc 1 222 0 discriminator 3
+ 735 0264 4183C501 		addl	$1, %r13d
+ 736              	.LVL78:
+ 223:fltk-1.3.4-1/jpeg/jcprepct.c **** 			      prep->color_buf[ci], -row,
+ 737              		.loc 1 223 0 discriminator 3
+ 738 0268 4889FA   		movq	%rdi, %rdx
+ 739 026b E8000000 		call	jcopy_sample_rows
+ 739      00
+ 740              	.LVL79:
+ 222:fltk-1.3.4-1/jpeg/jcprepct.c **** 	    jcopy_sample_rows(prep->color_buf[ci], 0,
+ 741              		.loc 1 222 0 discriminator 3
+ 742 0270 4539AF64 		cmpl	%r13d, 356(%r15)
+ 742      010000
+ 743 0277 7DD7     		jge	.L57
+ 744              	.LVL80:
+ 745              	.L42:
+ 746              	.LBE23:
+ 220:fltk-1.3.4-1/jpeg/jcprepct.c **** 	  int row;
+ 747              		.loc 1 220 0
+ 748 0279 4183C401 		addl	$1, %r12d
+ 749              	.LVL81:
+ 750 027d 4983C608 		addq	$8, %r14
+ 751 0281 4539675C 		cmpl	%r12d, 92(%r15)
+ 752 0285 7FB1     		jg	.L56
+ 753 0287 E9DBFEFF 		jmp	.L37
+ 753      FF
+ 754              		.cfi_endproc
+ 755              	.LFE64:
+ 757              		.section	.text.unlikely.pre_process_context
+ 758              	.LCOLDE2:
+ 759              		.section	.text.pre_process_context
+ 760              	.LHOTE2:
+ 761              		.section	.text.unlikely.jinit_c_prep_controller,"ax",@progbits
+ 762              	.LCOLDB3:
+ 763              		.section	.text.jinit_c_prep_controller,"ax",@progbits
+ 764              	.LHOTB3:
+ 765              		.p2align 4,,15
+ 766              		.globl	jinit_c_prep_controller
+ 768              	jinit_c_prep_controller:
+ 769              	.LFB66:
+ 262:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+ 263:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+ 264:fltk-1.3.4-1/jpeg/jcprepct.c **** /*
+ 265:fltk-1.3.4-1/jpeg/jcprepct.c ****  * Create the wrapped-around downsampling input buffer needed for context mode.
+ 266:fltk-1.3.4-1/jpeg/jcprepct.c ****  */
+ 267:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+ 268:fltk-1.3.4-1/jpeg/jcprepct.c **** LOCAL(void)
+ 269:fltk-1.3.4-1/jpeg/jcprepct.c **** create_context_buffer (j_compress_ptr cinfo)
+ 270:fltk-1.3.4-1/jpeg/jcprepct.c **** {
+ 271:fltk-1.3.4-1/jpeg/jcprepct.c ****   my_prep_ptr prep = (my_prep_ptr) cinfo->prep;
+ 272:fltk-1.3.4-1/jpeg/jcprepct.c ****   int rgroup_height = cinfo->max_v_samp_factor;
+ 273:fltk-1.3.4-1/jpeg/jcprepct.c ****   int ci, i;
+ 274:fltk-1.3.4-1/jpeg/jcprepct.c ****   jpeg_component_info * compptr;
+ 275:fltk-1.3.4-1/jpeg/jcprepct.c ****   JSAMPARRAY true_buffer, fake_buffer;
+ 276:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+ 277:fltk-1.3.4-1/jpeg/jcprepct.c ****   /* Grab enough space for fake row pointers for all the components;
+ 278:fltk-1.3.4-1/jpeg/jcprepct.c ****    * we need five row groups' worth of pointers for each component.
+ 279:fltk-1.3.4-1/jpeg/jcprepct.c ****    */
+ 280:fltk-1.3.4-1/jpeg/jcprepct.c ****   fake_buffer = (JSAMPARRAY)
+ 281:fltk-1.3.4-1/jpeg/jcprepct.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 282:fltk-1.3.4-1/jpeg/jcprepct.c **** 				(cinfo->num_components * 5 * rgroup_height) *
+ 283:fltk-1.3.4-1/jpeg/jcprepct.c **** 				SIZEOF(JSAMPROW));
+ 284:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+ 285:fltk-1.3.4-1/jpeg/jcprepct.c ****   for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
+ 286:fltk-1.3.4-1/jpeg/jcprepct.c ****        ci++, compptr++) {
+ 287:fltk-1.3.4-1/jpeg/jcprepct.c ****     /* Allocate the actual buffer space (3 row groups) for this component.
+ 288:fltk-1.3.4-1/jpeg/jcprepct.c ****      * We make the buffer wide enough to allow the downsampler to edge-expand
+ 289:fltk-1.3.4-1/jpeg/jcprepct.c ****      * horizontally within the buffer, if it so chooses.
+ 290:fltk-1.3.4-1/jpeg/jcprepct.c ****      */
+ 291:fltk-1.3.4-1/jpeg/jcprepct.c ****     true_buffer = (*cinfo->mem->alloc_sarray)
+ 292:fltk-1.3.4-1/jpeg/jcprepct.c ****       ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 293:fltk-1.3.4-1/jpeg/jcprepct.c ****        (JDIMENSION) (((long) compptr->width_in_blocks *
+ 294:fltk-1.3.4-1/jpeg/jcprepct.c **** 		      cinfo->min_DCT_h_scaled_size *
+ 295:fltk-1.3.4-1/jpeg/jcprepct.c **** 		      cinfo->max_h_samp_factor) / compptr->h_samp_factor),
+ 296:fltk-1.3.4-1/jpeg/jcprepct.c ****        (JDIMENSION) (3 * rgroup_height));
+ 297:fltk-1.3.4-1/jpeg/jcprepct.c ****     /* Copy true buffer row pointers into the middle of the fake row array */
+ 298:fltk-1.3.4-1/jpeg/jcprepct.c ****     MEMCOPY(fake_buffer + rgroup_height, true_buffer,
+ 299:fltk-1.3.4-1/jpeg/jcprepct.c **** 	    3 * rgroup_height * SIZEOF(JSAMPROW));
+ 300:fltk-1.3.4-1/jpeg/jcprepct.c ****     /* Fill in the above and below wraparound pointers */
+ 301:fltk-1.3.4-1/jpeg/jcprepct.c ****     for (i = 0; i < rgroup_height; i++) {
+ 302:fltk-1.3.4-1/jpeg/jcprepct.c ****       fake_buffer[i] = true_buffer[2 * rgroup_height + i];
+ 303:fltk-1.3.4-1/jpeg/jcprepct.c ****       fake_buffer[4 * rgroup_height + i] = true_buffer[i];
+ 304:fltk-1.3.4-1/jpeg/jcprepct.c ****     }
+ 305:fltk-1.3.4-1/jpeg/jcprepct.c ****     prep->color_buf[ci] = fake_buffer + rgroup_height;
+ 306:fltk-1.3.4-1/jpeg/jcprepct.c ****     fake_buffer += 5 * rgroup_height; /* point to space for next component */
+ 307:fltk-1.3.4-1/jpeg/jcprepct.c ****   }
+ 308:fltk-1.3.4-1/jpeg/jcprepct.c **** }
+ 309:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+ 310:fltk-1.3.4-1/jpeg/jcprepct.c **** #endif /* CONTEXT_ROWS_SUPPORTED */
+ 311:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+ 312:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+ 313:fltk-1.3.4-1/jpeg/jcprepct.c **** /*
+ 314:fltk-1.3.4-1/jpeg/jcprepct.c ****  * Initialize preprocessing controller.
+ 315:fltk-1.3.4-1/jpeg/jcprepct.c ****  */
+ 316:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+ 317:fltk-1.3.4-1/jpeg/jcprepct.c **** GLOBAL(void)
+ 318:fltk-1.3.4-1/jpeg/jcprepct.c **** jinit_c_prep_controller (j_compress_ptr cinfo, boolean need_full_buffer)
+ 319:fltk-1.3.4-1/jpeg/jcprepct.c **** {
+ 770              		.loc 1 319 0
+ 771              		.cfi_startproc
+ 772              	.LVL82:
+ 773 0000 4157     		pushq	%r15
+ 774              		.cfi_def_cfa_offset 16
+ 775              		.cfi_offset 15, -16
+ 776 0002 4156     		pushq	%r14
+ 777              		.cfi_def_cfa_offset 24
+ 778              		.cfi_offset 14, -24
+ 779 0004 4155     		pushq	%r13
+ 780              		.cfi_def_cfa_offset 32
+ 781              		.cfi_offset 13, -32
+ 782 0006 4154     		pushq	%r12
+ 783              		.cfi_def_cfa_offset 40
+ 784              		.cfi_offset 12, -40
+ 785 0008 55       		pushq	%rbp
+ 786              		.cfi_def_cfa_offset 48
+ 787              		.cfi_offset 6, -48
+ 788 0009 53       		pushq	%rbx
+ 789              		.cfi_def_cfa_offset 56
+ 790              		.cfi_offset 3, -56
+ 791 000a 4889FB   		movq	%rdi, %rbx
+ 792 000d 4883EC48 		subq	$72, %rsp
+ 793              		.cfi_def_cfa_offset 128
+ 320:fltk-1.3.4-1/jpeg/jcprepct.c ****   my_prep_ptr prep;
+ 321:fltk-1.3.4-1/jpeg/jcprepct.c ****   int ci;
+ 322:fltk-1.3.4-1/jpeg/jcprepct.c ****   jpeg_component_info * compptr;
+ 323:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+ 324:fltk-1.3.4-1/jpeg/jcprepct.c ****   if (need_full_buffer)		/* safety check */
+ 794              		.loc 1 324 0
+ 795 0011 85F6     		testl	%esi, %esi
+ 796 0013 0F85B700 		jne	.L89
+ 796      0000
+ 797              	.LVL83:
+ 798              	.L71:
+ 325:fltk-1.3.4-1/jpeg/jcprepct.c ****     ERREXIT(cinfo, JERR_BAD_BUFFER_MODE);
+ 326:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+ 327:fltk-1.3.4-1/jpeg/jcprepct.c ****   prep = (my_prep_ptr)
+ 328:fltk-1.3.4-1/jpeg/jcprepct.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 799              		.loc 1 328 0
+ 800 0019 488B4308 		movq	8(%rbx), %rax
+ 327:fltk-1.3.4-1/jpeg/jcprepct.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 801              		.loc 1 327 0
+ 802 001d BA700000 		movl	$112, %edx
+ 802      00
+ 803 0022 BE010000 		movl	$1, %esi
+ 803      00
+ 804 0027 4889DF   		movq	%rbx, %rdi
+ 805 002a FF10     		call	*(%rax)
+ 806              	.LVL84:
+ 329:fltk-1.3.4-1/jpeg/jcprepct.c **** 				SIZEOF(my_prep_controller));
+ 330:fltk-1.3.4-1/jpeg/jcprepct.c ****   cinfo->prep = (struct jpeg_c_prep_controller *) prep;
+ 807              		.loc 1 330 0
+ 808 002c 48898300 		movq	%rax, 512(%rbx)
+ 808      020000
+ 331:fltk-1.3.4-1/jpeg/jcprepct.c ****   prep->pub.start_pass = start_pass_prep;
+ 809              		.loc 1 331 0
+ 810 0033 48C70000 		movq	$start_pass_prep, (%rax)
+ 810      000000
+ 332:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+ 333:fltk-1.3.4-1/jpeg/jcprepct.c ****   /* Allocate the color conversion buffer.
+ 334:fltk-1.3.4-1/jpeg/jcprepct.c ****    * We make the buffer wide enough to allow the downsampler to edge-expand
+ 335:fltk-1.3.4-1/jpeg/jcprepct.c ****    * horizontally within the buffer, if it so chooses.
+ 336:fltk-1.3.4-1/jpeg/jcprepct.c ****    */
+ 337:fltk-1.3.4-1/jpeg/jcprepct.c ****   if (cinfo->downsample->need_context_rows) {
+ 811              		.loc 1 337 0
+ 812 003a 488B9320 		movq	544(%rbx), %rdx
+ 812      020000
+ 813 0041 8B7210   		movl	16(%rdx), %esi
+ 814 0044 85F6     		testl	%esi, %esi
+ 815 0046 0F859800 		jne	.L90
+ 815      0000
+ 338:fltk-1.3.4-1/jpeg/jcprepct.c ****     /* Set up to provide context rows */
+ 339:fltk-1.3.4-1/jpeg/jcprepct.c **** #ifdef CONTEXT_ROWS_SUPPORTED
+ 340:fltk-1.3.4-1/jpeg/jcprepct.c ****     prep->pub.pre_process_data = pre_process_context;
+ 341:fltk-1.3.4-1/jpeg/jcprepct.c ****     create_context_buffer(cinfo);
+ 342:fltk-1.3.4-1/jpeg/jcprepct.c **** #else
+ 343:fltk-1.3.4-1/jpeg/jcprepct.c ****     ERREXIT(cinfo, JERR_NOT_COMPILED);
+ 344:fltk-1.3.4-1/jpeg/jcprepct.c **** #endif
+ 345:fltk-1.3.4-1/jpeg/jcprepct.c ****   } else {
+ 346:fltk-1.3.4-1/jpeg/jcprepct.c ****     /* No context, just make it tall enough for one row group */
+ 347:fltk-1.3.4-1/jpeg/jcprepct.c ****     prep->pub.pre_process_data = pre_process_data;
+ 816              		.loc 1 347 0
+ 817 004c 48C74008 		movq	$pre_process_data, 8(%rax)
+ 817      00000000 
+ 818              	.LVL85:
+ 348:fltk-1.3.4-1/jpeg/jcprepct.c ****     for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
+ 819              		.loc 1 348 0
+ 820 0054 8B535C   		movl	92(%rbx), %edx
+ 821 0057 488B6B68 		movq	104(%rbx), %rbp
+ 822              	.LVL86:
+ 823 005b 85D2     		testl	%edx, %edx
+ 824 005d 7E62     		jle	.L70
+ 825 005f 4C8D6010 		leaq	16(%rax), %r12
+ 826 0063 4531ED   		xorl	%r13d, %r13d
+ 827              	.LVL87:
+ 828 0066 662E0F1F 		.p2align 4,,10
+ 828      84000000 
+ 828      0000
+ 829              		.p2align 3
+ 830              	.L79:
+ 349:fltk-1.3.4-1/jpeg/jcprepct.c **** 	 ci++, compptr++) {
+ 350:fltk-1.3.4-1/jpeg/jcprepct.c ****       prep->color_buf[ci] = (*cinfo->mem->alloc_sarray)
+ 831              		.loc 1 350 0
+ 832 0070 8B551C   		movl	28(%rbp), %edx
+ 833 0073 48638368 		movslq	360(%rbx), %rax
+ 833      010000
+ 834 007a 4889DF   		movq	%rbx, %rdi
+ 835 007d 4863B360 		movslq	352(%rbx), %rsi
+ 835      010000
+ 836 0084 4C8B4308 		movq	8(%rbx), %r8
+ 349:fltk-1.3.4-1/jpeg/jcprepct.c **** 	 ci++, compptr++) {
+ 837              		.loc 1 349 0
+ 838 0088 4183C501 		addl	$1, %r13d
+ 839              	.LVL88:
+ 840              		.loc 1 350 0
+ 841 008c 8B8B6401 		movl	356(%rbx), %ecx
+ 841      0000
+ 349:fltk-1.3.4-1/jpeg/jcprepct.c **** 	 ci++, compptr++) {
+ 842              		.loc 1 349 0
+ 843 0092 4883C560 		addq	$96, %rbp
+ 844              	.LVL89:
+ 845 0096 4983C408 		addq	$8, %r12
+ 846              		.loc 1 350 0
+ 847 009a 480FAFC2 		imulq	%rdx, %rax
+ 848 009e 480FAFC6 		imulq	%rsi, %rax
+ 849 00a2 486375A8 		movslq	-88(%rbp), %rsi
+ 850 00a6 4899     		cqto
+ 851 00a8 48F7FE   		idivq	%rsi
+ 852 00ab BE010000 		movl	$1, %esi
+ 852      00
+ 853 00b0 89C2     		movl	%eax, %edx
+ 854 00b2 41FF5010 		call	*16(%r8)
+ 855              	.LVL90:
+ 856 00b6 49894424 		movq	%rax, -8(%r12)
+ 856      F8
+ 348:fltk-1.3.4-1/jpeg/jcprepct.c ****     for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
+ 857              		.loc 1 348 0
+ 858 00bb 44396B5C 		cmpl	%r13d, 92(%rbx)
+ 859 00bf 7FAF     		jg	.L79
+ 860              	.LVL91:
+ 861              	.L70:
+ 351:fltk-1.3.4-1/jpeg/jcprepct.c **** 	((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 352:fltk-1.3.4-1/jpeg/jcprepct.c **** 	 (JDIMENSION) (((long) compptr->width_in_blocks *
+ 353:fltk-1.3.4-1/jpeg/jcprepct.c **** 			cinfo->min_DCT_h_scaled_size *
+ 354:fltk-1.3.4-1/jpeg/jcprepct.c **** 			cinfo->max_h_samp_factor) / compptr->h_samp_factor),
+ 355:fltk-1.3.4-1/jpeg/jcprepct.c **** 	 (JDIMENSION) cinfo->max_v_samp_factor);
+ 356:fltk-1.3.4-1/jpeg/jcprepct.c ****     }
+ 357:fltk-1.3.4-1/jpeg/jcprepct.c ****   }
+ 358:fltk-1.3.4-1/jpeg/jcprepct.c **** }
+ 862              		.loc 1 358 0
+ 863 00c1 4883C448 		addq	$72, %rsp
+ 864              		.cfi_remember_state
+ 865              		.cfi_def_cfa_offset 56
+ 866 00c5 5B       		popq	%rbx
+ 867              		.cfi_def_cfa_offset 48
+ 868              	.LVL92:
+ 869 00c6 5D       		popq	%rbp
+ 870              		.cfi_def_cfa_offset 40
+ 871 00c7 415C     		popq	%r12
+ 872              		.cfi_def_cfa_offset 32
+ 873 00c9 415D     		popq	%r13
+ 874              		.cfi_def_cfa_offset 24
+ 875 00cb 415E     		popq	%r14
+ 876              		.cfi_def_cfa_offset 16
+ 877 00cd 415F     		popq	%r15
+ 878              		.cfi_def_cfa_offset 8
+ 879 00cf C3       		ret
+ 880              	.LVL93:
+ 881              		.p2align 4,,10
+ 882              		.p2align 3
+ 883              	.L89:
+ 884              		.cfi_restore_state
+ 325:fltk-1.3.4-1/jpeg/jcprepct.c **** 
+ 885              		.loc 1 325 0
+ 886 00d0 488B07   		movq	(%rdi), %rax
+ 887 00d3 C7402803 		movl	$3, 40(%rax)
+ 887      000000
+ 888 00da 488B07   		movq	(%rdi), %rax
+ 889 00dd FF10     		call	*(%rax)
+ 890              	.LVL94:
+ 891 00df E935FFFF 		jmp	.L71
+ 891      FF
+ 892              	.LVL95:
+ 893              	.L90:
+ 340:fltk-1.3.4-1/jpeg/jcprepct.c ****     create_context_buffer(cinfo);
+ 894              		.loc 1 340 0
+ 895 00e4 48C74008 		movq	$pre_process_context, 8(%rax)
+ 895      00000000 
+ 896              	.LVL96:
+ 897              	.LBB28:
+ 898              	.LBB29:
+ 280:fltk-1.3.4-1/jpeg/jcprepct.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 899              		.loc 1 280 0
+ 900 00ec 8B435C   		movl	92(%rbx), %eax
+ 901              	.LVL97:
+ 902 00ef BE010000 		movl	$1, %esi
+ 902      00
+ 272:fltk-1.3.4-1/jpeg/jcprepct.c ****   int ci, i;
+ 903              		.loc 1 272 0
+ 904 00f4 448BBB64 		movl	356(%rbx), %r15d
+ 904      010000
+ 271:fltk-1.3.4-1/jpeg/jcprepct.c ****   int rgroup_height = cinfo->max_v_samp_factor;
+ 905              		.loc 1 271 0
+ 906 00fb 4C8BA300 		movq	512(%rbx), %r12
+ 906      020000
+ 907              	.LVL98:
+ 280:fltk-1.3.4-1/jpeg/jcprepct.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 908              		.loc 1 280 0
+ 909 0102 4889DF   		movq	%rbx, %rdi
+ 910 0105 8D1480   		leal	(%rax,%rax,4), %edx
+ 281:fltk-1.3.4-1/jpeg/jcprepct.c **** 				(cinfo->num_components * 5 * rgroup_height) *
+ 911              		.loc 1 281 0
+ 912 0108 488B4308 		movq	8(%rbx), %rax
+ 280:fltk-1.3.4-1/jpeg/jcprepct.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 913              		.loc 1 280 0
+ 914 010c 410FAFD7 		imull	%r15d, %edx
+ 915 0110 4863D2   		movslq	%edx, %rdx
+ 916 0113 48C1E203 		salq	$3, %rdx
+ 917 0117 FF10     		call	*(%rax)
+ 918              	.LVL99:
+ 285:fltk-1.3.4-1/jpeg/jcprepct.c ****        ci++, compptr++) {
+ 919              		.loc 1 285 0
+ 920 0119 8B4B5C   		movl	92(%rbx), %ecx
+ 280:fltk-1.3.4-1/jpeg/jcprepct.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 921              		.loc 1 280 0
+ 922 011c 4889C5   		movq	%rax, %rbp
+ 923              	.LVL100:
+ 285:fltk-1.3.4-1/jpeg/jcprepct.c ****        ci++, compptr++) {
+ 924              		.loc 1 285 0
+ 925 011f 4C8B4B68 		movq	104(%rbx), %r9
+ 926              	.LVL101:
+ 927 0123 85C9     		testl	%ecx, %ecx
+ 928 0125 7E9A     		jle	.L70
+ 929 0127 438D143F 		leal	(%r15,%r15), %edx
+ 930 012b 4D8D7424 		leaq	16(%r12), %r14
+ 930      10
+ 931 0130 4989D8   		movq	%rbx, %r8
+ 932 0133 4531ED   		xorl	%r13d, %r13d
+ 933 0136 428D043A 		leal	(%rdx,%r15), %eax
+ 934              	.LVL102:
+ 935 013a 4863D2   		movslq	%edx, %rdx
+ 936 013d 4C89F3   		movq	%r14, %rbx
+ 937              	.LVL103:
+ 938 0140 4D89CE   		movq	%r9, %r14
+ 939 0143 8944243C 		movl	%eax, 60(%rsp)
+ 940 0147 4898     		cltq
+ 941 0149 48C1E003 		salq	$3, %rax
+ 942 014d 48894424 		movq	%rax, 32(%rsp)
+ 942      20
+ 943 0152 4963C7   		movslq	%r15d, %rax
+ 944 0155 48C1E003 		salq	$3, %rax
+ 945 0159 48894424 		movq	%rax, 40(%rsp)
+ 945      28
+ 946 015e 428D04BD 		leal	0(,%r15,4), %eax
+ 946      00000000 
+ 947 0166 428D0C38 		leal	(%rax,%r15), %ecx
+ 948 016a 4898     		cltq
+ 949 016c 48C1E003 		salq	$3, %rax
+ 950 0170 4863C9   		movslq	%ecx, %rcx
+ 951 0173 48894424 		movq	%rax, 16(%rsp)
+ 951      10
+ 952 0178 488D3CCD 		leaq	0(,%rcx,8), %rdi
+ 952      00000000 
+ 953 0180 48897C24 		movq	%rdi, 48(%rsp)
+ 953      30
+ 954 0185 488D3CD5 		leaq	0(,%rdx,8), %rdi
+ 954      00000000 
+ 955 018d 48897C24 		movq	%rdi, 24(%rsp)
+ 955      18
+ 956              	.LVL104:
+ 957              		.p2align 4,,10
+ 958 0192 660F1F44 		.p2align 3
+ 958      0000
+ 959              	.L75:
+ 291:fltk-1.3.4-1/jpeg/jcprepct.c ****       ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 960              		.loc 1 291 0
+ 961 0198 49638068 		movslq	360(%r8), %rax
+ 961      010000
+ 962 019f 418B561C 		movl	28(%r14), %edx
+ 963 01a3 4C89C7   		movq	%r8, %rdi
+ 964 01a6 49638860 		movslq	352(%r8), %rcx
+ 964      010000
+ 965 01ad 4D8B6008 		movq	8(%r8), %r12
+ 966 01b1 BE010000 		movl	$1, %esi
+ 966      00
+ 967 01b6 4C894424 		movq	%r8, 8(%rsp)
+ 967      08
+ 968 01bb 480FAFC2 		imulq	%rdx, %rax
+ 969 01bf 480FAFC1 		imulq	%rcx, %rax
+ 970 01c3 49634E08 		movslq	8(%r14), %rcx
+ 971 01c7 4899     		cqto
+ 972 01c9 48F7F9   		idivq	%rcx
+ 973 01cc 8B4C243C 		movl	60(%rsp), %ecx
+ 974 01d0 89C2     		movl	%eax, %edx
+ 975 01d2 41FF5424 		call	*16(%r12)
+ 975      10
+ 976              	.LVL105:
+ 977 01d7 4989C4   		movq	%rax, %r12
+ 978              	.LVL106:
+ 979 01da 488B4424 		movq	40(%rsp), %rax
+ 979      28
+ 980              	.LVL107:
+ 981              	.LBB30:
+ 982              	.LBB31:
+ 983              		.file 2 "/usr/include/x86_64-linux-gnu/bits/string3.h"
+   1:/usr/include/x86_64-linux-gnu/bits/string3.h **** /* Copyright (C) 2004-2016 Free Software Foundation, Inc.
+   2:/usr/include/x86_64-linux-gnu/bits/string3.h ****    This file is part of the GNU C Library.
+   3:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+   4:/usr/include/x86_64-linux-gnu/bits/string3.h ****    The GNU C Library is free software; you can redistribute it and/or
+   5:/usr/include/x86_64-linux-gnu/bits/string3.h ****    modify it under the terms of the GNU Lesser General Public
+   6:/usr/include/x86_64-linux-gnu/bits/string3.h ****    License as published by the Free Software Foundation; either
+   7:/usr/include/x86_64-linux-gnu/bits/string3.h ****    version 2.1 of the License, or (at your option) any later version.
+   8:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+   9:/usr/include/x86_64-linux-gnu/bits/string3.h ****    The GNU C Library is distributed in the hope that it will be useful,
+  10:/usr/include/x86_64-linux-gnu/bits/string3.h ****    but WITHOUT ANY WARRANTY; without even the implied warranty of
+  11:/usr/include/x86_64-linux-gnu/bits/string3.h ****    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  12:/usr/include/x86_64-linux-gnu/bits/string3.h ****    Lesser General Public License for more details.
+  13:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  14:/usr/include/x86_64-linux-gnu/bits/string3.h ****    You should have received a copy of the GNU Lesser General Public
+  15:/usr/include/x86_64-linux-gnu/bits/string3.h ****    License along with the GNU C Library; if not, see
+  16:/usr/include/x86_64-linux-gnu/bits/string3.h ****    <http://www.gnu.org/licenses/>.  */
+  17:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  18:/usr/include/x86_64-linux-gnu/bits/string3.h **** #ifndef _STRING_H
+  19:/usr/include/x86_64-linux-gnu/bits/string3.h **** # error "Never use <bits/string3.h> directly; include <string.h> instead."
+  20:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  21:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  22:/usr/include/x86_64-linux-gnu/bits/string3.h **** #if !__GNUC_PREREQ (5,0)
+  23:/usr/include/x86_64-linux-gnu/bits/string3.h **** __warndecl (__warn_memset_zero_len,
+  24:/usr/include/x86_64-linux-gnu/bits/string3.h **** 	    "memset used with constant zero length parameter; this could be due to transposed parameters")
+  25:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  26:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  27:/usr/include/x86_64-linux-gnu/bits/string3.h **** #ifndef __cplusplus
+  28:/usr/include/x86_64-linux-gnu/bits/string3.h **** /* XXX This is temporarily.  We should not redefine any of the symbols
+  29:/usr/include/x86_64-linux-gnu/bits/string3.h ****    and instead integrate the error checking into the original
+  30:/usr/include/x86_64-linux-gnu/bits/string3.h ****    definitions.  */
+  31:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memcpy
+  32:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memmove
+  33:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memset
+  34:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strcat
+  35:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strcpy
+  36:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strncat
+  37:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strncpy
+  38:/usr/include/x86_64-linux-gnu/bits/string3.h **** # ifdef __USE_GNU
+  39:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef mempcpy
+  40:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef stpcpy
+  41:/usr/include/x86_64-linux-gnu/bits/string3.h **** # endif
+  42:/usr/include/x86_64-linux-gnu/bits/string3.h **** # ifdef __USE_MISC
+  43:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef bcopy
+  44:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef bzero
+  45:/usr/include/x86_64-linux-gnu/bits/string3.h **** # endif
+  46:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  47:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  48:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  49:/usr/include/x86_64-linux-gnu/bits/string3.h **** __fortify_function void *
+  50:/usr/include/x86_64-linux-gnu/bits/string3.h **** __NTH (memcpy (void *__restrict __dest, const void *__restrict __src,
+  51:/usr/include/x86_64-linux-gnu/bits/string3.h **** 	       size_t __len))
+  52:/usr/include/x86_64-linux-gnu/bits/string3.h **** {
+  53:/usr/include/x86_64-linux-gnu/bits/string3.h ****   return __builtin___memcpy_chk (__dest, __src, __len, __bos0 (__dest));
+ 984              		.loc 2 53 0
+ 985 01df 488B5424 		movq	32(%rsp), %rdx
+ 985      20
+ 986 01e4 4C89E6   		movq	%r12, %rsi
+ 987 01e7 488D4C05 		leaq	0(%rbp,%rax), %rcx
+ 987      00
+ 988              	.LVL108:
+ 989 01ec 4889CF   		movq	%rcx, %rdi
+ 990 01ef E8000000 		call	memcpy
+ 990      00
+ 991              	.LVL109:
+ 992 01f4 4889C1   		movq	%rax, %rcx
+ 993              	.LVL110:
+ 994 01f7 488B4424 		movq	24(%rsp), %rax
+ 994      18
+ 995              	.LBE31:
+ 996              	.LBE30:
+ 301:fltk-1.3.4-1/jpeg/jcprepct.c ****       fake_buffer[i] = true_buffer[2 * rgroup_height + i];
+ 997              		.loc 1 301 0
+ 998 01fc 4C8B4424 		movq	8(%rsp), %r8
+ 998      08
+ 999 0201 498D3C04 		leaq	(%r12,%rax), %rdi
+ 1000 0205 488B4424 		movq	16(%rsp), %rax
+ 1000      10
+ 1001 020a 488D7405 		leaq	0(%rbp,%rax), %rsi
+ 1001      00
+ 1002 020f 31C0     		xorl	%eax, %eax
+ 1003 0211 4585FF   		testl	%r15d, %r15d
+ 1004 0214 7E24     		jle	.L78
+ 1005              	.LVL111:
+ 1006 0216 662E0F1F 		.p2align 4,,10
+ 1006      84000000 
+ 1006      0000
+ 1007              		.p2align 3
+ 1008              	.L82:
+ 302:fltk-1.3.4-1/jpeg/jcprepct.c ****       fake_buffer[4 * rgroup_height + i] = true_buffer[i];
+ 1009              		.loc 1 302 0
+ 1010 0220 488B14C7 		movq	(%rdi,%rax,8), %rdx
+ 1011 0224 488954C5 		movq	%rdx, 0(%rbp,%rax,8)
+ 1011      00
+ 303:fltk-1.3.4-1/jpeg/jcprepct.c ****     }
+ 1012              		.loc 1 303 0
+ 1013 0229 498B14C4 		movq	(%r12,%rax,8), %rdx
+ 1014 022d 488914C6 		movq	%rdx, (%rsi,%rax,8)
+ 1015              	.LVL112:
+ 1016 0231 4883C001 		addq	$1, %rax
+ 1017              	.LVL113:
+ 301:fltk-1.3.4-1/jpeg/jcprepct.c ****       fake_buffer[i] = true_buffer[2 * rgroup_height + i];
+ 1018              		.loc 1 301 0
+ 1019 0235 4139C7   		cmpl	%eax, %r15d
+ 1020 0238 7FE6     		jg	.L82
+ 1021              	.L78:
+ 305:fltk-1.3.4-1/jpeg/jcprepct.c ****     fake_buffer += 5 * rgroup_height; /* point to space for next component */
+ 1022              		.loc 1 305 0
+ 1023 023a 48890B   		movq	%rcx, (%rbx)
+ 306:fltk-1.3.4-1/jpeg/jcprepct.c ****   }
+ 1024              		.loc 1 306 0
+ 1025 023d 48036C24 		addq	48(%rsp), %rbp
+ 1025      30
+ 1026              	.LVL114:
+ 286:fltk-1.3.4-1/jpeg/jcprepct.c ****     /* Allocate the actual buffer space (3 row groups) for this component.
+ 1027              		.loc 1 286 0
+ 1028 0242 4183C501 		addl	$1, %r13d
+ 1029              	.LVL115:
+ 1030 0246 4983C660 		addq	$96, %r14
+ 1031              	.LVL116:
+ 1032 024a 4883C308 		addq	$8, %rbx
+ 285:fltk-1.3.4-1/jpeg/jcprepct.c ****        ci++, compptr++) {
+ 1033              		.loc 1 285 0
+ 1034 024e 453B685C 		cmpl	92(%r8), %r13d
+ 1035 0252 0F8C40FF 		jl	.L75
+ 1035      FFFF
+ 1036              	.LBE29:
+ 1037              	.LBE28:
+ 1038              		.loc 1 358 0
+ 1039 0258 4883C448 		addq	$72, %rsp
+ 1040              		.cfi_def_cfa_offset 56
+ 1041 025c 5B       		popq	%rbx
+ 1042              		.cfi_def_cfa_offset 48
+ 1043 025d 5D       		popq	%rbp
+ 1044              		.cfi_def_cfa_offset 40
+ 1045              	.LVL117:
+ 1046 025e 415C     		popq	%r12
+ 1047              		.cfi_def_cfa_offset 32
+ 1048              	.LVL118:
+ 1049 0260 415D     		popq	%r13
+ 1050              		.cfi_def_cfa_offset 24
+ 1051              	.LVL119:
+ 1052 0262 415E     		popq	%r14
+ 1053              		.cfi_def_cfa_offset 16
+ 1054              	.LVL120:
+ 1055 0264 415F     		popq	%r15
+ 1056              		.cfi_def_cfa_offset 8
+ 1057              	.LVL121:
+ 1058 0266 C3       		ret
+ 1059              		.cfi_endproc
+ 1060              	.LFE66:
+ 1062              		.section	.text.unlikely.jinit_c_prep_controller
+ 1063              	.LCOLDE3:
+ 1064              		.section	.text.jinit_c_prep_controller
+ 1065              	.LHOTE3:
+ 1066              		.text
+ 1067              	.Letext0:
+ 1068              		.section	.text.unlikely.start_pass_prep
+ 1069              	.Letext_cold0:
+ 1070              		.file 3 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
+ 1071              		.file 4 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 1072              		.file 5 "/usr/include/libio.h"
+ 1073              		.file 6 "fltk-1.3.4-1/jpeg/jmorecfg.h"
+ 1074              		.file 7 "fltk-1.3.4-1/jpeg/jpeglib.h"
+ 1075              		.file 8 "fltk-1.3.4-1/jpeg/jpegint.h"
+ 1076              		.file 9 "fltk-1.3.4-1/jpeg/jerror.h"
+ 1077              		.file 10 "/usr/include/stdio.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 jcprepct.c
+     /tmp/ccucjklJ.s:13     .text.start_pass_prep:0000000000000000 start_pass_prep
+     /tmp/ccucjklJ.s:77     .text.pre_process_data:0000000000000000 pre_process_data
+     /tmp/ccucjklJ.s:436    .text.pre_process_context:0000000000000000 pre_process_context
+     /tmp/ccucjklJ.s:768    .text.jinit_c_prep_controller:0000000000000000 jinit_c_prep_controller
+                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
+                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+                           .group:0000000000000000 wm4.jconfig.h.10.247fc3ff67998f3074970b1373c70333
+                           .group:0000000000000000 wm4.features.h.19.24da27e0a4d0d521fd057013d982b8b5
+                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
+                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
+                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
+                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
+                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
+                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
+                           .group:0000000000000000 wm4.waitflags.h.25.e401b8bcfee800b540b27abd7cc78de9
+                           .group:0000000000000000 wm4.waitstatus.h.28.93f167f49d64e2b9b99f98d1162a93bf
+                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
+                           .group:0000000000000000 wm4.endian.h.41.24cced64aef71195a51d4daa8e4f4a95
+                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
+                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
+                           .group:0000000000000000 wm4.byteswap.h.38.11ee5fdc0f6cc53a16c505b9233cecef
+                           .group:0000000000000000 wm4.endian.h.63.97272d7c64d5db8020003b32e9289502
+                           .group:0000000000000000 wm4.waitstatus.h.99.408b6270fa6eb71377201a241ef15f79
+                           .group:0000000000000000 wm4.stdlib.h.50.84aeca2ac6f37d40e1e9b3cef757ba2d
+                           .group:0000000000000000 wm4.types.h.23.f6dcbaa72f8f71361acef09804d45a5e
+                           .group:0000000000000000 wm4.time.h.53.beb46e650cd406cb917b6b96b45e640a
+                           .group:0000000000000000 wm4.stddef.h.238.847b6907dabda77be90a9ab7ad789e2e
+                           .group:0000000000000000 wm4.types.h.187.bd5a05039b505b3620e6973f1b2ffeb1
+                           .group:0000000000000000 wm4.select.h.28.eb2f3debdbcffd1442ebddaebc4fb6ff
+                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
+                           .group:0000000000000000 wm4.select.h.36.f76c3b9e55c871743863013cc4cc14c9
+                           .group:0000000000000000 wm4.time.h.66.e70ce69790c975f0efb369340c432e0b
+                           .group:0000000000000000 wm4.time.h.25.ae5284cdff565e87a9198d819340325d
+                           .group:0000000000000000 wm4.select.h.49.e9d2041e5035cc68ebd1a20f7dbc8514
+                           .group:0000000000000000 wm4.select2.h.27.f95f2ab0ffee66dc1b6575014894b21a
+                           .group:0000000000000000 wm4.sysmacros.h.20.8a0c33ff175cd9b434a86c0aaa36f0a2
+                           .group:0000000000000000 wm4.types.h.229.67b3f66bd74b06b451caec392a72a945
+                           .group:0000000000000000 wm4.pthreadtypes.h.25.6892b1493314fcf446bbc76e7362acba
+                           .group:0000000000000000 wm4.alloca.h.19.edefa922a76c1cbaaf1e416903ba2d1c
+                           .group:0000000000000000 wm4.alloca.h.29.156e12058824cc23d961c4d3b13031f6
+                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
+                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
+                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
+                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
+                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
+                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
+                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
+                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
+                           .group:0000000000000000 wm4.stdio.h.80.17b7dd1ca72d8a61987532cb1d80194a
+                           .group:0000000000000000 wm4.stdio_lim.h.23.557290a6cddeba0587f574f29e3a5fb9
+                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
+                           .group:0000000000000000 wm4.stdio.h.26.cae64f7ada9bb8327a89dba6a5e93655
+                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
+                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
+                           .group:0000000000000000 wm4.string2.h.45.00535b99420fc3014c2da41d6645330d
+                           .group:0000000000000000 wm4.string3.h.31.0c4b9301b754a2db05eaafef869657d2
+                           .group:0000000000000000 wm4.jinclude.h.67.b19f941ec97c4845fa4609292c7e2db4
+                           .group:0000000000000000 wm4.jmorecfg.h.33.3b4c5f9cc07b3737823b06caf24d5b05
+                           .group:0000000000000000 wm4.jpeglib.h.40.4f111c27252a38df39328d65454e82f4
+                           .group:0000000000000000 wm4.jpegint.h.26.5219ef5d4e4921371d38e77b6091fd20
+                           .group:0000000000000000 wm4.jerror.h.25.1dbd8674e70ab5215bc0037320e5c2a2
+
+UNDEFINED SYMBOLS
+jcopy_sample_rows
+memcpy

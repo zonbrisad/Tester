@@ -1,0 +1,377 @@
+   1              		.file	"jcomapi.c"
+   2              		.text
+   3              	.Ltext0:
+   4              		.section	.text.unlikely.jpeg_abort,"ax",@progbits
+   5              	.LCOLDB0:
+   6              		.section	.text.jpeg_abort,"ax",@progbits
+   7              	.LHOTB0:
+   8              		.p2align 4,,15
+   9              		.section	.text.unlikely.jpeg_abort
+  10              	.Ltext_cold0:
+  11              		.section	.text.jpeg_abort
+  12              		.globl	jpeg_abort
+  14              	jpeg_abort:
+  15              	.LFB61:
+  16              		.file 1 "fltk-1.3.4-1/jpeg/jcomapi.c"
+   1:fltk-1.3.4-1/jpeg/jcomapi.c **** /*
+   2:fltk-1.3.4-1/jpeg/jcomapi.c ****  * jcomapi.c
+   3:fltk-1.3.4-1/jpeg/jcomapi.c ****  *
+   4:fltk-1.3.4-1/jpeg/jcomapi.c ****  * Copyright (C) 1994-1997, Thomas G. Lane.
+   5:fltk-1.3.4-1/jpeg/jcomapi.c ****  * This file is part of the Independent JPEG Group's software.
+   6:fltk-1.3.4-1/jpeg/jcomapi.c ****  * For conditions of distribution and use, see the accompanying README file.
+   7:fltk-1.3.4-1/jpeg/jcomapi.c ****  *
+   8:fltk-1.3.4-1/jpeg/jcomapi.c ****  * This file contains application interface routines that are used for both
+   9:fltk-1.3.4-1/jpeg/jcomapi.c ****  * compression and decompression.
+  10:fltk-1.3.4-1/jpeg/jcomapi.c ****  */
+  11:fltk-1.3.4-1/jpeg/jcomapi.c **** 
+  12:fltk-1.3.4-1/jpeg/jcomapi.c **** #define JPEG_INTERNALS
+  13:fltk-1.3.4-1/jpeg/jcomapi.c **** #include "jinclude.h"
+  14:fltk-1.3.4-1/jpeg/jcomapi.c **** #include "jpeglib.h"
+  15:fltk-1.3.4-1/jpeg/jcomapi.c **** 
+  16:fltk-1.3.4-1/jpeg/jcomapi.c **** 
+  17:fltk-1.3.4-1/jpeg/jcomapi.c **** /*
+  18:fltk-1.3.4-1/jpeg/jcomapi.c ****  * Abort processing of a JPEG compression or decompression operation,
+  19:fltk-1.3.4-1/jpeg/jcomapi.c ****  * but don't destroy the object itself.
+  20:fltk-1.3.4-1/jpeg/jcomapi.c ****  *
+  21:fltk-1.3.4-1/jpeg/jcomapi.c ****  * For this, we merely clean up all the nonpermanent memory pools.
+  22:fltk-1.3.4-1/jpeg/jcomapi.c ****  * Note that temp files (virtual arrays) are not allowed to belong to
+  23:fltk-1.3.4-1/jpeg/jcomapi.c ****  * the permanent pool, so we will be able to close all temp files here.
+  24:fltk-1.3.4-1/jpeg/jcomapi.c ****  * Closing a data source or destination, if necessary, is the application's
+  25:fltk-1.3.4-1/jpeg/jcomapi.c ****  * responsibility.
+  26:fltk-1.3.4-1/jpeg/jcomapi.c ****  */
+  27:fltk-1.3.4-1/jpeg/jcomapi.c **** 
+  28:fltk-1.3.4-1/jpeg/jcomapi.c **** GLOBAL(void)
+  29:fltk-1.3.4-1/jpeg/jcomapi.c **** jpeg_abort (j_common_ptr cinfo)
+  30:fltk-1.3.4-1/jpeg/jcomapi.c **** {
+  17              		.loc 1 30 0
+  18              		.cfi_startproc
+  19              	.LVL0:
+  31:fltk-1.3.4-1/jpeg/jcomapi.c ****   int pool;
+  32:fltk-1.3.4-1/jpeg/jcomapi.c **** 
+  33:fltk-1.3.4-1/jpeg/jcomapi.c ****   /* Do nothing if called on a not-initialized or destroyed JPEG object. */
+  34:fltk-1.3.4-1/jpeg/jcomapi.c ****   if (cinfo->mem == NULL)
+  20              		.loc 1 34 0
+  21 0000 488B4708 		movq	8(%rdi), %rax
+  22 0004 4885C0   		testq	%rax, %rax
+  23 0007 741B     		je	.L9
+  30:fltk-1.3.4-1/jpeg/jcomapi.c ****   int pool;
+  24              		.loc 1 30 0 discriminator 1
+  25 0009 53       		pushq	%rbx
+  26              		.cfi_def_cfa_offset 16
+  27              		.cfi_offset 3, -16
+  28 000a 4889FB   		movq	%rdi, %rbx
+  29              	.LVL1:
+  35:fltk-1.3.4-1/jpeg/jcomapi.c ****     return;
+  36:fltk-1.3.4-1/jpeg/jcomapi.c **** 
+  37:fltk-1.3.4-1/jpeg/jcomapi.c ****   /* Releasing pools in reverse order might help avoid fragmentation
+  38:fltk-1.3.4-1/jpeg/jcomapi.c ****    * with some (brain-damaged) malloc libraries.
+  39:fltk-1.3.4-1/jpeg/jcomapi.c ****    */
+  40:fltk-1.3.4-1/jpeg/jcomapi.c ****   for (pool = JPOOL_NUMPOOLS-1; pool > JPOOL_PERMANENT; pool--) {
+  41:fltk-1.3.4-1/jpeg/jcomapi.c ****     (*cinfo->mem->free_pool) (cinfo, pool);
+  30              		.loc 1 41 0 discriminator 1
+  31 000d BE010000 		movl	$1, %esi
+  31      00
+  32 0012 FF5048   		call	*72(%rax)
+  33              	.LVL2:
+  42:fltk-1.3.4-1/jpeg/jcomapi.c ****   }
+  43:fltk-1.3.4-1/jpeg/jcomapi.c **** 
+  44:fltk-1.3.4-1/jpeg/jcomapi.c ****   /* Reset overall state for possible reuse of object */
+  45:fltk-1.3.4-1/jpeg/jcomapi.c ****   if (cinfo->is_decompressor) {
+  34              		.loc 1 45 0 discriminator 1
+  35 0015 8B4320   		movl	32(%rbx), %eax
+  36 0018 85C0     		testl	%eax, %eax
+  37 001a 7514     		jne	.L11
+  46:fltk-1.3.4-1/jpeg/jcomapi.c ****     cinfo->global_state = DSTATE_START;
+  47:fltk-1.3.4-1/jpeg/jcomapi.c ****     /* Try to keep application from accessing now-deleted marker list.
+  48:fltk-1.3.4-1/jpeg/jcomapi.c ****      * A bit kludgy to do it here, but this is the most central place.
+  49:fltk-1.3.4-1/jpeg/jcomapi.c ****      */
+  50:fltk-1.3.4-1/jpeg/jcomapi.c ****     ((j_decompress_ptr) cinfo)->marker_list = NULL;
+  51:fltk-1.3.4-1/jpeg/jcomapi.c ****   } else {
+  52:fltk-1.3.4-1/jpeg/jcomapi.c ****     cinfo->global_state = CSTATE_START;
+  38              		.loc 1 52 0
+  39 001c C7432464 		movl	$100, 36(%rbx)
+  39      000000
+  53:fltk-1.3.4-1/jpeg/jcomapi.c ****   }
+  54:fltk-1.3.4-1/jpeg/jcomapi.c **** }
+  40              		.loc 1 54 0
+  41 0023 5B       		popq	%rbx
+  42              		.cfi_restore 3
+  43              		.cfi_def_cfa_offset 8
+  44              	.LVL3:
+  45              	.L9:
+  46 0024 F3C3     		rep ret
+  47              	.LVL4:
+  48 0026 662E0F1F 		.p2align 4,,10
+  48      84000000 
+  48      0000
+  49              		.p2align 3
+  50              	.L11:
+  51              		.cfi_def_cfa_offset 16
+  52              		.cfi_offset 3, -16
+  46:fltk-1.3.4-1/jpeg/jcomapi.c ****     cinfo->global_state = DSTATE_START;
+  53              		.loc 1 46 0
+  54 0030 C74324C8 		movl	$200, 36(%rbx)
+  54      000000
+  50:fltk-1.3.4-1/jpeg/jcomapi.c ****   } else {
+  55              		.loc 1 50 0
+  56 0037 48C78398 		movq	$0, 408(%rbx)
+  56      01000000 
+  56      000000
+  57              		.loc 1 54 0
+  58 0042 5B       		popq	%rbx
+  59              		.cfi_restore 3
+  60              		.cfi_def_cfa_offset 8
+  61              	.LVL5:
+  62 0043 EBDF     		jmp	.L9
+  63              		.cfi_endproc
+  64              	.LFE61:
+  66              		.section	.text.unlikely.jpeg_abort
+  67              	.LCOLDE0:
+  68              		.section	.text.jpeg_abort
+  69              	.LHOTE0:
+  70              		.section	.text.unlikely.jpeg_destroy,"ax",@progbits
+  71              	.LCOLDB1:
+  72              		.section	.text.jpeg_destroy,"ax",@progbits
+  73              	.LHOTB1:
+  74              		.p2align 4,,15
+  75              		.globl	jpeg_destroy
+  77              	jpeg_destroy:
+  78              	.LFB62:
+  55:fltk-1.3.4-1/jpeg/jcomapi.c **** 
+  56:fltk-1.3.4-1/jpeg/jcomapi.c **** 
+  57:fltk-1.3.4-1/jpeg/jcomapi.c **** /*
+  58:fltk-1.3.4-1/jpeg/jcomapi.c ****  * Destruction of a JPEG object.
+  59:fltk-1.3.4-1/jpeg/jcomapi.c ****  *
+  60:fltk-1.3.4-1/jpeg/jcomapi.c ****  * Everything gets deallocated except the master jpeg_compress_struct itself
+  61:fltk-1.3.4-1/jpeg/jcomapi.c ****  * and the error manager struct.  Both of these are supplied by the application
+  62:fltk-1.3.4-1/jpeg/jcomapi.c ****  * and must be freed, if necessary, by the application.  (Often they are on
+  63:fltk-1.3.4-1/jpeg/jcomapi.c ****  * the stack and so don't need to be freed anyway.)
+  64:fltk-1.3.4-1/jpeg/jcomapi.c ****  * Closing a data source or destination, if necessary, is the application's
+  65:fltk-1.3.4-1/jpeg/jcomapi.c ****  * responsibility.
+  66:fltk-1.3.4-1/jpeg/jcomapi.c ****  */
+  67:fltk-1.3.4-1/jpeg/jcomapi.c **** 
+  68:fltk-1.3.4-1/jpeg/jcomapi.c **** GLOBAL(void)
+  69:fltk-1.3.4-1/jpeg/jcomapi.c **** jpeg_destroy (j_common_ptr cinfo)
+  70:fltk-1.3.4-1/jpeg/jcomapi.c **** {
+  79              		.loc 1 70 0
+  80              		.cfi_startproc
+  81              	.LVL6:
+  71:fltk-1.3.4-1/jpeg/jcomapi.c ****   /* We need only tell the memory manager to release everything. */
+  72:fltk-1.3.4-1/jpeg/jcomapi.c ****   /* NB: mem pointer is NULL if memory mgr failed to initialize. */
+  73:fltk-1.3.4-1/jpeg/jcomapi.c ****   if (cinfo->mem != NULL)
+  82              		.loc 1 73 0
+  83 0000 488B4708 		movq	8(%rdi), %rax
+  70:fltk-1.3.4-1/jpeg/jcomapi.c ****   /* We need only tell the memory manager to release everything. */
+  84              		.loc 1 70 0
+  85 0004 53       		pushq	%rbx
+  86              		.cfi_def_cfa_offset 16
+  87              		.cfi_offset 3, -16
+  70:fltk-1.3.4-1/jpeg/jcomapi.c ****   /* We need only tell the memory manager to release everything. */
+  88              		.loc 1 70 0
+  89 0005 4889FB   		movq	%rdi, %rbx
+  90              		.loc 1 73 0
+  91 0008 4885C0   		testq	%rax, %rax
+  92 000b 7403     		je	.L13
+  74:fltk-1.3.4-1/jpeg/jcomapi.c ****     (*cinfo->mem->self_destruct) (cinfo);
+  93              		.loc 1 74 0
+  94 000d FF5050   		call	*80(%rax)
+  95              	.LVL7:
+  96              	.L13:
+  75:fltk-1.3.4-1/jpeg/jcomapi.c ****   cinfo->mem = NULL;		/* be safe if jpeg_destroy is called twice */
+  97              		.loc 1 75 0
+  98 0010 48C74308 		movq	$0, 8(%rbx)
+  98      00000000 
+  76:fltk-1.3.4-1/jpeg/jcomapi.c ****   cinfo->global_state = 0;	/* mark it destroyed */
+  99              		.loc 1 76 0
+ 100 0018 C7432400 		movl	$0, 36(%rbx)
+ 100      000000
+  77:fltk-1.3.4-1/jpeg/jcomapi.c **** }
+ 101              		.loc 1 77 0
+ 102 001f 5B       		popq	%rbx
+ 103              		.cfi_def_cfa_offset 8
+ 104              	.LVL8:
+ 105 0020 C3       		ret
+ 106              		.cfi_endproc
+ 107              	.LFE62:
+ 109              		.section	.text.unlikely.jpeg_destroy
+ 110              	.LCOLDE1:
+ 111              		.section	.text.jpeg_destroy
+ 112              	.LHOTE1:
+ 113              		.section	.text.unlikely.jpeg_alloc_quant_table,"ax",@progbits
+ 114              	.LCOLDB2:
+ 115              		.section	.text.jpeg_alloc_quant_table,"ax",@progbits
+ 116              	.LHOTB2:
+ 117              		.p2align 4,,15
+ 118              		.globl	jpeg_alloc_quant_table
+ 120              	jpeg_alloc_quant_table:
+ 121              	.LFB63:
+  78:fltk-1.3.4-1/jpeg/jcomapi.c **** 
+  79:fltk-1.3.4-1/jpeg/jcomapi.c **** 
+  80:fltk-1.3.4-1/jpeg/jcomapi.c **** /*
+  81:fltk-1.3.4-1/jpeg/jcomapi.c ****  * Convenience routines for allocating quantization and Huffman tables.
+  82:fltk-1.3.4-1/jpeg/jcomapi.c ****  * (Would jutils.c be a more reasonable place to put these?)
+  83:fltk-1.3.4-1/jpeg/jcomapi.c ****  */
+  84:fltk-1.3.4-1/jpeg/jcomapi.c **** 
+  85:fltk-1.3.4-1/jpeg/jcomapi.c **** GLOBAL(JQUANT_TBL *)
+  86:fltk-1.3.4-1/jpeg/jcomapi.c **** jpeg_alloc_quant_table (j_common_ptr cinfo)
+  87:fltk-1.3.4-1/jpeg/jcomapi.c **** {
+ 122              		.loc 1 87 0
+ 123              		.cfi_startproc
+ 124              	.LVL9:
+ 125 0000 4883EC08 		subq	$8, %rsp
+ 126              		.cfi_def_cfa_offset 16
+  88:fltk-1.3.4-1/jpeg/jcomapi.c ****   JQUANT_TBL *tbl;
+  89:fltk-1.3.4-1/jpeg/jcomapi.c **** 
+  90:fltk-1.3.4-1/jpeg/jcomapi.c ****   tbl = (JQUANT_TBL *)
+  91:fltk-1.3.4-1/jpeg/jcomapi.c ****     (*cinfo->mem->alloc_small) (cinfo, JPOOL_PERMANENT, SIZEOF(JQUANT_TBL));
+ 127              		.loc 1 91 0
+ 128 0004 488B4708 		movq	8(%rdi), %rax
+  90:fltk-1.3.4-1/jpeg/jcomapi.c ****     (*cinfo->mem->alloc_small) (cinfo, JPOOL_PERMANENT, SIZEOF(JQUANT_TBL));
+ 129              		.loc 1 90 0
+ 130 0008 BA840000 		movl	$132, %edx
+ 130      00
+ 131 000d 31F6     		xorl	%esi, %esi
+ 132 000f FF10     		call	*(%rax)
+ 133              	.LVL10:
+  92:fltk-1.3.4-1/jpeg/jcomapi.c ****   tbl->sent_table = FALSE;	/* make sure this is false in any new table */
+ 134              		.loc 1 92 0
+ 135 0011 C7808000 		movl	$0, 128(%rax)
+ 135      00000000 
+ 135      0000
+  93:fltk-1.3.4-1/jpeg/jcomapi.c ****   return tbl;
+  94:fltk-1.3.4-1/jpeg/jcomapi.c **** }
+ 136              		.loc 1 94 0
+ 137 001b 4883C408 		addq	$8, %rsp
+ 138              		.cfi_def_cfa_offset 8
+ 139 001f C3       		ret
+ 140              		.cfi_endproc
+ 141              	.LFE63:
+ 143              		.section	.text.unlikely.jpeg_alloc_quant_table
+ 144              	.LCOLDE2:
+ 145              		.section	.text.jpeg_alloc_quant_table
+ 146              	.LHOTE2:
+ 147              		.section	.text.unlikely.jpeg_alloc_huff_table,"ax",@progbits
+ 148              	.LCOLDB3:
+ 149              		.section	.text.jpeg_alloc_huff_table,"ax",@progbits
+ 150              	.LHOTB3:
+ 151              		.p2align 4,,15
+ 152              		.globl	jpeg_alloc_huff_table
+ 154              	jpeg_alloc_huff_table:
+ 155              	.LFB64:
+  95:fltk-1.3.4-1/jpeg/jcomapi.c **** 
+  96:fltk-1.3.4-1/jpeg/jcomapi.c **** 
+  97:fltk-1.3.4-1/jpeg/jcomapi.c **** GLOBAL(JHUFF_TBL *)
+  98:fltk-1.3.4-1/jpeg/jcomapi.c **** jpeg_alloc_huff_table (j_common_ptr cinfo)
+  99:fltk-1.3.4-1/jpeg/jcomapi.c **** {
+ 156              		.loc 1 99 0
+ 157              		.cfi_startproc
+ 158              	.LVL11:
+ 159 0000 4883EC08 		subq	$8, %rsp
+ 160              		.cfi_def_cfa_offset 16
+ 100:fltk-1.3.4-1/jpeg/jcomapi.c ****   JHUFF_TBL *tbl;
+ 101:fltk-1.3.4-1/jpeg/jcomapi.c **** 
+ 102:fltk-1.3.4-1/jpeg/jcomapi.c ****   tbl = (JHUFF_TBL *)
+ 103:fltk-1.3.4-1/jpeg/jcomapi.c ****     (*cinfo->mem->alloc_small) (cinfo, JPOOL_PERMANENT, SIZEOF(JHUFF_TBL));
+ 161              		.loc 1 103 0
+ 162 0004 488B4708 		movq	8(%rdi), %rax
+ 102:fltk-1.3.4-1/jpeg/jcomapi.c ****     (*cinfo->mem->alloc_small) (cinfo, JPOOL_PERMANENT, SIZEOF(JHUFF_TBL));
+ 163              		.loc 1 102 0
+ 164 0008 BA180100 		movl	$280, %edx
+ 164      00
+ 165 000d 31F6     		xorl	%esi, %esi
+ 166 000f FF10     		call	*(%rax)
+ 167              	.LVL12:
+ 104:fltk-1.3.4-1/jpeg/jcomapi.c ****   tbl->sent_table = FALSE;	/* make sure this is false in any new table */
+ 168              		.loc 1 104 0
+ 169 0011 C7801401 		movl	$0, 276(%rax)
+ 169      00000000 
+ 169      0000
+ 105:fltk-1.3.4-1/jpeg/jcomapi.c ****   return tbl;
+ 106:fltk-1.3.4-1/jpeg/jcomapi.c **** }
+ 170              		.loc 1 106 0
+ 171 001b 4883C408 		addq	$8, %rsp
+ 172              		.cfi_def_cfa_offset 8
+ 173 001f C3       		ret
+ 174              		.cfi_endproc
+ 175              	.LFE64:
+ 177              		.section	.text.unlikely.jpeg_alloc_huff_table
+ 178              	.LCOLDE3:
+ 179              		.section	.text.jpeg_alloc_huff_table
+ 180              	.LHOTE3:
+ 181              		.text
+ 182              	.Letext0:
+ 183              		.section	.text.unlikely.jpeg_abort
+ 184              	.Letext_cold0:
+ 185              		.file 2 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
+ 186              		.file 3 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 187              		.file 4 "/usr/include/libio.h"
+ 188              		.file 5 "fltk-1.3.4-1/jpeg/jmorecfg.h"
+ 189              		.file 6 "fltk-1.3.4-1/jpeg/jpeglib.h"
+ 190              		.file 7 "fltk-1.3.4-1/jpeg/jpegint.h"
+ 191              		.file 8 "/usr/include/stdio.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 jcomapi.c
+     /tmp/ccpoTwRs.s:14     .text.jpeg_abort:0000000000000000 jpeg_abort
+     /tmp/ccpoTwRs.s:77     .text.jpeg_destroy:0000000000000000 jpeg_destroy
+     /tmp/ccpoTwRs.s:120    .text.jpeg_alloc_quant_table:0000000000000000 jpeg_alloc_quant_table
+     /tmp/ccpoTwRs.s:154    .text.jpeg_alloc_huff_table:0000000000000000 jpeg_alloc_huff_table
+                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
+                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+                           .group:0000000000000000 wm4.jconfig.h.10.247fc3ff67998f3074970b1373c70333
+                           .group:0000000000000000 wm4.features.h.19.24da27e0a4d0d521fd057013d982b8b5
+                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
+                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
+                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
+                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
+                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
+                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
+                           .group:0000000000000000 wm4.waitflags.h.25.e401b8bcfee800b540b27abd7cc78de9
+                           .group:0000000000000000 wm4.waitstatus.h.28.93f167f49d64e2b9b99f98d1162a93bf
+                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
+                           .group:0000000000000000 wm4.endian.h.41.24cced64aef71195a51d4daa8e4f4a95
+                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
+                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
+                           .group:0000000000000000 wm4.byteswap.h.38.11ee5fdc0f6cc53a16c505b9233cecef
+                           .group:0000000000000000 wm4.endian.h.63.97272d7c64d5db8020003b32e9289502
+                           .group:0000000000000000 wm4.waitstatus.h.99.408b6270fa6eb71377201a241ef15f79
+                           .group:0000000000000000 wm4.stdlib.h.50.84aeca2ac6f37d40e1e9b3cef757ba2d
+                           .group:0000000000000000 wm4.types.h.23.f6dcbaa72f8f71361acef09804d45a5e
+                           .group:0000000000000000 wm4.time.h.53.beb46e650cd406cb917b6b96b45e640a
+                           .group:0000000000000000 wm4.stddef.h.238.847b6907dabda77be90a9ab7ad789e2e
+                           .group:0000000000000000 wm4.types.h.187.bd5a05039b505b3620e6973f1b2ffeb1
+                           .group:0000000000000000 wm4.select.h.28.eb2f3debdbcffd1442ebddaebc4fb6ff
+                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
+                           .group:0000000000000000 wm4.select.h.36.f76c3b9e55c871743863013cc4cc14c9
+                           .group:0000000000000000 wm4.time.h.66.e70ce69790c975f0efb369340c432e0b
+                           .group:0000000000000000 wm4.time.h.25.ae5284cdff565e87a9198d819340325d
+                           .group:0000000000000000 wm4.select.h.49.e9d2041e5035cc68ebd1a20f7dbc8514
+                           .group:0000000000000000 wm4.select2.h.27.f95f2ab0ffee66dc1b6575014894b21a
+                           .group:0000000000000000 wm4.sysmacros.h.20.8a0c33ff175cd9b434a86c0aaa36f0a2
+                           .group:0000000000000000 wm4.types.h.229.67b3f66bd74b06b451caec392a72a945
+                           .group:0000000000000000 wm4.pthreadtypes.h.25.6892b1493314fcf446bbc76e7362acba
+                           .group:0000000000000000 wm4.alloca.h.19.edefa922a76c1cbaaf1e416903ba2d1c
+                           .group:0000000000000000 wm4.alloca.h.29.156e12058824cc23d961c4d3b13031f6
+                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
+                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
+                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
+                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
+                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
+                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
+                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
+                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
+                           .group:0000000000000000 wm4.stdio.h.80.17b7dd1ca72d8a61987532cb1d80194a
+                           .group:0000000000000000 wm4.stdio_lim.h.23.557290a6cddeba0587f574f29e3a5fb9
+                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
+                           .group:0000000000000000 wm4.stdio.h.26.cae64f7ada9bb8327a89dba6a5e93655
+                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
+                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
+                           .group:0000000000000000 wm4.string2.h.45.00535b99420fc3014c2da41d6645330d
+                           .group:0000000000000000 wm4.string3.h.31.0c4b9301b754a2db05eaafef869657d2
+                           .group:0000000000000000 wm4.jinclude.h.67.b19f941ec97c4845fa4609292c7e2db4
+                           .group:0000000000000000 wm4.jmorecfg.h.33.3b4c5f9cc07b3737823b06caf24d5b05
+                           .group:0000000000000000 wm4.jpeglib.h.40.4f111c27252a38df39328d65454e82f4
+                           .group:0000000000000000 wm4.jpegint.h.26.5219ef5d4e4921371d38e77b6091fd20
+                           .group:0000000000000000 wm4.jerror.h.25.1dbd8674e70ab5215bc0037320e5c2a2
+
+NO UNDEFINED SYMBOLS

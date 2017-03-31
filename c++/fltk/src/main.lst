@@ -1,255 +1,602 @@
    1              		.file	"main.c"
-   2              		.section	.rodata.str1.1,"aMS",@progbits,1
-   3              	.LC0:
-   4 0000 53696768 		.string	"Sighup"
-   4      757000
-   5              		.section	.text.unlikely,"ax",@progbits
-   6              	.LCOLDB1:
-   7              		.text
-   8              	.LHOTB1:
-   9              		.p2align 4,,15
-  10              		.globl	sigHup
-  12              	sigHup:
-  13              	.LFB76:
-  14              		.cfi_startproc
-  15 0000 BF000000 		movl	$.LC0, %edi
-  15      00
-  16 0005 E9000000 		jmp	puts
-  16      00
-  17              		.cfi_endproc
-  18              	.LFE76:
-  20              		.section	.text.unlikely
-  21              	.LCOLDE1:
-  22              		.text
-  23              	.LHOTE1:
-  24              		.section	.rodata.str1.1
-  25              	.LC2:
-  26 0007 0A457869 		.string	"\nExiting program"
-  26      74696E67 
-  26      2070726F 
-  26      6772616D 
-  26      00
-  27              		.section	.text.unlikely
-  28              	.LCOLDB3:
-  29              		.text
-  30              	.LHOTB3:
-  31 000a 660F1F44 		.p2align 4,,15
-  31      0000
-  32              		.globl	sigInt
-  34              	sigInt:
-  35              	.LFB75:
-  36              		.cfi_startproc
-  37 0010 BF000000 		movl	$.LC2, %edi
-  37      00
-  38 0015 4883EC08 		subq	$8, %rsp
-  39              		.cfi_def_cfa_offset 16
-  40 0019 E8000000 		call	puts
-  40      00
-  41 001e 31FF     		xorl	%edi, %edi
-  42 0020 E8000000 		call	exit
+   2              		.text
+   3              	.Ltext0:
+   4              		.section	.rodata.str1.1,"aMS",@progbits,1
+   5              	.LC0:
+   6 0000 53696768 		.string	"Sighup"
+   6      757000
+   7              		.section	.text.unlikely.sigHup,"ax",@progbits
+   8              	.LCOLDB1:
+   9              		.section	.text.sigHup,"ax",@progbits
+  10              	.LHOTB1:
+  11              		.p2align 4,,15
+  12              		.section	.text.unlikely.sigHup
+  13              	.Ltext_cold0:
+  14              		.section	.text.sigHup
+  15              		.globl	sigHup
+  17              	sigHup:
+  18              	.LFB76:
+  19              		.file 1 "src/main.c"
+   1:src/main.c    **** /**
+   2:src/main.c    ****  *---------------------------------------------------------------------------
+   3:src/main.c    ****  * @brief   Makeplates main example file.
+   4:src/main.c    ****  *
+   5:src/main.c    ****  * @file    main.c
+   6:src/main.c    ****  * @author  Peter Malmberg <peter.malmberg@gmail.com>
+   7:src/main.c    ****  * @date    2016-10-24
+   8:src/main.c    ****  * @licence GPLv2
+   9:src/main.c    ****  *
+  10:src/main.c    ****  *---------------------------------------------------------------------------
+  11:src/main.c    ****  */
+  12:src/main.c    **** 
+  13:src/main.c    **** // Includes ---------------------------------------------------------------
+  14:src/main.c    **** 
+  15:src/main.c    **** #include <stdio.h>
+  16:src/main.c    **** #include <stdlib.h>
+  17:src/main.c    **** #include <sys/types.h>
+  18:src/main.c    **** #include <unistd.h>
+  19:src/main.c    **** #include <signal.h>
+  20:src/main.c    **** #include <string.h>
+  21:src/main.c    **** #include <errno.h>
+  22:src/main.c    **** 
+  23:src/main.c    **** #include "def.h"
+  24:src/main.c    **** 
+  25:src/main.c    **** // Defines ----------------------------------------------------------------
+  26:src/main.c    **** 
+  27:src/main.c    **** #define PROGNAME "makeplate"
+  28:src/main.c    **** 
+  29:src/main.c    **** // Variables --------------------------------------------------------------
+  30:src/main.c    **** 
+  31:src/main.c    **** // Prototypes -------------------------------------------------------------
+  32:src/main.c    **** void sigInt(int sig);
+  33:src/main.c    **** void sigHup(int sig);
+  34:src/main.c    **** 
+  35:src/main.c    **** // Code -------------------------------------------------------------------
+  36:src/main.c    **** 
+  37:src/main.c    **** 
+  38:src/main.c    **** void sigInt(int sig) {
+  39:src/main.c    **** 	UNUSED(sig);
+  40:src/main.c    **** 	
+  41:src/main.c    **** 	printf("\nExiting program\n");
+  42:src/main.c    **** 	exit(0);
+  43:src/main.c    **** }
+  44:src/main.c    **** 
+  45:src/main.c    **** void sigHup(int sig) {
+  20              		.loc 1 45 0
+  21              		.cfi_startproc
+  22              	.LVL0:
+  23              	.LBB28:
+  24              	.LBB29:
+  25              		.file 2 "/usr/include/x86_64-linux-gnu/bits/stdio2.h"
+   1:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** /* Checking macros for stdio functions.
+   2:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    Copyright (C) 2004-2016 Free Software Foundation, Inc.
+   3:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    This file is part of the GNU C Library.
+   4:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+   5:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    The GNU C Library is free software; you can redistribute it and/or
+   6:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    modify it under the terms of the GNU Lesser General Public
+   7:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    License as published by the Free Software Foundation; either
+   8:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    version 2.1 of the License, or (at your option) any later version.
+   9:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  10:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    The GNU C Library is distributed in the hope that it will be useful,
+  11:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    but WITHOUT ANY WARRANTY; without even the implied warranty of
+  12:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  13:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    Lesser General Public License for more details.
+  14:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  15:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    You should have received a copy of the GNU Lesser General Public
+  16:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    License along with the GNU C Library; if not, see
+  17:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    <http://www.gnu.org/licenses/>.  */
+  18:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  19:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #ifndef _STDIO_H
+  20:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # error "Never include <bits/stdio2.h> directly; use <stdio.h> instead."
+  21:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
+  22:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  23:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __sprintf_chk (char *__restrict __s, int __flag, size_t __slen,
+  24:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  const char *__restrict __format, ...) __THROW;
+  25:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vsprintf_chk (char *__restrict __s, int __flag, size_t __slen,
+  26:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   const char *__restrict __format,
+  27:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   _G_va_list __ap) __THROW;
+  28:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  29:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #ifdef __va_arg_pack
+  30:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+  31:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (sprintf (char *__restrict __s, const char *__restrict __fmt, ...))
+  32:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+  33:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __builtin___sprintf_chk (__s, __USE_FORTIFY_LEVEL - 1,
+  34:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				  __bos (__s), __fmt, __va_arg_pack ());
+  35:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+  36:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #elif !defined __cplusplus
+  37:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # define sprintf(str, ...) \
+  38:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __builtin___sprintf_chk (str, __USE_FORTIFY_LEVEL - 1, __bos (str), \
+  39:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   __VA_ARGS__)
+  40:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
+  41:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  42:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+  43:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (vsprintf (char *__restrict __s, const char *__restrict __fmt,
+  44:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		 _G_va_list __ap))
+  45:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+  46:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __builtin___vsprintf_chk (__s, __USE_FORTIFY_LEVEL - 1,
+  47:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				   __bos (__s), __fmt, __ap);
+  48:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+  49:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  50:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #if defined __USE_ISOC99 || defined __USE_UNIX98
+  51:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  52:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __snprintf_chk (char *__restrict __s, size_t __n, int __flag,
+  53:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   size_t __slen, const char *__restrict __format,
+  54:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   ...) __THROW;
+  55:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vsnprintf_chk (char *__restrict __s, size_t __n, int __flag,
+  56:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			    size_t __slen, const char *__restrict __format,
+  57:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			    _G_va_list __ap) __THROW;
+  58:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  59:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # ifdef __va_arg_pack
+  60:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+  61:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (snprintf (char *__restrict __s, size_t __n,
+  62:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		 const char *__restrict __fmt, ...))
+  63:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+  64:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+  65:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				   __bos (__s), __fmt, __va_arg_pack ());
+  66:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+  67:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # elif !defined __cplusplus
+  68:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  define snprintf(str, len, ...) \
+  69:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __builtin___snprintf_chk (str, len, __USE_FORTIFY_LEVEL - 1, __bos (str), \
+  70:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			    __VA_ARGS__)
+  71:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # endif
+  72:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  73:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+  74:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (vsnprintf (char *__restrict __s, size_t __n,
+  75:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		  const char *__restrict __fmt, _G_va_list __ap))
+  76:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+  77:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __builtin___vsnprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+  78:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				    __bos (__s), __fmt, __ap);
+  79:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+  80:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  81:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
+  82:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  83:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #if __USE_FORTIFY_LEVEL > 1
+  84:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  85:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __fprintf_chk (FILE *__restrict __stream, int __flag,
+  86:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  const char *__restrict __format, ...);
+  87:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __printf_chk (int __flag, const char *__restrict __format, ...);
+  88:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vfprintf_chk (FILE *__restrict __stream, int __flag,
+  89:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   const char *__restrict __format, _G_va_list __ap);
+  90:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vprintf_chk (int __flag, const char *__restrict __format,
+  91:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  _G_va_list __ap);
+  92:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  93:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # ifdef __va_arg_pack
+  94:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+  95:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** fprintf (FILE *__restrict __stream, const char *__restrict __fmt, ...)
+  96:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+  97:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __fprintf_chk (__stream, __USE_FORTIFY_LEVEL - 1, __fmt,
+  98:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			__va_arg_pack ());
+  99:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 100:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 101:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+ 102:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** printf (const char *__restrict __fmt, ...)
+ 103:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 104:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __printf_chk (__USE_FORTIFY_LEVEL - 1, __fmt, __va_arg_pack ());
+  26              		.loc 2 104 0
+  27 0000 BF000000 		movl	$.LC0, %edi
+  27      00
+  28              	.LVL1:
+  29 0005 E9000000 		jmp	puts
+  29      00
+  30              	.LVL2:
+  31              	.LBE29:
+  32              	.LBE28:
+  33              		.cfi_endproc
+  34              	.LFE76:
+  36              		.section	.text.unlikely.sigHup
+  37              	.LCOLDE1:
+  38              		.section	.text.sigHup
+  39              	.LHOTE1:
+  40              		.section	.rodata.str1.1
+  41              	.LC2:
+  42 0007 0A457869 		.string	"\nExiting program"
+  42      74696E67 
+  42      2070726F 
+  42      6772616D 
   42      00
-  43              		.cfi_endproc
-  44              	.LFE75:
-  46              		.section	.text.unlikely
-  47              	.LCOLDE3:
-  48              		.text
-  49              	.LHOTE3:
-  50              		.section	.rodata.str1.1
-  51              	.LC4:
-  52 0018 0A4D616B 		.string	"\nMakeplate linux C example.\n\n"
-  52      65706C61 
-  52      7465206C 
-  52      696E7578 
-  52      20432065 
-  53              		.section	.rodata.str1.8,"aMS",@progbits,1
-  54              		.align 8
-  55              	.LC5:
-  56 0000 1B5B313B 		.string	"\033[1;34mINFO \033[1;37m%4d\033[1;36m %-25s\033[0m: Information printout\n"
-  56      33346D49 
-  56      4E464F20 
-  56      1B5B313B 
-  56      33376D25 
-  57 003f 00       		.align 8
-  58              	.LC6:
-  59 0040 1B5B313B 		.string	"\033[1;32mDBG  \033[1;37m%4d\033[1;36m %-25s\033[0m: Debug printout\n"
-  59      33326D44 
-  59      42472020 
-  59      1B5B313B 
-  59      33376D25 
-  60 0079 00000000 		.align 8
-  60      000000
-  61              	.LC7:
-  62 0080 1B5B313B 		.string	"\033[1;33mWARN \033[1;37m%4d\033[1;36m %-25s\033[0m: Warning printout\n"
-  62      33336D57 
-  62      41524E20 
-  62      1B5B313B 
-  62      33376D25 
-  63 00bb 00000000 		.align 8
-  63      00
-  64              	.LC8:
-  65 00c0 1B5B313B 		.string	"\033[1;31mERR  \033[1;37m%4d\033[1;36m %-25s\033[0m: Error printout\n"
-  65      33316D45 
-  65      52522020 
-  65      1B5B313B 
-  65      33376D25 
-  66              		.section	.rodata.str1.1
-  67              	.LC9:
-  68 0036 44656275 		.string	"Debug do"
-  68      6720646F 
+  43              		.section	.text.unlikely.sigInt,"ax",@progbits
+  44              	.LCOLDB3:
+  45              		.section	.text.sigInt,"ax",@progbits
+  46              	.LHOTB3:
+  47              		.p2align 4,,15
+  48              		.globl	sigInt
+  50              	sigInt:
+  51              	.LFB75:
+  38:src/main.c    **** 	UNUSED(sig);
+  52              		.loc 1 38 0
+  53              		.cfi_startproc
+  54              	.LVL3:
+  55              	.LBB30:
+  56              	.LBB31:
+  57              		.loc 2 104 0
+  58 0000 BF000000 		movl	$.LC2, %edi
+  58      00
+  59              	.LVL4:
+  60              	.LBE31:
+  61              	.LBE30:
+  38:src/main.c    **** 	UNUSED(sig);
+  62              		.loc 1 38 0
+  63 0005 4883EC08 		subq	$8, %rsp
+  64              		.cfi_def_cfa_offset 16
+  65              	.LBB33:
+  66              	.LBB32:
+  67              		.loc 2 104 0
+  68 0009 E8000000 		call	puts
   68      00
-  69              	.LC10:
-  70 003f 56617220 		.string	"Var i = %2x\n"
-  70      69203D20 
-  70      2532780A 
-  70      00
-  71              	.LC11:
-  72 004c 55736520 		.string	"Use CTRL-C to stop program"
-  72      4354524C 
-  72      2D432074 
-  72      6F207374 
-  72      6F702070 
-  73              		.section	.text.unlikely
-  74              	.LCOLDB12:
-  75              		.section	.text.startup,"ax",@progbits
-  76              	.LHOTB12:
-  77              		.p2align 4,,15
-  78              		.globl	main
-  80              	main:
-  81              	.LFB77:
-  82              		.cfi_startproc
-  83 0000 4883EC08 		subq	$8, %rsp
-  84              		.cfi_def_cfa_offset 16
-  85 0004 BE000000 		movl	$sigInt, %esi
-  85      00
-  86 0009 BF020000 		movl	$2, %edi
-  86      00
-  87 000e E8000000 		call	signal
-  87      00
-  88 0013 BE000000 		movl	$sigHup, %esi
-  88      00
-  89 0018 BF010000 		movl	$1, %edi
-  89      00
-  90 001d E8000000 		call	signal
-  90      00
-  91 0022 BF000000 		movl	$.LC4, %edi
-  91      00
-  92 0027 E8000000 		call	puts
-  92      00
-  93 002c 488B3D00 		movq	stderr(%rip), %rdi
+  69              	.LVL5:
+  70              	.LBE32:
+  71              	.LBE33:
+  42:src/main.c    **** }
+  72              		.loc 1 42 0
+  73 000e 31FF     		xorl	%edi, %edi
+  74 0010 E8000000 		call	exit
+  74      00
+  75              	.LVL6:
+  76              		.cfi_endproc
+  77              	.LFE75:
+  79              		.section	.text.unlikely.sigInt
+  80              	.LCOLDE3:
+  81              		.section	.text.sigInt
+  82              	.LHOTE3:
+  83              		.section	.rodata.str1.1
+  84              	.LC4:
+  85 0018 0A4D616B 		.string	"\nMakeplate linux C example.\n\n"
+  85      65706C61 
+  85      7465206C 
+  85      696E7578 
+  85      20432065 
+  86              		.section	.rodata.str1.8,"aMS",@progbits,1
+  87              		.align 8
+  88              	.LC5:
+  89 0000 1B5B313B 		.string	"\033[1;34mINFO \033[1;37m%4d\033[1;36m %-25s\033[0m: Information printout\n"
+  89      33346D49 
+  89      4E464F20 
+  89      1B5B313B 
+  89      33376D25 
+  90 003f 00       		.align 8
+  91              	.LC6:
+  92 0040 1B5B313B 		.string	"\033[1;32mDBG  \033[1;37m%4d\033[1;36m %-25s\033[0m: Debug printout\n"
+  92      33326D44 
+  92      42472020 
+  92      1B5B313B 
+  92      33376D25 
+  93 0079 00000000 		.align 8
   93      000000
-  94 0033 41B80000 		movl	$__FUNCTION__.4742, %r8d
-  94      0000
-  95 0039 B93E0000 		movl	$62, %ecx
-  95      00
-  96 003e BA000000 		movl	$.LC5, %edx
+  94              	.LC7:
+  95 0080 1B5B313B 		.string	"\033[1;33mWARN \033[1;37m%4d\033[1;36m %-25s\033[0m: Warning printout\n"
+  95      33336D57 
+  95      41524E20 
+  95      1B5B313B 
+  95      33376D25 
+  96 00bb 00000000 		.align 8
   96      00
-  97 0043 BE010000 		movl	$1, %esi
-  97      00
-  98 0048 31C0     		xorl	%eax, %eax
-  99 004a E8000000 		call	__fprintf_chk
-  99      00
- 100 004f 488B3D00 		movq	stderr(%rip), %rdi
- 100      000000
- 101 0056 41B80000 		movl	$__FUNCTION__.4742, %r8d
- 101      0000
- 102 005c B9400000 		movl	$64, %ecx
- 102      00
- 103 0061 BA000000 		movl	$.LC6, %edx
+  97              	.LC8:
+  98 00c0 1B5B313B 		.string	"\033[1;31mERR  \033[1;37m%4d\033[1;36m %-25s\033[0m: Error printout\n"
+  98      33316D45 
+  98      52522020 
+  98      1B5B313B 
+  98      33376D25 
+  99              		.section	.rodata.str1.1
+ 100              	.LC9:
+ 101 0036 44656275 		.string	"Debug do"
+ 101      6720646F 
+ 101      00
+ 102              	.LC10:
+ 103 003f 56617220 		.string	"Var i = %2x\n"
+ 103      69203D20 
+ 103      2532780A 
  103      00
- 104 0066 BE010000 		movl	$1, %esi
- 104      00
- 105 006b 31C0     		xorl	%eax, %eax
- 106 006d E8000000 		call	__fprintf_chk
- 106      00
- 107 0072 488B3D00 		movq	stderr(%rip), %rdi
- 107      000000
- 108 0079 41B80000 		movl	$__FUNCTION__.4742, %r8d
- 108      0000
- 109 007f B9420000 		movl	$66, %ecx
- 109      00
- 110 0084 BA000000 		movl	$.LC7, %edx
- 110      00
- 111 0089 BE010000 		movl	$1, %esi
- 111      00
- 112 008e 31C0     		xorl	%eax, %eax
- 113 0090 E8000000 		call	__fprintf_chk
- 113      00
- 114 0095 488B3D00 		movq	stderr(%rip), %rdi
- 114      000000
- 115 009c 41B80000 		movl	$__FUNCTION__.4742, %r8d
- 115      0000
- 116 00a2 B9440000 		movl	$68, %ecx
- 116      00
- 117 00a7 BA000000 		movl	$.LC8, %edx
- 117      00
- 118 00ac BE010000 		movl	$1, %esi
- 118      00
- 119 00b1 31C0     		xorl	%eax, %eax
- 120 00b3 E8000000 		call	__fprintf_chk
- 120      00
- 121 00b8 BF000000 		movl	$.LC9, %edi
+ 104              	.LC11:
+ 105 004c 55736520 		.string	"Use CTRL-C to stop program"
+ 105      4354524C 
+ 105      2D432074 
+ 105      6F207374 
+ 105      6F702070 
+ 106              		.section	.text.unlikely.main,"ax",@progbits
+ 107              	.LCOLDB12:
+ 108              		.section	.text.startup.main,"ax",@progbits
+ 109              	.LHOTB12:
+ 110              		.p2align 4,,15
+ 111              		.globl	main
+ 113              	main:
+ 114              	.LFB77:
+  46:src/main.c    **** 	UNUSED(sig);
+  47:src/main.c    **** 	printf("Sighup\n");
+  48:src/main.c    **** }
+  49:src/main.c    **** 
+  50:src/main.c    **** 
+  51:src/main.c    **** int main(int argc, char *argv[]) {
+ 115              		.loc 1 51 0
+ 116              		.cfi_startproc
+ 117              	.LVL7:
+ 118 0000 4883EC08 		subq	$8, %rsp
+ 119              		.cfi_def_cfa_offset 16
+  52:src/main.c    **** 	int i;
+  53:src/main.c    **** 	
+  54:src/main.c    **** 	UNUSED(argc);
+  55:src/main.c    **** 	UNUSED(argv);
+  56:src/main.c    **** 	
+  57:src/main.c    **** 	signal(SIGINT, sigInt);
+ 120              		.loc 1 57 0
+ 121 0004 BE000000 		movl	$sigInt, %esi
  121      00
- 122 00bd E8000000 		call	puts
- 122      00
- 123 00c2 31D2     		xorl	%edx, %edx
- 124 00c4 BE000000 		movl	$.LC10, %esi
- 124      00
- 125 00c9 BF010000 		movl	$1, %edi
+ 122              	.LVL8:
+ 123 0009 BF020000 		movl	$2, %edi
+ 123      00
+ 124              	.LVL9:
+ 125 000e E8000000 		call	signal
  125      00
- 126 00ce 31C0     		xorl	%eax, %eax
- 127 00d0 E8000000 		call	__printf_chk
- 127      00
- 128 00d5 BA040000 		movl	$4, %edx
+ 126              	.LVL10:
+  58:src/main.c    **** 	signal(SIGHUP, sigHup);
+ 127              		.loc 1 58 0
+ 128 0013 BE000000 		movl	$sigHup, %esi
  128      00
- 129 00da BE000000 		movl	$.LC10, %esi
+ 129 0018 BF010000 		movl	$1, %edi
  129      00
- 130 00df BF010000 		movl	$1, %edi
+ 130 001d E8000000 		call	signal
  130      00
- 131 00e4 31C0     		xorl	%eax, %eax
- 132 00e6 E8000000 		call	__printf_chk
- 132      00
- 133 00eb BA060000 		movl	$6, %edx
- 133      00
- 134 00f0 BE000000 		movl	$.LC10, %esi
- 134      00
- 135 00f5 BF010000 		movl	$1, %edi
+ 131              	.LVL11:
+ 132              	.LBB34:
+ 133              	.LBB35:
+ 134              		.loc 2 104 0
+ 135 0022 BF000000 		movl	$.LC4, %edi
  135      00
- 136 00fa 31C0     		xorl	%eax, %eax
- 137 00fc E8000000 		call	__printf_chk
- 137      00
- 138 0101 BF010000 		movl	$1, %edi
- 138      00
- 139 0106 BA020000 		movl	$2, %edx
- 139      00
- 140 010b BE000000 		movl	$.LC10, %esi
- 140      00
- 141 0110 31C0     		xorl	%eax, %eax
- 142 0112 E8000000 		call	__printf_chk
- 142      00
- 143 0117 BF000000 		movl	$.LC11, %edi
- 143      00
- 144 011c E8000000 		call	puts
- 144      00
- 145              	.L5:
- 146 0121 EBFE     		jmp	.L5
- 147              		.cfi_endproc
- 148              	.LFE77:
- 150              		.section	.text.unlikely
- 151              	.LCOLDE12:
- 152              		.section	.text.startup
- 153              	.LHOTE12:
- 154              		.section	.rodata
- 157              	__FUNCTION__.4742:
- 158 0000 6D61696E 		.string	"main"
+ 136 0027 E8000000 		call	puts
+ 136      00
+ 137              	.LVL12:
+ 138              	.LBE35:
+ 139              	.LBE34:
+ 140              	.LBB36:
+ 141              	.LBB37:
+  97:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			__va_arg_pack ());
+ 142              		.loc 2 97 0
+ 143 002c 488B3D00 		movq	stderr(%rip), %rdi
+ 143      000000
+ 144 0033 41B80000 		movl	$__FUNCTION__.4742, %r8d
+ 144      0000
+ 145 0039 B93E0000 		movl	$62, %ecx
+ 145      00
+ 146 003e BA000000 		movl	$.LC5, %edx
+ 146      00
+ 147 0043 BE010000 		movl	$1, %esi
+ 147      00
+ 148 0048 31C0     		xorl	%eax, %eax
+ 149 004a E8000000 		call	__fprintf_chk
+ 149      00
+ 150              	.LVL13:
+ 151              	.LBE37:
+ 152              	.LBE36:
+ 153              	.LBB38:
+ 154              	.LBB39:
+ 155 004f 488B3D00 		movq	stderr(%rip), %rdi
+ 155      000000
+ 156 0056 41B80000 		movl	$__FUNCTION__.4742, %r8d
+ 156      0000
+ 157 005c B9400000 		movl	$64, %ecx
+ 157      00
+ 158 0061 BA000000 		movl	$.LC6, %edx
  158      00
- 159              		.ident	"GCC: (Ubuntu 5.4.0-6ubuntu1~16.04.4) 5.4.0 20160609"
- 160              		.section	.note.GNU-stack,"",@progbits
+ 159 0066 BE010000 		movl	$1, %esi
+ 159      00
+ 160 006b 31C0     		xorl	%eax, %eax
+ 161 006d E8000000 		call	__fprintf_chk
+ 161      00
+ 162              	.LVL14:
+ 163              	.LBE39:
+ 164              	.LBE38:
+ 165              	.LBB40:
+ 166              	.LBB41:
+ 167 0072 488B3D00 		movq	stderr(%rip), %rdi
+ 167      000000
+ 168 0079 41B80000 		movl	$__FUNCTION__.4742, %r8d
+ 168      0000
+ 169 007f B9420000 		movl	$66, %ecx
+ 169      00
+ 170 0084 BA000000 		movl	$.LC7, %edx
+ 170      00
+ 171 0089 BE010000 		movl	$1, %esi
+ 171      00
+ 172 008e 31C0     		xorl	%eax, %eax
+ 173 0090 E8000000 		call	__fprintf_chk
+ 173      00
+ 174              	.LVL15:
+ 175              	.LBE41:
+ 176              	.LBE40:
+ 177              	.LBB42:
+ 178              	.LBB43:
+ 179 0095 488B3D00 		movq	stderr(%rip), %rdi
+ 179      000000
+ 180 009c 41B80000 		movl	$__FUNCTION__.4742, %r8d
+ 180      0000
+ 181 00a2 B9440000 		movl	$68, %ecx
+ 181      00
+ 182 00a7 BA000000 		movl	$.LC8, %edx
+ 182      00
+ 183 00ac BE010000 		movl	$1, %esi
+ 183      00
+ 184 00b1 31C0     		xorl	%eax, %eax
+ 185 00b3 E8000000 		call	__fprintf_chk
+ 185      00
+ 186              	.LVL16:
+ 187              	.LBE43:
+ 188              	.LBE42:
+ 189              	.LBB44:
+ 190              	.LBB45:
+ 191              		.loc 2 104 0
+ 192 00b8 BF000000 		movl	$.LC9, %edi
+ 192      00
+ 193 00bd E8000000 		call	puts
+ 193      00
+ 194              	.LVL17:
+ 195              	.LBE45:
+ 196              	.LBE44:
+ 197              	.LBB46:
+ 198              	.LBB47:
+ 199 00c2 31D2     		xorl	%edx, %edx
+ 200 00c4 BE000000 		movl	$.LC10, %esi
+ 200      00
+ 201 00c9 BF010000 		movl	$1, %edi
+ 201      00
+ 202 00ce 31C0     		xorl	%eax, %eax
+ 203 00d0 E8000000 		call	__printf_chk
+ 203      00
+ 204              	.LVL18:
+ 205              	.LBE47:
+ 206              	.LBE46:
+ 207              	.LBB48:
+ 208              	.LBB49:
+ 209 00d5 BA040000 		movl	$4, %edx
+ 209      00
+ 210 00da BE000000 		movl	$.LC10, %esi
+ 210      00
+ 211 00df BF010000 		movl	$1, %edi
+ 211      00
+ 212 00e4 31C0     		xorl	%eax, %eax
+ 213 00e6 E8000000 		call	__printf_chk
+ 213      00
+ 214              	.LVL19:
+ 215              	.LBE49:
+ 216              	.LBE48:
+ 217              	.LBB50:
+ 218              	.LBB51:
+ 219 00eb BA060000 		movl	$6, %edx
+ 219      00
+ 220 00f0 BE000000 		movl	$.LC10, %esi
+ 220      00
+ 221 00f5 BF010000 		movl	$1, %edi
+ 221      00
+ 222 00fa 31C0     		xorl	%eax, %eax
+ 223 00fc E8000000 		call	__printf_chk
+ 223      00
+ 224              	.LVL20:
+ 225              	.LBE51:
+ 226              	.LBE50:
+ 227              	.LBB52:
+ 228              	.LBB53:
+ 229 0101 BF010000 		movl	$1, %edi
+ 229      00
+ 230 0106 BA020000 		movl	$2, %edx
+ 230      00
+ 231 010b BE000000 		movl	$.LC10, %esi
+ 231      00
+ 232 0110 31C0     		xorl	%eax, %eax
+ 233 0112 E8000000 		call	__printf_chk
+ 233      00
+ 234              	.LVL21:
+ 235              	.LBE53:
+ 236              	.LBE52:
+ 237              	.LBB54:
+ 238              	.LBB55:
+ 239 0117 BF000000 		movl	$.LC11, %edi
+ 239      00
+ 240 011c E8000000 		call	puts
+ 240      00
+ 241              	.LVL22:
+ 242              	.L5:
+ 243 0121 EBFE     		jmp	.L5
+ 244              	.LBE55:
+ 245              	.LBE54:
+ 246              		.cfi_endproc
+ 247              	.LFE77:
+ 249              		.section	.text.unlikely.main
+ 250              	.LCOLDE12:
+ 251              		.section	.text.startup.main
+ 252              	.LHOTE12:
+ 253              		.section	.rodata.__FUNCTION__.4742,"a",@progbits
+ 256              	__FUNCTION__.4742:
+ 257 0000 6D61696E 		.string	"main"
+ 257      00
+ 258              		.text
+ 259              	.Letext0:
+ 260              		.section	.text.unlikely.sigHup
+ 261              	.Letext_cold0:
+ 262              		.file 3 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
+ 263              		.file 4 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 264              		.file 5 "/usr/include/stdio.h"
+ 265              		.file 6 "/usr/include/libio.h"
+ 266              		.file 7 "/usr/include/stdlib.h"
+ 267              		.file 8 "/usr/include/signal.h"
+ 268              		.file 9 "<built-in>"
 DEFINED SYMBOLS
                             *ABS*:0000000000000000 main.c
-     /tmp/ccBGpx6q.s:12     .text:0000000000000000 sigHup
-     /tmp/ccBGpx6q.s:34     .text:0000000000000010 sigInt
-     /tmp/ccBGpx6q.s:80     .text.startup:0000000000000000 main
-     /tmp/ccBGpx6q.s:157    .rodata:0000000000000000 __FUNCTION__.4742
+     /tmp/cc4cC3Cv.s:17     .text.sigHup:0000000000000000 sigHup
+     /tmp/cc4cC3Cv.s:50     .text.sigInt:0000000000000000 sigInt
+     /tmp/cc4cC3Cv.s:113    .text.startup.main:0000000000000000 main
+     /tmp/cc4cC3Cv.s:256    .rodata.__FUNCTION__.4742:0000000000000000 __FUNCTION__.4742
+                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
+                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+                           .group:0000000000000000 wm4.features.h.19.24da27e0a4d0d521fd057013d982b8b5
+                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
+                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
+                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
+                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
+                           .group:0000000000000000 wm4.stdio.h.31.e39a94e203ad4e1d978c0fc68ce016ee
+                           .group:0000000000000000 wm4.stddef.h.187.2ff233552538c6ff9b8575ca8ea52cb3
+                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
+                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
+                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
+                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
+                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
+                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
+                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
+                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
+                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
+                           .group:0000000000000000 wm4.stdio.h.80.b753da704deea1ba47861962eb4798db
+                           .group:0000000000000000 wm4.stdio_lim.h.23.557290a6cddeba0587f574f29e3a5fb9
+                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
+                           .group:0000000000000000 wm4.stdio.h.26.cae64f7ada9bb8327a89dba6a5e93655
+                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
+                           .group:0000000000000000 wm4.stddef.h.238.5c3398669aab31a6fd426ff45ca6ab2c
+                           .group:0000000000000000 wm4.waitflags.h.25.e401b8bcfee800b540b27abd7cc78de9
+                           .group:0000000000000000 wm4.waitstatus.h.28.93f167f49d64e2b9b99f98d1162a93bf
+                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
+                           .group:0000000000000000 wm4.endian.h.41.24cced64aef71195a51d4daa8e4f4a95
+                           .group:0000000000000000 wm4.byteswap.h.38.11ee5fdc0f6cc53a16c505b9233cecef
+                           .group:0000000000000000 wm4.endian.h.63.97272d7c64d5db8020003b32e9289502
+                           .group:0000000000000000 wm4.waitstatus.h.99.408b6270fa6eb71377201a241ef15f79
+                           .group:0000000000000000 wm4.stdlib.h.50.84aeca2ac6f37d40e1e9b3cef757ba2d
+                           .group:0000000000000000 wm4.types.h.23.6b551a14160ee6e670a07567790a4689
+                           .group:0000000000000000 wm4.time.h.53.beb46e650cd406cb917b6b96b45e640a
+                           .group:0000000000000000 wm4.stddef.h.238.847b6907dabda77be90a9ab7ad789e2e
+                           .group:0000000000000000 wm4.types.h.187.bd5a05039b505b3620e6973f1b2ffeb1
+                           .group:0000000000000000 wm4.select.h.28.eb2f3debdbcffd1442ebddaebc4fb6ff
+                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
+                           .group:0000000000000000 wm4.select.h.36.f76c3b9e55c871743863013cc4cc14c9
+                           .group:0000000000000000 wm4.time.h.66.e70ce69790c975f0efb369340c432e0b
+                           .group:0000000000000000 wm4.time.h.25.ae5284cdff565e87a9198d819340325d
+                           .group:0000000000000000 wm4.select.h.49.e9d2041e5035cc68ebd1a20f7dbc8514
+                           .group:0000000000000000 wm4.select2.h.27.f95f2ab0ffee66dc1b6575014894b21a
+                           .group:0000000000000000 wm4.sysmacros.h.20.8a0c33ff175cd9b434a86c0aaa36f0a2
+                           .group:0000000000000000 wm4.types.h.229.67b3f66bd74b06b451caec392a72a945
+                           .group:0000000000000000 wm4.pthreadtypes.h.25.6892b1493314fcf446bbc76e7362acba
+                           .group:0000000000000000 wm4.alloca.h.19.edefa922a76c1cbaaf1e416903ba2d1c
+                           .group:0000000000000000 wm4.alloca.h.29.156e12058824cc23d961c4d3b13031f6
+                           .group:0000000000000000 wm4.unistd.h.23.a608ae63b1bee638e80d9e2a8598bd8e
+                           .group:0000000000000000 wm4.posix_opt.h.20.8587404e00639bdcc5f6a74591f95259
+                           .group:0000000000000000 wm4.environments.h.56.c5802092ccc191baeb41f8d355bb878f
+                           .group:0000000000000000 wm4.unistd.h.213.4c582e35260d661b081322974b7c1e74
+                           .group:0000000000000000 wm4.unistd.h.259.cd5f00c2d63db91fbd4bc06478f562cf
+                           .group:0000000000000000 wm4.confname.h.27.6b00117a32f457cc72e5ac810a9adade
+                           .group:0000000000000000 wm4.unistd.h.1078.24be2bc9ec99b97d21ee28d24f5968b2
+                           .group:0000000000000000 wm4.sigset.h.42.ba5e059bb02a4df57c0b39663c6450e5
+                           .group:0000000000000000 wm4.signal.h.38.4a14efc2703c3c0d68cf889b778c4bb4
+                           .group:0000000000000000 wm4.signum.h.22.4c1d620de4eecd5f9eeda9c80ba0f113
+                           .group:0000000000000000 wm4.time.h.66.fa652aa18ecf92239cee124d5533fe97
+                           .group:0000000000000000 wm4.siginfo.h.29.c3a762f7582f9dff6a2d31f44c9a643d
+                           .group:0000000000000000 wm4.signal.h.184.a49b773039089889dcf4436e98db5b15
+                           .group:0000000000000000 wm4.sigaction.h.36.df07c9e0e47f7c4a9420057185f38c34
+                           .group:0000000000000000 wm4.sigcontext.h.19.313573bb6ad2ae4efc9150f741b0d1d4
+                           .group:0000000000000000 wm4.sigstack.h.36.385688ed1383a3aea429a07cd7f554d3
+                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
+                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
+                           .group:0000000000000000 wm4.string2.h.45.00535b99420fc3014c2da41d6645330d
+                           .group:0000000000000000 wm4.string3.h.31.0c4b9301b754a2db05eaafef869657d2
+                           .group:0000000000000000 wm4.errno.h.21.234adedf0a908ba1512bb39778d0c13a
+                           .group:0000000000000000 wm4.errnobase.h.2.3ec77d86fa6012e288bd2eb28191253f
+                           .group:0000000000000000 wm4.errno.h.6.6707cf97e82b783d19d3d077217dd04e
+                           .group:0000000000000000 wm4.errno.h.27.5f4b88dc9507696aecbaa61ffb4828e0
+                           .group:0000000000000000 wm4.def.h.22.68b6187fac505a274a873e5ef381444e
 
 UNDEFINED SYMBOLS
 puts

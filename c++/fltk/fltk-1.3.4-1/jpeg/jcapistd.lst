@@ -1,0 +1,706 @@
+   1              		.file	"jcapistd.c"
+   2              		.text
+   3              	.Ltext0:
+   4              		.section	.text.unlikely.jpeg_start_compress,"ax",@progbits
+   5              	.LCOLDB0:
+   6              		.section	.text.jpeg_start_compress,"ax",@progbits
+   7              	.LHOTB0:
+   8              		.p2align 4,,15
+   9              		.section	.text.unlikely.jpeg_start_compress
+  10              	.Ltext_cold0:
+  11              		.section	.text.jpeg_start_compress
+  12              		.globl	jpeg_start_compress
+  14              	jpeg_start_compress:
+  15              	.LFB61:
+  16              		.file 1 "fltk-1.3.4-1/jpeg/jcapistd.c"
+   1:fltk-1.3.4-1/jpeg/jcapistd.c **** /*
+   2:fltk-1.3.4-1/jpeg/jcapistd.c ****  * jcapistd.c
+   3:fltk-1.3.4-1/jpeg/jcapistd.c ****  *
+   4:fltk-1.3.4-1/jpeg/jcapistd.c ****  * Copyright (C) 1994-1996, Thomas G. Lane.
+   5:fltk-1.3.4-1/jpeg/jcapistd.c ****  * Modified 2013 by Guido Vollbeding.
+   6:fltk-1.3.4-1/jpeg/jcapistd.c ****  * This file is part of the Independent JPEG Group's software.
+   7:fltk-1.3.4-1/jpeg/jcapistd.c ****  * For conditions of distribution and use, see the accompanying README file.
+   8:fltk-1.3.4-1/jpeg/jcapistd.c ****  *
+   9:fltk-1.3.4-1/jpeg/jcapistd.c ****  * This file contains application interface code for the compression half
+  10:fltk-1.3.4-1/jpeg/jcapistd.c ****  * of the JPEG library.  These are the "standard" API routines that are
+  11:fltk-1.3.4-1/jpeg/jcapistd.c ****  * used in the normal full-compression case.  They are not used by a
+  12:fltk-1.3.4-1/jpeg/jcapistd.c ****  * transcoding-only application.  Note that if an application links in
+  13:fltk-1.3.4-1/jpeg/jcapistd.c ****  * jpeg_start_compress, it will end up linking in the entire compressor.
+  14:fltk-1.3.4-1/jpeg/jcapistd.c ****  * We thus must separate this file from jcapimin.c to avoid linking the
+  15:fltk-1.3.4-1/jpeg/jcapistd.c ****  * whole compression library into a transcoder.
+  16:fltk-1.3.4-1/jpeg/jcapistd.c ****  */
+  17:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+  18:fltk-1.3.4-1/jpeg/jcapistd.c **** #define JPEG_INTERNALS
+  19:fltk-1.3.4-1/jpeg/jcapistd.c **** #include "jinclude.h"
+  20:fltk-1.3.4-1/jpeg/jcapistd.c **** #include "jpeglib.h"
+  21:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+  22:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+  23:fltk-1.3.4-1/jpeg/jcapistd.c **** /*
+  24:fltk-1.3.4-1/jpeg/jcapistd.c ****  * Compression initialization.
+  25:fltk-1.3.4-1/jpeg/jcapistd.c ****  * Before calling this, all parameters and a data destination must be set up.
+  26:fltk-1.3.4-1/jpeg/jcapistd.c ****  *
+  27:fltk-1.3.4-1/jpeg/jcapistd.c ****  * We require a write_all_tables parameter as a failsafe check when writing
+  28:fltk-1.3.4-1/jpeg/jcapistd.c ****  * multiple datastreams from the same compression object.  Since prior runs
+  29:fltk-1.3.4-1/jpeg/jcapistd.c ****  * will have left all the tables marked sent_table=TRUE, a subsequent run
+  30:fltk-1.3.4-1/jpeg/jcapistd.c ****  * would emit an abbreviated stream (no tables) by default.  This may be what
+  31:fltk-1.3.4-1/jpeg/jcapistd.c ****  * is wanted, but for safety's sake it should not be the default behavior:
+  32:fltk-1.3.4-1/jpeg/jcapistd.c ****  * programmers should have to make a deliberate choice to emit abbreviated
+  33:fltk-1.3.4-1/jpeg/jcapistd.c ****  * images.  Therefore the documentation and examples should encourage people
+  34:fltk-1.3.4-1/jpeg/jcapistd.c ****  * to pass write_all_tables=TRUE; then it will take active thought to do the
+  35:fltk-1.3.4-1/jpeg/jcapistd.c ****  * wrong thing.
+  36:fltk-1.3.4-1/jpeg/jcapistd.c ****  */
+  37:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+  38:fltk-1.3.4-1/jpeg/jcapistd.c **** GLOBAL(void)
+  39:fltk-1.3.4-1/jpeg/jcapistd.c **** jpeg_start_compress (j_compress_ptr cinfo, boolean write_all_tables)
+  40:fltk-1.3.4-1/jpeg/jcapistd.c **** {
+  17              		.loc 1 40 0
+  18              		.cfi_startproc
+  19              	.LVL0:
+  20 0000 55       		pushq	%rbp
+  21              		.cfi_def_cfa_offset 16
+  22              		.cfi_offset 6, -16
+  23 0001 53       		pushq	%rbx
+  24              		.cfi_def_cfa_offset 24
+  25              		.cfi_offset 3, -24
+  26 0002 89F5     		movl	%esi, %ebp
+  27 0004 4889FB   		movq	%rdi, %rbx
+  28 0007 4883EC08 		subq	$8, %rsp
+  29              		.cfi_def_cfa_offset 32
+  41:fltk-1.3.4-1/jpeg/jcapistd.c ****   if (cinfo->global_state != CSTATE_START)
+  30              		.loc 1 41 0
+  31 000b 837F2464 		cmpl	$100, 36(%rdi)
+  32 000f 7418     		je	.L2
+  42:fltk-1.3.4-1/jpeg/jcapistd.c ****     ERREXIT1(cinfo, JERR_BAD_STATE, cinfo->global_state);
+  33              		.loc 1 42 0
+  34 0011 488B07   		movq	(%rdi), %rax
+  35 0014 C7402815 		movl	$21, 40(%rax)
+  35      000000
+  36 001b 488B07   		movq	(%rdi), %rax
+  37 001e 8B5724   		movl	36(%rdi), %edx
+  38 0021 89502C   		movl	%edx, 44(%rax)
+  39 0024 488B07   		movq	(%rdi), %rax
+  40 0027 FF10     		call	*(%rax)
+  41              	.LVL1:
+  42              	.L2:
+  43:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+  44:fltk-1.3.4-1/jpeg/jcapistd.c ****   if (write_all_tables)
+  43              		.loc 1 44 0
+  44 0029 85ED     		testl	%ebp, %ebp
+  45 002b 754B     		jne	.L11
+  46              	.L3:
+  45:fltk-1.3.4-1/jpeg/jcapistd.c ****     jpeg_suppress_tables(cinfo, FALSE);	/* mark all tables to be written */
+  46:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+  47:fltk-1.3.4-1/jpeg/jcapistd.c ****   /* (Re)initialize error mgr and destination modules */
+  48:fltk-1.3.4-1/jpeg/jcapistd.c ****   (*cinfo->err->reset_error_mgr) ((j_common_ptr) cinfo);
+  47              		.loc 1 48 0
+  48 002d 488B03   		movq	(%rbx), %rax
+  49 0030 4889DF   		movq	%rbx, %rdi
+  50 0033 FF5020   		call	*32(%rax)
+  51              	.LVL2:
+  49:fltk-1.3.4-1/jpeg/jcapistd.c ****   (*cinfo->dest->init_destination) (cinfo);
+  52              		.loc 1 49 0
+  53 0036 488B4328 		movq	40(%rbx), %rax
+  54 003a 4889DF   		movq	%rbx, %rdi
+  55 003d FF5010   		call	*16(%rax)
+  56              	.LVL3:
+  50:fltk-1.3.4-1/jpeg/jcapistd.c ****   /* Perform master selection of active modules */
+  51:fltk-1.3.4-1/jpeg/jcapistd.c ****   jinit_compress_master(cinfo);
+  57              		.loc 1 51 0
+  58 0040 4889DF   		movq	%rbx, %rdi
+  59 0043 E8000000 		call	jinit_compress_master
+  59      00
+  60              	.LVL4:
+  52:fltk-1.3.4-1/jpeg/jcapistd.c ****   /* Set up for the first pass */
+  53:fltk-1.3.4-1/jpeg/jcapistd.c ****   (*cinfo->master->prepare_for_pass) (cinfo);
+  61              		.loc 1 53 0
+  62 0048 488B83F0 		movq	496(%rbx), %rax
+  62      010000
+  63 004f 4889DF   		movq	%rbx, %rdi
+  64 0052 FF10     		call	*(%rax)
+  65              	.LVL5:
+  54:fltk-1.3.4-1/jpeg/jcapistd.c ****   /* Ready for application to drive first pass through jpeg_write_scanlines
+  55:fltk-1.3.4-1/jpeg/jcapistd.c ****    * or jpeg_write_raw_data.
+  56:fltk-1.3.4-1/jpeg/jcapistd.c ****    */
+  57:fltk-1.3.4-1/jpeg/jcapistd.c ****   cinfo->next_scanline = 0;
+  58:fltk-1.3.4-1/jpeg/jcapistd.c ****   cinfo->global_state = (cinfo->raw_data_in ? CSTATE_RAW_OK : CSTATE_SCANNING);
+  66              		.loc 1 58 0
+  67 0054 83BB2001 		cmpl	$1, 288(%rbx)
+  67      000001
+  57:fltk-1.3.4-1/jpeg/jcapistd.c ****   cinfo->global_state = (cinfo->raw_data_in ? CSTATE_RAW_OK : CSTATE_SCANNING);
+  68              		.loc 1 57 0
+  69 005b C7835801 		movl	$0, 344(%rbx)
+  69      00000000 
+  69      0000
+  70              		.loc 1 58 0
+  71 0065 19C0     		sbbl	%eax, %eax
+  72 0067 83C066   		addl	$102, %eax
+  73 006a 894324   		movl	%eax, 36(%rbx)
+  59:fltk-1.3.4-1/jpeg/jcapistd.c **** }
+  74              		.loc 1 59 0
+  75 006d 4883C408 		addq	$8, %rsp
+  76              		.cfi_remember_state
+  77              		.cfi_def_cfa_offset 24
+  78 0071 5B       		popq	%rbx
+  79              		.cfi_def_cfa_offset 16
+  80              	.LVL6:
+  81 0072 5D       		popq	%rbp
+  82              		.cfi_def_cfa_offset 8
+  83              	.LVL7:
+  84 0073 C3       		ret
+  85              	.LVL8:
+  86              		.p2align 4,,10
+  87 0074 0F1F4000 		.p2align 3
+  88              	.L11:
+  89              		.cfi_restore_state
+  45:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+  90              		.loc 1 45 0
+  91 0078 31F6     		xorl	%esi, %esi
+  92 007a 4889DF   		movq	%rbx, %rdi
+  93 007d E8000000 		call	jpeg_suppress_tables
+  93      00
+  94              	.LVL9:
+  95 0082 EBA9     		jmp	.L3
+  96              		.cfi_endproc
+  97              	.LFE61:
+  99              		.section	.text.unlikely.jpeg_start_compress
+ 100              	.LCOLDE0:
+ 101              		.section	.text.jpeg_start_compress
+ 102              	.LHOTE0:
+ 103              		.section	.text.unlikely.jpeg_write_scanlines,"ax",@progbits
+ 104              	.LCOLDB1:
+ 105              		.section	.text.jpeg_write_scanlines,"ax",@progbits
+ 106              	.LHOTB1:
+ 107              		.p2align 4,,15
+ 108              		.globl	jpeg_write_scanlines
+ 110              	jpeg_write_scanlines:
+ 111              	.LFB62:
+  60:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+  61:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+  62:fltk-1.3.4-1/jpeg/jcapistd.c **** /*
+  63:fltk-1.3.4-1/jpeg/jcapistd.c ****  * Write some scanlines of data to the JPEG compressor.
+  64:fltk-1.3.4-1/jpeg/jcapistd.c ****  *
+  65:fltk-1.3.4-1/jpeg/jcapistd.c ****  * The return value will be the number of lines actually written.
+  66:fltk-1.3.4-1/jpeg/jcapistd.c ****  * This should be less than the supplied num_lines only in case that
+  67:fltk-1.3.4-1/jpeg/jcapistd.c ****  * the data destination module has requested suspension of the compressor,
+  68:fltk-1.3.4-1/jpeg/jcapistd.c ****  * or if more than image_height scanlines are passed in.
+  69:fltk-1.3.4-1/jpeg/jcapistd.c ****  *
+  70:fltk-1.3.4-1/jpeg/jcapistd.c ****  * Note: we warn about excess calls to jpeg_write_scanlines() since
+  71:fltk-1.3.4-1/jpeg/jcapistd.c ****  * this likely signals an application programmer error.  However,
+  72:fltk-1.3.4-1/jpeg/jcapistd.c ****  * excess scanlines passed in the last valid call are *silently* ignored,
+  73:fltk-1.3.4-1/jpeg/jcapistd.c ****  * so that the application need not adjust num_lines for end-of-image
+  74:fltk-1.3.4-1/jpeg/jcapistd.c ****  * when using a multiple-scanline buffer.
+  75:fltk-1.3.4-1/jpeg/jcapistd.c ****  */
+  76:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+  77:fltk-1.3.4-1/jpeg/jcapistd.c **** GLOBAL(JDIMENSION)
+  78:fltk-1.3.4-1/jpeg/jcapistd.c **** jpeg_write_scanlines (j_compress_ptr cinfo, JSAMPARRAY scanlines,
+  79:fltk-1.3.4-1/jpeg/jcapistd.c **** 		      JDIMENSION num_lines)
+  80:fltk-1.3.4-1/jpeg/jcapistd.c **** {
+ 112              		.loc 1 80 0
+ 113              		.cfi_startproc
+ 114              	.LVL10:
+ 115 0000 4154     		pushq	%r12
+ 116              		.cfi_def_cfa_offset 16
+ 117              		.cfi_offset 12, -16
+ 118 0002 55       		pushq	%rbp
+ 119              		.cfi_def_cfa_offset 24
+ 120              		.cfi_offset 6, -24
+ 121 0003 4989F4   		movq	%rsi, %r12
+ 122 0006 53       		pushq	%rbx
+ 123              		.cfi_def_cfa_offset 32
+ 124              		.cfi_offset 3, -32
+ 125 0007 89D5     		movl	%edx, %ebp
+ 126 0009 4889FB   		movq	%rdi, %rbx
+ 127 000c 4883EC10 		subq	$16, %rsp
+ 128              		.cfi_def_cfa_offset 48
+ 129              		.loc 1 80 0
+ 130 0010 64488B04 		movq	%fs:40, %rax
+ 130      25280000 
+ 130      00
+ 131 0019 48894424 		movq	%rax, 8(%rsp)
+ 131      08
+ 132 001e 31C0     		xorl	%eax, %eax
+  81:fltk-1.3.4-1/jpeg/jcapistd.c ****   JDIMENSION row_ctr, rows_left;
+  82:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+  83:fltk-1.3.4-1/jpeg/jcapistd.c ****   if (cinfo->global_state != CSTATE_SCANNING)
+ 133              		.loc 1 83 0
+ 134 0020 837F2465 		cmpl	$101, 36(%rdi)
+ 135 0024 7418     		je	.L13
+  84:fltk-1.3.4-1/jpeg/jcapistd.c ****     ERREXIT1(cinfo, JERR_BAD_STATE, cinfo->global_state);
+ 136              		.loc 1 84 0
+ 137 0026 488B07   		movq	(%rdi), %rax
+ 138 0029 C7402815 		movl	$21, 40(%rax)
+ 138      000000
+ 139 0030 488B07   		movq	(%rdi), %rax
+ 140 0033 8B5724   		movl	36(%rdi), %edx
+ 141              	.LVL11:
+ 142 0036 89502C   		movl	%edx, 44(%rax)
+ 143 0039 488B07   		movq	(%rdi), %rax
+ 144 003c FF10     		call	*(%rax)
+ 145              	.LVL12:
+ 146              	.L13:
+  85:fltk-1.3.4-1/jpeg/jcapistd.c ****   if (cinfo->next_scanline >= cinfo->image_height)
+ 147              		.loc 1 85 0
+ 148 003e 8B4334   		movl	52(%rbx), %eax
+ 149 0041 39835801 		cmpl	%eax, 344(%rbx)
+ 149      0000
+ 150 0047 0F838300 		jnb	.L22
+ 150      0000
+ 151              	.L14:
+  86:fltk-1.3.4-1/jpeg/jcapistd.c ****     WARNMS(cinfo, JWRN_TOO_MUCH_DATA);
+  87:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+  88:fltk-1.3.4-1/jpeg/jcapistd.c ****   /* Call progress monitor hook if present */
+  89:fltk-1.3.4-1/jpeg/jcapistd.c ****   if (cinfo->progress != NULL) {
+ 152              		.loc 1 89 0
+ 153 004d 488B4310 		movq	16(%rbx), %rax
+ 154 0051 4885C0   		testq	%rax, %rax
+ 155 0054 741E     		je	.L15
+  90:fltk-1.3.4-1/jpeg/jcapistd.c ****     cinfo->progress->pass_counter = (long) cinfo->next_scanline;
+ 156              		.loc 1 90 0
+ 157 0056 8BB35801 		movl	344(%rbx), %esi
+ 157      0000
+  91:fltk-1.3.4-1/jpeg/jcapistd.c ****     cinfo->progress->pass_limit = (long) cinfo->image_height;
+  92:fltk-1.3.4-1/jpeg/jcapistd.c ****     (*cinfo->progress->progress_monitor) ((j_common_ptr) cinfo);
+ 158              		.loc 1 92 0
+ 159 005c 4889DF   		movq	%rbx, %rdi
+  90:fltk-1.3.4-1/jpeg/jcapistd.c ****     cinfo->progress->pass_counter = (long) cinfo->next_scanline;
+ 160              		.loc 1 90 0
+ 161 005f 48897008 		movq	%rsi, 8(%rax)
+  91:fltk-1.3.4-1/jpeg/jcapistd.c ****     cinfo->progress->pass_limit = (long) cinfo->image_height;
+ 162              		.loc 1 91 0
+ 163 0063 8B7334   		movl	52(%rbx), %esi
+ 164 0066 488B4310 		movq	16(%rbx), %rax
+ 165 006a 48897010 		movq	%rsi, 16(%rax)
+ 166              		.loc 1 92 0
+ 167 006e 488B4310 		movq	16(%rbx), %rax
+ 168 0072 FF10     		call	*(%rax)
+ 169              	.LVL13:
+ 170              	.L15:
+  93:fltk-1.3.4-1/jpeg/jcapistd.c ****   }
+  94:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+  95:fltk-1.3.4-1/jpeg/jcapistd.c ****   /* Give master control module another chance if this is first call to
+  96:fltk-1.3.4-1/jpeg/jcapistd.c ****    * jpeg_write_scanlines.  This lets output of the frame/scan headers be
+  97:fltk-1.3.4-1/jpeg/jcapistd.c ****    * delayed so that application can write COM, etc, markers between
+  98:fltk-1.3.4-1/jpeg/jcapistd.c ****    * jpeg_start_compress and jpeg_write_scanlines.
+  99:fltk-1.3.4-1/jpeg/jcapistd.c ****    */
+ 100:fltk-1.3.4-1/jpeg/jcapistd.c ****   if (cinfo->master->call_pass_startup)
+ 171              		.loc 1 100 0
+ 172 0074 488B83F0 		movq	496(%rbx), %rax
+ 172      010000
+ 173 007b 8B5018   		movl	24(%rax), %edx
+ 174 007e 85D2     		testl	%edx, %edx
+ 175 0080 756E     		jne	.L23
+ 176              	.L16:
+ 101:fltk-1.3.4-1/jpeg/jcapistd.c ****     (*cinfo->master->pass_startup) (cinfo);
+ 102:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+ 103:fltk-1.3.4-1/jpeg/jcapistd.c ****   /* Ignore any extra scanlines at bottom of image. */
+ 104:fltk-1.3.4-1/jpeg/jcapistd.c ****   rows_left = cinfo->image_height - cinfo->next_scanline;
+ 177              		.loc 1 104 0
+ 178 0082 8B4B34   		movl	52(%rbx), %ecx
+ 179 0085 2B8B5801 		subl	344(%rbx), %ecx
+ 179      0000
+ 180              	.LVL14:
+ 105:fltk-1.3.4-1/jpeg/jcapistd.c ****   if (num_lines > rows_left)
+ 106:fltk-1.3.4-1/jpeg/jcapistd.c ****     num_lines = rows_left;
+ 107:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+ 108:fltk-1.3.4-1/jpeg/jcapistd.c ****   row_ctr = 0;
+ 109:fltk-1.3.4-1/jpeg/jcapistd.c ****   (*cinfo->main->process_data) (cinfo, scanlines, &row_ctr, num_lines);
+ 181              		.loc 1 109 0
+ 182 008b 4889DF   		movq	%rbx, %rdi
+ 183 008e 488B83F8 		movq	504(%rbx), %rax
+ 183      010000
+ 108:fltk-1.3.4-1/jpeg/jcapistd.c ****   (*cinfo->main->process_data) (cinfo, scanlines, &row_ctr, num_lines);
+ 184              		.loc 1 108 0
+ 185 0095 C7442404 		movl	$0, 4(%rsp)
+ 185      00000000 
+ 186              		.loc 1 109 0
+ 187 009d 488D5424 		leaq	4(%rsp), %rdx
+ 187      04
+ 188 00a2 4C89E6   		movq	%r12, %rsi
+ 189 00a5 39E9     		cmpl	%ebp, %ecx
+ 190 00a7 0F47CD   		cmova	%ebp, %ecx
+ 191              	.LVL15:
+ 192 00aa FF5008   		call	*8(%rax)
+ 193              	.LVL16:
+ 110:fltk-1.3.4-1/jpeg/jcapistd.c ****   cinfo->next_scanline += row_ctr;
+ 194              		.loc 1 110 0
+ 195 00ad 8B442404 		movl	4(%rsp), %eax
+ 196 00b1 01835801 		addl	%eax, 344(%rbx)
+ 196      0000
+ 111:fltk-1.3.4-1/jpeg/jcapistd.c ****   return row_ctr;
+ 112:fltk-1.3.4-1/jpeg/jcapistd.c **** }
+ 197              		.loc 1 112 0
+ 198 00b7 488B7C24 		movq	8(%rsp), %rdi
+ 198      08
+ 199 00bc 6448333C 		xorq	%fs:40, %rdi
+ 199      25280000 
+ 199      00
+ 200 00c5 7531     		jne	.L24
+ 201 00c7 4883C410 		addq	$16, %rsp
+ 202              		.cfi_remember_state
+ 203              		.cfi_def_cfa_offset 32
+ 204 00cb 5B       		popq	%rbx
+ 205              		.cfi_def_cfa_offset 24
+ 206              	.LVL17:
+ 207 00cc 5D       		popq	%rbp
+ 208              		.cfi_def_cfa_offset 16
+ 209 00cd 415C     		popq	%r12
+ 210              		.cfi_def_cfa_offset 8
+ 211              	.LVL18:
+ 212 00cf C3       		ret
+ 213              	.LVL19:
+ 214              		.p2align 4,,10
+ 215              		.p2align 3
+ 216              	.L22:
+ 217              		.cfi_restore_state
+  86:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+ 218              		.loc 1 86 0
+ 219 00d0 488B03   		movq	(%rbx), %rax
+ 220 00d3 BEFFFFFF 		movl	$-1, %esi
+ 220      FF
+ 221 00d8 4889DF   		movq	%rbx, %rdi
+ 222 00db C740287E 		movl	$126, 40(%rax)
+ 222      000000
+ 223 00e2 488B03   		movq	(%rbx), %rax
+ 224 00e5 FF5008   		call	*8(%rax)
+ 225              	.LVL20:
+ 226 00e8 E960FFFF 		jmp	.L14
+ 226      FF
+ 227 00ed 0F1F00   		.p2align 4,,10
+ 228              		.p2align 3
+ 229              	.L23:
+ 101:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+ 230              		.loc 1 101 0
+ 231 00f0 4889DF   		movq	%rbx, %rdi
+ 232 00f3 FF5008   		call	*8(%rax)
+ 233              	.LVL21:
+ 234 00f6 EB8A     		jmp	.L16
+ 235              	.LVL22:
+ 236              	.L24:
+ 237              		.loc 1 112 0
+ 238 00f8 E8000000 		call	__stack_chk_fail
+ 238      00
+ 239              	.LVL23:
+ 240              		.cfi_endproc
+ 241              	.LFE62:
+ 243              		.section	.text.unlikely.jpeg_write_scanlines
+ 244              	.LCOLDE1:
+ 245              		.section	.text.jpeg_write_scanlines
+ 246              	.LHOTE1:
+ 247              		.section	.text.unlikely.jpeg_write_raw_data,"ax",@progbits
+ 248              	.LCOLDB2:
+ 249              		.section	.text.jpeg_write_raw_data,"ax",@progbits
+ 250              	.LHOTB2:
+ 251              		.p2align 4,,15
+ 252              		.globl	jpeg_write_raw_data
+ 254              	jpeg_write_raw_data:
+ 255              	.LFB63:
+ 113:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+ 114:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+ 115:fltk-1.3.4-1/jpeg/jcapistd.c **** /*
+ 116:fltk-1.3.4-1/jpeg/jcapistd.c ****  * Alternate entry point to write raw data.
+ 117:fltk-1.3.4-1/jpeg/jcapistd.c ****  * Processes exactly one iMCU row per call, unless suspended.
+ 118:fltk-1.3.4-1/jpeg/jcapistd.c ****  */
+ 119:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+ 120:fltk-1.3.4-1/jpeg/jcapistd.c **** GLOBAL(JDIMENSION)
+ 121:fltk-1.3.4-1/jpeg/jcapistd.c **** jpeg_write_raw_data (j_compress_ptr cinfo, JSAMPIMAGE data,
+ 122:fltk-1.3.4-1/jpeg/jcapistd.c **** 		     JDIMENSION num_lines)
+ 123:fltk-1.3.4-1/jpeg/jcapistd.c **** {
+ 256              		.loc 1 123 0
+ 257              		.cfi_startproc
+ 258              	.LVL24:
+ 259 0000 4155     		pushq	%r13
+ 260              		.cfi_def_cfa_offset 16
+ 261              		.cfi_offset 13, -16
+ 262 0002 4154     		pushq	%r12
+ 263              		.cfi_def_cfa_offset 24
+ 264              		.cfi_offset 12, -24
+ 265 0004 4189D5   		movl	%edx, %r13d
+ 266 0007 55       		pushq	%rbp
+ 267              		.cfi_def_cfa_offset 32
+ 268              		.cfi_offset 6, -32
+ 269 0008 53       		pushq	%rbx
+ 270              		.cfi_def_cfa_offset 40
+ 271              		.cfi_offset 3, -40
+ 272 0009 4989F4   		movq	%rsi, %r12
+ 273 000c 4889FB   		movq	%rdi, %rbx
+ 274 000f 4883EC08 		subq	$8, %rsp
+ 275              		.cfi_def_cfa_offset 48
+ 124:fltk-1.3.4-1/jpeg/jcapistd.c ****   JDIMENSION lines_per_iMCU_row;
+ 125:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+ 126:fltk-1.3.4-1/jpeg/jcapistd.c ****   if (cinfo->global_state != CSTATE_RAW_OK)
+ 276              		.loc 1 126 0
+ 277 0013 837F2466 		cmpl	$102, 36(%rdi)
+ 278 0017 7418     		je	.L26
+ 127:fltk-1.3.4-1/jpeg/jcapistd.c ****     ERREXIT1(cinfo, JERR_BAD_STATE, cinfo->global_state);
+ 279              		.loc 1 127 0
+ 280 0019 488B07   		movq	(%rdi), %rax
+ 281 001c C7402815 		movl	$21, 40(%rax)
+ 281      000000
+ 282 0023 488B07   		movq	(%rdi), %rax
+ 283 0026 8B5724   		movl	36(%rdi), %edx
+ 284              	.LVL25:
+ 285 0029 89502C   		movl	%edx, 44(%rax)
+ 286 002c 488B07   		movq	(%rdi), %rax
+ 287 002f FF10     		call	*(%rax)
+ 288              	.LVL26:
+ 289              	.L26:
+ 128:fltk-1.3.4-1/jpeg/jcapistd.c ****   if (cinfo->next_scanline >= cinfo->image_height) {
+ 290              		.loc 1 128 0
+ 291 0031 8B835801 		movl	344(%rbx), %eax
+ 291      0000
+ 292 0037 3B4334   		cmpl	52(%rbx), %eax
+ 293 003a 0F839000 		jnb	.L38
+ 293      0000
+ 129:fltk-1.3.4-1/jpeg/jcapistd.c ****     WARNMS(cinfo, JWRN_TOO_MUCH_DATA);
+ 130:fltk-1.3.4-1/jpeg/jcapistd.c ****     return 0;
+ 131:fltk-1.3.4-1/jpeg/jcapistd.c ****   }
+ 132:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+ 133:fltk-1.3.4-1/jpeg/jcapistd.c ****   /* Call progress monitor hook if present */
+ 134:fltk-1.3.4-1/jpeg/jcapistd.c ****   if (cinfo->progress != NULL) {
+ 294              		.loc 1 134 0
+ 295 0040 488B5310 		movq	16(%rbx), %rdx
+ 296 0044 4885D2   		testq	%rdx, %rdx
+ 297 0047 7418     		je	.L29
+ 135:fltk-1.3.4-1/jpeg/jcapistd.c ****     cinfo->progress->pass_counter = (long) cinfo->next_scanline;
+ 298              		.loc 1 135 0
+ 299 0049 48894208 		movq	%rax, 8(%rdx)
+ 136:fltk-1.3.4-1/jpeg/jcapistd.c ****     cinfo->progress->pass_limit = (long) cinfo->image_height;
+ 300              		.loc 1 136 0
+ 301 004d 8B4B34   		movl	52(%rbx), %ecx
+ 137:fltk-1.3.4-1/jpeg/jcapistd.c ****     (*cinfo->progress->progress_monitor) ((j_common_ptr) cinfo);
+ 302              		.loc 1 137 0
+ 303 0050 4889DF   		movq	%rbx, %rdi
+ 136:fltk-1.3.4-1/jpeg/jcapistd.c ****     cinfo->progress->pass_limit = (long) cinfo->image_height;
+ 304              		.loc 1 136 0
+ 305 0053 488B4310 		movq	16(%rbx), %rax
+ 306 0057 48894810 		movq	%rcx, 16(%rax)
+ 307              		.loc 1 137 0
+ 308 005b 488B4310 		movq	16(%rbx), %rax
+ 309 005f FF10     		call	*(%rax)
+ 310              	.LVL27:
+ 311              	.L29:
+ 138:fltk-1.3.4-1/jpeg/jcapistd.c ****   }
+ 139:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+ 140:fltk-1.3.4-1/jpeg/jcapistd.c ****   /* Give master control module another chance if this is first call to
+ 141:fltk-1.3.4-1/jpeg/jcapistd.c ****    * jpeg_write_raw_data.  This lets output of the frame/scan headers be
+ 142:fltk-1.3.4-1/jpeg/jcapistd.c ****    * delayed so that application can write COM, etc, markers between
+ 143:fltk-1.3.4-1/jpeg/jcapistd.c ****    * jpeg_start_compress and jpeg_write_raw_data.
+ 144:fltk-1.3.4-1/jpeg/jcapistd.c ****    */
+ 145:fltk-1.3.4-1/jpeg/jcapistd.c ****   if (cinfo->master->call_pass_startup)
+ 312              		.loc 1 145 0
+ 313 0061 488B83F0 		movq	496(%rbx), %rax
+ 313      010000
+ 314 0068 8B5018   		movl	24(%rax), %edx
+ 315 006b 85D2     		testl	%edx, %edx
+ 316 006d 7559     		jne	.L39
+ 317              	.L30:
+ 146:fltk-1.3.4-1/jpeg/jcapistd.c ****     (*cinfo->master->pass_startup) (cinfo);
+ 147:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+ 148:fltk-1.3.4-1/jpeg/jcapistd.c ****   /* Verify that at least one iMCU row has been passed. */
+ 149:fltk-1.3.4-1/jpeg/jcapistd.c ****   lines_per_iMCU_row = cinfo->max_v_samp_factor * cinfo->min_DCT_v_scaled_size;
+ 318              		.loc 1 149 0
+ 319 006f 8BAB6401 		movl	356(%rbx), %ebp
+ 319      0000
+ 320 0075 0FAFAB6C 		imull	364(%rbx), %ebp
+ 320      010000
+ 321              	.LVL28:
+ 150:fltk-1.3.4-1/jpeg/jcapistd.c ****   if (num_lines < lines_per_iMCU_row)
+ 322              		.loc 1 150 0
+ 323 007c 4439ED   		cmpl	%r13d, %ebp
+ 324 007f 772F     		ja	.L40
+ 325              	.L31:
+ 151:fltk-1.3.4-1/jpeg/jcapistd.c ****     ERREXIT(cinfo, JERR_BUFFER_SIZE);
+ 152:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+ 153:fltk-1.3.4-1/jpeg/jcapistd.c ****   /* Directly compress the row. */
+ 154:fltk-1.3.4-1/jpeg/jcapistd.c ****   if (! (*cinfo->coef->compress_data) (cinfo, data)) {
+ 326              		.loc 1 154 0
+ 327 0081 488B8308 		movq	520(%rbx), %rax
+ 327      020000
+ 328 0088 4C89E6   		movq	%r12, %rsi
+ 329 008b 4889DF   		movq	%rbx, %rdi
+ 330 008e FF5008   		call	*8(%rax)
+ 331              	.LVL29:
+ 155:fltk-1.3.4-1/jpeg/jcapistd.c ****     /* If compressor did not consume the whole row, suspend processing. */
+ 156:fltk-1.3.4-1/jpeg/jcapistd.c ****     return 0;
+ 332              		.loc 1 156 0
+ 333 0091 31D2     		xorl	%edx, %edx
+ 154:fltk-1.3.4-1/jpeg/jcapistd.c ****     /* If compressor did not consume the whole row, suspend processing. */
+ 334              		.loc 1 154 0
+ 335 0093 85C0     		testl	%eax, %eax
+ 336 0095 7408     		je	.L28
+ 157:fltk-1.3.4-1/jpeg/jcapistd.c ****   }
+ 158:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+ 159:fltk-1.3.4-1/jpeg/jcapistd.c ****   /* OK, we processed one iMCU row. */
+ 160:fltk-1.3.4-1/jpeg/jcapistd.c ****   cinfo->next_scanline += lines_per_iMCU_row;
+ 337              		.loc 1 160 0
+ 338 0097 01AB5801 		addl	%ebp, 344(%rbx)
+ 338      0000
+ 149:fltk-1.3.4-1/jpeg/jcapistd.c ****   if (num_lines < lines_per_iMCU_row)
+ 339              		.loc 1 149 0
+ 340 009d 89EA     		movl	%ebp, %edx
+ 341              	.L28:
+ 161:fltk-1.3.4-1/jpeg/jcapistd.c ****   return lines_per_iMCU_row;
+ 162:fltk-1.3.4-1/jpeg/jcapistd.c **** }
+ 342              		.loc 1 162 0
+ 343 009f 4883C408 		addq	$8, %rsp
+ 344              		.cfi_remember_state
+ 345              		.cfi_def_cfa_offset 40
+ 346 00a3 89D0     		movl	%edx, %eax
+ 347 00a5 5B       		popq	%rbx
+ 348              		.cfi_def_cfa_offset 32
+ 349              	.LVL30:
+ 350 00a6 5D       		popq	%rbp
+ 351              		.cfi_def_cfa_offset 24
+ 352              	.LVL31:
+ 353 00a7 415C     		popq	%r12
+ 354              		.cfi_def_cfa_offset 16
+ 355              	.LVL32:
+ 356 00a9 415D     		popq	%r13
+ 357              		.cfi_def_cfa_offset 8
+ 358              	.LVL33:
+ 359 00ab C3       		ret
+ 360              	.LVL34:
+ 361 00ac 0F1F4000 		.p2align 4,,10
+ 362              		.p2align 3
+ 363              	.L40:
+ 364              		.cfi_restore_state
+ 151:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+ 365              		.loc 1 151 0
+ 366 00b0 488B03   		movq	(%rbx), %rax
+ 367 00b3 4889DF   		movq	%rbx, %rdi
+ 368 00b6 C7402818 		movl	$24, 40(%rax)
+ 368      000000
+ 369 00bd 488B03   		movq	(%rbx), %rax
+ 370 00c0 FF10     		call	*(%rax)
+ 371              	.LVL35:
+ 372 00c2 EBBD     		jmp	.L31
+ 373              	.LVL36:
+ 374              		.p2align 4,,10
+ 375 00c4 0F1F4000 		.p2align 3
+ 376              	.L39:
+ 146:fltk-1.3.4-1/jpeg/jcapistd.c **** 
+ 377              		.loc 1 146 0
+ 378 00c8 4889DF   		movq	%rbx, %rdi
+ 379 00cb FF5008   		call	*8(%rax)
+ 380              	.LVL37:
+ 381 00ce EB9F     		jmp	.L30
+ 382              		.p2align 4,,10
+ 383              		.p2align 3
+ 384              	.L38:
+ 129:fltk-1.3.4-1/jpeg/jcapistd.c ****     return 0;
+ 385              		.loc 1 129 0
+ 386 00d0 488B03   		movq	(%rbx), %rax
+ 387 00d3 4889DF   		movq	%rbx, %rdi
+ 388 00d6 BEFFFFFF 		movl	$-1, %esi
+ 388      FF
+ 389 00db C740287E 		movl	$126, 40(%rax)
+ 389      000000
+ 390 00e2 488B03   		movq	(%rbx), %rax
+ 391 00e5 FF5008   		call	*8(%rax)
+ 392              	.LVL38:
+ 393              		.loc 1 162 0
+ 394 00e8 4883C408 		addq	$8, %rsp
+ 395              		.cfi_def_cfa_offset 40
+ 130:fltk-1.3.4-1/jpeg/jcapistd.c ****   }
+ 396              		.loc 1 130 0
+ 397 00ec 31D2     		xorl	%edx, %edx
+ 398              		.loc 1 162 0
+ 399 00ee 5B       		popq	%rbx
+ 400              		.cfi_def_cfa_offset 32
+ 401              	.LVL39:
+ 402 00ef 89D0     		movl	%edx, %eax
+ 403 00f1 5D       		popq	%rbp
+ 404              		.cfi_def_cfa_offset 24
+ 405 00f2 415C     		popq	%r12
+ 406              		.cfi_def_cfa_offset 16
+ 407              	.LVL40:
+ 408 00f4 415D     		popq	%r13
+ 409              		.cfi_def_cfa_offset 8
+ 410              	.LVL41:
+ 411 00f6 C3       		ret
+ 412              		.cfi_endproc
+ 413              	.LFE63:
+ 415              		.section	.text.unlikely.jpeg_write_raw_data
+ 416              	.LCOLDE2:
+ 417              		.section	.text.jpeg_write_raw_data
+ 418              	.LHOTE2:
+ 419              		.text
+ 420              	.Letext0:
+ 421              		.section	.text.unlikely.jpeg_start_compress
+ 422              	.Letext_cold0:
+ 423              		.file 2 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
+ 424              		.file 3 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 425              		.file 4 "/usr/include/libio.h"
+ 426              		.file 5 "fltk-1.3.4-1/jpeg/jmorecfg.h"
+ 427              		.file 6 "fltk-1.3.4-1/jpeg/jpeglib.h"
+ 428              		.file 7 "fltk-1.3.4-1/jpeg/jpegint.h"
+ 429              		.file 8 "fltk-1.3.4-1/jpeg/jerror.h"
+ 430              		.file 9 "/usr/include/stdio.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 jcapistd.c
+     /tmp/ccJbQov6.s:14     .text.jpeg_start_compress:0000000000000000 jpeg_start_compress
+     /tmp/ccJbQov6.s:110    .text.jpeg_write_scanlines:0000000000000000 jpeg_write_scanlines
+     /tmp/ccJbQov6.s:254    .text.jpeg_write_raw_data:0000000000000000 jpeg_write_raw_data
+                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
+                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+                           .group:0000000000000000 wm4.jconfig.h.10.247fc3ff67998f3074970b1373c70333
+                           .group:0000000000000000 wm4.features.h.19.24da27e0a4d0d521fd057013d982b8b5
+                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
+                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
+                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
+                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
+                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
+                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
+                           .group:0000000000000000 wm4.waitflags.h.25.e401b8bcfee800b540b27abd7cc78de9
+                           .group:0000000000000000 wm4.waitstatus.h.28.93f167f49d64e2b9b99f98d1162a93bf
+                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
+                           .group:0000000000000000 wm4.endian.h.41.24cced64aef71195a51d4daa8e4f4a95
+                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
+                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
+                           .group:0000000000000000 wm4.byteswap.h.38.11ee5fdc0f6cc53a16c505b9233cecef
+                           .group:0000000000000000 wm4.endian.h.63.97272d7c64d5db8020003b32e9289502
+                           .group:0000000000000000 wm4.waitstatus.h.99.408b6270fa6eb71377201a241ef15f79
+                           .group:0000000000000000 wm4.stdlib.h.50.84aeca2ac6f37d40e1e9b3cef757ba2d
+                           .group:0000000000000000 wm4.types.h.23.f6dcbaa72f8f71361acef09804d45a5e
+                           .group:0000000000000000 wm4.time.h.53.beb46e650cd406cb917b6b96b45e640a
+                           .group:0000000000000000 wm4.stddef.h.238.847b6907dabda77be90a9ab7ad789e2e
+                           .group:0000000000000000 wm4.types.h.187.bd5a05039b505b3620e6973f1b2ffeb1
+                           .group:0000000000000000 wm4.select.h.28.eb2f3debdbcffd1442ebddaebc4fb6ff
+                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
+                           .group:0000000000000000 wm4.select.h.36.f76c3b9e55c871743863013cc4cc14c9
+                           .group:0000000000000000 wm4.time.h.66.e70ce69790c975f0efb369340c432e0b
+                           .group:0000000000000000 wm4.time.h.25.ae5284cdff565e87a9198d819340325d
+                           .group:0000000000000000 wm4.select.h.49.e9d2041e5035cc68ebd1a20f7dbc8514
+                           .group:0000000000000000 wm4.select2.h.27.f95f2ab0ffee66dc1b6575014894b21a
+                           .group:0000000000000000 wm4.sysmacros.h.20.8a0c33ff175cd9b434a86c0aaa36f0a2
+                           .group:0000000000000000 wm4.types.h.229.67b3f66bd74b06b451caec392a72a945
+                           .group:0000000000000000 wm4.pthreadtypes.h.25.6892b1493314fcf446bbc76e7362acba
+                           .group:0000000000000000 wm4.alloca.h.19.edefa922a76c1cbaaf1e416903ba2d1c
+                           .group:0000000000000000 wm4.alloca.h.29.156e12058824cc23d961c4d3b13031f6
+                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
+                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
+                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
+                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
+                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
+                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
+                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
+                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
+                           .group:0000000000000000 wm4.stdio.h.80.17b7dd1ca72d8a61987532cb1d80194a
+                           .group:0000000000000000 wm4.stdio_lim.h.23.557290a6cddeba0587f574f29e3a5fb9
+                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
+                           .group:0000000000000000 wm4.stdio.h.26.cae64f7ada9bb8327a89dba6a5e93655
+                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
+                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
+                           .group:0000000000000000 wm4.string2.h.45.00535b99420fc3014c2da41d6645330d
+                           .group:0000000000000000 wm4.string3.h.31.0c4b9301b754a2db05eaafef869657d2
+                           .group:0000000000000000 wm4.jinclude.h.67.b19f941ec97c4845fa4609292c7e2db4
+                           .group:0000000000000000 wm4.jmorecfg.h.33.3b4c5f9cc07b3737823b06caf24d5b05
+                           .group:0000000000000000 wm4.jpeglib.h.40.4f111c27252a38df39328d65454e82f4
+                           .group:0000000000000000 wm4.jpegint.h.26.5219ef5d4e4921371d38e77b6091fd20
+                           .group:0000000000000000 wm4.jerror.h.25.1dbd8674e70ab5215bc0037320e5c2a2
+
+UNDEFINED SYMBOLS
+jinit_compress_master
+jpeg_suppress_tables
+__stack_chk_fail

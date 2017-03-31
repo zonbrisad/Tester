@@ -1,0 +1,365 @@
+   1              		.file	"jmemnobs.c"
+   2              		.text
+   3              	.Ltext0:
+   4              		.section	.text.unlikely.jpeg_get_small,"ax",@progbits
+   5              	.LCOLDB0:
+   6              		.section	.text.jpeg_get_small,"ax",@progbits
+   7              	.LHOTB0:
+   8              		.p2align 4,,15
+   9              		.globl	jpeg_get_small
+  11              	jpeg_get_small:
+  12              	.LFB72:
+  13              		.cfi_startproc
+  14 0000 4889F7   		movq	%rsi, %rdi
+  15 0003 E9000000 		jmp	malloc
+  15      00
+  16              		.cfi_endproc
+  17              	.LFE72:
+  19              		.section	.text.unlikely.jpeg_get_small
+  20              	.LCOLDE0:
+  21              		.section	.text.jpeg_get_small
+  22              	.LHOTE0:
+  23              		.section	.text.unlikely.jpeg_free_small,"ax",@progbits
+  24              	.LCOLDB1:
+  25              		.section	.text.jpeg_free_small,"ax",@progbits
+  26              	.LHOTB1:
+  27              		.p2align 4,,15
+  28              		.globl	jpeg_free_small
+  30              	jpeg_free_small:
+  31              	.LFB70:
+  32              		.cfi_startproc
+  33 0000 4889F7   		movq	%rsi, %rdi
+  34 0003 E9000000 		jmp	free
+  34      00
+  35              		.cfi_endproc
+  36              	.LFE70:
+  38              		.section	.text.unlikely.jpeg_free_small
+  39              	.LCOLDE1:
+  40              		.section	.text.jpeg_free_small
+  41              	.LHOTE1:
+  42              		.section	.text.unlikely.jpeg_get_large,"ax",@progbits
+  43              	.LCOLDB2:
+  44              		.section	.text.jpeg_get_large,"ax",@progbits
+  45              	.LHOTB2:
+  46              		.p2align 4,,15
+  47              		.section	.text.unlikely.jpeg_get_large
+  48              	.Ltext_cold0:
+  49              		.section	.text.jpeg_get_large
+  50              		.globl	jpeg_get_large
+  52              	jpeg_get_large:
+  53              	.LFB63:
+  54              		.file 1 "fltk-1.3.4-1/jpeg/jmemnobs.c"
+   1:fltk-1.3.4-1/jpeg/jmemnobs.c **** /*
+   2:fltk-1.3.4-1/jpeg/jmemnobs.c ****  * jmemnobs.c
+   3:fltk-1.3.4-1/jpeg/jmemnobs.c ****  *
+   4:fltk-1.3.4-1/jpeg/jmemnobs.c ****  * Copyright (C) 1992-1996, Thomas G. Lane.
+   5:fltk-1.3.4-1/jpeg/jmemnobs.c ****  * This file is part of the Independent JPEG Group's software.
+   6:fltk-1.3.4-1/jpeg/jmemnobs.c ****  * For conditions of distribution and use, see the accompanying README file.
+   7:fltk-1.3.4-1/jpeg/jmemnobs.c ****  *
+   8:fltk-1.3.4-1/jpeg/jmemnobs.c ****  * This file provides a really simple implementation of the system-
+   9:fltk-1.3.4-1/jpeg/jmemnobs.c ****  * dependent portion of the JPEG memory manager.  This implementation
+  10:fltk-1.3.4-1/jpeg/jmemnobs.c ****  * assumes that no backing-store files are needed: all required space
+  11:fltk-1.3.4-1/jpeg/jmemnobs.c ****  * can be obtained from malloc().
+  12:fltk-1.3.4-1/jpeg/jmemnobs.c ****  * This is very portable in the sense that it'll compile on almost anything,
+  13:fltk-1.3.4-1/jpeg/jmemnobs.c ****  * but you'd better have lots of main memory (or virtual memory) if you want
+  14:fltk-1.3.4-1/jpeg/jmemnobs.c ****  * to process big images.
+  15:fltk-1.3.4-1/jpeg/jmemnobs.c ****  * Note that the max_memory_to_use option is ignored by this implementation.
+  16:fltk-1.3.4-1/jpeg/jmemnobs.c ****  */
+  17:fltk-1.3.4-1/jpeg/jmemnobs.c **** 
+  18:fltk-1.3.4-1/jpeg/jmemnobs.c **** #define JPEG_INTERNALS
+  19:fltk-1.3.4-1/jpeg/jmemnobs.c **** #include "jinclude.h"
+  20:fltk-1.3.4-1/jpeg/jmemnobs.c **** #include "jpeglib.h"
+  21:fltk-1.3.4-1/jpeg/jmemnobs.c **** #include "jmemsys.h"		/* import the system-dependent declarations */
+  22:fltk-1.3.4-1/jpeg/jmemnobs.c **** 
+  23:fltk-1.3.4-1/jpeg/jmemnobs.c **** #ifndef HAVE_STDLIB_H		/* <stdlib.h> should declare malloc(),free() */
+  24:fltk-1.3.4-1/jpeg/jmemnobs.c **** extern void * malloc JPP((size_t size));
+  25:fltk-1.3.4-1/jpeg/jmemnobs.c **** extern void free JPP((void *ptr));
+  26:fltk-1.3.4-1/jpeg/jmemnobs.c **** #endif
+  27:fltk-1.3.4-1/jpeg/jmemnobs.c **** 
+  28:fltk-1.3.4-1/jpeg/jmemnobs.c **** 
+  29:fltk-1.3.4-1/jpeg/jmemnobs.c **** /*
+  30:fltk-1.3.4-1/jpeg/jmemnobs.c ****  * Memory allocation and freeing are controlled by the regular library
+  31:fltk-1.3.4-1/jpeg/jmemnobs.c ****  * routines malloc() and free().
+  32:fltk-1.3.4-1/jpeg/jmemnobs.c ****  */
+  33:fltk-1.3.4-1/jpeg/jmemnobs.c **** 
+  34:fltk-1.3.4-1/jpeg/jmemnobs.c **** GLOBAL(void *)
+  35:fltk-1.3.4-1/jpeg/jmemnobs.c **** jpeg_get_small (j_common_ptr cinfo, size_t sizeofobject)
+  36:fltk-1.3.4-1/jpeg/jmemnobs.c **** {
+  37:fltk-1.3.4-1/jpeg/jmemnobs.c ****   return (void *) malloc(sizeofobject);
+  38:fltk-1.3.4-1/jpeg/jmemnobs.c **** }
+  39:fltk-1.3.4-1/jpeg/jmemnobs.c **** 
+  40:fltk-1.3.4-1/jpeg/jmemnobs.c **** GLOBAL(void)
+  41:fltk-1.3.4-1/jpeg/jmemnobs.c **** jpeg_free_small (j_common_ptr cinfo, void * object, size_t sizeofobject)
+  42:fltk-1.3.4-1/jpeg/jmemnobs.c **** {
+  43:fltk-1.3.4-1/jpeg/jmemnobs.c ****   free(object);
+  44:fltk-1.3.4-1/jpeg/jmemnobs.c **** }
+  45:fltk-1.3.4-1/jpeg/jmemnobs.c **** 
+  46:fltk-1.3.4-1/jpeg/jmemnobs.c **** 
+  47:fltk-1.3.4-1/jpeg/jmemnobs.c **** /*
+  48:fltk-1.3.4-1/jpeg/jmemnobs.c ****  * "Large" objects are treated the same as "small" ones.
+  49:fltk-1.3.4-1/jpeg/jmemnobs.c ****  * NB: although we include FAR keywords in the routine declarations,
+  50:fltk-1.3.4-1/jpeg/jmemnobs.c ****  * this file won't actually work in 80x86 small/medium model; at least,
+  51:fltk-1.3.4-1/jpeg/jmemnobs.c ****  * you probably won't be able to process useful-size images in only 64KB.
+  52:fltk-1.3.4-1/jpeg/jmemnobs.c ****  */
+  53:fltk-1.3.4-1/jpeg/jmemnobs.c **** 
+  54:fltk-1.3.4-1/jpeg/jmemnobs.c **** GLOBAL(void FAR *)
+  55:fltk-1.3.4-1/jpeg/jmemnobs.c **** jpeg_get_large (j_common_ptr cinfo, size_t sizeofobject)
+  56:fltk-1.3.4-1/jpeg/jmemnobs.c **** {
+  55              		.loc 1 56 0
+  56              		.cfi_startproc
+  57              	.LVL0:
+  57:fltk-1.3.4-1/jpeg/jmemnobs.c ****   return (void FAR *) malloc(sizeofobject);
+  58              		.loc 1 57 0
+  59 0000 4889F7   		movq	%rsi, %rdi
+  60              	.LVL1:
+  61 0003 E9000000 		jmp	malloc
+  61      00
+  62              	.LVL2:
+  63              		.cfi_endproc
+  64              	.LFE63:
+  66              		.section	.text.unlikely.jpeg_get_large
+  67              	.LCOLDE2:
+  68              		.section	.text.jpeg_get_large
+  69              	.LHOTE2:
+  70              		.section	.text.unlikely.jpeg_free_large,"ax",@progbits
+  71              	.LCOLDB3:
+  72              		.section	.text.jpeg_free_large,"ax",@progbits
+  73              	.LHOTB3:
+  74              		.p2align 4,,15
+  75              		.globl	jpeg_free_large
+  77              	jpeg_free_large:
+  78              	.LFB64:
+  58:fltk-1.3.4-1/jpeg/jmemnobs.c **** }
+  59:fltk-1.3.4-1/jpeg/jmemnobs.c **** 
+  60:fltk-1.3.4-1/jpeg/jmemnobs.c **** GLOBAL(void)
+  61:fltk-1.3.4-1/jpeg/jmemnobs.c **** jpeg_free_large (j_common_ptr cinfo, void FAR * object, size_t sizeofobject)
+  62:fltk-1.3.4-1/jpeg/jmemnobs.c **** {
+  79              		.loc 1 62 0
+  80              		.cfi_startproc
+  81              	.LVL3:
+  63:fltk-1.3.4-1/jpeg/jmemnobs.c ****   free(object);
+  82              		.loc 1 63 0
+  83 0000 4889F7   		movq	%rsi, %rdi
+  84              	.LVL4:
+  85 0003 E9000000 		jmp	free
+  85      00
+  86              	.LVL5:
+  87              		.cfi_endproc
+  88              	.LFE64:
+  90              		.section	.text.unlikely.jpeg_free_large
+  91              	.LCOLDE3:
+  92              		.section	.text.jpeg_free_large
+  93              	.LHOTE3:
+  94              		.section	.text.unlikely.jpeg_mem_available,"ax",@progbits
+  95              	.LCOLDB4:
+  96              		.section	.text.jpeg_mem_available,"ax",@progbits
+  97              	.LHOTB4:
+  98              		.p2align 4,,15
+  99              		.globl	jpeg_mem_available
+ 101              	jpeg_mem_available:
+ 102              	.LFB65:
+  64:fltk-1.3.4-1/jpeg/jmemnobs.c **** }
+  65:fltk-1.3.4-1/jpeg/jmemnobs.c **** 
+  66:fltk-1.3.4-1/jpeg/jmemnobs.c **** 
+  67:fltk-1.3.4-1/jpeg/jmemnobs.c **** /*
+  68:fltk-1.3.4-1/jpeg/jmemnobs.c ****  * This routine computes the total memory space available for allocation.
+  69:fltk-1.3.4-1/jpeg/jmemnobs.c ****  * Here we always say, "we got all you want bud!"
+  70:fltk-1.3.4-1/jpeg/jmemnobs.c ****  */
+  71:fltk-1.3.4-1/jpeg/jmemnobs.c **** 
+  72:fltk-1.3.4-1/jpeg/jmemnobs.c **** GLOBAL(long)
+  73:fltk-1.3.4-1/jpeg/jmemnobs.c **** jpeg_mem_available (j_common_ptr cinfo, long min_bytes_needed,
+  74:fltk-1.3.4-1/jpeg/jmemnobs.c **** 		    long max_bytes_needed, long already_allocated)
+  75:fltk-1.3.4-1/jpeg/jmemnobs.c **** {
+ 103              		.loc 1 75 0
+ 104              		.cfi_startproc
+ 105              	.LVL6:
+ 106              		.loc 1 75 0
+ 107 0000 4889D0   		movq	%rdx, %rax
+  76:fltk-1.3.4-1/jpeg/jmemnobs.c ****   return max_bytes_needed;
+  77:fltk-1.3.4-1/jpeg/jmemnobs.c **** }
+ 108              		.loc 1 77 0
+ 109 0003 C3       		ret
+ 110              		.cfi_endproc
+ 111              	.LFE65:
+ 113              		.section	.text.unlikely.jpeg_mem_available
+ 114              	.LCOLDE4:
+ 115              		.section	.text.jpeg_mem_available
+ 116              	.LHOTE4:
+ 117              		.section	.text.unlikely.jpeg_open_backing_store,"ax",@progbits
+ 118              	.LCOLDB5:
+ 119              		.section	.text.jpeg_open_backing_store,"ax",@progbits
+ 120              	.LHOTB5:
+ 121              		.p2align 4,,15
+ 122              		.globl	jpeg_open_backing_store
+ 124              	jpeg_open_backing_store:
+ 125              	.LFB66:
+  78:fltk-1.3.4-1/jpeg/jmemnobs.c **** 
+  79:fltk-1.3.4-1/jpeg/jmemnobs.c **** 
+  80:fltk-1.3.4-1/jpeg/jmemnobs.c **** /*
+  81:fltk-1.3.4-1/jpeg/jmemnobs.c ****  * Backing store (temporary file) management.
+  82:fltk-1.3.4-1/jpeg/jmemnobs.c ****  * Since jpeg_mem_available always promised the moon,
+  83:fltk-1.3.4-1/jpeg/jmemnobs.c ****  * this should never be called and we can just error out.
+  84:fltk-1.3.4-1/jpeg/jmemnobs.c ****  */
+  85:fltk-1.3.4-1/jpeg/jmemnobs.c **** 
+  86:fltk-1.3.4-1/jpeg/jmemnobs.c **** GLOBAL(void)
+  87:fltk-1.3.4-1/jpeg/jmemnobs.c **** jpeg_open_backing_store (j_common_ptr cinfo, backing_store_ptr info,
+  88:fltk-1.3.4-1/jpeg/jmemnobs.c **** 			 long total_bytes_needed)
+  89:fltk-1.3.4-1/jpeg/jmemnobs.c **** {
+ 126              		.loc 1 89 0
+ 127              		.cfi_startproc
+ 128              	.LVL7:
+  90:fltk-1.3.4-1/jpeg/jmemnobs.c ****   ERREXIT(cinfo, JERR_NO_BACKING_STORE);
+ 129              		.loc 1 90 0
+ 130 0000 488B07   		movq	(%rdi), %rax
+ 131 0003 C7402833 		movl	$51, 40(%rax)
+ 131      000000
+ 132 000a 488B07   		movq	(%rdi), %rax
+ 133 000d FF20     		jmp	*(%rax)
+ 134              	.LVL8:
+ 135              		.cfi_endproc
+ 136              	.LFE66:
+ 138              		.section	.text.unlikely.jpeg_open_backing_store
+ 139              	.LCOLDE5:
+ 140              		.section	.text.jpeg_open_backing_store
+ 141              	.LHOTE5:
+ 142              		.section	.text.unlikely.jpeg_mem_init,"ax",@progbits
+ 143              	.LCOLDB6:
+ 144              		.section	.text.jpeg_mem_init,"ax",@progbits
+ 145              	.LHOTB6:
+ 146              		.p2align 4,,15
+ 147              		.globl	jpeg_mem_init
+ 149              	jpeg_mem_init:
+ 150              	.LFB67:
+  91:fltk-1.3.4-1/jpeg/jmemnobs.c **** }
+  92:fltk-1.3.4-1/jpeg/jmemnobs.c **** 
+  93:fltk-1.3.4-1/jpeg/jmemnobs.c **** 
+  94:fltk-1.3.4-1/jpeg/jmemnobs.c **** /*
+  95:fltk-1.3.4-1/jpeg/jmemnobs.c ****  * These routines take care of any system-dependent initialization and
+  96:fltk-1.3.4-1/jpeg/jmemnobs.c ****  * cleanup required.  Here, there isn't any.
+  97:fltk-1.3.4-1/jpeg/jmemnobs.c ****  */
+  98:fltk-1.3.4-1/jpeg/jmemnobs.c **** 
+  99:fltk-1.3.4-1/jpeg/jmemnobs.c **** GLOBAL(long)
+ 100:fltk-1.3.4-1/jpeg/jmemnobs.c **** jpeg_mem_init (j_common_ptr cinfo)
+ 101:fltk-1.3.4-1/jpeg/jmemnobs.c **** {
+ 151              		.loc 1 101 0
+ 152              		.cfi_startproc
+ 153              	.LVL9:
+ 102:fltk-1.3.4-1/jpeg/jmemnobs.c ****   return 0;			/* just set max_memory_to_use to 0 */
+ 103:fltk-1.3.4-1/jpeg/jmemnobs.c **** }
+ 154              		.loc 1 103 0
+ 155 0000 31C0     		xorl	%eax, %eax
+ 156 0002 C3       		ret
+ 157              		.cfi_endproc
+ 158              	.LFE67:
+ 160              		.section	.text.unlikely.jpeg_mem_init
+ 161              	.LCOLDE6:
+ 162              		.section	.text.jpeg_mem_init
+ 163              	.LHOTE6:
+ 164              		.section	.text.unlikely.jpeg_mem_term,"ax",@progbits
+ 165              	.LCOLDB7:
+ 166              		.section	.text.jpeg_mem_term,"ax",@progbits
+ 167              	.LHOTB7:
+ 168              		.p2align 4,,15
+ 169              		.globl	jpeg_mem_term
+ 171              	jpeg_mem_term:
+ 172              	.LFB68:
+ 104:fltk-1.3.4-1/jpeg/jmemnobs.c **** 
+ 105:fltk-1.3.4-1/jpeg/jmemnobs.c **** GLOBAL(void)
+ 106:fltk-1.3.4-1/jpeg/jmemnobs.c **** jpeg_mem_term (j_common_ptr cinfo)
+ 107:fltk-1.3.4-1/jpeg/jmemnobs.c **** {
+ 173              		.loc 1 107 0
+ 174              		.cfi_startproc
+ 175              	.LVL10:
+ 176 0000 F3C3     		rep ret
+ 177              		.cfi_endproc
+ 178              	.LFE68:
+ 180              		.section	.text.unlikely.jpeg_mem_term
+ 181              	.LCOLDE7:
+ 182              		.section	.text.jpeg_mem_term
+ 183              	.LHOTE7:
+ 184              		.text
+ 185              	.Letext0:
+ 186              		.section	.text.unlikely.jpeg_get_large
+ 187              	.Letext_cold0:
+ 188              		.file 2 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
+ 189              		.file 3 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 190              		.file 4 "/usr/include/stdio.h"
+ 191              		.file 5 "/usr/include/libio.h"
+ 192              		.file 6 "fltk-1.3.4-1/jpeg/jmorecfg.h"
+ 193              		.file 7 "fltk-1.3.4-1/jpeg/jpeglib.h"
+ 194              		.file 8 "fltk-1.3.4-1/jpeg/jerror.h"
+ 195              		.file 9 "fltk-1.3.4-1/jpeg/jmemsys.h"
+ 196              		.file 10 "/usr/include/stdlib.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 jmemnobs.c
+     /tmp/ccAWEa1o.s:11     .text.jpeg_get_small:0000000000000000 jpeg_get_small
+     /tmp/ccAWEa1o.s:30     .text.jpeg_free_small:0000000000000000 jpeg_free_small
+     /tmp/ccAWEa1o.s:52     .text.jpeg_get_large:0000000000000000 jpeg_get_large
+     /tmp/ccAWEa1o.s:77     .text.jpeg_free_large:0000000000000000 jpeg_free_large
+     /tmp/ccAWEa1o.s:101    .text.jpeg_mem_available:0000000000000000 jpeg_mem_available
+     /tmp/ccAWEa1o.s:124    .text.jpeg_open_backing_store:0000000000000000 jpeg_open_backing_store
+     /tmp/ccAWEa1o.s:149    .text.jpeg_mem_init:0000000000000000 jpeg_mem_init
+     /tmp/ccAWEa1o.s:171    .text.jpeg_mem_term:0000000000000000 jpeg_mem_term
+                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
+                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+                           .group:0000000000000000 wm4.jconfig.h.10.247fc3ff67998f3074970b1373c70333
+                           .group:0000000000000000 wm4.features.h.19.24da27e0a4d0d521fd057013d982b8b5
+                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
+                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
+                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
+                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
+                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
+                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
+                           .group:0000000000000000 wm4.waitflags.h.25.e401b8bcfee800b540b27abd7cc78de9
+                           .group:0000000000000000 wm4.waitstatus.h.28.93f167f49d64e2b9b99f98d1162a93bf
+                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
+                           .group:0000000000000000 wm4.endian.h.41.24cced64aef71195a51d4daa8e4f4a95
+                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
+                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
+                           .group:0000000000000000 wm4.byteswap.h.38.11ee5fdc0f6cc53a16c505b9233cecef
+                           .group:0000000000000000 wm4.endian.h.63.97272d7c64d5db8020003b32e9289502
+                           .group:0000000000000000 wm4.waitstatus.h.99.408b6270fa6eb71377201a241ef15f79
+                           .group:0000000000000000 wm4.stdlib.h.50.84aeca2ac6f37d40e1e9b3cef757ba2d
+                           .group:0000000000000000 wm4.types.h.23.f6dcbaa72f8f71361acef09804d45a5e
+                           .group:0000000000000000 wm4.time.h.53.beb46e650cd406cb917b6b96b45e640a
+                           .group:0000000000000000 wm4.stddef.h.238.847b6907dabda77be90a9ab7ad789e2e
+                           .group:0000000000000000 wm4.types.h.187.bd5a05039b505b3620e6973f1b2ffeb1
+                           .group:0000000000000000 wm4.select.h.28.eb2f3debdbcffd1442ebddaebc4fb6ff
+                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
+                           .group:0000000000000000 wm4.select.h.36.f76c3b9e55c871743863013cc4cc14c9
+                           .group:0000000000000000 wm4.time.h.66.e70ce69790c975f0efb369340c432e0b
+                           .group:0000000000000000 wm4.time.h.25.ae5284cdff565e87a9198d819340325d
+                           .group:0000000000000000 wm4.select.h.49.e9d2041e5035cc68ebd1a20f7dbc8514
+                           .group:0000000000000000 wm4.select2.h.27.f95f2ab0ffee66dc1b6575014894b21a
+                           .group:0000000000000000 wm4.sysmacros.h.20.8a0c33ff175cd9b434a86c0aaa36f0a2
+                           .group:0000000000000000 wm4.types.h.229.67b3f66bd74b06b451caec392a72a945
+                           .group:0000000000000000 wm4.pthreadtypes.h.25.6892b1493314fcf446bbc76e7362acba
+                           .group:0000000000000000 wm4.alloca.h.19.edefa922a76c1cbaaf1e416903ba2d1c
+                           .group:0000000000000000 wm4.alloca.h.29.156e12058824cc23d961c4d3b13031f6
+                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
+                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
+                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
+                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
+                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
+                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
+                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
+                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
+                           .group:0000000000000000 wm4.stdio.h.80.17b7dd1ca72d8a61987532cb1d80194a
+                           .group:0000000000000000 wm4.stdio_lim.h.23.557290a6cddeba0587f574f29e3a5fb9
+                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
+                           .group:0000000000000000 wm4.stdio.h.26.cae64f7ada9bb8327a89dba6a5e93655
+                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
+                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
+                           .group:0000000000000000 wm4.string2.h.45.00535b99420fc3014c2da41d6645330d
+                           .group:0000000000000000 wm4.string3.h.31.0c4b9301b754a2db05eaafef869657d2
+                           .group:0000000000000000 wm4.jinclude.h.67.b19f941ec97c4845fa4609292c7e2db4
+                           .group:0000000000000000 wm4.jmorecfg.h.33.3b4c5f9cc07b3737823b06caf24d5b05
+                           .group:0000000000000000 wm4.jpeglib.h.40.4f111c27252a38df39328d65454e82f4
+                           .group:0000000000000000 wm4.jpegint.h.26.5219ef5d4e4921371d38e77b6091fd20
+                           .group:0000000000000000 wm4.jerror.h.25.1dbd8674e70ab5215bc0037320e5c2a2
+                           .group:0000000000000000 wm4.jmemsys.h.78.e8417de29834b6ee7fe4d9b9f74aec3c
+
+UNDEFINED SYMBOLS
+malloc
+free

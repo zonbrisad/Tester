@@ -1,0 +1,2361 @@
+   1              		.file	"jccolor.c"
+   2              		.text
+   3              	.Ltext0:
+   4              		.section	.text.unlikely.rgb_ycc_start,"ax",@progbits
+   5              	.LCOLDB0:
+   6              		.section	.text.rgb_ycc_start,"ax",@progbits
+   7              	.LHOTB0:
+   8              		.p2align 4,,15
+   9              		.section	.text.unlikely.rgb_ycc_start
+  10              	.Ltext_cold0:
+  11              		.section	.text.rgb_ycc_start
+  13              	rgb_ycc_start:
+  14              	.LFB61:
+  15              		.file 1 "fltk-1.3.4-1/jpeg/jccolor.c"
+   1:fltk-1.3.4-1/jpeg/jccolor.c **** /*
+   2:fltk-1.3.4-1/jpeg/jccolor.c ****  * jccolor.c
+   3:fltk-1.3.4-1/jpeg/jccolor.c ****  *
+   4:fltk-1.3.4-1/jpeg/jccolor.c ****  * Copyright (C) 1991-1996, Thomas G. Lane.
+   5:fltk-1.3.4-1/jpeg/jccolor.c ****  * Modified 2011-2013 by Guido Vollbeding.
+   6:fltk-1.3.4-1/jpeg/jccolor.c ****  * This file is part of the Independent JPEG Group's software.
+   7:fltk-1.3.4-1/jpeg/jccolor.c ****  * For conditions of distribution and use, see the accompanying README file.
+   8:fltk-1.3.4-1/jpeg/jccolor.c ****  *
+   9:fltk-1.3.4-1/jpeg/jccolor.c ****  * This file contains input colorspace conversion routines.
+  10:fltk-1.3.4-1/jpeg/jccolor.c ****  */
+  11:fltk-1.3.4-1/jpeg/jccolor.c **** 
+  12:fltk-1.3.4-1/jpeg/jccolor.c **** #define JPEG_INTERNALS
+  13:fltk-1.3.4-1/jpeg/jccolor.c **** #include "jinclude.h"
+  14:fltk-1.3.4-1/jpeg/jccolor.c **** #include "jpeglib.h"
+  15:fltk-1.3.4-1/jpeg/jccolor.c **** 
+  16:fltk-1.3.4-1/jpeg/jccolor.c **** 
+  17:fltk-1.3.4-1/jpeg/jccolor.c **** /* Private subobject */
+  18:fltk-1.3.4-1/jpeg/jccolor.c **** 
+  19:fltk-1.3.4-1/jpeg/jccolor.c **** typedef struct {
+  20:fltk-1.3.4-1/jpeg/jccolor.c ****   struct jpeg_color_converter pub; /* public fields */
+  21:fltk-1.3.4-1/jpeg/jccolor.c **** 
+  22:fltk-1.3.4-1/jpeg/jccolor.c ****   /* Private state for RGB->YCC conversion */
+  23:fltk-1.3.4-1/jpeg/jccolor.c ****   INT32 * rgb_ycc_tab;		/* => table for RGB to YCbCr conversion */
+  24:fltk-1.3.4-1/jpeg/jccolor.c **** } my_color_converter;
+  25:fltk-1.3.4-1/jpeg/jccolor.c **** 
+  26:fltk-1.3.4-1/jpeg/jccolor.c **** typedef my_color_converter * my_cconvert_ptr;
+  27:fltk-1.3.4-1/jpeg/jccolor.c **** 
+  28:fltk-1.3.4-1/jpeg/jccolor.c **** 
+  29:fltk-1.3.4-1/jpeg/jccolor.c **** /**************** RGB -> YCbCr conversion: most common case **************/
+  30:fltk-1.3.4-1/jpeg/jccolor.c **** 
+  31:fltk-1.3.4-1/jpeg/jccolor.c **** /*
+  32:fltk-1.3.4-1/jpeg/jccolor.c ****  * YCbCr is defined per Recommendation ITU-R BT.601-7 (03/2011),
+  33:fltk-1.3.4-1/jpeg/jccolor.c ****  * previously known as Recommendation CCIR 601-1, except that Cb and Cr
+  34:fltk-1.3.4-1/jpeg/jccolor.c ****  * are normalized to the range 0..MAXJSAMPLE rather than -0.5 .. 0.5.
+  35:fltk-1.3.4-1/jpeg/jccolor.c ****  * sRGB (standard RGB color space) is defined per IEC 61966-2-1:1999.
+  36:fltk-1.3.4-1/jpeg/jccolor.c ****  * sYCC (standard luma-chroma-chroma color space with extended gamut)
+  37:fltk-1.3.4-1/jpeg/jccolor.c ****  * is defined per IEC 61966-2-1:1999 Amendment A1:2003 Annex F.
+  38:fltk-1.3.4-1/jpeg/jccolor.c ****  * bg-sRGB and bg-sYCC (big gamut standard color spaces)
+  39:fltk-1.3.4-1/jpeg/jccolor.c ****  * are defined per IEC 61966-2-1:1999 Amendment A1:2003 Annex G.
+  40:fltk-1.3.4-1/jpeg/jccolor.c ****  * Note that the derived conversion coefficients given in some of these
+  41:fltk-1.3.4-1/jpeg/jccolor.c ****  * documents are imprecise.  The general conversion equations are
+  42:fltk-1.3.4-1/jpeg/jccolor.c ****  *	Y  = Kr * R + (1 - Kr - Kb) * G + Kb * B
+  43:fltk-1.3.4-1/jpeg/jccolor.c ****  *	Cb = 0.5 * (B - Y) / (1 - Kb)
+  44:fltk-1.3.4-1/jpeg/jccolor.c ****  *	Cr = 0.5 * (R - Y) / (1 - Kr)
+  45:fltk-1.3.4-1/jpeg/jccolor.c ****  * With Kr = 0.299 and Kb = 0.114 (derived according to SMPTE RP 177-1993
+  46:fltk-1.3.4-1/jpeg/jccolor.c ****  * from the 1953 FCC NTSC primaries and CIE Illuminant C),
+  47:fltk-1.3.4-1/jpeg/jccolor.c ****  * the conversion equations to be implemented are therefore
+  48:fltk-1.3.4-1/jpeg/jccolor.c ****  *	Y  =  0.299 * R + 0.587 * G + 0.114 * B
+  49:fltk-1.3.4-1/jpeg/jccolor.c ****  *	Cb = -0.168735892 * R - 0.331264108 * G + 0.5 * B + CENTERJSAMPLE
+  50:fltk-1.3.4-1/jpeg/jccolor.c ****  *	Cr =  0.5 * R - 0.418687589 * G - 0.081312411 * B + CENTERJSAMPLE
+  51:fltk-1.3.4-1/jpeg/jccolor.c ****  * Note: older versions of the IJG code used a zero offset of MAXJSAMPLE/2,
+  52:fltk-1.3.4-1/jpeg/jccolor.c ****  * rather than CENTERJSAMPLE, for Cb and Cr.  This gave equal positive and
+  53:fltk-1.3.4-1/jpeg/jccolor.c ****  * negative swings for Cb/Cr, but meant that grayscale values (Cb=Cr=0)
+  54:fltk-1.3.4-1/jpeg/jccolor.c ****  * were not represented exactly.  Now we sacrifice exact representation of
+  55:fltk-1.3.4-1/jpeg/jccolor.c ****  * maximum red and maximum blue in order to get exact grayscales.
+  56:fltk-1.3.4-1/jpeg/jccolor.c ****  *
+  57:fltk-1.3.4-1/jpeg/jccolor.c ****  * To avoid floating-point arithmetic, we represent the fractional constants
+  58:fltk-1.3.4-1/jpeg/jccolor.c ****  * as integers scaled up by 2^16 (about 4 digits precision); we have to divide
+  59:fltk-1.3.4-1/jpeg/jccolor.c ****  * the products by 2^16, with appropriate rounding, to get the correct answer.
+  60:fltk-1.3.4-1/jpeg/jccolor.c ****  *
+  61:fltk-1.3.4-1/jpeg/jccolor.c ****  * For even more speed, we avoid doing any multiplications in the inner loop
+  62:fltk-1.3.4-1/jpeg/jccolor.c ****  * by precalculating the constants times R,G,B for all possible values.
+  63:fltk-1.3.4-1/jpeg/jccolor.c ****  * For 8-bit JSAMPLEs this is very reasonable (only 256 entries per table);
+  64:fltk-1.3.4-1/jpeg/jccolor.c ****  * for 9-bit to 12-bit samples it is still acceptable.  It's not very
+  65:fltk-1.3.4-1/jpeg/jccolor.c ****  * reasonable for 16-bit samples, but if you want lossless storage you
+  66:fltk-1.3.4-1/jpeg/jccolor.c ****  * shouldn't be changing colorspace anyway.
+  67:fltk-1.3.4-1/jpeg/jccolor.c ****  * The CENTERJSAMPLE offsets and the rounding fudge-factor of 0.5 are included
+  68:fltk-1.3.4-1/jpeg/jccolor.c ****  * in the tables to save adding them separately in the inner loop.
+  69:fltk-1.3.4-1/jpeg/jccolor.c ****  */
+  70:fltk-1.3.4-1/jpeg/jccolor.c **** 
+  71:fltk-1.3.4-1/jpeg/jccolor.c **** #define SCALEBITS	16	/* speediest right-shift on some machines */
+  72:fltk-1.3.4-1/jpeg/jccolor.c **** #define CBCR_OFFSET	((INT32) CENTERJSAMPLE << SCALEBITS)
+  73:fltk-1.3.4-1/jpeg/jccolor.c **** #define ONE_HALF	((INT32) 1 << (SCALEBITS-1))
+  74:fltk-1.3.4-1/jpeg/jccolor.c **** #define FIX(x)		((INT32) ((x) * (1L<<SCALEBITS) + 0.5))
+  75:fltk-1.3.4-1/jpeg/jccolor.c **** 
+  76:fltk-1.3.4-1/jpeg/jccolor.c **** /* We allocate one big table and divide it up into eight parts, instead of
+  77:fltk-1.3.4-1/jpeg/jccolor.c ****  * doing eight alloc_small requests.  This lets us use a single table base
+  78:fltk-1.3.4-1/jpeg/jccolor.c ****  * address, which can be held in a register in the inner loops on many
+  79:fltk-1.3.4-1/jpeg/jccolor.c ****  * machines (more than can hold all eight addresses, anyway).
+  80:fltk-1.3.4-1/jpeg/jccolor.c ****  */
+  81:fltk-1.3.4-1/jpeg/jccolor.c **** 
+  82:fltk-1.3.4-1/jpeg/jccolor.c **** #define R_Y_OFF		0			/* offset to R => Y section */
+  83:fltk-1.3.4-1/jpeg/jccolor.c **** #define G_Y_OFF		(1*(MAXJSAMPLE+1))	/* offset to G => Y section */
+  84:fltk-1.3.4-1/jpeg/jccolor.c **** #define B_Y_OFF		(2*(MAXJSAMPLE+1))	/* etc. */
+  85:fltk-1.3.4-1/jpeg/jccolor.c **** #define R_CB_OFF	(3*(MAXJSAMPLE+1))
+  86:fltk-1.3.4-1/jpeg/jccolor.c **** #define G_CB_OFF	(4*(MAXJSAMPLE+1))
+  87:fltk-1.3.4-1/jpeg/jccolor.c **** #define B_CB_OFF	(5*(MAXJSAMPLE+1))
+  88:fltk-1.3.4-1/jpeg/jccolor.c **** #define R_CR_OFF	B_CB_OFF		/* B=>Cb, R=>Cr are the same */
+  89:fltk-1.3.4-1/jpeg/jccolor.c **** #define G_CR_OFF	(6*(MAXJSAMPLE+1))
+  90:fltk-1.3.4-1/jpeg/jccolor.c **** #define B_CR_OFF	(7*(MAXJSAMPLE+1))
+  91:fltk-1.3.4-1/jpeg/jccolor.c **** #define TABLE_SIZE	(8*(MAXJSAMPLE+1))
+  92:fltk-1.3.4-1/jpeg/jccolor.c **** 
+  93:fltk-1.3.4-1/jpeg/jccolor.c **** 
+  94:fltk-1.3.4-1/jpeg/jccolor.c **** /*
+  95:fltk-1.3.4-1/jpeg/jccolor.c ****  * Initialize for RGB->YCC colorspace conversion.
+  96:fltk-1.3.4-1/jpeg/jccolor.c ****  */
+  97:fltk-1.3.4-1/jpeg/jccolor.c **** 
+  98:fltk-1.3.4-1/jpeg/jccolor.c **** METHODDEF(void)
+  99:fltk-1.3.4-1/jpeg/jccolor.c **** rgb_ycc_start (j_compress_ptr cinfo)
+ 100:fltk-1.3.4-1/jpeg/jccolor.c **** {
+  16              		.loc 1 100 0
+  17              		.cfi_startproc
+  18              	.LVL0:
+  19 0000 53       		pushq	%rbx
+  20              		.cfi_def_cfa_offset 16
+  21              		.cfi_offset 3, -16
+ 101:fltk-1.3.4-1/jpeg/jccolor.c ****   my_cconvert_ptr cconvert = (my_cconvert_ptr) cinfo->cconvert;
+  22              		.loc 1 101 0
+  23 0001 488B9F18 		movq	536(%rdi), %rbx
+  23      020000
+  24              	.LVL1:
+ 102:fltk-1.3.4-1/jpeg/jccolor.c ****   INT32 * rgb_ycc_tab;
+ 103:fltk-1.3.4-1/jpeg/jccolor.c ****   INT32 i;
+ 104:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 105:fltk-1.3.4-1/jpeg/jccolor.c ****   /* Allocate and fill in the conversion tables. */
+ 106:fltk-1.3.4-1/jpeg/jccolor.c ****   cconvert->rgb_ycc_tab = rgb_ycc_tab = (INT32 *)
+  25              		.loc 1 106 0
+  26 0008 BA004000 		movl	$16384, %edx
+  26      00
+ 107:fltk-1.3.4-1/jpeg/jccolor.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+  27              		.loc 1 107 0
+  28 000d 488B4708 		movq	8(%rdi), %rax
+ 106:fltk-1.3.4-1/jpeg/jccolor.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+  29              		.loc 1 106 0
+  30 0011 BE010000 		movl	$1, %esi
+  30      00
+  31 0016 FF10     		call	*(%rax)
+  32              	.LVL2:
+  33 0018 4531DB   		xorl	%r11d, %r11d
+  34 001b 48894310 		movq	%rax, 16(%rbx)
+  35              	.LVL3:
+  36 001f 4531D2   		xorl	%r10d, %r10d
+  37 0022 41B9FF7F 		movl	$8421375, %r9d
+  37      8000
+  38 0028 4531C0   		xorl	%r8d, %r8d
+  39 002b 31FF     		xorl	%edi, %edi
+  40 002d BE008000 		movl	$32768, %esi
+  40      00
+  41 0032 31C9     		xorl	%ecx, %ecx
+  42 0034 31D2     		xorl	%edx, %edx
+  43              	.LVL4:
+  44 0036 662E0F1F 		.p2align 4,,10
+  44      84000000 
+  44      0000
+  45              		.p2align 3
+  46              	.L2:
+ 108:fltk-1.3.4-1/jpeg/jccolor.c **** 				(TABLE_SIZE * SIZEOF(INT32)));
+ 109:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 110:fltk-1.3.4-1/jpeg/jccolor.c ****   for (i = 0; i <= MAXJSAMPLE; i++) {
+ 111:fltk-1.3.4-1/jpeg/jccolor.c ****     rgb_ycc_tab[i+R_Y_OFF] = FIX(0.299) * i;
+  47              		.loc 1 111 0 discriminator 3
+  48 0040 488910   		movq	%rdx, (%rax)
+  49 0043 4881C28B 		addq	$19595, %rdx
+  49      4C0000
+ 112:fltk-1.3.4-1/jpeg/jccolor.c ****     rgb_ycc_tab[i+G_Y_OFF] = FIX(0.587) * i;
+  50              		.loc 1 112 0 discriminator 3
+  51 004a 48898800 		movq	%rcx, 2048(%rax)
+  51      080000
+ 113:fltk-1.3.4-1/jpeg/jccolor.c ****     rgb_ycc_tab[i+B_Y_OFF] = FIX(0.114) * i   + ONE_HALF;
+  52              		.loc 1 113 0 discriminator 3
+  53 0051 4889B000 		movq	%rsi, 4096(%rax)
+  53      100000
+ 114:fltk-1.3.4-1/jpeg/jccolor.c ****     rgb_ycc_tab[i+R_CB_OFF] = (-FIX(0.168735892)) * i;
+  54              		.loc 1 114 0 discriminator 3
+  55 0058 4889B800 		movq	%rdi, 6144(%rax)
+  55      180000
+  56 005f 4881C146 		addq	$38470, %rcx
+  56      960000
+ 115:fltk-1.3.4-1/jpeg/jccolor.c ****     rgb_ycc_tab[i+G_CB_OFF] = (-FIX(0.331264108)) * i;
+  57              		.loc 1 115 0 discriminator 3
+  58 0066 4C898000 		movq	%r8, 8192(%rax)
+  58      200000
+ 116:fltk-1.3.4-1/jpeg/jccolor.c ****     /* We use a rounding fudge-factor of 0.5-epsilon for Cb and Cr.
+ 117:fltk-1.3.4-1/jpeg/jccolor.c ****      * This ensures that the maximum output will round to MAXJSAMPLE
+ 118:fltk-1.3.4-1/jpeg/jccolor.c ****      * not MAXJSAMPLE+1, and thus that we don't have to range-limit.
+ 119:fltk-1.3.4-1/jpeg/jccolor.c ****      */
+ 120:fltk-1.3.4-1/jpeg/jccolor.c ****     rgb_ycc_tab[i+B_CB_OFF] = FIX(0.5) * i    + CBCR_OFFSET + ONE_HALF-1;
+  59              		.loc 1 120 0 discriminator 3
+  60 006d 4C898800 		movq	%r9, 10240(%rax)
+  60      280000
+  61 0074 4881C62F 		addq	$7471, %rsi
+  61      1D0000
+ 121:fltk-1.3.4-1/jpeg/jccolor.c **** /*  B=>Cb and R=>Cr tables are the same
+ 122:fltk-1.3.4-1/jpeg/jccolor.c ****     rgb_ycc_tab[i+R_CR_OFF] = FIX(0.5) * i    + CBCR_OFFSET + ONE_HALF-1;
+ 123:fltk-1.3.4-1/jpeg/jccolor.c **** */
+ 124:fltk-1.3.4-1/jpeg/jccolor.c ****     rgb_ycc_tab[i+G_CR_OFF] = (-FIX(0.418687589)) * i;
+  62              		.loc 1 124 0 discriminator 3
+  63 007b 4C899000 		movq	%r10, 12288(%rax)
+  63      300000
+ 125:fltk-1.3.4-1/jpeg/jccolor.c ****     rgb_ycc_tab[i+B_CR_OFF] = (-FIX(0.081312411)) * i;
+  64              		.loc 1 125 0 discriminator 3
+  65 0082 4C899800 		movq	%r11, 14336(%rax)
+  65      380000
+  66 0089 4881EF32 		subq	$11058, %rdi
+  66      2B0000
+  67 0090 4883C008 		addq	$8, %rax
+  68 0094 4981E8CE 		subq	$21710, %r8
+  68      540000
+  69 009b 4981C100 		addq	$32768, %r9
+  69      800000
+  70 00a2 4981EA2F 		subq	$27439, %r10
+  70      6B0000
+  71 00a9 4981EBD1 		subq	$5329, %r11
+  71      140000
+ 110:fltk-1.3.4-1/jpeg/jccolor.c ****     rgb_ycc_tab[i+R_Y_OFF] = FIX(0.299) * i;
+  72              		.loc 1 110 0 discriminator 3
+  73 00b0 4881FA00 		cmpq	$5016320, %rdx
+  73      8B4C00
+  74 00b7 7587     		jne	.L2
+ 126:fltk-1.3.4-1/jpeg/jccolor.c ****   }
+ 127:fltk-1.3.4-1/jpeg/jccolor.c **** }
+  75              		.loc 1 127 0
+  76 00b9 5B       		popq	%rbx
+  77              		.cfi_def_cfa_offset 8
+  78              	.LVL5:
+  79 00ba C3       		ret
+  80              		.cfi_endproc
+  81              	.LFE61:
+  83              		.section	.text.unlikely.rgb_ycc_start
+  84              	.LCOLDE0:
+  85              		.section	.text.rgb_ycc_start
+  86              	.LHOTE0:
+  87              		.section	.text.unlikely.rgb_ycc_convert,"ax",@progbits
+  88              	.LCOLDB1:
+  89              		.section	.text.rgb_ycc_convert,"ax",@progbits
+  90              	.LHOTB1:
+  91              		.p2align 4,,15
+  93              	rgb_ycc_convert:
+  94              	.LFB62:
+ 128:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 129:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 130:fltk-1.3.4-1/jpeg/jccolor.c **** /*
+ 131:fltk-1.3.4-1/jpeg/jccolor.c ****  * Convert some rows of samples to the JPEG colorspace.
+ 132:fltk-1.3.4-1/jpeg/jccolor.c ****  *
+ 133:fltk-1.3.4-1/jpeg/jccolor.c ****  * Note that we change from the application's interleaved-pixel format
+ 134:fltk-1.3.4-1/jpeg/jccolor.c ****  * to our internal noninterleaved, one-plane-per-component format.
+ 135:fltk-1.3.4-1/jpeg/jccolor.c ****  * The input buffer is therefore three times as wide as the output buffer.
+ 136:fltk-1.3.4-1/jpeg/jccolor.c ****  *
+ 137:fltk-1.3.4-1/jpeg/jccolor.c ****  * A starting row offset is provided only for the output buffer.  The caller
+ 138:fltk-1.3.4-1/jpeg/jccolor.c ****  * can easily adjust the passed input_buf value to accommodate any row
+ 139:fltk-1.3.4-1/jpeg/jccolor.c ****  * offset required on that side.
+ 140:fltk-1.3.4-1/jpeg/jccolor.c ****  */
+ 141:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 142:fltk-1.3.4-1/jpeg/jccolor.c **** METHODDEF(void)
+ 143:fltk-1.3.4-1/jpeg/jccolor.c **** rgb_ycc_convert (j_compress_ptr cinfo,
+ 144:fltk-1.3.4-1/jpeg/jccolor.c **** 		 JSAMPARRAY input_buf, JSAMPIMAGE output_buf,
+ 145:fltk-1.3.4-1/jpeg/jccolor.c **** 		 JDIMENSION output_row, int num_rows)
+ 146:fltk-1.3.4-1/jpeg/jccolor.c **** {
+  95              		.loc 1 146 0
+  96              		.cfi_startproc
+  97              	.LVL6:
+  98 0000 4157     		pushq	%r15
+  99              		.cfi_def_cfa_offset 16
+ 100              		.cfi_offset 15, -16
+ 101              	.LVL7:
+ 102 0002 4156     		pushq	%r14
+ 103              		.cfi_def_cfa_offset 24
+ 104              		.cfi_offset 14, -24
+ 105 0004 4155     		pushq	%r13
+ 106              		.cfi_def_cfa_offset 32
+ 107              		.cfi_offset 13, -32
+ 108 0006 4154     		pushq	%r12
+ 109              		.cfi_def_cfa_offset 40
+ 110              		.cfi_offset 12, -40
+ 111 0008 55       		pushq	%rbp
+ 112              		.cfi_def_cfa_offset 48
+ 113              		.cfi_offset 6, -48
+ 114 0009 53       		pushq	%rbx
+ 115              		.cfi_def_cfa_offset 56
+ 116              		.cfi_offset 3, -56
+ 147:fltk-1.3.4-1/jpeg/jccolor.c ****   my_cconvert_ptr cconvert = (my_cconvert_ptr) cinfo->cconvert;
+ 148:fltk-1.3.4-1/jpeg/jccolor.c ****   register INT32 * ctab = cconvert->rgb_ycc_tab;
+ 117              		.loc 1 148 0
+ 118 000a 488B8718 		movq	536(%rdi), %rax
+ 118      020000
+ 149:fltk-1.3.4-1/jpeg/jccolor.c ****   register int r, g, b;
+ 150:fltk-1.3.4-1/jpeg/jccolor.c ****   register JSAMPROW inptr;
+ 151:fltk-1.3.4-1/jpeg/jccolor.c ****   register JSAMPROW outptr0, outptr1, outptr2;
+ 152:fltk-1.3.4-1/jpeg/jccolor.c ****   register JDIMENSION col;
+ 153:fltk-1.3.4-1/jpeg/jccolor.c ****   JDIMENSION num_cols = cinfo->image_width;
+ 119              		.loc 1 153 0
+ 120 0011 448B6730 		movl	48(%rdi), %r12d
+ 146:fltk-1.3.4-1/jpeg/jccolor.c ****   my_cconvert_ptr cconvert = (my_cconvert_ptr) cinfo->cconvert;
+ 121              		.loc 1 146 0
+ 122 0015 894C24F8 		movl	%ecx, -8(%rsp)
+ 123 0019 44894424 		movl	%r8d, -4(%rsp)
+ 123      FC
+ 148:fltk-1.3.4-1/jpeg/jccolor.c ****   register int r, g, b;
+ 124              		.loc 1 148 0
+ 125 001e 488B4010 		movq	16(%rax), %rax
+ 126              	.LVL8:
+ 127              	.L7:
+ 154:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 155:fltk-1.3.4-1/jpeg/jccolor.c ****   while (--num_rows >= 0) {
+ 128              		.loc 1 155 0
+ 129 0022 836C24FC 		subl	$1, -4(%rsp)
+ 129      01
+ 130              	.LVL9:
+ 131 0027 0F88E000 		js	.L15
+ 131      0000
+ 132 002d 0F1F00   		.p2align 4,,10
+ 133              		.p2align 3
+ 134              	.L11:
+ 156:fltk-1.3.4-1/jpeg/jccolor.c ****     inptr = *input_buf++;
+ 157:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr0 = output_buf[0][output_row];
+ 135              		.loc 1 157 0
+ 136 0030 8B4C24F8 		movl	-8(%rsp), %ecx
+ 137 0034 488B3A   		movq	(%rdx), %rdi
+ 156:fltk-1.3.4-1/jpeg/jccolor.c ****     inptr = *input_buf++;
+ 138              		.loc 1 156 0
+ 139 0037 4883C608 		addq	$8, %rsi
+ 140              	.LVL10:
+ 141 003b 4C8B46F8 		movq	-8(%rsi), %r8
+ 142              	.LVL11:
+ 143              		.loc 1 157 0
+ 144 003f 4C8B3CCF 		movq	(%rdi,%rcx,8), %r15
+ 145              	.LVL12:
+ 158:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr1 = output_buf[1][output_row];
+ 146              		.loc 1 158 0
+ 147 0043 488B7A08 		movq	8(%rdx), %rdi
+ 157:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr1 = output_buf[1][output_row];
+ 148              		.loc 1 157 0
+ 149 0047 4889CB   		movq	%rcx, %rbx
+ 159:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr2 = output_buf[2][output_row];
+ 160:fltk-1.3.4-1/jpeg/jccolor.c ****     output_row++;
+ 150              		.loc 1 160 0
+ 151 004a 83C301   		addl	$1, %ebx
+ 152 004d 895C24F8 		movl	%ebx, -8(%rsp)
+ 158:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr2 = output_buf[2][output_row];
+ 153              		.loc 1 158 0
+ 154 0051 4C8B34CF 		movq	(%rdi,%rcx,8), %r14
+ 155              	.LVL13:
+ 159:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr2 = output_buf[2][output_row];
+ 156              		.loc 1 159 0
+ 157 0055 488B7A10 		movq	16(%rdx), %rdi
+ 158 0059 4C8B2CCF 		movq	(%rdi,%rcx,8), %r13
+ 159              	.LVL14:
+ 161:fltk-1.3.4-1/jpeg/jccolor.c ****     for (col = 0; col < num_cols; col++) {
+ 160              		.loc 1 161 0
+ 161 005d 31FF     		xorl	%edi, %edi
+ 162 005f 4585E4   		testl	%r12d, %r12d
+ 163 0062 74BE     		je	.L7
+ 164              	.LVL15:
+ 165              		.p2align 4,,10
+ 166 0064 0F1F4000 		.p2align 3
+ 167              	.L12:
+ 162:fltk-1.3.4-1/jpeg/jccolor.c ****       r = GETJSAMPLE(inptr[RGB_RED]);
+ 163:fltk-1.3.4-1/jpeg/jccolor.c ****       g = GETJSAMPLE(inptr[RGB_GREEN]);
+ 164:fltk-1.3.4-1/jpeg/jccolor.c ****       b = GETJSAMPLE(inptr[RGB_BLUE]);
+ 165:fltk-1.3.4-1/jpeg/jccolor.c ****       /* If the inputs are 0..MAXJSAMPLE, the outputs of these equations
+ 166:fltk-1.3.4-1/jpeg/jccolor.c ****        * must be too; we do not need an explicit range-limiting operation.
+ 167:fltk-1.3.4-1/jpeg/jccolor.c ****        * Hence the value being shifted is never negative, and we don't
+ 168:fltk-1.3.4-1/jpeg/jccolor.c ****        * need the general RIGHT_SHIFT macro.
+ 169:fltk-1.3.4-1/jpeg/jccolor.c ****        */
+ 170:fltk-1.3.4-1/jpeg/jccolor.c ****       /* Y */
+ 171:fltk-1.3.4-1/jpeg/jccolor.c ****       outptr0[col] = (JSAMPLE)
+ 172:fltk-1.3.4-1/jpeg/jccolor.c **** 		((ctab[r+R_Y_OFF] + ctab[g+G_Y_OFF] + ctab[b+B_Y_OFF])
+ 168              		.loc 1 172 0 discriminator 3
+ 169 0068 410FB648 		movzbl	1(%r8), %ecx
+ 169      01
+ 170 006d 410FB628 		movzbl	(%r8), %ebp
+ 173:fltk-1.3.4-1/jpeg/jccolor.c **** 		 >> SCALEBITS);
+ 174:fltk-1.3.4-1/jpeg/jccolor.c ****       /* Cb */
+ 175:fltk-1.3.4-1/jpeg/jccolor.c ****       outptr1[col] = (JSAMPLE)
+ 176:fltk-1.3.4-1/jpeg/jccolor.c **** 		((ctab[r+R_CB_OFF] + ctab[g+G_CB_OFF] + ctab[b+B_CB_OFF])
+ 177:fltk-1.3.4-1/jpeg/jccolor.c **** 		 >> SCALEBITS);
+ 178:fltk-1.3.4-1/jpeg/jccolor.c ****       /* Cr */
+ 179:fltk-1.3.4-1/jpeg/jccolor.c ****       outptr2[col] = (JSAMPLE)
+ 180:fltk-1.3.4-1/jpeg/jccolor.c **** 		((ctab[r+R_CR_OFF] + ctab[g+G_CR_OFF] + ctab[b+B_CR_OFF])
+ 181:fltk-1.3.4-1/jpeg/jccolor.c **** 		 >> SCALEBITS);
+ 182:fltk-1.3.4-1/jpeg/jccolor.c ****       inptr += RGB_PIXELSIZE;
+ 171              		.loc 1 182 0 discriminator 3
+ 172 0071 4983C003 		addq	$3, %r8
+ 173              	.LVL16:
+ 172:fltk-1.3.4-1/jpeg/jccolor.c **** 		 >> SCALEBITS);
+ 174              		.loc 1 172 0 discriminator 3
+ 175 0075 410FB658 		movzbl	-1(%r8), %ebx
+ 175      FF
+ 176              	.LVL17:
+ 177 007a 4881C100 		addq	$256, %rcx
+ 177      010000
+ 178 0081 4C8D14ED 		leaq	0(,%rbp,8), %r10
+ 178      00000000 
+ 179 0089 4C8D1CCD 		leaq	0(,%rcx,8), %r11
+ 179      00000000 
+ 180 0091 4881C300 		addq	$512, %rbx
+ 180      020000
+ 171:fltk-1.3.4-1/jpeg/jccolor.c **** 		((ctab[r+R_Y_OFF] + ctab[g+G_Y_OFF] + ctab[b+B_Y_OFF])
+ 181              		.loc 1 171 0 discriminator 3
+ 182 0098 488B0CC8 		movq	(%rax,%rcx,8), %rcx
+ 183 009c 48030CE8 		addq	(%rax,%rbp,8), %rcx
+ 172:fltk-1.3.4-1/jpeg/jccolor.c **** 		 >> SCALEBITS);
+ 184              		.loc 1 172 0 discriminator 3
+ 185 00a0 4C8D0CDD 		leaq	0(,%rbx,8), %r9
+ 185      00000000 
+ 171:fltk-1.3.4-1/jpeg/jccolor.c **** 		((ctab[r+R_Y_OFF] + ctab[g+G_Y_OFF] + ctab[b+B_Y_OFF])
+ 186              		.loc 1 171 0 discriminator 3
+ 187 00a8 48030CD8 		addq	(%rax,%rbx,8), %rcx
+ 188 00ac 48C1F910 		sarq	$16, %rcx
+ 189 00b0 41880C3F 		movb	%cl, (%r15,%rdi)
+ 190              	.LVL18:
+ 175:fltk-1.3.4-1/jpeg/jccolor.c **** 		((ctab[r+R_CB_OFF] + ctab[g+G_CB_OFF] + ctab[b+B_CB_OFF])
+ 191              		.loc 1 175 0 discriminator 3
+ 192 00b4 4A8B8C18 		movq	6144(%rax,%r11), %rcx
+ 192      00180000 
+ 193 00bc 4A038C10 		addq	6144(%rax,%r10), %rcx
+ 193      00180000 
+ 194 00c4 4A038C08 		addq	6144(%rax,%r9), %rcx
+ 194      00180000 
+ 195 00cc 48C1F910 		sarq	$16, %rcx
+ 196 00d0 41880C3E 		movb	%cl, (%r14,%rdi)
+ 179:fltk-1.3.4-1/jpeg/jccolor.c **** 		((ctab[r+R_CR_OFF] + ctab[g+G_CR_OFF] + ctab[b+B_CR_OFF])
+ 197              		.loc 1 179 0 discriminator 3
+ 198 00d4 4A8B8C18 		movq	10240(%rax,%r11), %rcx
+ 198      00280000 
+ 199 00dc 4A038C10 		addq	10240(%rax,%r10), %rcx
+ 199      00280000 
+ 200 00e4 4A038C08 		addq	10240(%rax,%r9), %rcx
+ 200      00280000 
+ 201 00ec 48C1F910 		sarq	$16, %rcx
+ 202 00f0 41884C3D 		movb	%cl, 0(%r13,%rdi)
+ 202      00
+ 203 00f5 4883C701 		addq	$1, %rdi
+ 204              	.LVL19:
+ 161:fltk-1.3.4-1/jpeg/jccolor.c ****       r = GETJSAMPLE(inptr[RGB_RED]);
+ 205              		.loc 1 161 0 discriminator 3
+ 206 00f9 4139FC   		cmpl	%edi, %r12d
+ 207 00fc 0F8766FF 		ja	.L12
+ 207      FFFF
+ 208              	.LVL20:
+ 155:fltk-1.3.4-1/jpeg/jccolor.c ****     inptr = *input_buf++;
+ 209              		.loc 1 155 0
+ 210 0102 836C24FC 		subl	$1, -4(%rsp)
+ 210      01
+ 211              	.LVL21:
+ 212 0107 0F8923FF 		jns	.L11
+ 212      FFFF
+ 213              	.LVL22:
+ 214              	.L15:
+ 183:fltk-1.3.4-1/jpeg/jccolor.c ****     }
+ 184:fltk-1.3.4-1/jpeg/jccolor.c ****   }
+ 185:fltk-1.3.4-1/jpeg/jccolor.c **** }
+ 215              		.loc 1 185 0
+ 216 010d 5B       		popq	%rbx
+ 217              		.cfi_def_cfa_offset 48
+ 218              	.LVL23:
+ 219 010e 5D       		popq	%rbp
+ 220              		.cfi_def_cfa_offset 40
+ 221 010f 415C     		popq	%r12
+ 222              		.cfi_def_cfa_offset 32
+ 223              	.LVL24:
+ 224 0111 415D     		popq	%r13
+ 225              		.cfi_def_cfa_offset 24
+ 226 0113 415E     		popq	%r14
+ 227              		.cfi_def_cfa_offset 16
+ 228 0115 415F     		popq	%r15
+ 229              		.cfi_def_cfa_offset 8
+ 230 0117 C3       		ret
+ 231              		.cfi_endproc
+ 232              	.LFE62:
+ 234              		.section	.text.unlikely.rgb_ycc_convert
+ 235              	.LCOLDE1:
+ 236              		.section	.text.rgb_ycc_convert
+ 237              	.LHOTE1:
+ 238              		.section	.text.unlikely.rgb_gray_convert,"ax",@progbits
+ 239              	.LCOLDB2:
+ 240              		.section	.text.rgb_gray_convert,"ax",@progbits
+ 241              	.LHOTB2:
+ 242              		.p2align 4,,15
+ 244              	rgb_gray_convert:
+ 245              	.LFB63:
+ 186:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 187:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 188:fltk-1.3.4-1/jpeg/jccolor.c **** /**************** Cases other than RGB -> YCbCr **************/
+ 189:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 190:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 191:fltk-1.3.4-1/jpeg/jccolor.c **** /*
+ 192:fltk-1.3.4-1/jpeg/jccolor.c ****  * Convert some rows of samples to the JPEG colorspace.
+ 193:fltk-1.3.4-1/jpeg/jccolor.c ****  * This version handles RGB->grayscale conversion, which is the same
+ 194:fltk-1.3.4-1/jpeg/jccolor.c ****  * as the RGB->Y portion of RGB->YCbCr.
+ 195:fltk-1.3.4-1/jpeg/jccolor.c ****  * We assume rgb_ycc_start has been called (we only use the Y tables).
+ 196:fltk-1.3.4-1/jpeg/jccolor.c ****  */
+ 197:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 198:fltk-1.3.4-1/jpeg/jccolor.c **** METHODDEF(void)
+ 199:fltk-1.3.4-1/jpeg/jccolor.c **** rgb_gray_convert (j_compress_ptr cinfo,
+ 200:fltk-1.3.4-1/jpeg/jccolor.c **** 		  JSAMPARRAY input_buf, JSAMPIMAGE output_buf,
+ 201:fltk-1.3.4-1/jpeg/jccolor.c **** 		  JDIMENSION output_row, int num_rows)
+ 202:fltk-1.3.4-1/jpeg/jccolor.c **** {
+ 246              		.loc 1 202 0
+ 247              		.cfi_startproc
+ 248              	.LVL25:
+ 249 0000 4154     		pushq	%r12
+ 250              		.cfi_def_cfa_offset 16
+ 251              		.cfi_offset 12, -16
+ 252              	.LVL26:
+ 253 0002 55       		pushq	%rbp
+ 254              		.cfi_def_cfa_offset 24
+ 255              		.cfi_offset 6, -24
+ 256 0003 53       		pushq	%rbx
+ 257              		.cfi_def_cfa_offset 32
+ 258              		.cfi_offset 3, -32
+ 203:fltk-1.3.4-1/jpeg/jccolor.c ****   my_cconvert_ptr cconvert = (my_cconvert_ptr) cinfo->cconvert;
+ 204:fltk-1.3.4-1/jpeg/jccolor.c ****   register INT32 * ctab = cconvert->rgb_ycc_tab;
+ 205:fltk-1.3.4-1/jpeg/jccolor.c ****   register int r, g, b;
+ 206:fltk-1.3.4-1/jpeg/jccolor.c ****   register JSAMPROW inptr;
+ 207:fltk-1.3.4-1/jpeg/jccolor.c ****   register JSAMPROW outptr;
+ 208:fltk-1.3.4-1/jpeg/jccolor.c ****   register JDIMENSION col;
+ 209:fltk-1.3.4-1/jpeg/jccolor.c ****   JDIMENSION num_cols = cinfo->image_width;
+ 259              		.loc 1 209 0
+ 260 0004 448B6730 		movl	48(%rdi), %r12d
+ 204:fltk-1.3.4-1/jpeg/jccolor.c ****   register int r, g, b;
+ 261              		.loc 1 204 0
+ 262 0008 488B8718 		movq	536(%rdi), %rax
+ 262      020000
+ 263 000f 418D6C24 		leal	-1(%r12), %ebp
+ 263      FF
+ 264 0014 4C8B4810 		movq	16(%rax), %r9
+ 265              	.LVL27:
+ 266 0018 4883C501 		addq	$1, %rbp
+ 267              	.LVL28:
+ 210:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 211:fltk-1.3.4-1/jpeg/jccolor.c ****   while (--num_rows >= 0) {
+ 268              		.loc 1 211 0
+ 269 001c 4183E801 		subl	$1, %r8d
+ 270              	.LVL29:
+ 271 0020 7863     		js	.L24
+ 272              	.LVL30:
+ 273              		.p2align 4,,10
+ 274 0022 660F1F44 		.p2align 3
+ 274      0000
+ 275              	.L21:
+ 212:fltk-1.3.4-1/jpeg/jccolor.c ****     inptr = *input_buf++;
+ 213:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr = output_buf[0][output_row++];
+ 276              		.loc 1 213 0
+ 277 0028 488B02   		movq	(%rdx), %rax
+ 278 002b 8D5901   		leal	1(%rcx), %ebx
+ 279 002e 89C9     		movl	%ecx, %ecx
+ 212:fltk-1.3.4-1/jpeg/jccolor.c ****     inptr = *input_buf++;
+ 280              		.loc 1 212 0
+ 281 0030 4883C608 		addq	$8, %rsi
+ 282              	.LVL31:
+ 214:fltk-1.3.4-1/jpeg/jccolor.c ****     for (col = 0; col < num_cols; col++) {
+ 283              		.loc 1 214 0
+ 284 0034 4585E4   		testl	%r12d, %r12d
+ 212:fltk-1.3.4-1/jpeg/jccolor.c ****     inptr = *input_buf++;
+ 285              		.loc 1 212 0
+ 286 0037 488B7EF8 		movq	-8(%rsi), %rdi
+ 287              	.LVL32:
+ 213:fltk-1.3.4-1/jpeg/jccolor.c ****     for (col = 0; col < num_cols; col++) {
+ 288              		.loc 1 213 0
+ 289 003b 488B0CC8 		movq	(%rax,%rcx,8), %rcx
+ 290              	.LVL33:
+ 291 003f 4C8D1C29 		leaq	(%rcx,%rbp), %r11
+ 292              		.loc 1 214 0
+ 293 0043 7438     		je	.L20
+ 294              	.LVL34:
+ 295              		.p2align 4,,10
+ 296 0045 0F1F00   		.p2align 3
+ 297              	.L19:
+ 215:fltk-1.3.4-1/jpeg/jccolor.c ****       r = GETJSAMPLE(inptr[RGB_RED]);
+ 216:fltk-1.3.4-1/jpeg/jccolor.c ****       g = GETJSAMPLE(inptr[RGB_GREEN]);
+ 217:fltk-1.3.4-1/jpeg/jccolor.c ****       b = GETJSAMPLE(inptr[RGB_BLUE]);
+ 218:fltk-1.3.4-1/jpeg/jccolor.c ****       /* Y */
+ 219:fltk-1.3.4-1/jpeg/jccolor.c ****       outptr[col] = (JSAMPLE)
+ 220:fltk-1.3.4-1/jpeg/jccolor.c **** 		((ctab[r+R_Y_OFF] + ctab[g+G_Y_OFF] + ctab[b+B_Y_OFF])
+ 298              		.loc 1 220 0 discriminator 3
+ 299 0048 440FB657 		movzbl	1(%rdi), %r10d
+ 299      01
+ 300 004d 0FB607   		movzbl	(%rdi), %eax
+ 301 0050 4883C101 		addq	$1, %rcx
+ 221:fltk-1.3.4-1/jpeg/jccolor.c **** 		 >> SCALEBITS);
+ 222:fltk-1.3.4-1/jpeg/jccolor.c ****       inptr += RGB_PIXELSIZE;
+ 302              		.loc 1 222 0 discriminator 3
+ 303 0054 4883C703 		addq	$3, %rdi
+ 304              	.LVL35:
+ 219:fltk-1.3.4-1/jpeg/jccolor.c **** 		((ctab[r+R_Y_OFF] + ctab[g+G_Y_OFF] + ctab[b+B_Y_OFF])
+ 305              		.loc 1 219 0 discriminator 3
+ 306 0058 498B04C1 		movq	(%r9,%rax,8), %rax
+ 307 005c 4B0384D1 		addq	2048(%r9,%r10,8), %rax
+ 307      00080000 
+ 220:fltk-1.3.4-1/jpeg/jccolor.c **** 		 >> SCALEBITS);
+ 308              		.loc 1 220 0 discriminator 3
+ 309 0064 440FB657 		movzbl	-1(%rdi), %r10d
+ 309      FF
+ 310              	.LVL36:
+ 219:fltk-1.3.4-1/jpeg/jccolor.c **** 		((ctab[r+R_Y_OFF] + ctab[g+G_Y_OFF] + ctab[b+B_Y_OFF])
+ 311              		.loc 1 219 0 discriminator 3
+ 312 0069 4B0384D1 		addq	4096(%r9,%r10,8), %rax
+ 312      00100000 
+ 313 0071 48C1F810 		sarq	$16, %rax
+ 314 0075 8841FF   		movb	%al, -1(%rcx)
+ 315              	.LVL37:
+ 214:fltk-1.3.4-1/jpeg/jccolor.c ****       r = GETJSAMPLE(inptr[RGB_RED]);
+ 316              		.loc 1 214 0 discriminator 3
+ 317 0078 4939CB   		cmpq	%rcx, %r11
+ 318 007b 75CB     		jne	.L19
+ 319              	.L20:
+ 211:fltk-1.3.4-1/jpeg/jccolor.c ****     inptr = *input_buf++;
+ 320              		.loc 1 211 0
+ 321 007d 4183E801 		subl	$1, %r8d
+ 213:fltk-1.3.4-1/jpeg/jccolor.c ****     for (col = 0; col < num_cols; col++) {
+ 322              		.loc 1 213 0
+ 323 0081 89D9     		movl	%ebx, %ecx
+ 324              	.LVL38:
+ 211:fltk-1.3.4-1/jpeg/jccolor.c ****     inptr = *input_buf++;
+ 325              		.loc 1 211 0
+ 326 0083 79A3     		jns	.L21
+ 327              	.LVL39:
+ 328              	.L24:
+ 223:fltk-1.3.4-1/jpeg/jccolor.c ****     }
+ 224:fltk-1.3.4-1/jpeg/jccolor.c ****   }
+ 225:fltk-1.3.4-1/jpeg/jccolor.c **** }
+ 329              		.loc 1 225 0
+ 330 0085 5B       		popq	%rbx
+ 331              		.cfi_def_cfa_offset 24
+ 332 0086 5D       		popq	%rbp
+ 333              		.cfi_def_cfa_offset 16
+ 334 0087 415C     		popq	%r12
+ 335              		.cfi_def_cfa_offset 8
+ 336              	.LVL40:
+ 337 0089 C3       		ret
+ 338              		.cfi_endproc
+ 339              	.LFE63:
+ 341              		.section	.text.unlikely.rgb_gray_convert
+ 342              	.LCOLDE2:
+ 343              		.section	.text.rgb_gray_convert
+ 344              	.LHOTE2:
+ 345              		.section	.text.unlikely.cmyk_ycck_convert,"ax",@progbits
+ 346              	.LCOLDB3:
+ 347              		.section	.text.cmyk_ycck_convert,"ax",@progbits
+ 348              	.LHOTB3:
+ 349              		.p2align 4,,15
+ 351              	cmyk_ycck_convert:
+ 352              	.LFB64:
+ 226:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 227:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 228:fltk-1.3.4-1/jpeg/jccolor.c **** /*
+ 229:fltk-1.3.4-1/jpeg/jccolor.c ****  * Convert some rows of samples to the JPEG colorspace.
+ 230:fltk-1.3.4-1/jpeg/jccolor.c ****  * This version handles Adobe-style CMYK->YCCK conversion,
+ 231:fltk-1.3.4-1/jpeg/jccolor.c ****  * where we convert R=1-C, G=1-M, and B=1-Y to YCbCr using the same
+ 232:fltk-1.3.4-1/jpeg/jccolor.c ****  * conversion as above, while passing K (black) unchanged.
+ 233:fltk-1.3.4-1/jpeg/jccolor.c ****  * We assume rgb_ycc_start has been called.
+ 234:fltk-1.3.4-1/jpeg/jccolor.c ****  */
+ 235:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 236:fltk-1.3.4-1/jpeg/jccolor.c **** METHODDEF(void)
+ 237:fltk-1.3.4-1/jpeg/jccolor.c **** cmyk_ycck_convert (j_compress_ptr cinfo,
+ 238:fltk-1.3.4-1/jpeg/jccolor.c **** 		   JSAMPARRAY input_buf, JSAMPIMAGE output_buf,
+ 239:fltk-1.3.4-1/jpeg/jccolor.c **** 		   JDIMENSION output_row, int num_rows)
+ 240:fltk-1.3.4-1/jpeg/jccolor.c **** {
+ 353              		.loc 1 240 0
+ 354              		.cfi_startproc
+ 355              	.LVL41:
+ 356 0000 4157     		pushq	%r15
+ 357              		.cfi_def_cfa_offset 16
+ 358              		.cfi_offset 15, -16
+ 359              	.LVL42:
+ 360 0002 4156     		pushq	%r14
+ 361              		.cfi_def_cfa_offset 24
+ 362              		.cfi_offset 14, -24
+ 241:fltk-1.3.4-1/jpeg/jccolor.c ****   my_cconvert_ptr cconvert = (my_cconvert_ptr) cinfo->cconvert;
+ 242:fltk-1.3.4-1/jpeg/jccolor.c ****   register INT32 * ctab = cconvert->rgb_ycc_tab;
+ 243:fltk-1.3.4-1/jpeg/jccolor.c ****   register int r, g, b;
+ 244:fltk-1.3.4-1/jpeg/jccolor.c ****   register JSAMPROW inptr;
+ 245:fltk-1.3.4-1/jpeg/jccolor.c ****   register JSAMPROW outptr0, outptr1, outptr2, outptr3;
+ 246:fltk-1.3.4-1/jpeg/jccolor.c ****   register JDIMENSION col;
+ 247:fltk-1.3.4-1/jpeg/jccolor.c ****   JDIMENSION num_cols = cinfo->image_width;
+ 248:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 249:fltk-1.3.4-1/jpeg/jccolor.c ****   while (--num_rows >= 0) {
+ 250:fltk-1.3.4-1/jpeg/jccolor.c ****     inptr = *input_buf++;
+ 251:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr0 = output_buf[0][output_row];
+ 252:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr1 = output_buf[1][output_row];
+ 253:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr2 = output_buf[2][output_row];
+ 254:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr3 = output_buf[3][output_row];
+ 255:fltk-1.3.4-1/jpeg/jccolor.c ****     output_row++;
+ 256:fltk-1.3.4-1/jpeg/jccolor.c ****     for (col = 0; col < num_cols; col++) {
+ 257:fltk-1.3.4-1/jpeg/jccolor.c ****       r = MAXJSAMPLE - GETJSAMPLE(inptr[0]);
+ 363              		.loc 1 257 0
+ 364 0004 41B9FF00 		movl	$255, %r9d
+ 364      0000
+ 240:fltk-1.3.4-1/jpeg/jccolor.c ****   my_cconvert_ptr cconvert = (my_cconvert_ptr) cinfo->cconvert;
+ 365              		.loc 1 240 0
+ 366 000a 4155     		pushq	%r13
+ 367              		.cfi_def_cfa_offset 32
+ 368              		.cfi_offset 13, -32
+ 369 000c 4154     		pushq	%r12
+ 370              		.cfi_def_cfa_offset 40
+ 371              		.cfi_offset 12, -40
+ 372 000e 55       		pushq	%rbp
+ 373              		.cfi_def_cfa_offset 48
+ 374              		.cfi_offset 6, -48
+ 375 000f 53       		pushq	%rbx
+ 376              		.cfi_def_cfa_offset 56
+ 377              		.cfi_offset 3, -56
+ 242:fltk-1.3.4-1/jpeg/jccolor.c ****   register int r, g, b;
+ 378              		.loc 1 242 0
+ 379 0010 488B8718 		movq	536(%rdi), %rax
+ 379      020000
+ 247:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 380              		.loc 1 247 0
+ 381 0017 8B6F30   		movl	48(%rdi), %ebp
+ 240:fltk-1.3.4-1/jpeg/jccolor.c ****   my_cconvert_ptr cconvert = (my_cconvert_ptr) cinfo->cconvert;
+ 382              		.loc 1 240 0
+ 383 001a 48897424 		movq	%rsi, -24(%rsp)
+ 383      E8
+ 384 001f 48895424 		movq	%rdx, -8(%rsp)
+ 384      F8
+ 385 0024 894C24F0 		movl	%ecx, -16(%rsp)
+ 386 0028 44894424 		movl	%r8d, -12(%rsp)
+ 386      F4
+ 242:fltk-1.3.4-1/jpeg/jccolor.c ****   register int r, g, b;
+ 387              		.loc 1 242 0
+ 388 002d 488B4010 		movq	16(%rax), %rax
+ 389              	.LVL43:
+ 390              	.L26:
+ 249:fltk-1.3.4-1/jpeg/jccolor.c ****     inptr = *input_buf++;
+ 391              		.loc 1 249 0
+ 392 0031 836C24F4 		subl	$1, -12(%rsp)
+ 392      01
+ 393              	.LVL44:
+ 394 0036 0F881601 		js	.L34
+ 394      0000
+ 395 003c 0F1F4000 		.p2align 4,,10
+ 396              		.p2align 3
+ 397              	.L30:
+ 251:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr1 = output_buf[1][output_row];
+ 398              		.loc 1 251 0
+ 399 0040 488B5C24 		movq	-8(%rsp), %rbx
+ 399      F8
+ 400 0045 8B7424F0 		movl	-16(%rsp), %esi
+ 250:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr0 = output_buf[0][output_row];
+ 401              		.loc 1 250 0
+ 402 0049 48834424 		addq	$8, -24(%rsp)
+ 402      E808
+ 403 004f 488B7C24 		movq	-24(%rsp), %rdi
+ 403      E8
+ 404              	.LVL45:
+ 251:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr1 = output_buf[1][output_row];
+ 405              		.loc 1 251 0
+ 406 0054 488B0B   		movq	(%rbx), %rcx
+ 407 0057 89F2     		movl	%esi, %edx
+ 250:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr0 = output_buf[0][output_row];
+ 408              		.loc 1 250 0
+ 409 0059 488B7FF8 		movq	-8(%rdi), %rdi
+ 410              	.LVL46:
+ 251:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr1 = output_buf[1][output_row];
+ 411              		.loc 1 251 0
+ 412 005d 4C8B3CD1 		movq	(%rcx,%rdx,8), %r15
+ 413              	.LVL47:
+ 252:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr2 = output_buf[2][output_row];
+ 414              		.loc 1 252 0
+ 415 0061 488B4B08 		movq	8(%rbx), %rcx
+ 416 0065 4C8B34D1 		movq	(%rcx,%rdx,8), %r14
+ 417              	.LVL48:
+ 253:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr3 = output_buf[3][output_row];
+ 418              		.loc 1 253 0
+ 419 0069 488B4B10 		movq	16(%rbx), %rcx
+ 420 006d 4C8B2CD1 		movq	(%rcx,%rdx,8), %r13
+ 421              	.LVL49:
+ 254:fltk-1.3.4-1/jpeg/jccolor.c ****     output_row++;
+ 422              		.loc 1 254 0
+ 423 0071 488B4B18 		movq	24(%rbx), %rcx
+ 424 0075 4C8B24D1 		movq	(%rcx,%rdx,8), %r12
+ 425              	.LVL50:
+ 255:fltk-1.3.4-1/jpeg/jccolor.c ****     for (col = 0; col < num_cols; col++) {
+ 426              		.loc 1 255 0
+ 427 0079 89F1     		movl	%esi, %ecx
+ 428 007b 83C101   		addl	$1, %ecx
+ 429 007e 894C24F0 		movl	%ecx, -16(%rsp)
+ 430              	.LVL51:
+ 256:fltk-1.3.4-1/jpeg/jccolor.c ****       r = MAXJSAMPLE - GETJSAMPLE(inptr[0]);
+ 431              		.loc 1 256 0
+ 432 0082 31C9     		xorl	%ecx, %ecx
+ 433              	.LVL52:
+ 434 0084 85ED     		testl	%ebp, %ebp
+ 435 0086 74A9     		je	.L26
+ 436              	.LVL53:
+ 437 0088 0F1F8400 		.p2align 4,,10
+ 437      00000000 
+ 438              		.p2align 3
+ 439              	.L31:
+ 440              		.loc 1 257 0 discriminator 3
+ 441 0090 0FB617   		movzbl	(%rdi), %edx
+ 442 0093 4489CB   		movl	%r9d, %ebx
+ 258:fltk-1.3.4-1/jpeg/jccolor.c ****       g = MAXJSAMPLE - GETJSAMPLE(inptr[1]);
+ 443              		.loc 1 258 0 discriminator 3
+ 444 0096 4489CE   		movl	%r9d, %esi
+ 259:fltk-1.3.4-1/jpeg/jccolor.c ****       b = MAXJSAMPLE - GETJSAMPLE(inptr[2]);
+ 445              		.loc 1 259 0 discriminator 3
+ 446 0099 4589CB   		movl	%r9d, %r11d
+ 260:fltk-1.3.4-1/jpeg/jccolor.c ****       /* K passes through as-is */
+ 261:fltk-1.3.4-1/jpeg/jccolor.c ****       outptr3[col] = inptr[3];	/* don't need GETJSAMPLE here */
+ 262:fltk-1.3.4-1/jpeg/jccolor.c ****       /* If the inputs are 0..MAXJSAMPLE, the outputs of these equations
+ 263:fltk-1.3.4-1/jpeg/jccolor.c ****        * must be too; we do not need an explicit range-limiting operation.
+ 264:fltk-1.3.4-1/jpeg/jccolor.c ****        * Hence the value being shifted is never negative, and we don't
+ 265:fltk-1.3.4-1/jpeg/jccolor.c ****        * need the general RIGHT_SHIFT macro.
+ 266:fltk-1.3.4-1/jpeg/jccolor.c ****        */
+ 267:fltk-1.3.4-1/jpeg/jccolor.c ****       /* Y */
+ 268:fltk-1.3.4-1/jpeg/jccolor.c ****       outptr0[col] = (JSAMPLE)
+ 269:fltk-1.3.4-1/jpeg/jccolor.c **** 		((ctab[r+R_Y_OFF] + ctab[g+G_Y_OFF] + ctab[b+B_Y_OFF])
+ 270:fltk-1.3.4-1/jpeg/jccolor.c **** 		 >> SCALEBITS);
+ 271:fltk-1.3.4-1/jpeg/jccolor.c ****       /* Cb */
+ 272:fltk-1.3.4-1/jpeg/jccolor.c ****       outptr1[col] = (JSAMPLE)
+ 273:fltk-1.3.4-1/jpeg/jccolor.c **** 		((ctab[r+R_CB_OFF] + ctab[g+G_CB_OFF] + ctab[b+B_CB_OFF])
+ 274:fltk-1.3.4-1/jpeg/jccolor.c **** 		 >> SCALEBITS);
+ 275:fltk-1.3.4-1/jpeg/jccolor.c ****       /* Cr */
+ 276:fltk-1.3.4-1/jpeg/jccolor.c ****       outptr2[col] = (JSAMPLE)
+ 277:fltk-1.3.4-1/jpeg/jccolor.c **** 		((ctab[r+R_CR_OFF] + ctab[g+G_CR_OFF] + ctab[b+B_CR_OFF])
+ 278:fltk-1.3.4-1/jpeg/jccolor.c **** 		 >> SCALEBITS);
+ 279:fltk-1.3.4-1/jpeg/jccolor.c ****       inptr += 4;
+ 447              		.loc 1 279 0 discriminator 3
+ 448 009c 4883C704 		addq	$4, %rdi
+ 449              	.LVL54:
+ 257:fltk-1.3.4-1/jpeg/jccolor.c ****       g = MAXJSAMPLE - GETJSAMPLE(inptr[1]);
+ 450              		.loc 1 257 0 discriminator 3
+ 451 00a0 29D3     		subl	%edx, %ebx
+ 452              	.LVL55:
+ 258:fltk-1.3.4-1/jpeg/jccolor.c ****       b = MAXJSAMPLE - GETJSAMPLE(inptr[2]);
+ 453              		.loc 1 258 0 discriminator 3
+ 454 00a2 0FB657FD 		movzbl	-3(%rdi), %edx
+ 269:fltk-1.3.4-1/jpeg/jccolor.c **** 		 >> SCALEBITS);
+ 455              		.loc 1 269 0 discriminator 3
+ 456 00a6 4863DB   		movslq	%ebx, %rbx
+ 457 00a9 4C8D04DD 		leaq	0(,%rbx,8), %r8
+ 457      00000000 
+ 258:fltk-1.3.4-1/jpeg/jccolor.c ****       b = MAXJSAMPLE - GETJSAMPLE(inptr[2]);
+ 458              		.loc 1 258 0 discriminator 3
+ 459 00b1 29D6     		subl	%edx, %esi
+ 460 00b3 4863D6   		movslq	%esi, %rdx
+ 461              	.LVL56:
+ 259:fltk-1.3.4-1/jpeg/jccolor.c ****       /* K passes through as-is */
+ 462              		.loc 1 259 0 discriminator 3
+ 463 00b6 0FB677FE 		movzbl	-2(%rdi), %esi
+ 269:fltk-1.3.4-1/jpeg/jccolor.c **** 		 >> SCALEBITS);
+ 464              		.loc 1 269 0 discriminator 3
+ 465 00ba 4881C200 		addq	$256, %rdx
+ 465      010000
+ 466              	.LVL57:
+ 467 00c1 4C8D14D5 		leaq	0(,%rdx,8), %r10
+ 467      00000000 
+ 259:fltk-1.3.4-1/jpeg/jccolor.c ****       /* K passes through as-is */
+ 468              		.loc 1 259 0 discriminator 3
+ 469 00c9 4129F3   		subl	%esi, %r11d
+ 470              	.LVL58:
+ 261:fltk-1.3.4-1/jpeg/jccolor.c ****       /* If the inputs are 0..MAXJSAMPLE, the outputs of these equations
+ 471              		.loc 1 261 0 discriminator 3
+ 472 00cc 0FB677FF 		movzbl	-1(%rdi), %esi
+ 473              	.LVL59:
+ 269:fltk-1.3.4-1/jpeg/jccolor.c **** 		 >> SCALEBITS);
+ 474              		.loc 1 269 0 discriminator 3
+ 475 00d0 4D63DB   		movslq	%r11d, %r11
+ 476 00d3 4981C300 		addq	$512, %r11
+ 476      020000
+ 477              	.LVL60:
+ 261:fltk-1.3.4-1/jpeg/jccolor.c ****       /* If the inputs are 0..MAXJSAMPLE, the outputs of these equations
+ 478              		.loc 1 261 0 discriminator 3
+ 479 00da 4188340C 		movb	%sil, (%r12,%rcx)
+ 268:fltk-1.3.4-1/jpeg/jccolor.c **** 		((ctab[r+R_Y_OFF] + ctab[g+G_Y_OFF] + ctab[b+B_Y_OFF])
+ 480              		.loc 1 268 0 discriminator 3
+ 481 00de 488B14D0 		movq	(%rax,%rdx,8), %rdx
+ 482              	.LVL61:
+ 269:fltk-1.3.4-1/jpeg/jccolor.c **** 		 >> SCALEBITS);
+ 483              		.loc 1 269 0 discriminator 3
+ 484 00e2 4A8D34DD 		leaq	0(,%r11,8), %rsi
+ 484      00000000 
+ 268:fltk-1.3.4-1/jpeg/jccolor.c **** 		((ctab[r+R_Y_OFF] + ctab[g+G_Y_OFF] + ctab[b+B_Y_OFF])
+ 485              		.loc 1 268 0 discriminator 3
+ 486 00ea 480314D8 		addq	(%rax,%rbx,8), %rdx
+ 487 00ee 4A0314D8 		addq	(%rax,%r11,8), %rdx
+ 488 00f2 48C1FA10 		sarq	$16, %rdx
+ 489 00f6 4188140F 		movb	%dl, (%r15,%rcx)
+ 272:fltk-1.3.4-1/jpeg/jccolor.c **** 		((ctab[r+R_CB_OFF] + ctab[g+G_CB_OFF] + ctab[b+B_CB_OFF])
+ 490              		.loc 1 272 0 discriminator 3
+ 491 00fa 4A8B9410 		movq	6144(%rax,%r10), %rdx
+ 491      00180000 
+ 492 0102 4A039400 		addq	6144(%rax,%r8), %rdx
+ 492      00180000 
+ 493 010a 48039430 		addq	6144(%rax,%rsi), %rdx
+ 493      00180000 
+ 494 0112 48C1FA10 		sarq	$16, %rdx
+ 495 0116 4188140E 		movb	%dl, (%r14,%rcx)
+ 276:fltk-1.3.4-1/jpeg/jccolor.c **** 		((ctab[r+R_CR_OFF] + ctab[g+G_CR_OFF] + ctab[b+B_CR_OFF])
+ 496              		.loc 1 276 0 discriminator 3
+ 497 011a 4A8B9410 		movq	10240(%rax,%r10), %rdx
+ 497      00280000 
+ 498 0122 4A039400 		addq	10240(%rax,%r8), %rdx
+ 498      00280000 
+ 499 012a 48039430 		addq	10240(%rax,%rsi), %rdx
+ 499      00280000 
+ 500 0132 48C1FA10 		sarq	$16, %rdx
+ 501 0136 4188540D 		movb	%dl, 0(%r13,%rcx)
+ 501      00
+ 502 013b 4883C101 		addq	$1, %rcx
+ 503              	.LVL62:
+ 256:fltk-1.3.4-1/jpeg/jccolor.c ****       r = MAXJSAMPLE - GETJSAMPLE(inptr[0]);
+ 504              		.loc 1 256 0 discriminator 3
+ 505 013f 39CD     		cmpl	%ecx, %ebp
+ 506 0141 0F8749FF 		ja	.L31
+ 506      FFFF
+ 507              	.LVL63:
+ 249:fltk-1.3.4-1/jpeg/jccolor.c ****     inptr = *input_buf++;
+ 508              		.loc 1 249 0
+ 509 0147 836C24F4 		subl	$1, -12(%rsp)
+ 509      01
+ 510              	.LVL64:
+ 511 014c 0F89EEFE 		jns	.L30
+ 511      FFFF
+ 512              	.LVL65:
+ 513              	.L34:
+ 280:fltk-1.3.4-1/jpeg/jccolor.c ****     }
+ 281:fltk-1.3.4-1/jpeg/jccolor.c ****   }
+ 282:fltk-1.3.4-1/jpeg/jccolor.c **** }
+ 514              		.loc 1 282 0
+ 515 0152 5B       		popq	%rbx
+ 516              		.cfi_def_cfa_offset 48
+ 517              	.LVL66:
+ 518 0153 5D       		popq	%rbp
+ 519              		.cfi_def_cfa_offset 40
+ 520              	.LVL67:
+ 521 0154 415C     		popq	%r12
+ 522              		.cfi_def_cfa_offset 32
+ 523 0156 415D     		popq	%r13
+ 524              		.cfi_def_cfa_offset 24
+ 525 0158 415E     		popq	%r14
+ 526              		.cfi_def_cfa_offset 16
+ 527 015a 415F     		popq	%r15
+ 528              		.cfi_def_cfa_offset 8
+ 529 015c C3       		ret
+ 530              		.cfi_endproc
+ 531              	.LFE64:
+ 533              		.section	.text.unlikely.cmyk_ycck_convert
+ 534              	.LCOLDE3:
+ 535              		.section	.text.cmyk_ycck_convert
+ 536              	.LHOTE3:
+ 537              		.section	.text.unlikely.rgb_rgb1_convert,"ax",@progbits
+ 538              	.LCOLDB4:
+ 539              		.section	.text.rgb_rgb1_convert,"ax",@progbits
+ 540              	.LHOTB4:
+ 541              		.p2align 4,,15
+ 543              	rgb_rgb1_convert:
+ 544              	.LFB65:
+ 283:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 284:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 285:fltk-1.3.4-1/jpeg/jccolor.c **** /*
+ 286:fltk-1.3.4-1/jpeg/jccolor.c ****  * Convert some rows of samples to the JPEG colorspace.
+ 287:fltk-1.3.4-1/jpeg/jccolor.c ****  * [R,G,B] to [R-G,G,B-G] conversion with modulo calculation
+ 288:fltk-1.3.4-1/jpeg/jccolor.c ****  * (forward reversible color transform).
+ 289:fltk-1.3.4-1/jpeg/jccolor.c ****  * This can be seen as an adaption of the general RGB->YCbCr
+ 290:fltk-1.3.4-1/jpeg/jccolor.c ****  * conversion equation with Kr = Kb = 0, while replacing the
+ 291:fltk-1.3.4-1/jpeg/jccolor.c ****  * normalization by modulo calculation.
+ 292:fltk-1.3.4-1/jpeg/jccolor.c ****  */
+ 293:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 294:fltk-1.3.4-1/jpeg/jccolor.c **** METHODDEF(void)
+ 295:fltk-1.3.4-1/jpeg/jccolor.c **** rgb_rgb1_convert (j_compress_ptr cinfo,
+ 296:fltk-1.3.4-1/jpeg/jccolor.c **** 		  JSAMPARRAY input_buf, JSAMPIMAGE output_buf,
+ 297:fltk-1.3.4-1/jpeg/jccolor.c **** 		  JDIMENSION output_row, int num_rows)
+ 298:fltk-1.3.4-1/jpeg/jccolor.c **** {
+ 545              		.loc 1 298 0
+ 546              		.cfi_startproc
+ 547              	.LVL68:
+ 548 0000 4155     		pushq	%r13
+ 549              		.cfi_def_cfa_offset 16
+ 550              		.cfi_offset 13, -16
+ 551 0002 4154     		pushq	%r12
+ 552              		.cfi_def_cfa_offset 24
+ 553              		.cfi_offset 12, -24
+ 554 0004 55       		pushq	%rbp
+ 555              		.cfi_def_cfa_offset 32
+ 556              		.cfi_offset 6, -32
+ 557 0005 53       		pushq	%rbx
+ 558              		.cfi_def_cfa_offset 40
+ 559              		.cfi_offset 3, -40
+ 299:fltk-1.3.4-1/jpeg/jccolor.c ****   register int r, g, b;
+ 300:fltk-1.3.4-1/jpeg/jccolor.c ****   register JSAMPROW inptr;
+ 301:fltk-1.3.4-1/jpeg/jccolor.c ****   register JSAMPROW outptr0, outptr1, outptr2;
+ 302:fltk-1.3.4-1/jpeg/jccolor.c ****   register JDIMENSION col;
+ 303:fltk-1.3.4-1/jpeg/jccolor.c ****   JDIMENSION num_cols = cinfo->image_width;
+ 560              		.loc 1 303 0
+ 561 0006 448B5F30 		movl	48(%rdi), %r11d
+ 562              	.LVL69:
+ 563              	.L36:
+ 304:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 305:fltk-1.3.4-1/jpeg/jccolor.c ****   while (--num_rows >= 0) {
+ 564              		.loc 1 305 0
+ 565 000a 4183E801 		subl	$1, %r8d
+ 566              	.LVL70:
+ 567 000e 786B     		js	.L44
+ 568              		.p2align 4,,10
+ 569              		.p2align 3
+ 570              	.L40:
+ 306:fltk-1.3.4-1/jpeg/jccolor.c ****     inptr = *input_buf++;
+ 307:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr0 = output_buf[0][output_row];
+ 571              		.loc 1 307 0
+ 572 0010 488B3A   		movq	(%rdx), %rdi
+ 573 0013 89C8     		movl	%ecx, %eax
+ 306:fltk-1.3.4-1/jpeg/jccolor.c ****     inptr = *input_buf++;
+ 574              		.loc 1 306 0
+ 575 0015 4883C608 		addq	$8, %rsi
+ 576              	.LVL71:
+ 308:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr1 = output_buf[1][output_row];
+ 309:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr2 = output_buf[2][output_row];
+ 310:fltk-1.3.4-1/jpeg/jccolor.c ****     output_row++;
+ 577              		.loc 1 310 0
+ 578 0019 83C101   		addl	$1, %ecx
+ 579              	.LVL72:
+ 306:fltk-1.3.4-1/jpeg/jccolor.c ****     inptr = *input_buf++;
+ 580              		.loc 1 306 0
+ 581 001c 4C8B56F8 		movq	-8(%rsi), %r10
+ 582              	.LVL73:
+ 307:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr1 = output_buf[1][output_row];
+ 583              		.loc 1 307 0
+ 584 0020 4C8B24C7 		movq	(%rdi,%rax,8), %r12
+ 585              	.LVL74:
+ 308:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr1 = output_buf[1][output_row];
+ 586              		.loc 1 308 0
+ 587 0024 488B7A08 		movq	8(%rdx), %rdi
+ 588 0028 488B2CC7 		movq	(%rdi,%rax,8), %rbp
+ 589              	.LVL75:
+ 309:fltk-1.3.4-1/jpeg/jccolor.c ****     output_row++;
+ 590              		.loc 1 309 0
+ 591 002c 488B7A10 		movq	16(%rdx), %rdi
+ 592 0030 488B1CC7 		movq	(%rdi,%rax,8), %rbx
+ 593              	.LVL76:
+ 311:fltk-1.3.4-1/jpeg/jccolor.c ****     for (col = 0; col < num_cols; col++) {
+ 594              		.loc 1 311 0
+ 595 0034 31C0     		xorl	%eax, %eax
+ 596 0036 4585DB   		testl	%r11d, %r11d
+ 597 0039 74CF     		je	.L36
+ 598              	.LVL77:
+ 599 003b 0F1F4400 		.p2align 4,,10
+ 599      00
+ 600              		.p2align 3
+ 601              	.L41:
+ 312:fltk-1.3.4-1/jpeg/jccolor.c ****       r = GETJSAMPLE(inptr[RGB_RED]);
+ 313:fltk-1.3.4-1/jpeg/jccolor.c ****       g = GETJSAMPLE(inptr[RGB_GREEN]);
+ 314:fltk-1.3.4-1/jpeg/jccolor.c ****       b = GETJSAMPLE(inptr[RGB_BLUE]);
+ 602              		.loc 1 314 0 discriminator 3
+ 603 0040 410FB67A 		movzbl	2(%r10), %edi
+ 603      02
+ 315:fltk-1.3.4-1/jpeg/jccolor.c ****       /* Assume that MAXJSAMPLE+1 is a power of 2, so that the MOD
+ 316:fltk-1.3.4-1/jpeg/jccolor.c ****        * (modulo) operator is equivalent to the bitmask operator AND.
+ 317:fltk-1.3.4-1/jpeg/jccolor.c ****        */
+ 318:fltk-1.3.4-1/jpeg/jccolor.c ****       outptr0[col] = (JSAMPLE) ((r - g + CENTERJSAMPLE) & MAXJSAMPLE);
+ 604              		.loc 1 318 0 discriminator 3
+ 605 0045 450FB60A 		movzbl	(%r10), %r9d
+ 319:fltk-1.3.4-1/jpeg/jccolor.c ****       outptr1[col] = (JSAMPLE) g;
+ 320:fltk-1.3.4-1/jpeg/jccolor.c ****       outptr2[col] = (JSAMPLE) ((b - g + CENTERJSAMPLE) & MAXJSAMPLE);
+ 321:fltk-1.3.4-1/jpeg/jccolor.c ****       inptr += RGB_PIXELSIZE;
+ 606              		.loc 1 321 0 discriminator 3
+ 607 0049 4983C203 		addq	$3, %r10
+ 608              	.LVL78:
+ 313:fltk-1.3.4-1/jpeg/jccolor.c ****       b = GETJSAMPLE(inptr[RGB_BLUE]);
+ 609              		.loc 1 313 0 discriminator 3
+ 610 004d 450FB66A 		movzbl	-2(%r10), %r13d
+ 610      FE
+ 611              	.LVL79:
+ 318:fltk-1.3.4-1/jpeg/jccolor.c ****       outptr1[col] = (JSAMPLE) g;
+ 612              		.loc 1 318 0 discriminator 3
+ 613 0052 4183C180 		addl	$-128, %r9d
+ 614              	.LVL80:
+ 320:fltk-1.3.4-1/jpeg/jccolor.c ****       inptr += RGB_PIXELSIZE;
+ 615              		.loc 1 320 0 discriminator 3
+ 616 0056 83C780   		addl	$-128, %edi
+ 617              	.LVL81:
+ 318:fltk-1.3.4-1/jpeg/jccolor.c ****       outptr1[col] = (JSAMPLE) g;
+ 618              		.loc 1 318 0 discriminator 3
+ 619 0059 4529E9   		subl	%r13d, %r9d
+ 320:fltk-1.3.4-1/jpeg/jccolor.c ****       inptr += RGB_PIXELSIZE;
+ 620              		.loc 1 320 0 discriminator 3
+ 621 005c 4429EF   		subl	%r13d, %edi
+ 318:fltk-1.3.4-1/jpeg/jccolor.c ****       outptr1[col] = (JSAMPLE) g;
+ 622              		.loc 1 318 0 discriminator 3
+ 623 005f 45880C04 		movb	%r9b, (%r12,%rax)
+ 624              	.LVL82:
+ 319:fltk-1.3.4-1/jpeg/jccolor.c ****       outptr2[col] = (JSAMPLE) ((b - g + CENTERJSAMPLE) & MAXJSAMPLE);
+ 625              		.loc 1 319 0 discriminator 3
+ 626 0063 44886C05 		movb	%r13b, 0(%rbp,%rax)
+ 626      00
+ 320:fltk-1.3.4-1/jpeg/jccolor.c ****       inptr += RGB_PIXELSIZE;
+ 627              		.loc 1 320 0 discriminator 3
+ 628 0068 40883C03 		movb	%dil, (%rbx,%rax)
+ 629 006c 4883C001 		addq	$1, %rax
+ 630              	.LVL83:
+ 311:fltk-1.3.4-1/jpeg/jccolor.c ****       r = GETJSAMPLE(inptr[RGB_RED]);
+ 631              		.loc 1 311 0 discriminator 3
+ 632 0070 4139C3   		cmpl	%eax, %r11d
+ 633 0073 77CB     		ja	.L41
+ 634              	.LVL84:
+ 305:fltk-1.3.4-1/jpeg/jccolor.c ****     inptr = *input_buf++;
+ 635              		.loc 1 305 0
+ 636 0075 4183E801 		subl	$1, %r8d
+ 637              	.LVL85:
+ 638 0079 7995     		jns	.L40
+ 639              	.LVL86:
+ 640              	.L44:
+ 322:fltk-1.3.4-1/jpeg/jccolor.c ****     }
+ 323:fltk-1.3.4-1/jpeg/jccolor.c ****   }
+ 324:fltk-1.3.4-1/jpeg/jccolor.c **** }
+ 641              		.loc 1 324 0
+ 642 007b 5B       		popq	%rbx
+ 643              		.cfi_def_cfa_offset 32
+ 644 007c 5D       		popq	%rbp
+ 645              		.cfi_def_cfa_offset 24
+ 646 007d 415C     		popq	%r12
+ 647              		.cfi_def_cfa_offset 16
+ 648 007f 415D     		popq	%r13
+ 649              		.cfi_def_cfa_offset 8
+ 650 0081 C3       		ret
+ 651              		.cfi_endproc
+ 652              	.LFE65:
+ 654              		.section	.text.unlikely.rgb_rgb1_convert
+ 655              	.LCOLDE4:
+ 656              		.section	.text.rgb_rgb1_convert
+ 657              	.LHOTE4:
+ 658              		.section	.text.unlikely.grayscale_convert,"ax",@progbits
+ 659              	.LCOLDB5:
+ 660              		.section	.text.grayscale_convert,"ax",@progbits
+ 661              	.LHOTB5:
+ 662              		.p2align 4,,15
+ 664              	grayscale_convert:
+ 665              	.LFB66:
+ 325:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 326:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 327:fltk-1.3.4-1/jpeg/jccolor.c **** /*
+ 328:fltk-1.3.4-1/jpeg/jccolor.c ****  * Convert some rows of samples to the JPEG colorspace.
+ 329:fltk-1.3.4-1/jpeg/jccolor.c ****  * This version handles grayscale output with no conversion.
+ 330:fltk-1.3.4-1/jpeg/jccolor.c ****  * The source can be either plain grayscale or YCC (since Y == gray).
+ 331:fltk-1.3.4-1/jpeg/jccolor.c ****  */
+ 332:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 333:fltk-1.3.4-1/jpeg/jccolor.c **** METHODDEF(void)
+ 334:fltk-1.3.4-1/jpeg/jccolor.c **** grayscale_convert (j_compress_ptr cinfo,
+ 335:fltk-1.3.4-1/jpeg/jccolor.c **** 		   JSAMPARRAY input_buf, JSAMPIMAGE output_buf,
+ 336:fltk-1.3.4-1/jpeg/jccolor.c **** 		   JDIMENSION output_row, int num_rows)
+ 337:fltk-1.3.4-1/jpeg/jccolor.c **** {
+ 666              		.loc 1 337 0
+ 667              		.cfi_startproc
+ 668              	.LVL87:
+ 669 0000 55       		pushq	%rbp
+ 670              		.cfi_def_cfa_offset 16
+ 671              		.cfi_offset 6, -16
+ 672              	.LVL88:
+ 673 0001 53       		pushq	%rbx
+ 674              		.cfi_def_cfa_offset 24
+ 675              		.cfi_offset 3, -24
+ 338:fltk-1.3.4-1/jpeg/jccolor.c ****   int instride = cinfo->input_components;
+ 339:fltk-1.3.4-1/jpeg/jccolor.c ****   register JSAMPROW inptr;
+ 340:fltk-1.3.4-1/jpeg/jccolor.c ****   register JSAMPROW outptr;
+ 341:fltk-1.3.4-1/jpeg/jccolor.c ****   register JDIMENSION col;
+ 342:fltk-1.3.4-1/jpeg/jccolor.c ****   JDIMENSION num_cols = cinfo->image_width;
+ 676              		.loc 1 342 0
+ 677 0002 8B6F30   		movl	48(%rdi), %ebp
+ 678              	.LVL89:
+ 679 0005 4C635738 		movslq	56(%rdi), %r10
+ 680 0009 8D5DFF   		leal	-1(%rbp), %ebx
+ 681 000c 4883C301 		addq	$1, %rbx
+ 682              	.LVL90:
+ 343:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 344:fltk-1.3.4-1/jpeg/jccolor.c ****   while (--num_rows >= 0) {
+ 683              		.loc 1 344 0
+ 684 0010 4183E801 		subl	$1, %r8d
+ 685              	.LVL91:
+ 686 0014 7845     		js	.L53
+ 687              	.LVL92:
+ 688 0016 662E0F1F 		.p2align 4,,10
+ 688      84000000 
+ 688      0000
+ 689              		.p2align 3
+ 690              	.L50:
+ 345:fltk-1.3.4-1/jpeg/jccolor.c ****     inptr = *input_buf++;
+ 346:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr = output_buf[0][output_row++];
+ 691              		.loc 1 346 0
+ 692 0020 488B02   		movq	(%rdx), %rax
+ 693 0023 448D5901 		leal	1(%rcx), %r11d
+ 694 0027 89C9     		movl	%ecx, %ecx
+ 345:fltk-1.3.4-1/jpeg/jccolor.c ****     inptr = *input_buf++;
+ 695              		.loc 1 345 0
+ 696 0029 4883C608 		addq	$8, %rsi
+ 697              	.LVL93:
+ 347:fltk-1.3.4-1/jpeg/jccolor.c ****     for (col = 0; col < num_cols; col++) {
+ 698              		.loc 1 347 0
+ 699 002d 85ED     		testl	%ebp, %ebp
+ 345:fltk-1.3.4-1/jpeg/jccolor.c ****     inptr = *input_buf++;
+ 700              		.loc 1 345 0
+ 701 002f 488B7EF8 		movq	-8(%rsi), %rdi
+ 702              	.LVL94:
+ 346:fltk-1.3.4-1/jpeg/jccolor.c ****     for (col = 0; col < num_cols; col++) {
+ 703              		.loc 1 346 0
+ 704 0033 488B04C8 		movq	(%rax,%rcx,8), %rax
+ 705              	.LVL95:
+ 706 0037 4C8D0C18 		leaq	(%rax,%rbx), %r9
+ 707              		.loc 1 347 0
+ 708 003b 7415     		je	.L49
+ 709              	.LVL96:
+ 710 003d 0F1F00   		.p2align 4,,10
+ 711              		.p2align 3
+ 712              	.L48:
+ 348:fltk-1.3.4-1/jpeg/jccolor.c ****       outptr[col] = inptr[0];	/* don't need GETJSAMPLE() here */
+ 713              		.loc 1 348 0 discriminator 3
+ 714 0040 0FB60F   		movzbl	(%rdi), %ecx
+ 715 0043 4883C001 		addq	$1, %rax
+ 349:fltk-1.3.4-1/jpeg/jccolor.c ****       inptr += instride;
+ 716              		.loc 1 349 0 discriminator 3
+ 717 0047 4C01D7   		addq	%r10, %rdi
+ 718              	.LVL97:
+ 348:fltk-1.3.4-1/jpeg/jccolor.c ****       outptr[col] = inptr[0];	/* don't need GETJSAMPLE() here */
+ 719              		.loc 1 348 0 discriminator 3
+ 720 004a 8848FF   		movb	%cl, -1(%rax)
+ 347:fltk-1.3.4-1/jpeg/jccolor.c ****       outptr[col] = inptr[0];	/* don't need GETJSAMPLE() here */
+ 721              		.loc 1 347 0 discriminator 3
+ 722 004d 4C39C8   		cmpq	%r9, %rax
+ 723 0050 75EE     		jne	.L48
+ 724              	.L49:
+ 344:fltk-1.3.4-1/jpeg/jccolor.c ****     inptr = *input_buf++;
+ 725              		.loc 1 344 0
+ 726 0052 4183E801 		subl	$1, %r8d
+ 346:fltk-1.3.4-1/jpeg/jccolor.c ****     for (col = 0; col < num_cols; col++) {
+ 727              		.loc 1 346 0
+ 728 0056 4489D9   		movl	%r11d, %ecx
+ 729              	.LVL98:
+ 344:fltk-1.3.4-1/jpeg/jccolor.c ****     inptr = *input_buf++;
+ 730              		.loc 1 344 0
+ 731 0059 79C5     		jns	.L50
+ 732              	.LVL99:
+ 733              	.L53:
+ 350:fltk-1.3.4-1/jpeg/jccolor.c ****     }
+ 351:fltk-1.3.4-1/jpeg/jccolor.c ****   }
+ 352:fltk-1.3.4-1/jpeg/jccolor.c **** }
+ 734              		.loc 1 352 0
+ 735 005b 5B       		popq	%rbx
+ 736              		.cfi_def_cfa_offset 16
+ 737 005c 5D       		popq	%rbp
+ 738              		.cfi_def_cfa_offset 8
+ 739              	.LVL100:
+ 740 005d C3       		ret
+ 741              		.cfi_endproc
+ 742              	.LFE66:
+ 744              		.section	.text.unlikely.grayscale_convert
+ 745              	.LCOLDE5:
+ 746              		.section	.text.grayscale_convert
+ 747              	.LHOTE5:
+ 748              		.section	.text.unlikely.rgb_convert,"ax",@progbits
+ 749              	.LCOLDB6:
+ 750              		.section	.text.rgb_convert,"ax",@progbits
+ 751              	.LHOTB6:
+ 752              		.p2align 4,,15
+ 754              	rgb_convert:
+ 755              	.LFB67:
+ 353:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 354:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 355:fltk-1.3.4-1/jpeg/jccolor.c **** /*
+ 356:fltk-1.3.4-1/jpeg/jccolor.c ****  * Convert some rows of samples to the JPEG colorspace.
+ 357:fltk-1.3.4-1/jpeg/jccolor.c ****  * No colorspace conversion, but change from interleaved
+ 358:fltk-1.3.4-1/jpeg/jccolor.c ****  * to separate-planes representation.
+ 359:fltk-1.3.4-1/jpeg/jccolor.c ****  */
+ 360:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 361:fltk-1.3.4-1/jpeg/jccolor.c **** METHODDEF(void)
+ 362:fltk-1.3.4-1/jpeg/jccolor.c **** rgb_convert (j_compress_ptr cinfo,
+ 363:fltk-1.3.4-1/jpeg/jccolor.c **** 	     JSAMPARRAY input_buf, JSAMPIMAGE output_buf,
+ 364:fltk-1.3.4-1/jpeg/jccolor.c **** 	     JDIMENSION output_row, int num_rows)
+ 365:fltk-1.3.4-1/jpeg/jccolor.c **** {
+ 756              		.loc 1 365 0
+ 757              		.cfi_startproc
+ 758              	.LVL101:
+ 759 0000 55       		pushq	%rbp
+ 760              		.cfi_def_cfa_offset 16
+ 761              		.cfi_offset 6, -16
+ 762 0001 53       		pushq	%rbx
+ 763              		.cfi_def_cfa_offset 24
+ 764              		.cfi_offset 3, -24
+ 366:fltk-1.3.4-1/jpeg/jccolor.c ****   register JSAMPROW inptr;
+ 367:fltk-1.3.4-1/jpeg/jccolor.c ****   register JSAMPROW outptr0, outptr1, outptr2;
+ 368:fltk-1.3.4-1/jpeg/jccolor.c ****   register JDIMENSION col;
+ 369:fltk-1.3.4-1/jpeg/jccolor.c ****   JDIMENSION num_cols = cinfo->image_width;
+ 765              		.loc 1 369 0
+ 766 0002 448B5730 		movl	48(%rdi), %r10d
+ 767              	.LVL102:
+ 768              	.L55:
+ 370:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 371:fltk-1.3.4-1/jpeg/jccolor.c ****   while (--num_rows >= 0) {
+ 769              		.loc 1 371 0
+ 770 0006 4183E801 		subl	$1, %r8d
+ 771              	.LVL103:
+ 772 000a 7862     		js	.L63
+ 773 000c 0F1F4000 		.p2align 4,,10
+ 774              		.p2align 3
+ 775              	.L59:
+ 372:fltk-1.3.4-1/jpeg/jccolor.c ****     inptr = *input_buf++;
+ 373:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr0 = output_buf[0][output_row];
+ 776              		.loc 1 373 0
+ 777 0010 4C8B0A   		movq	(%rdx), %r9
+ 778 0013 89C8     		movl	%ecx, %eax
+ 372:fltk-1.3.4-1/jpeg/jccolor.c ****     inptr = *input_buf++;
+ 779              		.loc 1 372 0
+ 780 0015 4883C608 		addq	$8, %rsi
+ 781              	.LVL104:
+ 374:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr1 = output_buf[1][output_row];
+ 375:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr2 = output_buf[2][output_row];
+ 376:fltk-1.3.4-1/jpeg/jccolor.c ****     output_row++;
+ 782              		.loc 1 376 0
+ 783 0019 83C101   		addl	$1, %ecx
+ 784              	.LVL105:
+ 372:fltk-1.3.4-1/jpeg/jccolor.c ****     inptr = *input_buf++;
+ 785              		.loc 1 372 0
+ 786 001c 488B7EF8 		movq	-8(%rsi), %rdi
+ 787              	.LVL106:
+ 373:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr1 = output_buf[1][output_row];
+ 788              		.loc 1 373 0
+ 789 0020 498B2CC1 		movq	(%r9,%rax,8), %rbp
+ 790              	.LVL107:
+ 374:fltk-1.3.4-1/jpeg/jccolor.c ****     outptr1 = output_buf[1][output_row];
+ 791              		.loc 1 374 0
+ 792 0024 4C8B4A08 		movq	8(%rdx), %r9
+ 793 0028 498B1CC1 		movq	(%r9,%rax,8), %rbx
+ 794              	.LVL108:
+ 375:fltk-1.3.4-1/jpeg/jccolor.c ****     output_row++;
+ 795              		.loc 1 375 0
+ 796 002c 4C8B4A10 		movq	16(%rdx), %r9
+ 797 0030 4D8B1CC1 		movq	(%r9,%rax,8), %r11
+ 798              	.LVL109:
+ 377:fltk-1.3.4-1/jpeg/jccolor.c ****     for (col = 0; col < num_cols; col++) {
+ 799              		.loc 1 377 0
+ 800 0034 31C0     		xorl	%eax, %eax
+ 801 0036 4585D2   		testl	%r10d, %r10d
+ 802 0039 74CB     		je	.L55
+ 803              	.LVL110:
+ 804 003b 0F1F4400 		.p2align 4,,10
+ 804      00
+ 805              		.p2align 3
+ 806              	.L60:
+ 378:fltk-1.3.4-1/jpeg/jccolor.c ****       /* We can dispense with GETJSAMPLE() here */
+ 379:fltk-1.3.4-1/jpeg/jccolor.c ****       outptr0[col] = inptr[RGB_RED];
+ 807              		.loc 1 379 0 discriminator 3
+ 808 0040 440FB60F 		movzbl	(%rdi), %r9d
+ 380:fltk-1.3.4-1/jpeg/jccolor.c ****       outptr1[col] = inptr[RGB_GREEN];
+ 381:fltk-1.3.4-1/jpeg/jccolor.c ****       outptr2[col] = inptr[RGB_BLUE];
+ 382:fltk-1.3.4-1/jpeg/jccolor.c ****       inptr += RGB_PIXELSIZE;
+ 809              		.loc 1 382 0 discriminator 3
+ 810 0044 4883C703 		addq	$3, %rdi
+ 811              	.LVL111:
+ 379:fltk-1.3.4-1/jpeg/jccolor.c ****       outptr1[col] = inptr[RGB_GREEN];
+ 812              		.loc 1 379 0 discriminator 3
+ 813 0048 44884C05 		movb	%r9b, 0(%rbp,%rax)
+ 813      00
+ 380:fltk-1.3.4-1/jpeg/jccolor.c ****       outptr1[col] = inptr[RGB_GREEN];
+ 814              		.loc 1 380 0 discriminator 3
+ 815 004d 440FB64F 		movzbl	-2(%rdi), %r9d
+ 815      FE
+ 816 0052 44880C03 		movb	%r9b, (%rbx,%rax)
+ 381:fltk-1.3.4-1/jpeg/jccolor.c ****       inptr += RGB_PIXELSIZE;
+ 817              		.loc 1 381 0 discriminator 3
+ 818 0056 440FB64F 		movzbl	-1(%rdi), %r9d
+ 818      FF
+ 819              	.LVL112:
+ 820 005b 45880C03 		movb	%r9b, (%r11,%rax)
+ 821 005f 4883C001 		addq	$1, %rax
+ 822              	.LVL113:
+ 377:fltk-1.3.4-1/jpeg/jccolor.c ****       /* We can dispense with GETJSAMPLE() here */
+ 823              		.loc 1 377 0 discriminator 3
+ 824 0063 4139C2   		cmpl	%eax, %r10d
+ 825 0066 77D8     		ja	.L60
+ 826              	.LVL114:
+ 371:fltk-1.3.4-1/jpeg/jccolor.c ****     inptr = *input_buf++;
+ 827              		.loc 1 371 0
+ 828 0068 4183E801 		subl	$1, %r8d
+ 829              	.LVL115:
+ 830 006c 79A2     		jns	.L59
+ 831              	.LVL116:
+ 832              	.L63:
+ 383:fltk-1.3.4-1/jpeg/jccolor.c ****     }
+ 384:fltk-1.3.4-1/jpeg/jccolor.c ****   }
+ 385:fltk-1.3.4-1/jpeg/jccolor.c **** }
+ 833              		.loc 1 385 0
+ 834 006e 5B       		popq	%rbx
+ 835              		.cfi_def_cfa_offset 16
+ 836 006f 5D       		popq	%rbp
+ 837              		.cfi_def_cfa_offset 8
+ 838 0070 C3       		ret
+ 839              		.cfi_endproc
+ 840              	.LFE67:
+ 842              		.section	.text.unlikely.rgb_convert
+ 843              	.LCOLDE6:
+ 844              		.section	.text.rgb_convert
+ 845              	.LHOTE6:
+ 846              		.section	.text.unlikely.null_convert,"ax",@progbits
+ 847              	.LCOLDB7:
+ 848              		.section	.text.null_convert,"ax",@progbits
+ 849              	.LHOTB7:
+ 850              		.p2align 4,,15
+ 852              	null_convert:
+ 853              	.LFB68:
+ 386:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 387:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 388:fltk-1.3.4-1/jpeg/jccolor.c **** /*
+ 389:fltk-1.3.4-1/jpeg/jccolor.c ****  * Convert some rows of samples to the JPEG colorspace.
+ 390:fltk-1.3.4-1/jpeg/jccolor.c ****  * This version handles multi-component colorspaces without conversion.
+ 391:fltk-1.3.4-1/jpeg/jccolor.c ****  * We assume input_components == num_components.
+ 392:fltk-1.3.4-1/jpeg/jccolor.c ****  */
+ 393:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 394:fltk-1.3.4-1/jpeg/jccolor.c **** METHODDEF(void)
+ 395:fltk-1.3.4-1/jpeg/jccolor.c **** null_convert (j_compress_ptr cinfo,
+ 396:fltk-1.3.4-1/jpeg/jccolor.c **** 	      JSAMPARRAY input_buf, JSAMPIMAGE output_buf,
+ 397:fltk-1.3.4-1/jpeg/jccolor.c **** 	      JDIMENSION output_row, int num_rows)
+ 398:fltk-1.3.4-1/jpeg/jccolor.c **** {
+ 854              		.loc 1 398 0
+ 855              		.cfi_startproc
+ 856              	.LVL117:
+ 857 0000 4156     		pushq	%r14
+ 858              		.cfi_def_cfa_offset 16
+ 859              		.cfi_offset 14, -16
+ 399:fltk-1.3.4-1/jpeg/jccolor.c ****   int ci;
+ 400:fltk-1.3.4-1/jpeg/jccolor.c ****   register int nc = cinfo->num_components;
+ 401:fltk-1.3.4-1/jpeg/jccolor.c ****   register JSAMPROW inptr;
+ 402:fltk-1.3.4-1/jpeg/jccolor.c ****   register JSAMPROW outptr;
+ 403:fltk-1.3.4-1/jpeg/jccolor.c ****   register JDIMENSION col;
+ 404:fltk-1.3.4-1/jpeg/jccolor.c ****   JDIMENSION num_cols = cinfo->image_width;
+ 405:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 406:fltk-1.3.4-1/jpeg/jccolor.c ****   while (--num_rows >= 0) {
+ 860              		.loc 1 406 0
+ 861 0002 4585C0   		testl	%r8d, %r8d
+ 398:fltk-1.3.4-1/jpeg/jccolor.c ****   int ci;
+ 862              		.loc 1 398 0
+ 863 0005 4155     		pushq	%r13
+ 864              		.cfi_def_cfa_offset 24
+ 865              		.cfi_offset 13, -24
+ 866 0007 4189CD   		movl	%ecx, %r13d
+ 867 000a 4154     		pushq	%r12
+ 868              		.cfi_def_cfa_offset 32
+ 869              		.cfi_offset 12, -32
+ 870 000c 55       		pushq	%rbp
+ 871              		.cfi_def_cfa_offset 40
+ 872              		.cfi_offset 6, -40
+ 873 000d 478D3428 		leal	(%r8,%r13), %r14d
+ 874 0011 53       		pushq	%rbx
+ 875              		.cfi_def_cfa_offset 48
+ 876              		.cfi_offset 3, -48
+ 400:fltk-1.3.4-1/jpeg/jccolor.c ****   register JSAMPROW inptr;
+ 877              		.loc 1 400 0
+ 878 0012 8B4F5C   		movl	92(%rdi), %ecx
+ 879              	.LVL118:
+ 404:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 880              		.loc 1 404 0
+ 881 0015 8B6F30   		movl	48(%rdi), %ebp
+ 882              	.LVL119:
+ 883              		.loc 1 406 0
+ 884 0018 7E60     		jle	.L64
+ 885 001a 8D5DFF   		leal	-1(%rbp), %ebx
+ 886 001d 4989D4   		movq	%rdx, %r12
+ 887 0020 4C63D1   		movslq	%ecx, %r10
+ 888 0023 4883C301 		addq	$1, %rbx
+ 889              	.LVL120:
+ 890              	.L73:
+ 407:fltk-1.3.4-1/jpeg/jccolor.c ****     /* It seems fastest to make a separate pass for each component. */
+ 408:fltk-1.3.4-1/jpeg/jccolor.c ****     for (ci = 0; ci < nc; ci++) {
+ 891              		.loc 1 408 0 discriminator 1
+ 892 0027 85C9     		testl	%ecx, %ecx
+ 893 0029 7E42     		jle	.L69
+ 894 002b 4489EA   		movl	%r13d, %edx
+ 895              		.loc 1 408 0 is_stmt 0
+ 896 002e 4531DB   		xorl	%r11d, %r11d
+ 897 0031 48C1E203 		salq	$3, %rdx
+ 898              	.LVL121:
+ 899              		.p2align 4,,10
+ 900 0035 0F1F00   		.p2align 3
+ 901              	.L68:
+ 409:fltk-1.3.4-1/jpeg/jccolor.c ****       inptr = input_buf[0] + ci;
+ 410:fltk-1.3.4-1/jpeg/jccolor.c ****       outptr = output_buf[ci][output_row];
+ 902              		.loc 1 410 0 is_stmt 1
+ 903 0038 4B8B04DC 		movq	(%r12,%r11,8), %rax
+ 409:fltk-1.3.4-1/jpeg/jccolor.c ****       inptr = input_buf[0] + ci;
+ 904              		.loc 1 409 0
+ 905 003c 4C89DF   		movq	%r11, %rdi
+ 906 003f 48033E   		addq	(%rsi), %rdi
+ 907              	.LVL122:
+ 411:fltk-1.3.4-1/jpeg/jccolor.c ****       for (col = 0; col < num_cols; col++) {
+ 908              		.loc 1 411 0
+ 909 0042 85ED     		testl	%ebp, %ebp
+ 410:fltk-1.3.4-1/jpeg/jccolor.c ****       for (col = 0; col < num_cols; col++) {
+ 910              		.loc 1 410 0
+ 911 0044 488B0410 		movq	(%rax,%rdx), %rax
+ 912              	.LVL123:
+ 913 0048 4C8D0C18 		leaq	(%rax,%rbx), %r9
+ 914              		.loc 1 411 0
+ 915 004c 7416     		je	.L71
+ 916              	.LVL124:
+ 917 004e 6690     		.p2align 4,,10
+ 918              		.p2align 3
+ 919              	.L70:
+ 412:fltk-1.3.4-1/jpeg/jccolor.c **** 	*outptr++ = *inptr;	/* don't need GETJSAMPLE() here */
+ 920              		.loc 1 412 0 discriminator 3
+ 921 0050 440FB607 		movzbl	(%rdi), %r8d
+ 922 0054 4883C001 		addq	$1, %rax
+ 923              	.LVL125:
+ 413:fltk-1.3.4-1/jpeg/jccolor.c **** 	inptr += nc;
+ 924              		.loc 1 413 0 discriminator 3
+ 925 0058 4C01D7   		addq	%r10, %rdi
+ 926              	.LVL126:
+ 411:fltk-1.3.4-1/jpeg/jccolor.c **** 	*outptr++ = *inptr;	/* don't need GETJSAMPLE() here */
+ 927              		.loc 1 411 0 discriminator 3
+ 928 005b 4939C1   		cmpq	%rax, %r9
+ 412:fltk-1.3.4-1/jpeg/jccolor.c **** 	*outptr++ = *inptr;	/* don't need GETJSAMPLE() here */
+ 929              		.loc 1 412 0 discriminator 3
+ 930 005e 448840FF 		movb	%r8b, -1(%rax)
+ 411:fltk-1.3.4-1/jpeg/jccolor.c **** 	*outptr++ = *inptr;	/* don't need GETJSAMPLE() here */
+ 931              		.loc 1 411 0 discriminator 3
+ 932 0062 75EC     		jne	.L70
+ 933              	.LVL127:
+ 934              	.L71:
+ 935 0064 4983C301 		addq	$1, %r11
+ 936              	.LVL128:
+ 408:fltk-1.3.4-1/jpeg/jccolor.c ****       inptr = input_buf[0] + ci;
+ 937              		.loc 1 408 0
+ 938 0068 4439D9   		cmpl	%r11d, %ecx
+ 939 006b 7FCB     		jg	.L68
+ 940              	.LVL129:
+ 941              	.L69:
+ 414:fltk-1.3.4-1/jpeg/jccolor.c ****       }
+ 415:fltk-1.3.4-1/jpeg/jccolor.c ****     }
+ 416:fltk-1.3.4-1/jpeg/jccolor.c ****     input_buf++;
+ 417:fltk-1.3.4-1/jpeg/jccolor.c ****     output_row++;
+ 942              		.loc 1 417 0
+ 943 006d 4183C501 		addl	$1, %r13d
+ 944              	.LVL130:
+ 416:fltk-1.3.4-1/jpeg/jccolor.c ****     output_row++;
+ 945              		.loc 1 416 0
+ 946 0071 4883C608 		addq	$8, %rsi
+ 947              	.LVL131:
+ 406:fltk-1.3.4-1/jpeg/jccolor.c ****     /* It seems fastest to make a separate pass for each component. */
+ 948              		.loc 1 406 0
+ 949 0075 4539F5   		cmpl	%r14d, %r13d
+ 950 0078 75AD     		jne	.L73
+ 951              	.LVL132:
+ 952              	.L64:
+ 418:fltk-1.3.4-1/jpeg/jccolor.c ****   }
+ 419:fltk-1.3.4-1/jpeg/jccolor.c **** }
+ 953              		.loc 1 419 0
+ 954 007a 5B       		popq	%rbx
+ 955              		.cfi_def_cfa_offset 40
+ 956 007b 5D       		popq	%rbp
+ 957              		.cfi_def_cfa_offset 32
+ 958              	.LVL133:
+ 959 007c 415C     		popq	%r12
+ 960              		.cfi_def_cfa_offset 24
+ 961 007e 415D     		popq	%r13
+ 962              		.cfi_def_cfa_offset 16
+ 963              	.LVL134:
+ 964 0080 415E     		popq	%r14
+ 965              		.cfi_def_cfa_offset 8
+ 966 0082 C3       		ret
+ 967              		.cfi_endproc
+ 968              	.LFE68:
+ 970              		.section	.text.unlikely.null_convert
+ 971              	.LCOLDE7:
+ 972              		.section	.text.null_convert
+ 973              	.LHOTE7:
+ 974              		.section	.text.unlikely.null_method,"ax",@progbits
+ 975              	.LCOLDB8:
+ 976              		.section	.text.null_method,"ax",@progbits
+ 977              	.LHOTB8:
+ 978              		.p2align 4,,15
+ 980              	null_method:
+ 981              	.LFB69:
+ 420:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 421:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 422:fltk-1.3.4-1/jpeg/jccolor.c **** /*
+ 423:fltk-1.3.4-1/jpeg/jccolor.c ****  * Empty method for start_pass.
+ 424:fltk-1.3.4-1/jpeg/jccolor.c ****  */
+ 425:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 426:fltk-1.3.4-1/jpeg/jccolor.c **** METHODDEF(void)
+ 427:fltk-1.3.4-1/jpeg/jccolor.c **** null_method (j_compress_ptr cinfo)
+ 428:fltk-1.3.4-1/jpeg/jccolor.c **** {
+ 982              		.loc 1 428 0
+ 983              		.cfi_startproc
+ 984              	.LVL135:
+ 985 0000 F3C3     		rep ret
+ 986              		.cfi_endproc
+ 987              	.LFE69:
+ 989              		.section	.text.unlikely.null_method
+ 990              	.LCOLDE8:
+ 991              		.section	.text.null_method
+ 992              	.LHOTE8:
+ 993              		.section	.text.unlikely.jinit_color_converter,"ax",@progbits
+ 994              	.LCOLDB9:
+ 995              		.section	.text.jinit_color_converter,"ax",@progbits
+ 996              	.LHOTB9:
+ 997              		.p2align 4,,15
+ 998              		.globl	jinit_color_converter
+ 1000              	jinit_color_converter:
+ 1001              	.LFB70:
+ 429:fltk-1.3.4-1/jpeg/jccolor.c ****   /* no work needed */
+ 430:fltk-1.3.4-1/jpeg/jccolor.c **** }
+ 431:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 432:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 433:fltk-1.3.4-1/jpeg/jccolor.c **** /*
+ 434:fltk-1.3.4-1/jpeg/jccolor.c ****  * Module initialization routine for input colorspace conversion.
+ 435:fltk-1.3.4-1/jpeg/jccolor.c ****  */
+ 436:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 437:fltk-1.3.4-1/jpeg/jccolor.c **** GLOBAL(void)
+ 438:fltk-1.3.4-1/jpeg/jccolor.c **** jinit_color_converter (j_compress_ptr cinfo)
+ 439:fltk-1.3.4-1/jpeg/jccolor.c **** {
+ 1002              		.loc 1 439 0
+ 1003              		.cfi_startproc
+ 1004              	.LVL136:
+ 1005              		.loc 1 439 0
+ 1006 0000 55       		pushq	%rbp
+ 1007              		.cfi_def_cfa_offset 16
+ 1008              		.cfi_offset 6, -16
+ 1009 0001 53       		pushq	%rbx
+ 1010              		.cfi_def_cfa_offset 24
+ 1011              		.cfi_offset 3, -24
+ 1012 0002 4889FB   		movq	%rdi, %rbx
+ 440:fltk-1.3.4-1/jpeg/jccolor.c ****   my_cconvert_ptr cconvert;
+ 441:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 442:fltk-1.3.4-1/jpeg/jccolor.c ****   cconvert = (my_cconvert_ptr)
+ 1013              		.loc 1 442 0
+ 1014 0005 BA180000 		movl	$24, %edx
+ 1014      00
+ 1015 000a BE010000 		movl	$1, %esi
+ 1015      00
+ 439:fltk-1.3.4-1/jpeg/jccolor.c ****   my_cconvert_ptr cconvert;
+ 1016              		.loc 1 439 0
+ 1017 000f 4883EC08 		subq	$8, %rsp
+ 1018              		.cfi_def_cfa_offset 32
+ 443:fltk-1.3.4-1/jpeg/jccolor.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 1019              		.loc 1 443 0
+ 1020 0013 488B4708 		movq	8(%rdi), %rax
+ 442:fltk-1.3.4-1/jpeg/jccolor.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 1021              		.loc 1 442 0
+ 1022 0017 FF10     		call	*(%rax)
+ 1023              	.LVL137:
+ 444:fltk-1.3.4-1/jpeg/jccolor.c **** 				SIZEOF(my_color_converter));
+ 445:fltk-1.3.4-1/jpeg/jccolor.c ****   cinfo->cconvert = &cconvert->pub;
+ 1024              		.loc 1 445 0
+ 1025 0019 48898318 		movq	%rax, 536(%rbx)
+ 1025      020000
+ 446:fltk-1.3.4-1/jpeg/jccolor.c ****   /* set start_pass to null method until we find out differently */
+ 447:fltk-1.3.4-1/jpeg/jccolor.c ****   cconvert->pub.start_pass = null_method;
+ 1026              		.loc 1 447 0
+ 1027 0020 48C70000 		movq	$null_method, (%rax)
+ 1027      000000
+ 442:fltk-1.3.4-1/jpeg/jccolor.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 1028              		.loc 1 442 0
+ 1029 0027 4889C5   		movq	%rax, %rbp
+ 1030              	.LVL138:
+ 448:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 449:fltk-1.3.4-1/jpeg/jccolor.c ****   /* Make sure input_components agrees with in_color_space */
+ 450:fltk-1.3.4-1/jpeg/jccolor.c ****   switch (cinfo->in_color_space) {
+ 1031              		.loc 1 450 0
+ 1032 002a 837B3C07 		cmpl	$7, 60(%rbx)
+ 1033 002e 0F878C00 		ja	.L80
+ 1033      0000
+ 1034 0034 8B433C   		movl	60(%rbx), %eax
+ 1035              	.LVL139:
+ 1036 0037 FF24C500 		jmp	*.L82(,%rax,8)
+ 1036      000000
+ 1037              		.section	.rodata.jinit_color_converter,"a",@progbits
+ 1038              		.align 8
+ 1039              		.align 4
+ 1040              	.L82:
+ 1041 0000 00000000 		.quad	.L80
+ 1041      00000000 
+ 1042 0008 00000000 		.quad	.L81
+ 1042      00000000 
+ 1043 0010 00000000 		.quad	.L84
+ 1043      00000000 
+ 1044 0018 00000000 		.quad	.L84
+ 1044      00000000 
+ 1045 0020 00000000 		.quad	.L85
+ 1045      00000000 
+ 1046 0028 00000000 		.quad	.L85
+ 1046      00000000 
+ 1047 0030 00000000 		.quad	.L84
+ 1047      00000000 
+ 1048 0038 00000000 		.quad	.L84
+ 1048      00000000 
+ 1049              		.section	.text.jinit_color_converter
+ 1050 003e 6690     		.p2align 4,,10
+ 1051              		.p2align 3
+ 1052              	.L84:
+ 451:fltk-1.3.4-1/jpeg/jccolor.c ****   case JCS_GRAYSCALE:
+ 452:fltk-1.3.4-1/jpeg/jccolor.c ****     if (cinfo->input_components != 1)
+ 453:fltk-1.3.4-1/jpeg/jccolor.c ****       ERREXIT(cinfo, JERR_BAD_IN_COLORSPACE);
+ 454:fltk-1.3.4-1/jpeg/jccolor.c ****     break;
+ 455:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 456:fltk-1.3.4-1/jpeg/jccolor.c ****   case JCS_RGB:
+ 457:fltk-1.3.4-1/jpeg/jccolor.c ****   case JCS_BG_RGB:
+ 458:fltk-1.3.4-1/jpeg/jccolor.c ****     if (cinfo->input_components != RGB_PIXELSIZE)
+ 459:fltk-1.3.4-1/jpeg/jccolor.c ****       ERREXIT(cinfo, JERR_BAD_IN_COLORSPACE);
+ 460:fltk-1.3.4-1/jpeg/jccolor.c ****     break;
+ 461:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 462:fltk-1.3.4-1/jpeg/jccolor.c ****   case JCS_YCbCr:
+ 463:fltk-1.3.4-1/jpeg/jccolor.c ****   case JCS_BG_YCC:
+ 464:fltk-1.3.4-1/jpeg/jccolor.c ****     if (cinfo->input_components != 3)
+ 1053              		.loc 1 464 0
+ 1054 0040 837B3803 		cmpl	$3, 56(%rbx)
+ 1055 0044 7412     		je	.L86
+ 1056              	.L145:
+ 465:fltk-1.3.4-1/jpeg/jccolor.c ****       ERREXIT(cinfo, JERR_BAD_IN_COLORSPACE);
+ 466:fltk-1.3.4-1/jpeg/jccolor.c ****     break;
+ 467:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 468:fltk-1.3.4-1/jpeg/jccolor.c ****   case JCS_CMYK:
+ 469:fltk-1.3.4-1/jpeg/jccolor.c ****   case JCS_YCCK:
+ 470:fltk-1.3.4-1/jpeg/jccolor.c ****     if (cinfo->input_components != 4)
+ 471:fltk-1.3.4-1/jpeg/jccolor.c ****       ERREXIT(cinfo, JERR_BAD_IN_COLORSPACE);
+ 472:fltk-1.3.4-1/jpeg/jccolor.c ****     break;
+ 473:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 474:fltk-1.3.4-1/jpeg/jccolor.c ****   default:			/* JCS_UNKNOWN can be anything */
+ 475:fltk-1.3.4-1/jpeg/jccolor.c ****     if (cinfo->input_components < 1)
+ 476:fltk-1.3.4-1/jpeg/jccolor.c ****       ERREXIT(cinfo, JERR_BAD_IN_COLORSPACE);
+ 1057              		.loc 1 476 0
+ 1058 0046 488B03   		movq	(%rbx), %rax
+ 1059 0049 4889DF   		movq	%rbx, %rdi
+ 1060 004c C740280A 		movl	$10, 40(%rax)
+ 1060      000000
+ 1061 0053 488B03   		movq	(%rbx), %rax
+ 1062 0056 FF10     		call	*(%rax)
+ 1063              	.LVL140:
+ 1064              	.L86:
+ 477:fltk-1.3.4-1/jpeg/jccolor.c ****     break;
+ 478:fltk-1.3.4-1/jpeg/jccolor.c ****   }
+ 479:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 480:fltk-1.3.4-1/jpeg/jccolor.c ****   /* Support color transform only for RGB colorspaces */
+ 481:fltk-1.3.4-1/jpeg/jccolor.c ****   if (cinfo->color_transform &&
+ 1065              		.loc 1 481 0
+ 1066 0058 8B835401 		movl	340(%rbx), %eax
+ 1066      0000
+ 482:fltk-1.3.4-1/jpeg/jccolor.c ****       cinfo->jpeg_color_space != JCS_RGB &&
+ 1067              		.loc 1 482 0
+ 1068 005e 8B5360   		movl	96(%rbx), %edx
+ 481:fltk-1.3.4-1/jpeg/jccolor.c ****       cinfo->jpeg_color_space != JCS_RGB &&
+ 1069              		.loc 1 481 0
+ 1070 0061 85C0     		testl	%eax, %eax
+ 1071 0063 7423     		je	.L88
+ 1072              		.loc 1 482 0 discriminator 1
+ 1073 0065 89D0     		movl	%edx, %eax
+ 1074 0067 83E0FB   		andl	$-5, %eax
+ 1075 006a 83F802   		cmpl	$2, %eax
+ 1076 006d 7419     		je	.L88
+ 483:fltk-1.3.4-1/jpeg/jccolor.c ****       cinfo->jpeg_color_space != JCS_BG_RGB)
+ 484:fltk-1.3.4-1/jpeg/jccolor.c ****     ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
+ 1077              		.loc 1 484 0
+ 1078 006f 488B03   		movq	(%rbx), %rax
+ 1079 0072 4889DF   		movq	%rbx, %rdi
+ 1080 0075 C740281C 		movl	$28, 40(%rax)
+ 1080      000000
+ 1081 007c 488B03   		movq	(%rbx), %rax
+ 1082 007f FF10     		call	*(%rax)
+ 1083              	.LVL141:
+ 1084 0081 8B5360   		movl	96(%rbx), %edx
+ 1085              		.p2align 4,,10
+ 1086 0084 0F1F4000 		.p2align 3
+ 1087              	.L88:
+ 485:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 486:fltk-1.3.4-1/jpeg/jccolor.c ****   /* Check num_components, set conversion method based on requested space */
+ 487:fltk-1.3.4-1/jpeg/jccolor.c ****   switch (cinfo->jpeg_color_space) {
+ 1088              		.loc 1 487 0
+ 1089 0088 83FA07   		cmpl	$7, %edx
+ 1090 008b 0F87DF01 		ja	.L89
+ 1090      0000
+ 1091 0091 89D0     		movl	%edx, %eax
+ 1092 0093 FF24C500 		jmp	*.L91(,%rax,8)
+ 1092      000000
+ 1093              		.section	.rodata.jinit_color_converter
+ 1094              		.align 8
+ 1095              		.align 4
+ 1096              	.L91:
+ 1097 0040 00000000 		.quad	.L89
+ 1097      00000000 
+ 1098 0048 00000000 		.quad	.L90
+ 1098      00000000 
+ 1099 0050 00000000 		.quad	.L92
+ 1099      00000000 
+ 1100 0058 00000000 		.quad	.L93
+ 1100      00000000 
+ 1101 0060 00000000 		.quad	.L94
+ 1101      00000000 
+ 1102 0068 00000000 		.quad	.L95
+ 1102      00000000 
+ 1103 0070 00000000 		.quad	.L92
+ 1103      00000000 
+ 1104 0078 00000000 		.quad	.L96
+ 1104      00000000 
+ 1105              		.section	.text.jinit_color_converter
+ 1106 009a 660F1F44 		.p2align 4,,10
+ 1106      0000
+ 1107              		.p2align 3
+ 1108              	.L85:
+ 470:fltk-1.3.4-1/jpeg/jccolor.c ****       ERREXIT(cinfo, JERR_BAD_IN_COLORSPACE);
+ 1109              		.loc 1 470 0
+ 1110 00a0 837B3804 		cmpl	$4, 56(%rbx)
+ 1111 00a4 75A0     		jne	.L145
+ 1112 00a6 EBB0     		jmp	.L86
+ 1113 00a8 0F1F8400 		.p2align 4,,10
+ 1113      00000000 
+ 1114              		.p2align 3
+ 1115              	.L81:
+ 452:fltk-1.3.4-1/jpeg/jccolor.c ****       ERREXIT(cinfo, JERR_BAD_IN_COLORSPACE);
+ 1116              		.loc 1 452 0
+ 1117 00b0 837B3801 		cmpl	$1, 56(%rbx)
+ 1118 00b4 7590     		jne	.L145
+ 1119 00b6 EBA0     		jmp	.L86
+ 1120 00b8 0F1F8400 		.p2align 4,,10
+ 1120      00000000 
+ 1121              		.p2align 3
+ 1122              	.L80:
+ 475:fltk-1.3.4-1/jpeg/jccolor.c ****       ERREXIT(cinfo, JERR_BAD_IN_COLORSPACE);
+ 1123              		.loc 1 475 0
+ 1124 00c0 8B5338   		movl	56(%rbx), %edx
+ 1125 00c3 85D2     		testl	%edx, %edx
+ 1126 00c5 7F91     		jg	.L86
+ 1127 00c7 E97AFFFF 		jmp	.L145
+ 1127      FF
+ 1128 00cc 0F1F4000 		.p2align 4,,10
+ 1129              		.p2align 3
+ 1130              	.L96:
+ 488:fltk-1.3.4-1/jpeg/jccolor.c ****   case JCS_GRAYSCALE:
+ 489:fltk-1.3.4-1/jpeg/jccolor.c ****     if (cinfo->num_components != 1)
+ 490:fltk-1.3.4-1/jpeg/jccolor.c ****       ERREXIT(cinfo, JERR_BAD_J_COLORSPACE);
+ 491:fltk-1.3.4-1/jpeg/jccolor.c ****     switch (cinfo->in_color_space) {
+ 492:fltk-1.3.4-1/jpeg/jccolor.c ****     case JCS_GRAYSCALE:
+ 493:fltk-1.3.4-1/jpeg/jccolor.c ****     case JCS_YCbCr:
+ 494:fltk-1.3.4-1/jpeg/jccolor.c ****     case JCS_BG_YCC:
+ 495:fltk-1.3.4-1/jpeg/jccolor.c ****       cconvert->pub.color_convert = grayscale_convert;
+ 496:fltk-1.3.4-1/jpeg/jccolor.c ****       break;
+ 497:fltk-1.3.4-1/jpeg/jccolor.c ****     case JCS_RGB:
+ 498:fltk-1.3.4-1/jpeg/jccolor.c ****       cconvert->pub.start_pass = rgb_ycc_start;
+ 499:fltk-1.3.4-1/jpeg/jccolor.c ****       cconvert->pub.color_convert = rgb_gray_convert;
+ 500:fltk-1.3.4-1/jpeg/jccolor.c ****       break;
+ 501:fltk-1.3.4-1/jpeg/jccolor.c ****     default:
+ 502:fltk-1.3.4-1/jpeg/jccolor.c ****       ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
+ 503:fltk-1.3.4-1/jpeg/jccolor.c ****     }
+ 504:fltk-1.3.4-1/jpeg/jccolor.c ****     break;
+ 505:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 506:fltk-1.3.4-1/jpeg/jccolor.c ****   case JCS_RGB:
+ 507:fltk-1.3.4-1/jpeg/jccolor.c ****   case JCS_BG_RGB:
+ 508:fltk-1.3.4-1/jpeg/jccolor.c ****     if (cinfo->num_components != 3)
+ 509:fltk-1.3.4-1/jpeg/jccolor.c ****       ERREXIT(cinfo, JERR_BAD_J_COLORSPACE);
+ 510:fltk-1.3.4-1/jpeg/jccolor.c ****     if (cinfo->in_color_space == cinfo->jpeg_color_space) {
+ 511:fltk-1.3.4-1/jpeg/jccolor.c ****       switch (cinfo->color_transform) {
+ 512:fltk-1.3.4-1/jpeg/jccolor.c ****       case JCT_NONE:
+ 513:fltk-1.3.4-1/jpeg/jccolor.c **** 	cconvert->pub.color_convert = rgb_convert;
+ 514:fltk-1.3.4-1/jpeg/jccolor.c **** 	break;
+ 515:fltk-1.3.4-1/jpeg/jccolor.c ****       case JCT_SUBTRACT_GREEN:
+ 516:fltk-1.3.4-1/jpeg/jccolor.c **** 	cconvert->pub.color_convert = rgb_rgb1_convert;
+ 517:fltk-1.3.4-1/jpeg/jccolor.c **** 	break;
+ 518:fltk-1.3.4-1/jpeg/jccolor.c ****       default:
+ 519:fltk-1.3.4-1/jpeg/jccolor.c **** 	ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
+ 520:fltk-1.3.4-1/jpeg/jccolor.c ****       }
+ 521:fltk-1.3.4-1/jpeg/jccolor.c ****     } else
+ 522:fltk-1.3.4-1/jpeg/jccolor.c ****       ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
+ 523:fltk-1.3.4-1/jpeg/jccolor.c ****     break;
+ 524:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 525:fltk-1.3.4-1/jpeg/jccolor.c ****   case JCS_YCbCr:
+ 526:fltk-1.3.4-1/jpeg/jccolor.c ****     if (cinfo->num_components != 3)
+ 527:fltk-1.3.4-1/jpeg/jccolor.c ****       ERREXIT(cinfo, JERR_BAD_J_COLORSPACE);
+ 528:fltk-1.3.4-1/jpeg/jccolor.c ****     switch (cinfo->in_color_space) {
+ 529:fltk-1.3.4-1/jpeg/jccolor.c ****     case JCS_RGB:
+ 530:fltk-1.3.4-1/jpeg/jccolor.c ****       cconvert->pub.start_pass = rgb_ycc_start;
+ 531:fltk-1.3.4-1/jpeg/jccolor.c ****       cconvert->pub.color_convert = rgb_ycc_convert;
+ 532:fltk-1.3.4-1/jpeg/jccolor.c ****       break;
+ 533:fltk-1.3.4-1/jpeg/jccolor.c ****     case JCS_YCbCr:
+ 534:fltk-1.3.4-1/jpeg/jccolor.c ****       cconvert->pub.color_convert = null_convert;
+ 535:fltk-1.3.4-1/jpeg/jccolor.c ****       break;
+ 536:fltk-1.3.4-1/jpeg/jccolor.c ****     default:
+ 537:fltk-1.3.4-1/jpeg/jccolor.c ****       ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
+ 538:fltk-1.3.4-1/jpeg/jccolor.c ****     }
+ 539:fltk-1.3.4-1/jpeg/jccolor.c ****     break;
+ 540:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 541:fltk-1.3.4-1/jpeg/jccolor.c ****   case JCS_BG_YCC:
+ 542:fltk-1.3.4-1/jpeg/jccolor.c ****     if (cinfo->num_components != 3)
+ 1131              		.loc 1 542 0
+ 1132 00d0 837B5C03 		cmpl	$3, 92(%rbx)
+ 1133 00d4 7412     		je	.L112
+ 543:fltk-1.3.4-1/jpeg/jccolor.c ****       ERREXIT(cinfo, JERR_BAD_J_COLORSPACE);
+ 1134              		.loc 1 543 0
+ 1135 00d6 488B03   		movq	(%rbx), %rax
+ 1136 00d9 4889DF   		movq	%rbx, %rdi
+ 1137 00dc C740280B 		movl	$11, 40(%rax)
+ 1137      000000
+ 1138 00e3 488B03   		movq	(%rbx), %rax
+ 1139 00e6 FF10     		call	*(%rax)
+ 1140              	.LVL142:
+ 1141              	.L112:
+ 544:fltk-1.3.4-1/jpeg/jccolor.c ****     switch (cinfo->in_color_space) {
+ 1142              		.loc 1 544 0
+ 1143 00e8 8B433C   		movl	60(%rbx), %eax
+ 1144 00eb 83F803   		cmpl	$3, %eax
+ 1145 00ee 0F84EC01 		je	.L114
+ 1145      0000
+ 1146 00f4 83F807   		cmpl	$7, %eax
+ 1147 00f7 0F849201 		je	.L124
+ 1147      0000
+ 1148 00fd 83F802   		cmpl	$2, %eax
+ 1149 0100 0F858C00 		jne	.L143
+ 1149      0000
+ 545:fltk-1.3.4-1/jpeg/jccolor.c ****     case JCS_RGB:
+ 546:fltk-1.3.4-1/jpeg/jccolor.c ****       /* For conversion from normal RGB input to BG_YCC representation,
+ 547:fltk-1.3.4-1/jpeg/jccolor.c ****        * the Cb/Cr values are first computed as usual, and then
+ 548:fltk-1.3.4-1/jpeg/jccolor.c ****        * quantized further after DCT processing by a factor of
+ 549:fltk-1.3.4-1/jpeg/jccolor.c ****        * 2 in reference to the nominal quantization factor.
+ 550:fltk-1.3.4-1/jpeg/jccolor.c ****        */
+ 551:fltk-1.3.4-1/jpeg/jccolor.c ****       /* need quantization scale by factor of 2 after DCT */
+ 552:fltk-1.3.4-1/jpeg/jccolor.c ****       cinfo->comp_info[1].component_needed = TRUE;
+ 1150              		.loc 1 552 0
+ 1151 0106 488B4368 		movq	104(%rbx), %rax
+ 1152 010a C7809400 		movl	$1, 148(%rax)
+ 1152      00000100 
+ 1152      0000
+ 553:fltk-1.3.4-1/jpeg/jccolor.c ****       cinfo->comp_info[2].component_needed = TRUE;
+ 1153              		.loc 1 553 0
+ 1154 0114 488B4368 		movq	104(%rbx), %rax
+ 1155 0118 C780F400 		movl	$1, 244(%rax)
+ 1155      00000100 
+ 1155      0000
+ 1156              	.L146:
+ 554:fltk-1.3.4-1/jpeg/jccolor.c ****       /* compute normal YCC first */
+ 555:fltk-1.3.4-1/jpeg/jccolor.c ****       cconvert->pub.start_pass = rgb_ycc_start;
+ 1157              		.loc 1 555 0
+ 1158 0122 48C74500 		movq	$rgb_ycc_start, 0(%rbp)
+ 1158      00000000 
+ 556:fltk-1.3.4-1/jpeg/jccolor.c ****       cconvert->pub.color_convert = rgb_ycc_convert;
+ 1159              		.loc 1 556 0
+ 1160 012a 48C74508 		movq	$rgb_ycc_convert, 8(%rbp)
+ 1160      00000000 
+ 557:fltk-1.3.4-1/jpeg/jccolor.c ****       break;
+ 1161              		.loc 1 557 0
+ 1162 0132 E9600100 		jmp	.L79
+ 1162      00
+ 1163 0137 660F1F84 		.p2align 4,,10
+ 1163      00000000 
+ 1163      00
+ 1164              		.p2align 3
+ 1165              	.L95:
+ 558:fltk-1.3.4-1/jpeg/jccolor.c ****     case JCS_YCbCr:
+ 559:fltk-1.3.4-1/jpeg/jccolor.c ****       /* need quantization scale by factor of 2 after DCT */
+ 560:fltk-1.3.4-1/jpeg/jccolor.c ****       cinfo->comp_info[1].component_needed = TRUE;
+ 561:fltk-1.3.4-1/jpeg/jccolor.c ****       cinfo->comp_info[2].component_needed = TRUE;
+ 562:fltk-1.3.4-1/jpeg/jccolor.c ****       /*FALLTHROUGH*/
+ 563:fltk-1.3.4-1/jpeg/jccolor.c ****     case JCS_BG_YCC:
+ 564:fltk-1.3.4-1/jpeg/jccolor.c ****       /* Pass through for BG_YCC input */
+ 565:fltk-1.3.4-1/jpeg/jccolor.c ****       cconvert->pub.color_convert = null_convert;
+ 566:fltk-1.3.4-1/jpeg/jccolor.c ****       break;
+ 567:fltk-1.3.4-1/jpeg/jccolor.c ****     default:
+ 568:fltk-1.3.4-1/jpeg/jccolor.c ****       ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
+ 569:fltk-1.3.4-1/jpeg/jccolor.c ****     }
+ 570:fltk-1.3.4-1/jpeg/jccolor.c ****     break;
+ 571:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 572:fltk-1.3.4-1/jpeg/jccolor.c ****   case JCS_CMYK:
+ 573:fltk-1.3.4-1/jpeg/jccolor.c ****     if (cinfo->num_components != 4)
+ 574:fltk-1.3.4-1/jpeg/jccolor.c ****       ERREXIT(cinfo, JERR_BAD_J_COLORSPACE);
+ 575:fltk-1.3.4-1/jpeg/jccolor.c ****     if (cinfo->in_color_space == JCS_CMYK)
+ 576:fltk-1.3.4-1/jpeg/jccolor.c ****       cconvert->pub.color_convert = null_convert;
+ 577:fltk-1.3.4-1/jpeg/jccolor.c ****     else
+ 578:fltk-1.3.4-1/jpeg/jccolor.c ****       ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
+ 579:fltk-1.3.4-1/jpeg/jccolor.c ****     break;
+ 580:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 581:fltk-1.3.4-1/jpeg/jccolor.c ****   case JCS_YCCK:
+ 582:fltk-1.3.4-1/jpeg/jccolor.c ****     if (cinfo->num_components != 4)
+ 1166              		.loc 1 582 0
+ 1167 0140 837B5C04 		cmpl	$4, 92(%rbx)
+ 1168 0144 7412     		je	.L119
+ 583:fltk-1.3.4-1/jpeg/jccolor.c ****       ERREXIT(cinfo, JERR_BAD_J_COLORSPACE);
+ 1169              		.loc 1 583 0
+ 1170 0146 488B03   		movq	(%rbx), %rax
+ 1171 0149 4889DF   		movq	%rbx, %rdi
+ 1172 014c C740280B 		movl	$11, 40(%rax)
+ 1172      000000
+ 1173 0153 488B03   		movq	(%rbx), %rax
+ 1174 0156 FF10     		call	*(%rax)
+ 1175              	.LVL143:
+ 1176              	.L119:
+ 584:fltk-1.3.4-1/jpeg/jccolor.c ****     switch (cinfo->in_color_space) {
+ 1177              		.loc 1 584 0
+ 1178 0158 8B433C   		movl	60(%rbx), %eax
+ 1179 015b 83F804   		cmpl	$4, %eax
+ 1180 015e 0F845401 		je	.L121
+ 1180      0000
+ 1181 0164 83F805   		cmpl	$5, %eax
+ 1182 0167 0F842201 		je	.L124
+ 1182      0000
+ 1183 016d EB23     		jmp	.L143
+ 1184 016f 90       		.p2align 4,,10
+ 1185              		.p2align 3
+ 1186              	.L94:
+ 573:fltk-1.3.4-1/jpeg/jccolor.c ****       ERREXIT(cinfo, JERR_BAD_J_COLORSPACE);
+ 1187              		.loc 1 573 0
+ 1188 0170 837B5C04 		cmpl	$4, 92(%rbx)
+ 1189 0174 7412     		je	.L117
+ 574:fltk-1.3.4-1/jpeg/jccolor.c ****     if (cinfo->in_color_space == JCS_CMYK)
+ 1190              		.loc 1 574 0
+ 1191 0176 488B03   		movq	(%rbx), %rax
+ 1192 0179 4889DF   		movq	%rbx, %rdi
+ 1193 017c C740280B 		movl	$11, 40(%rax)
+ 1193      000000
+ 1194 0183 488B03   		movq	(%rbx), %rax
+ 1195 0186 FF10     		call	*(%rax)
+ 1196              	.LVL144:
+ 1197              	.L117:
+ 575:fltk-1.3.4-1/jpeg/jccolor.c ****       cconvert->pub.color_convert = null_convert;
+ 1198              		.loc 1 575 0
+ 1199 0188 837B3C04 		cmpl	$4, 60(%rbx)
+ 1200 018c 0F84FD00 		je	.L124
+ 1200      0000
+ 1201              	.L143:
+ 585:fltk-1.3.4-1/jpeg/jccolor.c ****     case JCS_CMYK:
+ 586:fltk-1.3.4-1/jpeg/jccolor.c ****       cconvert->pub.start_pass = rgb_ycc_start;
+ 587:fltk-1.3.4-1/jpeg/jccolor.c ****       cconvert->pub.color_convert = cmyk_ycck_convert;
+ 588:fltk-1.3.4-1/jpeg/jccolor.c ****       break;
+ 589:fltk-1.3.4-1/jpeg/jccolor.c ****     case JCS_YCCK:
+ 590:fltk-1.3.4-1/jpeg/jccolor.c ****       cconvert->pub.color_convert = null_convert;
+ 591:fltk-1.3.4-1/jpeg/jccolor.c ****       break;
+ 592:fltk-1.3.4-1/jpeg/jccolor.c ****     default:
+ 593:fltk-1.3.4-1/jpeg/jccolor.c ****       ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
+ 1202              		.loc 1 593 0
+ 1203 0192 488B03   		movq	(%rbx), %rax
+ 1204 0195 4889DF   		movq	%rbx, %rdi
+ 1205 0198 C740281C 		movl	$28, 40(%rax)
+ 1205      000000
+ 1206 019f 488B03   		movq	(%rbx), %rax
+ 1207 01a2 488B00   		movq	(%rax), %rax
+ 594:fltk-1.3.4-1/jpeg/jccolor.c ****     }
+ 595:fltk-1.3.4-1/jpeg/jccolor.c ****     break;
+ 596:fltk-1.3.4-1/jpeg/jccolor.c **** 
+ 597:fltk-1.3.4-1/jpeg/jccolor.c ****   default:			/* allow null conversion of JCS_UNKNOWN */
+ 598:fltk-1.3.4-1/jpeg/jccolor.c ****     if (cinfo->jpeg_color_space != cinfo->in_color_space ||
+ 599:fltk-1.3.4-1/jpeg/jccolor.c **** 	cinfo->num_components != cinfo->input_components)
+ 600:fltk-1.3.4-1/jpeg/jccolor.c ****       ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
+ 601:fltk-1.3.4-1/jpeg/jccolor.c ****     cconvert->pub.color_convert = null_convert;
+ 602:fltk-1.3.4-1/jpeg/jccolor.c ****     break;
+ 603:fltk-1.3.4-1/jpeg/jccolor.c ****   }
+ 604:fltk-1.3.4-1/jpeg/jccolor.c **** }
+ 1208              		.loc 1 604 0
+ 1209 01a5 4883C408 		addq	$8, %rsp
+ 1210              		.cfi_remember_state
+ 1211              		.cfi_def_cfa_offset 24
+ 1212 01a9 5B       		popq	%rbx
+ 1213              		.cfi_def_cfa_offset 16
+ 1214              	.LVL145:
+ 1215 01aa 5D       		popq	%rbp
+ 1216              		.cfi_def_cfa_offset 8
+ 1217              	.LVL146:
+ 593:fltk-1.3.4-1/jpeg/jccolor.c ****     }
+ 1218              		.loc 1 593 0
+ 1219 01ab FFE0     		jmp	*%rax
+ 1220              	.LVL147:
+ 1221 01ad 0F1F00   		.p2align 4,,10
+ 1222              		.p2align 3
+ 1223              	.L93:
+ 1224              		.cfi_restore_state
+ 526:fltk-1.3.4-1/jpeg/jccolor.c ****       ERREXIT(cinfo, JERR_BAD_J_COLORSPACE);
+ 1225              		.loc 1 526 0
+ 1226 01b0 837B5C03 		cmpl	$3, 92(%rbx)
+ 1227 01b4 7412     		je	.L108
+ 527:fltk-1.3.4-1/jpeg/jccolor.c ****     switch (cinfo->in_color_space) {
+ 1228              		.loc 1 527 0
+ 1229 01b6 488B03   		movq	(%rbx), %rax
+ 1230 01b9 4889DF   		movq	%rbx, %rdi
+ 1231 01bc C740280B 		movl	$11, 40(%rax)
+ 1231      000000
+ 1232 01c3 488B03   		movq	(%rbx), %rax
+ 1233 01c6 FF10     		call	*(%rax)
+ 1234              	.LVL148:
+ 1235              	.L108:
+ 528:fltk-1.3.4-1/jpeg/jccolor.c ****     case JCS_RGB:
+ 1236              		.loc 1 528 0
+ 1237 01c8 8B433C   		movl	60(%rbx), %eax
+ 1238 01cb 83F802   		cmpl	$2, %eax
+ 1239 01ce 0F844EFF 		je	.L146
+ 1239      FFFF
+ 1240 01d4 83F803   		cmpl	$3, %eax
+ 1241 01d7 0F84B200 		je	.L124
+ 1241      0000
+ 1242 01dd EBB3     		jmp	.L143
+ 1243 01df 90       		.p2align 4,,10
+ 1244              		.p2align 3
+ 1245              	.L92:
+ 508:fltk-1.3.4-1/jpeg/jccolor.c ****       ERREXIT(cinfo, JERR_BAD_J_COLORSPACE);
+ 1246              		.loc 1 508 0
+ 1247 01e0 837B5C03 		cmpl	$3, 92(%rbx)
+ 1248 01e4 7415     		je	.L103
+ 509:fltk-1.3.4-1/jpeg/jccolor.c ****     if (cinfo->in_color_space == cinfo->jpeg_color_space) {
+ 1249              		.loc 1 509 0
+ 1250 01e6 488B03   		movq	(%rbx), %rax
+ 1251 01e9 4889DF   		movq	%rbx, %rdi
+ 1252 01ec C740280B 		movl	$11, 40(%rax)
+ 1252      000000
+ 1253 01f3 488B03   		movq	(%rbx), %rax
+ 1254 01f6 FF10     		call	*(%rax)
+ 1255              	.LVL149:
+ 1256 01f8 8B5360   		movl	96(%rbx), %edx
+ 1257              	.L103:
+ 510:fltk-1.3.4-1/jpeg/jccolor.c ****       switch (cinfo->color_transform) {
+ 1258              		.loc 1 510 0
+ 1259 01fb 39533C   		cmpl	%edx, 60(%rbx)
+ 1260 01fe 7592     		jne	.L143
+ 511:fltk-1.3.4-1/jpeg/jccolor.c ****       case JCT_NONE:
+ 1261              		.loc 1 511 0
+ 1262 0200 8B835401 		movl	340(%rbx), %eax
+ 1262      0000
+ 1263 0206 85C0     		testl	%eax, %eax
+ 1264 0208 0F84F200 		je	.L106
+ 1264      0000
+ 1265 020e 83F801   		cmpl	$1, %eax
+ 1266 0211 0F857BFF 		jne	.L143
+ 1266      FFFF
+ 516:fltk-1.3.4-1/jpeg/jccolor.c **** 	break;
+ 1267              		.loc 1 516 0
+ 1268 0217 48C74508 		movq	$rgb_rgb1_convert, 8(%rbp)
+ 1268      00000000 
+ 517:fltk-1.3.4-1/jpeg/jccolor.c ****       default:
+ 1269              		.loc 1 517 0
+ 1270 021f EB76     		jmp	.L79
+ 1271              		.p2align 4,,10
+ 1272 0221 0F1F8000 		.p2align 3
+ 1272      000000
+ 1273              	.L90:
+ 489:fltk-1.3.4-1/jpeg/jccolor.c ****       ERREXIT(cinfo, JERR_BAD_J_COLORSPACE);
+ 1274              		.loc 1 489 0
+ 1275 0228 837B5C01 		cmpl	$1, 92(%rbx)
+ 1276 022c 7412     		je	.L97
+ 490:fltk-1.3.4-1/jpeg/jccolor.c ****     switch (cinfo->in_color_space) {
+ 1277              		.loc 1 490 0
+ 1278 022e 488B03   		movq	(%rbx), %rax
+ 1279 0231 4889DF   		movq	%rbx, %rdi
+ 1280 0234 C740280B 		movl	$11, 40(%rax)
+ 1280      000000
+ 1281 023b 488B03   		movq	(%rbx), %rax
+ 1282 023e FF10     		call	*(%rax)
+ 1283              	.LVL150:
+ 1284              	.L97:
+ 491:fltk-1.3.4-1/jpeg/jccolor.c ****     case JCS_GRAYSCALE:
+ 1285              		.loc 1 491 0
+ 1286 0240 8B433C   		movl	60(%rbx), %eax
+ 1287 0243 83F802   		cmpl	$2, %eax
+ 1288 0246 7458     		je	.L99
+ 1289 0248 0F868200 		jbe	.L148
+ 1289      0000
+ 1290 024e 83F803   		cmpl	$3, %eax
+ 1291 0251 7409     		je	.L101
+ 1292 0253 83F807   		cmpl	$7, %eax
+ 1293 0256 0F8536FF 		jne	.L143
+ 1293      FFFF
+ 1294              	.L101:
+ 495:fltk-1.3.4-1/jpeg/jccolor.c ****       break;
+ 1295              		.loc 1 495 0
+ 1296 025c 48C74508 		movq	$grayscale_convert, 8(%rbp)
+ 1296      00000000 
+ 496:fltk-1.3.4-1/jpeg/jccolor.c ****     case JCS_RGB:
+ 1297              		.loc 1 496 0
+ 1298 0264 EB31     		jmp	.L79
+ 1299 0266 662E0F1F 		.p2align 4,,10
+ 1299      84000000 
+ 1299      0000
+ 1300              		.p2align 3
+ 1301              	.L89:
+ 598:fltk-1.3.4-1/jpeg/jccolor.c **** 	cinfo->num_components != cinfo->input_components)
+ 1302              		.loc 1 598 0
+ 1303 0270 39533C   		cmpl	%edx, 60(%rbx)
+ 1304 0273 7508     		jne	.L123
+ 598:fltk-1.3.4-1/jpeg/jccolor.c **** 	cinfo->num_components != cinfo->input_components)
+ 1305              		.loc 1 598 0 is_stmt 0 discriminator 1
+ 1306 0275 8B4338   		movl	56(%rbx), %eax
+ 1307 0278 39435C   		cmpl	%eax, 92(%rbx)
+ 1308 027b 7412     		je	.L124
+ 1309              	.L123:
+ 600:fltk-1.3.4-1/jpeg/jccolor.c ****     cconvert->pub.color_convert = null_convert;
+ 1310              		.loc 1 600 0 is_stmt 1
+ 1311 027d 488B03   		movq	(%rbx), %rax
+ 1312 0280 4889DF   		movq	%rbx, %rdi
+ 1313 0283 C740281C 		movl	$28, 40(%rax)
+ 1313      000000
+ 1314 028a 488B03   		movq	(%rbx), %rax
+ 1315 028d FF10     		call	*(%rax)
+ 1316              	.LVL151:
+ 1317              	.L124:
+ 601:fltk-1.3.4-1/jpeg/jccolor.c ****     break;
+ 1318              		.loc 1 601 0
+ 1319 028f 48C74508 		movq	$null_convert, 8(%rbp)
+ 1319      00000000 
+ 1320              	.L79:
+ 1321              		.loc 1 604 0
+ 1322 0297 4883C408 		addq	$8, %rsp
+ 1323              		.cfi_remember_state
+ 1324              		.cfi_def_cfa_offset 24
+ 1325 029b 5B       		popq	%rbx
+ 1326              		.cfi_def_cfa_offset 16
+ 1327              	.LVL152:
+ 1328 029c 5D       		popq	%rbp
+ 1329              		.cfi_def_cfa_offset 8
+ 1330              	.LVL153:
+ 1331 029d C3       		ret
+ 1332              	.LVL154:
+ 1333 029e 6690     		.p2align 4,,10
+ 1334              		.p2align 3
+ 1335              	.L99:
+ 1336              		.cfi_restore_state
+ 498:fltk-1.3.4-1/jpeg/jccolor.c ****       cconvert->pub.color_convert = rgb_gray_convert;
+ 1337              		.loc 1 498 0
+ 1338 02a0 48C74500 		movq	$rgb_ycc_start, 0(%rbp)
+ 1338      00000000 
+ 499:fltk-1.3.4-1/jpeg/jccolor.c ****       break;
+ 1339              		.loc 1 499 0
+ 1340 02a8 48C74508 		movq	$rgb_gray_convert, 8(%rbp)
+ 1340      00000000 
+ 500:fltk-1.3.4-1/jpeg/jccolor.c ****     default:
+ 1341              		.loc 1 500 0
+ 1342 02b0 EBE5     		jmp	.L79
+ 1343              		.p2align 4,,10
+ 1344 02b2 660F1F44 		.p2align 3
+ 1344      0000
+ 1345              	.L121:
+ 586:fltk-1.3.4-1/jpeg/jccolor.c ****       cconvert->pub.color_convert = cmyk_ycck_convert;
+ 1346              		.loc 1 586 0
+ 1347 02b8 48C74500 		movq	$rgb_ycc_start, 0(%rbp)
+ 1347      00000000 
+ 587:fltk-1.3.4-1/jpeg/jccolor.c ****       break;
+ 1348              		.loc 1 587 0
+ 1349 02c0 48C74508 		movq	$cmyk_ycck_convert, 8(%rbp)
+ 1349      00000000 
+ 588:fltk-1.3.4-1/jpeg/jccolor.c ****     case JCS_YCCK:
+ 1350              		.loc 1 588 0
+ 1351 02c8 EBCD     		jmp	.L79
+ 1352 02ca 660F1F44 		.p2align 4,,10
+ 1352      0000
+ 1353              		.p2align 3
+ 1354              	.L148:
+ 491:fltk-1.3.4-1/jpeg/jccolor.c ****     case JCS_GRAYSCALE:
+ 1355              		.loc 1 491 0
+ 1356 02d0 83F801   		cmpl	$1, %eax
+ 1357 02d3 0F85B9FE 		jne	.L143
+ 1357      FFFF
+ 1358 02d9 E97EFFFF 		jmp	.L101
+ 1358      FF
+ 1359 02de 6690     		.p2align 4,,10
+ 1360              		.p2align 3
+ 1361              	.L114:
+ 560:fltk-1.3.4-1/jpeg/jccolor.c ****       cinfo->comp_info[2].component_needed = TRUE;
+ 1362              		.loc 1 560 0
+ 1363 02e0 488B4368 		movq	104(%rbx), %rax
+ 1364 02e4 C7809400 		movl	$1, 148(%rax)
+ 1364      00000100 
+ 1364      0000
+ 561:fltk-1.3.4-1/jpeg/jccolor.c ****       /*FALLTHROUGH*/
+ 1365              		.loc 1 561 0
+ 1366 02ee 488B4368 		movq	104(%rbx), %rax
+ 1367 02f2 C780F400 		movl	$1, 244(%rax)
+ 1367      00000100 
+ 1367      0000
+ 1368 02fc EB91     		jmp	.L124
+ 1369 02fe 6690     		.p2align 4,,10
+ 1370              		.p2align 3
+ 1371              	.L106:
+ 513:fltk-1.3.4-1/jpeg/jccolor.c **** 	break;
+ 1372              		.loc 1 513 0
+ 1373 0300 48C74508 		movq	$rgb_convert, 8(%rbp)
+ 1373      00000000 
+ 514:fltk-1.3.4-1/jpeg/jccolor.c ****       case JCT_SUBTRACT_GREEN:
+ 1374              		.loc 1 514 0
+ 1375 0308 EB8D     		jmp	.L79
+ 1376              		.cfi_endproc
+ 1377              	.LFE70:
+ 1379              		.section	.text.unlikely.jinit_color_converter
+ 1380              	.LCOLDE9:
+ 1381              		.section	.text.jinit_color_converter
+ 1382              	.LHOTE9:
+ 1383              		.text
+ 1384              	.Letext0:
+ 1385              		.section	.text.unlikely.rgb_ycc_start
+ 1386              	.Letext_cold0:
+ 1387              		.file 2 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
+ 1388              		.file 3 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 1389              		.file 4 "/usr/include/libio.h"
+ 1390              		.file 5 "fltk-1.3.4-1/jpeg/jmorecfg.h"
+ 1391              		.file 6 "fltk-1.3.4-1/jpeg/jpeglib.h"
+ 1392              		.file 7 "fltk-1.3.4-1/jpeg/jpegint.h"
+ 1393              		.file 8 "fltk-1.3.4-1/jpeg/jerror.h"
+ 1394              		.file 9 "/usr/include/stdio.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 jccolor.c
+     /tmp/ccI7bn2l.s:13     .text.rgb_ycc_start:0000000000000000 rgb_ycc_start
+     /tmp/ccI7bn2l.s:93     .text.rgb_ycc_convert:0000000000000000 rgb_ycc_convert
+     /tmp/ccI7bn2l.s:244    .text.rgb_gray_convert:0000000000000000 rgb_gray_convert
+     /tmp/ccI7bn2l.s:351    .text.cmyk_ycck_convert:0000000000000000 cmyk_ycck_convert
+     /tmp/ccI7bn2l.s:543    .text.rgb_rgb1_convert:0000000000000000 rgb_rgb1_convert
+     /tmp/ccI7bn2l.s:664    .text.grayscale_convert:0000000000000000 grayscale_convert
+     /tmp/ccI7bn2l.s:754    .text.rgb_convert:0000000000000000 rgb_convert
+     /tmp/ccI7bn2l.s:852    .text.null_convert:0000000000000000 null_convert
+     /tmp/ccI7bn2l.s:980    .text.null_method:0000000000000000 null_method
+     /tmp/ccI7bn2l.s:1000   .text.jinit_color_converter:0000000000000000 jinit_color_converter
+                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
+                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+                           .group:0000000000000000 wm4.jconfig.h.10.247fc3ff67998f3074970b1373c70333
+                           .group:0000000000000000 wm4.features.h.19.24da27e0a4d0d521fd057013d982b8b5
+                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
+                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
+                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
+                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
+                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
+                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
+                           .group:0000000000000000 wm4.waitflags.h.25.e401b8bcfee800b540b27abd7cc78de9
+                           .group:0000000000000000 wm4.waitstatus.h.28.93f167f49d64e2b9b99f98d1162a93bf
+                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
+                           .group:0000000000000000 wm4.endian.h.41.24cced64aef71195a51d4daa8e4f4a95
+                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
+                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
+                           .group:0000000000000000 wm4.byteswap.h.38.11ee5fdc0f6cc53a16c505b9233cecef
+                           .group:0000000000000000 wm4.endian.h.63.97272d7c64d5db8020003b32e9289502
+                           .group:0000000000000000 wm4.waitstatus.h.99.408b6270fa6eb71377201a241ef15f79
+                           .group:0000000000000000 wm4.stdlib.h.50.84aeca2ac6f37d40e1e9b3cef757ba2d
+                           .group:0000000000000000 wm4.types.h.23.f6dcbaa72f8f71361acef09804d45a5e
+                           .group:0000000000000000 wm4.time.h.53.beb46e650cd406cb917b6b96b45e640a
+                           .group:0000000000000000 wm4.stddef.h.238.847b6907dabda77be90a9ab7ad789e2e
+                           .group:0000000000000000 wm4.types.h.187.bd5a05039b505b3620e6973f1b2ffeb1
+                           .group:0000000000000000 wm4.select.h.28.eb2f3debdbcffd1442ebddaebc4fb6ff
+                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
+                           .group:0000000000000000 wm4.select.h.36.f76c3b9e55c871743863013cc4cc14c9
+                           .group:0000000000000000 wm4.time.h.66.e70ce69790c975f0efb369340c432e0b
+                           .group:0000000000000000 wm4.time.h.25.ae5284cdff565e87a9198d819340325d
+                           .group:0000000000000000 wm4.select.h.49.e9d2041e5035cc68ebd1a20f7dbc8514
+                           .group:0000000000000000 wm4.select2.h.27.f95f2ab0ffee66dc1b6575014894b21a
+                           .group:0000000000000000 wm4.sysmacros.h.20.8a0c33ff175cd9b434a86c0aaa36f0a2
+                           .group:0000000000000000 wm4.types.h.229.67b3f66bd74b06b451caec392a72a945
+                           .group:0000000000000000 wm4.pthreadtypes.h.25.6892b1493314fcf446bbc76e7362acba
+                           .group:0000000000000000 wm4.alloca.h.19.edefa922a76c1cbaaf1e416903ba2d1c
+                           .group:0000000000000000 wm4.alloca.h.29.156e12058824cc23d961c4d3b13031f6
+                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
+                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
+                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
+                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
+                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
+                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
+                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
+                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
+                           .group:0000000000000000 wm4.stdio.h.80.17b7dd1ca72d8a61987532cb1d80194a
+                           .group:0000000000000000 wm4.stdio_lim.h.23.557290a6cddeba0587f574f29e3a5fb9
+                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
+                           .group:0000000000000000 wm4.stdio.h.26.cae64f7ada9bb8327a89dba6a5e93655
+                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
+                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
+                           .group:0000000000000000 wm4.string2.h.45.00535b99420fc3014c2da41d6645330d
+                           .group:0000000000000000 wm4.string3.h.31.0c4b9301b754a2db05eaafef869657d2
+                           .group:0000000000000000 wm4.jinclude.h.67.b19f941ec97c4845fa4609292c7e2db4
+                           .group:0000000000000000 wm4.jmorecfg.h.33.3b4c5f9cc07b3737823b06caf24d5b05
+                           .group:0000000000000000 wm4.jpeglib.h.40.4f111c27252a38df39328d65454e82f4
+                           .group:0000000000000000 wm4.jpegint.h.26.5219ef5d4e4921371d38e77b6091fd20
+                           .group:0000000000000000 wm4.jerror.h.25.1dbd8674e70ab5215bc0037320e5c2a2
+
+NO UNDEFINED SYMBOLS

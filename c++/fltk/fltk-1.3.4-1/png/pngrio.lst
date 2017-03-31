@@ -1,0 +1,741 @@
+   1              		.file	"pngrio.c"
+   2              		.text
+   3              	.Ltext0:
+   4              		.section	.rodata.str1.1,"aMS",@progbits,1
+   5              	.LC0:
+   6 0000 52656164 		.string	"Read Error"
+   6      20457272 
+   6      6F7200
+   7              		.section	.text.unlikely.png_default_read_data,"ax",@progbits
+   8              	.LCOLDB1:
+   9              		.section	.text.png_default_read_data,"ax",@progbits
+  10              	.LHOTB1:
+  11              		.p2align 4,,15
+  12              		.section	.text.unlikely.png_default_read_data
+  13              	.Ltext_cold0:
+  14              		.section	.text.png_default_read_data
+  15              		.globl	png_default_read_data
+  17              	png_default_read_data:
+  18              	.LFB57:
+  19              		.file 1 "fltk-1.3.4-1/png/pngrio.c"
+   1:fltk-1.3.4-1/png/pngrio.c **** 
+   2:fltk-1.3.4-1/png/pngrio.c **** /* pngrio.c - functions for data input
+   3:fltk-1.3.4-1/png/pngrio.c ****  *
+   4:fltk-1.3.4-1/png/pngrio.c ****  * Last changed in libpng 1.6.15 [November 20, 2014]
+   5:fltk-1.3.4-1/png/pngrio.c ****  * Copyright (c) 1998-2014 Glenn Randers-Pehrson
+   6:fltk-1.3.4-1/png/pngrio.c ****  * (Version 0.96 Copyright (c) 1996, 1997 Andreas Dilger)
+   7:fltk-1.3.4-1/png/pngrio.c ****  * (Version 0.88 Copyright (c) 1995, 1996 Guy Eric Schalnat, Group 42, Inc.)
+   8:fltk-1.3.4-1/png/pngrio.c ****  *
+   9:fltk-1.3.4-1/png/pngrio.c ****  * This code is released under the libpng license.
+  10:fltk-1.3.4-1/png/pngrio.c ****  * For conditions of distribution and use, see the disclaimer
+  11:fltk-1.3.4-1/png/pngrio.c ****  * and license in png.h
+  12:fltk-1.3.4-1/png/pngrio.c ****  *
+  13:fltk-1.3.4-1/png/pngrio.c ****  * This file provides a location for all input.  Users who need
+  14:fltk-1.3.4-1/png/pngrio.c ****  * special handling are expected to write a function that has the same
+  15:fltk-1.3.4-1/png/pngrio.c ****  * arguments as this and performs a similar function, but that possibly
+  16:fltk-1.3.4-1/png/pngrio.c ****  * has a different input method.  Note that you shouldn't change this
+  17:fltk-1.3.4-1/png/pngrio.c ****  * function, but rather write a replacement function and then make
+  18:fltk-1.3.4-1/png/pngrio.c ****  * libpng use it at run time with png_set_read_fn(...).
+  19:fltk-1.3.4-1/png/pngrio.c ****  */
+  20:fltk-1.3.4-1/png/pngrio.c **** 
+  21:fltk-1.3.4-1/png/pngrio.c **** #include "pngpriv.h"
+  22:fltk-1.3.4-1/png/pngrio.c **** 
+  23:fltk-1.3.4-1/png/pngrio.c **** #ifdef PNG_READ_SUPPORTED
+  24:fltk-1.3.4-1/png/pngrio.c **** 
+  25:fltk-1.3.4-1/png/pngrio.c **** /* Read the data from whatever input you are using.  The default routine
+  26:fltk-1.3.4-1/png/pngrio.c ****  * reads from a file pointer.  Note that this routine sometimes gets called
+  27:fltk-1.3.4-1/png/pngrio.c ****  * with very small lengths, so you should implement some kind of simple
+  28:fltk-1.3.4-1/png/pngrio.c ****  * buffering if you are using unbuffered reads.  This should never be asked
+  29:fltk-1.3.4-1/png/pngrio.c ****  * to read more then 64K on a 16 bit machine.
+  30:fltk-1.3.4-1/png/pngrio.c ****  */
+  31:fltk-1.3.4-1/png/pngrio.c **** void /* PRIVATE */
+  32:fltk-1.3.4-1/png/pngrio.c **** png_read_data(png_structrp png_ptr, png_bytep data, png_size_t length)
+  33:fltk-1.3.4-1/png/pngrio.c **** {
+  34:fltk-1.3.4-1/png/pngrio.c ****    png_debug1(4, "reading %d bytes", (int)length);
+  35:fltk-1.3.4-1/png/pngrio.c **** 
+  36:fltk-1.3.4-1/png/pngrio.c ****    if (png_ptr->read_data_fn != NULL)
+  37:fltk-1.3.4-1/png/pngrio.c ****       (*(png_ptr->read_data_fn))(png_ptr, data, length);
+  38:fltk-1.3.4-1/png/pngrio.c **** 
+  39:fltk-1.3.4-1/png/pngrio.c ****    else
+  40:fltk-1.3.4-1/png/pngrio.c ****       png_error(png_ptr, "Call to NULL read function");
+  41:fltk-1.3.4-1/png/pngrio.c **** }
+  42:fltk-1.3.4-1/png/pngrio.c **** 
+  43:fltk-1.3.4-1/png/pngrio.c **** #ifdef PNG_STDIO_SUPPORTED
+  44:fltk-1.3.4-1/png/pngrio.c **** /* This is the function that does the actual reading of data.  If you are
+  45:fltk-1.3.4-1/png/pngrio.c ****  * not reading from a standard C stream, you should create a replacement
+  46:fltk-1.3.4-1/png/pngrio.c ****  * read_data function and use it at run time with png_set_read_fn(), rather
+  47:fltk-1.3.4-1/png/pngrio.c ****  * than changing the library.
+  48:fltk-1.3.4-1/png/pngrio.c ****  */
+  49:fltk-1.3.4-1/png/pngrio.c **** void PNGCBAPI
+  50:fltk-1.3.4-1/png/pngrio.c **** png_default_read_data(png_structp png_ptr, png_bytep data, png_size_t length)
+  51:fltk-1.3.4-1/png/pngrio.c **** {
+  20              		.loc 1 51 0
+  21              		.cfi_startproc
+  22              	.LVL0:
+  52:fltk-1.3.4-1/png/pngrio.c ****    png_size_t check;
+  53:fltk-1.3.4-1/png/pngrio.c **** 
+  54:fltk-1.3.4-1/png/pngrio.c ****    if (png_ptr == NULL)
+  23              		.loc 1 54 0
+  24 0000 4885FF   		testq	%rdi, %rdi
+  25 0003 742E     		je	.L8
+  51:fltk-1.3.4-1/png/pngrio.c ****    png_size_t check;
+  26              		.loc 1 51 0
+  27 0005 55       		pushq	%rbp
+  28              		.cfi_def_cfa_offset 16
+  29              		.cfi_offset 6, -16
+  30 0006 53       		pushq	%rbx
+  31              		.cfi_def_cfa_offset 24
+  32              		.cfi_offset 3, -24
+  33 0007 4889F8   		movq	%rdi, %rax
+  34 000a 4889D5   		movq	%rdx, %rbp
+  35 000d 4889F7   		movq	%rsi, %rdi
+  36              	.LVL1:
+  37              	.LBB4:
+  38              	.LBB5:
+  39              		.file 2 "/usr/include/x86_64-linux-gnu/bits/stdio2.h"
+   1:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** /* Checking macros for stdio functions.
+   2:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    Copyright (C) 2004-2016 Free Software Foundation, Inc.
+   3:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    This file is part of the GNU C Library.
+   4:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+   5:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    The GNU C Library is free software; you can redistribute it and/or
+   6:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    modify it under the terms of the GNU Lesser General Public
+   7:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    License as published by the Free Software Foundation; either
+   8:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    version 2.1 of the License, or (at your option) any later version.
+   9:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  10:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    The GNU C Library is distributed in the hope that it will be useful,
+  11:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    but WITHOUT ANY WARRANTY; without even the implied warranty of
+  12:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  13:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    Lesser General Public License for more details.
+  14:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  15:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    You should have received a copy of the GNU Lesser General Public
+  16:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    License along with the GNU C Library; if not, see
+  17:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    <http://www.gnu.org/licenses/>.  */
+  18:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  19:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #ifndef _STDIO_H
+  20:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # error "Never include <bits/stdio2.h> directly; use <stdio.h> instead."
+  21:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
+  22:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  23:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __sprintf_chk (char *__restrict __s, int __flag, size_t __slen,
+  24:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  const char *__restrict __format, ...) __THROW;
+  25:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vsprintf_chk (char *__restrict __s, int __flag, size_t __slen,
+  26:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   const char *__restrict __format,
+  27:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   _G_va_list __ap) __THROW;
+  28:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  29:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #ifdef __va_arg_pack
+  30:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+  31:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (sprintf (char *__restrict __s, const char *__restrict __fmt, ...))
+  32:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+  33:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __builtin___sprintf_chk (__s, __USE_FORTIFY_LEVEL - 1,
+  34:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				  __bos (__s), __fmt, __va_arg_pack ());
+  35:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+  36:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #elif !defined __cplusplus
+  37:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # define sprintf(str, ...) \
+  38:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __builtin___sprintf_chk (str, __USE_FORTIFY_LEVEL - 1, __bos (str), \
+  39:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   __VA_ARGS__)
+  40:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
+  41:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  42:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+  43:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (vsprintf (char *__restrict __s, const char *__restrict __fmt,
+  44:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		 _G_va_list __ap))
+  45:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+  46:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __builtin___vsprintf_chk (__s, __USE_FORTIFY_LEVEL - 1,
+  47:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				   __bos (__s), __fmt, __ap);
+  48:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+  49:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  50:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #if defined __USE_ISOC99 || defined __USE_UNIX98
+  51:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  52:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __snprintf_chk (char *__restrict __s, size_t __n, int __flag,
+  53:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   size_t __slen, const char *__restrict __format,
+  54:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   ...) __THROW;
+  55:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vsnprintf_chk (char *__restrict __s, size_t __n, int __flag,
+  56:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			    size_t __slen, const char *__restrict __format,
+  57:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			    _G_va_list __ap) __THROW;
+  58:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  59:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # ifdef __va_arg_pack
+  60:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+  61:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (snprintf (char *__restrict __s, size_t __n,
+  62:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		 const char *__restrict __fmt, ...))
+  63:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+  64:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+  65:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				   __bos (__s), __fmt, __va_arg_pack ());
+  66:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+  67:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # elif !defined __cplusplus
+  68:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  define snprintf(str, len, ...) \
+  69:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __builtin___snprintf_chk (str, len, __USE_FORTIFY_LEVEL - 1, __bos (str), \
+  70:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			    __VA_ARGS__)
+  71:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # endif
+  72:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  73:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+  74:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (vsnprintf (char *__restrict __s, size_t __n,
+  75:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		  const char *__restrict __fmt, _G_va_list __ap))
+  76:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+  77:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __builtin___vsnprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+  78:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				    __bos (__s), __fmt, __ap);
+  79:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+  80:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  81:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
+  82:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  83:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #if __USE_FORTIFY_LEVEL > 1
+  84:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  85:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __fprintf_chk (FILE *__restrict __stream, int __flag,
+  86:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  const char *__restrict __format, ...);
+  87:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __printf_chk (int __flag, const char *__restrict __format, ...);
+  88:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vfprintf_chk (FILE *__restrict __stream, int __flag,
+  89:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   const char *__restrict __format, _G_va_list __ap);
+  90:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vprintf_chk (int __flag, const char *__restrict __format,
+  91:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  _G_va_list __ap);
+  92:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  93:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # ifdef __va_arg_pack
+  94:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+  95:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** fprintf (FILE *__restrict __stream, const char *__restrict __fmt, ...)
+  96:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+  97:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __fprintf_chk (__stream, __USE_FORTIFY_LEVEL - 1, __fmt,
+  98:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			__va_arg_pack ());
+  99:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 100:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 101:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+ 102:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** printf (const char *__restrict __fmt, ...)
+ 103:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 104:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __printf_chk (__USE_FORTIFY_LEVEL - 1, __fmt, __va_arg_pack ());
+ 105:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 106:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # elif !defined __cplusplus
+ 107:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  define printf(...) \
+ 108:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __printf_chk (__USE_FORTIFY_LEVEL - 1, __VA_ARGS__)
+ 109:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  define fprintf(stream, ...) \
+ 110:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __fprintf_chk (stream, __USE_FORTIFY_LEVEL - 1, __VA_ARGS__)
+ 111:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # endif
+ 112:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 113:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+ 114:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** vprintf (const char *__restrict __fmt, _G_va_list __ap)
+ 115:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 116:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #ifdef __USE_EXTERN_INLINES
+ 117:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __vfprintf_chk (stdout, __USE_FORTIFY_LEVEL - 1, __fmt, __ap);
+ 118:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #else
+ 119:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __vprintf_chk (__USE_FORTIFY_LEVEL - 1, __fmt, __ap);
+ 120:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
+ 121:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 122:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 123:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+ 124:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** vfprintf (FILE *__restrict __stream,
+ 125:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 	  const char *__restrict __fmt, _G_va_list __ap)
+ 126:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 127:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __vfprintf_chk (__stream, __USE_FORTIFY_LEVEL - 1, __fmt, __ap);
+ 128:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 129:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 130:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # ifdef __USE_XOPEN2K8
+ 131:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __dprintf_chk (int __fd, int __flag, const char *__restrict __fmt,
+ 132:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  ...) __attribute__ ((__format__ (__printf__, 3, 4)));
+ 133:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vdprintf_chk (int __fd, int __flag,
+ 134:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   const char *__restrict __fmt, _G_va_list __arg)
+ 135:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****      __attribute__ ((__format__ (__printf__, 3, 0)));
+ 136:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 137:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  ifdef __va_arg_pack
+ 138:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+ 139:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** dprintf (int __fd, const char *__restrict __fmt, ...)
+ 140:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 141:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __dprintf_chk (__fd, __USE_FORTIFY_LEVEL - 1, __fmt,
+ 142:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			__va_arg_pack ());
+ 143:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 144:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  elif !defined __cplusplus
+ 145:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #   define dprintf(fd, ...) \
+ 146:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __dprintf_chk (fd, __USE_FORTIFY_LEVEL - 1, __VA_ARGS__)
+ 147:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  endif
+ 148:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 149:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+ 150:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** vdprintf (int __fd, const char *__restrict __fmt, _G_va_list __ap)
+ 151:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 152:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __vdprintf_chk (__fd, __USE_FORTIFY_LEVEL - 1, __fmt, __ap);
+ 153:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 154:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # endif
+ 155:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 156:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # ifdef __USE_GNU
+ 157:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 158:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __asprintf_chk (char **__restrict __ptr, int __flag,
+ 159:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   const char *__restrict __fmt, ...)
+ 160:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****      __THROW __attribute__ ((__format__ (__printf__, 3, 4))) __wur;
+ 161:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vasprintf_chk (char **__restrict __ptr, int __flag,
+ 162:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			    const char *__restrict __fmt, _G_va_list __arg)
+ 163:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****      __THROW __attribute__ ((__format__ (__printf__, 3, 0))) __wur;
+ 164:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __obstack_printf_chk (struct obstack *__restrict __obstack,
+ 165:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				 int __flag, const char *__restrict __format,
+ 166:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				 ...)
+ 167:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****      __THROW __attribute__ ((__format__ (__printf__, 3, 4)));
+ 168:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __obstack_vprintf_chk (struct obstack *__restrict __obstack,
+ 169:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				  int __flag,
+ 170:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				  const char *__restrict __format,
+ 171:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				  _G_va_list __args)
+ 172:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****      __THROW __attribute__ ((__format__ (__printf__, 3, 0)));
+ 173:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 174:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  ifdef __va_arg_pack
+ 175:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+ 176:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (asprintf (char **__restrict __ptr, const char *__restrict __fmt, ...))
+ 177:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 178:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __asprintf_chk (__ptr, __USE_FORTIFY_LEVEL - 1, __fmt,
+ 179:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			 __va_arg_pack ());
+ 180:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 181:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 182:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+ 183:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (__asprintf (char **__restrict __ptr, const char *__restrict __fmt,
+ 184:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		   ...))
+ 185:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 186:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __asprintf_chk (__ptr, __USE_FORTIFY_LEVEL - 1, __fmt,
+ 187:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			 __va_arg_pack ());
+ 188:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 189:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 190:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+ 191:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (obstack_printf (struct obstack *__restrict __obstack,
+ 192:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		       const char *__restrict __fmt, ...))
+ 193:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 194:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __obstack_printf_chk (__obstack, __USE_FORTIFY_LEVEL - 1, __fmt,
+ 195:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			       __va_arg_pack ());
+ 196:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 197:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  elif !defined __cplusplus
+ 198:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #   define asprintf(ptr, ...) \
+ 199:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __asprintf_chk (ptr, __USE_FORTIFY_LEVEL - 1, __VA_ARGS__)
+ 200:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #   define __asprintf(ptr, ...) \
+ 201:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __asprintf_chk (ptr, __USE_FORTIFY_LEVEL - 1, __VA_ARGS__)
+ 202:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #   define obstack_printf(obstack, ...) \
+ 203:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __obstack_printf_chk (obstack, __USE_FORTIFY_LEVEL - 1, __VA_ARGS__)
+ 204:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  endif
+ 205:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 206:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+ 207:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (vasprintf (char **__restrict __ptr, const char *__restrict __fmt,
+ 208:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		  _G_va_list __ap))
+ 209:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 210:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __vasprintf_chk (__ptr, __USE_FORTIFY_LEVEL - 1, __fmt, __ap);
+ 211:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 212:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 213:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+ 214:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (obstack_vprintf (struct obstack *__restrict __obstack,
+ 215:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			const char *__restrict __fmt, _G_va_list __ap))
+ 216:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 217:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __obstack_vprintf_chk (__obstack, __USE_FORTIFY_LEVEL - 1, __fmt,
+ 218:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				__ap);
+ 219:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 220:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 221:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # endif
+ 222:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 223:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
+ 224:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 225:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #if !defined __USE_ISOC11 \
+ 226:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****     || (defined __cplusplus && __cplusplus <= 201103L && !defined __USE_GNU)
+ 227:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern char *__gets_chk (char *__str, size_t) __wur;
+ 228:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern char *__REDIRECT (__gets_warn, (char *__str), gets)
+ 229:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****      __wur __warnattr ("please use fgets or getline instead, gets can't "
+ 230:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		       "specify buffer size");
+ 231:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 232:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function __wur char *
+ 233:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** gets (char *__str)
+ 234:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 235:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   if (__bos (__str) != (size_t) -1)
+ 236:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****     return __gets_chk (__str, __bos (__str));
+ 237:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __gets_warn (__str);
+ 238:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 239:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
+ 240:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 241:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern char *__fgets_chk (char *__restrict __s, size_t __size, int __n,
+ 242:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  FILE *__restrict __stream) __wur;
+ 243:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern char *__REDIRECT (__fgets_alias,
+ 244:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			 (char *__restrict __s, int __n,
+ 245:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  FILE *__restrict __stream), fgets) __wur;
+ 246:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern char *__REDIRECT (__fgets_chk_warn,
+ 247:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			 (char *__restrict __s, size_t __size, int __n,
+ 248:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  FILE *__restrict __stream), __fgets_chk)
+ 249:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****      __wur __warnattr ("fgets called with bigger size than length "
+ 250:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		       "of destination buffer");
+ 251:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 252:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function __wur char *
+ 253:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** fgets (char *__restrict __s, int __n, FILE *__restrict __stream)
+ 254:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 255:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   if (__bos (__s) != (size_t) -1)
+ 256:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****     {
+ 257:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****       if (!__builtin_constant_p (__n) || __n <= 0)
+ 258:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 	return __fgets_chk (__s, __bos (__s), __n, __stream);
+ 259:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 260:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****       if ((size_t) __n > __bos (__s))
+ 261:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 	return __fgets_chk_warn (__s, __bos (__s), __n, __stream);
+ 262:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****     }
+ 263:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __fgets_alias (__s, __n, __stream);
+ 264:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 265:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 266:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern size_t __fread_chk (void *__restrict __ptr, size_t __ptrlen,
+ 267:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   size_t __size, size_t __n,
+ 268:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   FILE *__restrict __stream) __wur;
+ 269:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern size_t __REDIRECT (__fread_alias,
+ 270:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  (void *__restrict __ptr, size_t __size,
+ 271:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   size_t __n, FILE *__restrict __stream),
+ 272:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  fread) __wur;
+ 273:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern size_t __REDIRECT (__fread_chk_warn,
+ 274:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  (void *__restrict __ptr, size_t __ptrlen,
+ 275:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   size_t __size, size_t __n,
+ 276:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   FILE *__restrict __stream),
+ 277:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  __fread_chk)
+ 278:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****      __wur __warnattr ("fread called with bigger size * nmemb than length "
+ 279:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		       "of destination buffer");
+ 280:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 281:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function __wur size_t
+ 282:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** fread (void *__restrict __ptr, size_t __size, size_t __n,
+ 283:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****        FILE *__restrict __stream)
+ 284:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 285:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   if (__bos0 (__ptr) != (size_t) -1)
+ 286:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****     {
+ 287:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****       if (!__builtin_constant_p (__size)
+ 288:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 	  || !__builtin_constant_p (__n)
+ 289:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 	  || (__size | __n) >= (((size_t) 1) << (8 * sizeof (size_t) / 2)))
+ 290:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 	return __fread_chk (__ptr, __bos0 (__ptr), __size, __n, __stream);
+ 291:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 292:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****       if (__size * __n > __bos0 (__ptr))
+ 293:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 	return __fread_chk_warn (__ptr, __bos0 (__ptr), __size, __n, __stream);
+ 294:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****     }
+ 295:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __fread_alias (__ptr, __size, __n, __stream);
+  40              		.loc 2 295 0
+  41 0010 BE010000 		movl	$1, %esi
+  41      00
+  42              	.LVL2:
+  43              	.LBE5:
+  44              	.LBE4:
+  51:fltk-1.3.4-1/png/pngrio.c ****    png_size_t check;
+  45              		.loc 1 51 0
+  46 0015 4883EC08 		subq	$8, %rsp
+  47              		.cfi_def_cfa_offset 32
+  48              	.LBB7:
+  49              	.LBB6:
+  50              		.loc 2 295 0
+  51 0019 488B8808 		movq	264(%rax), %rcx
+  51      010000
+  52 0020 4889C3   		movq	%rax, %rbx
+  53              	.LVL3:
+  54 0023 E8000000 		call	fread
+  54      00
+  55              	.LVL4:
+  56              	.LBE6:
+  57              	.LBE7:
+  55:fltk-1.3.4-1/png/pngrio.c ****       return;
+  56:fltk-1.3.4-1/png/pngrio.c **** 
+  57:fltk-1.3.4-1/png/pngrio.c ****    /* fread() returns 0 on error, so it is OK to store this in a png_size_t
+  58:fltk-1.3.4-1/png/pngrio.c ****     * instead of an int, which is what fread() actually returns.
+  59:fltk-1.3.4-1/png/pngrio.c ****     */
+  60:fltk-1.3.4-1/png/pngrio.c ****    check = fread(data, 1, length, png_voidcast(png_FILE_p, png_ptr->io_ptr));
+  61:fltk-1.3.4-1/png/pngrio.c **** 
+  62:fltk-1.3.4-1/png/pngrio.c ****    if (check != length)
+  58              		.loc 1 62 0
+  59 0028 4839C5   		cmpq	%rax, %rbp
+  60 002b 7508     		jne	.L10
+  63:fltk-1.3.4-1/png/pngrio.c ****       png_error(png_ptr, "Read Error");
+  64:fltk-1.3.4-1/png/pngrio.c **** }
+  61              		.loc 1 64 0
+  62 002d 4883C408 		addq	$8, %rsp
+  63              		.cfi_def_cfa_offset 24
+  64 0031 5B       		popq	%rbx
+  65              		.cfi_restore 3
+  66              		.cfi_def_cfa_offset 16
+  67              	.LVL5:
+  68 0032 5D       		popq	%rbp
+  69              		.cfi_restore 6
+  70              		.cfi_def_cfa_offset 8
+  71              	.LVL6:
+  72              	.L8:
+  73 0033 F3C3     		rep ret
+  74              	.LVL7:
+  75              	.L10:
+  76              		.cfi_def_cfa_offset 32
+  77              		.cfi_offset 3, -24
+  78              		.cfi_offset 6, -16
+  63:fltk-1.3.4-1/png/pngrio.c ****       png_error(png_ptr, "Read Error");
+  79              		.loc 1 63 0
+  80 0035 BE000000 		movl	$.LC0, %esi
+  80      00
+  81 003a 4889DF   		movq	%rbx, %rdi
+  82 003d E8000000 		call	png_error
+  82      00
+  83              	.LVL8:
+  84              		.cfi_endproc
+  85              	.LFE57:
+  87              		.section	.text.unlikely.png_default_read_data
+  88              	.LCOLDE1:
+  89              		.section	.text.png_default_read_data
+  90              	.LHOTE1:
+  91              		.section	.rodata.str1.1
+  92              	.LC2:
+  93 000b 43616C6C 		.string	"Call to NULL read function"
+  93      20746F20 
+  93      4E554C4C 
+  93      20726561 
+  93      64206675 
+  94              		.section	.text.unlikely.png_read_data,"ax",@progbits
+  95              	.LCOLDB3:
+  96              		.section	.text.png_read_data,"ax",@progbits
+  97              	.LHOTB3:
+  98              		.p2align 4,,15
+  99              		.globl	png_read_data
+ 101              	png_read_data:
+ 102              	.LFB56:
+  33:fltk-1.3.4-1/png/pngrio.c ****    png_debug1(4, "reading %d bytes", (int)length);
+ 103              		.loc 1 33 0
+ 104              		.cfi_startproc
+ 105              	.LVL9:
+  36:fltk-1.3.4-1/png/pngrio.c ****       (*(png_ptr->read_data_fn))(png_ptr, data, length);
+ 106              		.loc 1 36 0
+ 107 0000 488B8700 		movq	256(%rdi), %rax
+ 107      010000
+ 108 0007 4885C0   		testq	%rax, %rax
+ 109 000a 7402     		je	.L12
+  37:fltk-1.3.4-1/png/pngrio.c **** 
+ 110              		.loc 1 37 0
+ 111 000c FFE0     		jmp	*%rax
+ 112              	.LVL10:
+ 113              	.L12:
+  33:fltk-1.3.4-1/png/pngrio.c ****    png_debug1(4, "reading %d bytes", (int)length);
+ 114              		.loc 1 33 0
+ 115 000e 50       		pushq	%rax
+ 116              		.cfi_def_cfa_offset 16
+  40:fltk-1.3.4-1/png/pngrio.c **** }
+ 117              		.loc 1 40 0
+ 118 000f BE000000 		movl	$.LC2, %esi
+ 118      00
+ 119              	.LVL11:
+ 120 0014 E8000000 		call	png_error
+ 120      00
+ 121              	.LVL12:
+ 122              		.cfi_endproc
+ 123              	.LFE56:
+ 125              		.section	.text.unlikely.png_read_data
+ 126              	.LCOLDE3:
+ 127              		.section	.text.png_read_data
+ 128              	.LHOTE3:
+ 129              		.section	.rodata.str1.8,"aMS",@progbits,1
+ 130              		.align 8
+ 131              	.LC4:
+ 132 0000 43616E27 		.string	"Can't set both read_data_fn and write_data_fn in the same structure"
+ 132      74207365 
+ 132      7420626F 
+ 132      74682072 
+ 132      6561645F 
+ 133              		.section	.text.unlikely.png_set_read_fn,"ax",@progbits
+ 134              	.LCOLDB5:
+ 135              		.section	.text.png_set_read_fn,"ax",@progbits
+ 136              	.LHOTB5:
+ 137              		.p2align 4,,15
+ 138              		.globl	png_set_read_fn
+ 140              	png_set_read_fn:
+ 141              	.LFB58:
+  65:fltk-1.3.4-1/png/pngrio.c **** #endif
+  66:fltk-1.3.4-1/png/pngrio.c **** 
+  67:fltk-1.3.4-1/png/pngrio.c **** /* This function allows the application to supply a new input function
+  68:fltk-1.3.4-1/png/pngrio.c ****  * for libpng if standard C streams aren't being used.
+  69:fltk-1.3.4-1/png/pngrio.c ****  *
+  70:fltk-1.3.4-1/png/pngrio.c ****  * This function takes as its arguments:
+  71:fltk-1.3.4-1/png/pngrio.c ****  *
+  72:fltk-1.3.4-1/png/pngrio.c ****  * png_ptr      - pointer to a png input data structure
+  73:fltk-1.3.4-1/png/pngrio.c ****  *
+  74:fltk-1.3.4-1/png/pngrio.c ****  * io_ptr       - pointer to user supplied structure containing info about
+  75:fltk-1.3.4-1/png/pngrio.c ****  *                the input functions.  May be NULL.
+  76:fltk-1.3.4-1/png/pngrio.c ****  *
+  77:fltk-1.3.4-1/png/pngrio.c ****  * read_data_fn - pointer to a new input function that takes as its
+  78:fltk-1.3.4-1/png/pngrio.c ****  *                arguments a pointer to a png_struct, a pointer to
+  79:fltk-1.3.4-1/png/pngrio.c ****  *                a location where input data can be stored, and a 32-bit
+  80:fltk-1.3.4-1/png/pngrio.c ****  *                unsigned int that is the number of bytes to be read.
+  81:fltk-1.3.4-1/png/pngrio.c ****  *                To exit and output any fatal error messages the new write
+  82:fltk-1.3.4-1/png/pngrio.c ****  *                function should call png_error(png_ptr, "Error msg").
+  83:fltk-1.3.4-1/png/pngrio.c ****  *                May be NULL, in which case libpng's default function will
+  84:fltk-1.3.4-1/png/pngrio.c ****  *                be used.
+  85:fltk-1.3.4-1/png/pngrio.c ****  */
+  86:fltk-1.3.4-1/png/pngrio.c **** void PNGAPI
+  87:fltk-1.3.4-1/png/pngrio.c **** png_set_read_fn(png_structrp png_ptr, png_voidp io_ptr,
+  88:fltk-1.3.4-1/png/pngrio.c ****    png_rw_ptr read_data_fn)
+  89:fltk-1.3.4-1/png/pngrio.c **** {
+ 142              		.loc 1 89 0
+ 143              		.cfi_startproc
+ 144              	.LVL13:
+  90:fltk-1.3.4-1/png/pngrio.c ****    if (png_ptr == NULL)
+ 145              		.loc 1 90 0
+ 146 0000 4885FF   		testq	%rdi, %rdi
+ 147 0003 7449     		je	.L24
+  91:fltk-1.3.4-1/png/pngrio.c ****       return;
+  92:fltk-1.3.4-1/png/pngrio.c **** 
+  93:fltk-1.3.4-1/png/pngrio.c ****    png_ptr->io_ptr = io_ptr;
+  94:fltk-1.3.4-1/png/pngrio.c **** 
+  95:fltk-1.3.4-1/png/pngrio.c **** #ifdef PNG_STDIO_SUPPORTED
+  96:fltk-1.3.4-1/png/pngrio.c ****    if (read_data_fn != NULL)
+  97:fltk-1.3.4-1/png/pngrio.c ****       png_ptr->read_data_fn = read_data_fn;
+ 148              		.loc 1 97 0
+ 149 0005 4885D2   		testq	%rdx, %rdx
+ 150 0008 B8000000 		movl	$png_default_read_data, %eax
+ 150      00
+  89:fltk-1.3.4-1/png/pngrio.c ****    if (png_ptr == NULL)
+ 151              		.loc 1 89 0
+ 152 000d 53       		pushq	%rbx
+ 153              		.cfi_def_cfa_offset 16
+ 154              		.cfi_offset 3, -16
+ 155              		.loc 1 97 0
+ 156 000e 480F44D0 		cmove	%rax, %rdx
+ 157              	.LVL14:
+  98:fltk-1.3.4-1/png/pngrio.c **** 
+  99:fltk-1.3.4-1/png/pngrio.c ****    else
+ 100:fltk-1.3.4-1/png/pngrio.c ****       png_ptr->read_data_fn = png_default_read_data;
+ 101:fltk-1.3.4-1/png/pngrio.c **** #else
+ 102:fltk-1.3.4-1/png/pngrio.c ****    png_ptr->read_data_fn = read_data_fn;
+ 103:fltk-1.3.4-1/png/pngrio.c **** #endif
+ 104:fltk-1.3.4-1/png/pngrio.c **** 
+ 105:fltk-1.3.4-1/png/pngrio.c **** #ifdef PNG_WRITE_SUPPORTED
+ 106:fltk-1.3.4-1/png/pngrio.c ****    /* It is an error to write to a read device */
+ 107:fltk-1.3.4-1/png/pngrio.c ****    if (png_ptr->write_data_fn != NULL)
+ 158              		.loc 1 107 0
+ 159 0012 4883BFF8 		cmpq	$0, 248(%rdi)
+ 159      00000000 
+ 160 001a 4889FB   		movq	%rdi, %rbx
+  93:fltk-1.3.4-1/png/pngrio.c **** 
+ 161              		.loc 1 93 0
+ 162 001d 4889B708 		movq	%rsi, 264(%rdi)
+ 162      010000
+  97:fltk-1.3.4-1/png/pngrio.c **** 
+ 163              		.loc 1 97 0
+ 164 0024 48899700 		movq	%rdx, 256(%rdi)
+ 164      010000
+ 165              		.loc 1 107 0
+ 166 002b 7415     		je	.L18
+ 108:fltk-1.3.4-1/png/pngrio.c ****    {
+ 109:fltk-1.3.4-1/png/pngrio.c ****       png_ptr->write_data_fn = NULL;
+ 167              		.loc 1 109 0
+ 168 002d 48C787F8 		movq	$0, 248(%rdi)
+ 168      00000000 
+ 168      000000
+ 110:fltk-1.3.4-1/png/pngrio.c ****       png_warning(png_ptr,
+ 169              		.loc 1 110 0
+ 170 0038 BE000000 		movl	$.LC4, %esi
+ 170      00
+ 171              	.LVL15:
+ 172 003d E8000000 		call	png_warning
+ 172      00
+ 173              	.LVL16:
+ 174              	.L18:
+ 111:fltk-1.3.4-1/png/pngrio.c ****           "Can't set both read_data_fn and write_data_fn in the"
+ 112:fltk-1.3.4-1/png/pngrio.c ****           " same structure");
+ 113:fltk-1.3.4-1/png/pngrio.c ****    }
+ 114:fltk-1.3.4-1/png/pngrio.c **** #endif
+ 115:fltk-1.3.4-1/png/pngrio.c **** 
+ 116:fltk-1.3.4-1/png/pngrio.c **** #ifdef PNG_WRITE_FLUSH_SUPPORTED
+ 117:fltk-1.3.4-1/png/pngrio.c ****    png_ptr->output_flush_fn = NULL;
+ 175              		.loc 1 117 0
+ 176 0042 48C783A0 		movq	$0, 672(%rbx)
+ 176      02000000 
+ 176      000000
+ 118:fltk-1.3.4-1/png/pngrio.c **** #endif
+ 119:fltk-1.3.4-1/png/pngrio.c **** }
+ 177              		.loc 1 119 0
+ 178 004d 5B       		popq	%rbx
+ 179              		.cfi_restore 3
+ 180              		.cfi_def_cfa_offset 8
+ 181              	.LVL17:
+ 182              	.L24:
+ 183 004e F3C3     		rep ret
+ 184              		.cfi_endproc
+ 185              	.LFE58:
+ 187              		.section	.text.unlikely.png_set_read_fn
+ 188              	.LCOLDE5:
+ 189              		.section	.text.png_set_read_fn
+ 190              	.LHOTE5:
+ 191              		.text
+ 192              	.Letext0:
+ 193              		.section	.text.unlikely.png_default_read_data
+ 194              	.Letext_cold0:
+ 195              		.file 3 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
+ 196              		.file 4 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 197              		.file 5 "/usr/include/stdio.h"
+ 198              		.file 6 "/usr/include/libio.h"
+ 199              		.file 7 "/usr/include/x86_64-linux-gnu/bits/setjmp.h"
+ 200              		.file 8 "/usr/include/x86_64-linux-gnu/bits/sigset.h"
+ 201              		.file 9 "/usr/include/setjmp.h"
+ 202              		.file 10 "fltk-1.3.4-1/png/pngconf.h"
+ 203              		.file 11 "fltk-1.3.4-1/png/png.h"
+ 204              		.file 12 "fltk-1.3.4-1/png/pngstruct.h"
+ 205              		.file 13 "fltk-1.3.4-1/png/pnginfo.h"
+ 206              		.file 14 "/usr/include/x86_64-linux-gnu/zconf.h"
+ 207              		.file 15 "/usr/include/zlib.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 pngrio.c
+     /tmp/ccxcExP6.s:17     .text.png_default_read_data:0000000000000000 png_default_read_data
+     /tmp/ccxcExP6.s:101    .text.png_read_data:0000000000000000 png_read_data
+     /tmp/ccxcExP6.s:140    .text.png_set_read_fn:0000000000000000 png_set_read_fn
+                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
+                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+                           .group:0000000000000000 wm4.pngpriv.h.26.ca3d1719773cd86007410b516123e125
+                           .group:0000000000000000 wm4.features.h.19.22780be97c2f806ec599b8b99aa89f7d
+                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
+                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
+                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
+                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
+                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
+                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
+                           .group:0000000000000000 wm4.stdlib.h.37.e081b308f911db94d3185af615f2b2e2
+                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
+                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
+                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
+                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
+                           .group:0000000000000000 wm4.endian.h.41.27d650ce666b76881e2a2a218ea61984
+                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
+                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
+                           .group:0000000000000000 wm4.string2.h.55.e4a4cfd7781cc64a4341475e67436ab1
+                           .group:0000000000000000 wm4.string3.h.31.2b75bd65145c50aeedb61673ce0d3293
+                           .group:0000000000000000 wm4.pnglibconf.h.15.30e2eea90e566ac06da4f4de487193d7
+                           .group:0000000000000000 wm4.pngpriv.h.130.f65d93453b5b5837849611ffe82d627a
+                           .group:0000000000000000 wm4.png.h.412.12a95b2193a7d0bc2282b72c70a28ce1
+                           .group:0000000000000000 wm4.limits.h.23.f0fd92c175c1576df467c4d5fe2b091a
+                           .group:0000000000000000 wm4.posix1_lim.h.25.28c8eb2d22697e7711efefdec5344a02
+                           .group:0000000000000000 wm4.local_lim.h.25.97ee4129efb08ad296101237bcd3401b
+                           .group:0000000000000000 wm4.limits.h.2.9ff59823e8adcf4502d980ef41362326
+                           .group:0000000000000000 wm4.local_lim.h.42.9dc3935e0e3b94e23cda247e4e39bd8b
+                           .group:0000000000000000 wm4.limits.h.60.eb7066f861c8b8edc7a0a399744b0335
+                           .group:0000000000000000 wm4.stddef.h.39.d5a83c17f38162a5dd6f834eaf38f8ef
+                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
+                           .group:0000000000000000 wm4.stddef.h.161.19e15733342b50ead2919490b095303e
+                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
+                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
+                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
+                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
+                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
+                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
+                           .group:0000000000000000 wm4.stdio.h.120.80cbf0ec1718a5b27e6428218e29c72d
+                           .group:0000000000000000 wm4.stdio_lim.h.23.f8541119d1bcf759d7de9531671fd758
+                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
+                           .group:0000000000000000 wm4.stdio.h.26.e50fc3808d57d965ceefc6f6dd102eb7
+                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
+                           .group:0000000000000000 wm4.setjmp.h.67.51aa194c3c89a841663c00cb93fd90ff
+                           .group:0000000000000000 wm4.time.h.26.6a3cabd4f228e226db6723a3b0c81ba6
+                           .group:0000000000000000 wm4.time.h.40.99bfb90272c7e82357ef3c2f5c6fefc8
+                           .group:0000000000000000 wm4.time.h.53.f8af6908497bac0ca16faea86fb8cd87
+                           .group:0000000000000000 wm4.pngconf.h.86.6636b2584cb7be1618479e118d71e58c
+                           .group:0000000000000000 wm4.png.h.506.fa53b6434c0b20c8e63094b04d7940c5
+                           .group:0000000000000000 wm4.pngpriv.h.298.dc2c896ce0eddc5cfadee24e76e3c417
+                           .group:0000000000000000 wm4.float.h.29.1cf88a0527b6b1225d49fbee2b32acb7
+                           .group:0000000000000000 wm4.math.h.26.671af5ac9cd425a35e0730f7b6d7cde2
+                           .group:0000000000000000 wm4.libmsimddeclstubs.h.34.75644856b74ba3d815155fe5fe7ecc56
+                           .group:0000000000000000 wm4.mathdef.h.23.67c0aa4a204f1f427459dfc651aba565
+                           .group:0000000000000000 wm4.math.h.55.cf380f99c57d42476a5252f30065036a
+                           .group:0000000000000000 wm4.math.h.84.742292806c6be54f49dc607928a827f7
+                           .group:0000000000000000 wm4.math.h.105.59ff0f83ebf6a04e70e145cef2d1185e
+                           .group:0000000000000000 wm4.math.h.152.48a142bc1575e748473ff86330dee044
+                           .group:0000000000000000 wm4.math.h.30.7cada3efe024725df2da4c705b6566be
+                           .group:0000000000000000 wm4.pngpriv.h.481.f98e7c29eaaa759546a3f9808bc25c74
+                           .group:0000000000000000 wm4.pngstruct.h.22.7b9573417641055ab8f42438aa8afadf
+                           .group:0000000000000000 wm4.zconf.h.9.bbc7b5783b51507f7721a5620139b4ee
+                           .group:0000000000000000 wm4.zconf.h.397.69c03305677a9a6792fe2a94f7c9f69b
+                           .group:0000000000000000 wm4.types.h.23.92678977f3921b8dce508274ac68f78d
+                           .group:0000000000000000 wm4.types.h.187.12f6c32afb936b45a5f241219964ce93
+                           .group:0000000000000000 wm4.stdarg.h.31.48e922dd0aaedfb616aafd8a7b7a4949
+                           .group:0000000000000000 wm4.unistd.h.23.c85a58a698f53edadcf64287ab24fecb
+                           .group:0000000000000000 wm4.posix_opt.h.20.9a8aece77957db1725bd2b9521e5f9c5
+                           .group:0000000000000000 wm4.unistd.h.213.4c582e35260d661b081322974b7c1e74
+                           .group:0000000000000000 wm4.unistd.h.284.7e168706bc8bd978e02fd1da439d9bc3
+                           .group:0000000000000000 wm4.confname.h.27.6b00117a32f457cc72e5ac810a9adade
+                           .group:0000000000000000 wm4.zconf.h.457.505c3613686dd75e492569d7a56a6eb0
+                           .group:0000000000000000 wm4.zlib.h.40.5a15529ab8e285cee4b0ddab32502c27
+                           .group:0000000000000000 wm4.pngstruct.h.44.bc957704556ff8ddcb697678a008ffae
+                           .group:0000000000000000 wm4.pngpriv.h.853.4585af3e74cfb155d8486c5333b94adf
+                           .group:0000000000000000 wm4.pngdebug.h.36.e9c57d5f35e3128225fb629498ec6fc8
+
+UNDEFINED SYMBOLS
+fread
+png_error
+png_warning

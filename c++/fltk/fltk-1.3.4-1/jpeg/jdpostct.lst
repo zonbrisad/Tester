@@ -1,0 +1,1157 @@
+   1              		.file	"jdpostct.c"
+   2              		.text
+   3              	.Ltext0:
+   4              		.section	.text.unlikely.start_pass_dpost,"ax",@progbits
+   5              	.LCOLDB0:
+   6              		.section	.text.start_pass_dpost,"ax",@progbits
+   7              	.LHOTB0:
+   8              		.p2align 4,,15
+   9              		.section	.text.unlikely.start_pass_dpost
+  10              	.Ltext_cold0:
+  11              		.section	.text.start_pass_dpost
+  13              	start_pass_dpost:
+  14              	.LFB61:
+  15              		.file 1 "fltk-1.3.4-1/jpeg/jdpostct.c"
+   1:fltk-1.3.4-1/jpeg/jdpostct.c **** /*
+   2:fltk-1.3.4-1/jpeg/jdpostct.c ****  * jdpostct.c
+   3:fltk-1.3.4-1/jpeg/jdpostct.c ****  *
+   4:fltk-1.3.4-1/jpeg/jdpostct.c ****  * Copyright (C) 1994-1996, Thomas G. Lane.
+   5:fltk-1.3.4-1/jpeg/jdpostct.c ****  * This file is part of the Independent JPEG Group's software.
+   6:fltk-1.3.4-1/jpeg/jdpostct.c ****  * For conditions of distribution and use, see the accompanying README file.
+   7:fltk-1.3.4-1/jpeg/jdpostct.c ****  *
+   8:fltk-1.3.4-1/jpeg/jdpostct.c ****  * This file contains the decompression postprocessing controller.
+   9:fltk-1.3.4-1/jpeg/jdpostct.c ****  * This controller manages the upsampling, color conversion, and color
+  10:fltk-1.3.4-1/jpeg/jdpostct.c ****  * quantization/reduction steps; specifically, it controls the buffering
+  11:fltk-1.3.4-1/jpeg/jdpostct.c ****  * between upsample/color conversion and color quantization/reduction.
+  12:fltk-1.3.4-1/jpeg/jdpostct.c ****  *
+  13:fltk-1.3.4-1/jpeg/jdpostct.c ****  * If no color quantization/reduction is required, then this module has no
+  14:fltk-1.3.4-1/jpeg/jdpostct.c ****  * work to do, and it just hands off to the upsample/color conversion code.
+  15:fltk-1.3.4-1/jpeg/jdpostct.c ****  * An integrated upsample/convert/quantize process would replace this module
+  16:fltk-1.3.4-1/jpeg/jdpostct.c ****  * entirely.
+  17:fltk-1.3.4-1/jpeg/jdpostct.c ****  */
+  18:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+  19:fltk-1.3.4-1/jpeg/jdpostct.c **** #define JPEG_INTERNALS
+  20:fltk-1.3.4-1/jpeg/jdpostct.c **** #include "jinclude.h"
+  21:fltk-1.3.4-1/jpeg/jdpostct.c **** #include "jpeglib.h"
+  22:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+  23:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+  24:fltk-1.3.4-1/jpeg/jdpostct.c **** /* Private buffer controller object */
+  25:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+  26:fltk-1.3.4-1/jpeg/jdpostct.c **** typedef struct {
+  27:fltk-1.3.4-1/jpeg/jdpostct.c ****   struct jpeg_d_post_controller pub; /* public fields */
+  28:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+  29:fltk-1.3.4-1/jpeg/jdpostct.c ****   /* Color quantization source buffer: this holds output data from
+  30:fltk-1.3.4-1/jpeg/jdpostct.c ****    * the upsample/color conversion step to be passed to the quantizer.
+  31:fltk-1.3.4-1/jpeg/jdpostct.c ****    * For two-pass color quantization, we need a full-image buffer;
+  32:fltk-1.3.4-1/jpeg/jdpostct.c ****    * for one-pass operation, a strip buffer is sufficient.
+  33:fltk-1.3.4-1/jpeg/jdpostct.c ****    */
+  34:fltk-1.3.4-1/jpeg/jdpostct.c ****   jvirt_sarray_ptr whole_image;	/* virtual array, or NULL if one-pass */
+  35:fltk-1.3.4-1/jpeg/jdpostct.c ****   JSAMPARRAY buffer;		/* strip buffer, or current strip of virtual */
+  36:fltk-1.3.4-1/jpeg/jdpostct.c ****   JDIMENSION strip_height;	/* buffer size in rows */
+  37:fltk-1.3.4-1/jpeg/jdpostct.c ****   /* for two-pass mode only: */
+  38:fltk-1.3.4-1/jpeg/jdpostct.c ****   JDIMENSION starting_row;	/* row # of first row in current strip */
+  39:fltk-1.3.4-1/jpeg/jdpostct.c ****   JDIMENSION next_row;		/* index of next row to fill/empty in strip */
+  40:fltk-1.3.4-1/jpeg/jdpostct.c **** } my_post_controller;
+  41:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+  42:fltk-1.3.4-1/jpeg/jdpostct.c **** typedef my_post_controller * my_post_ptr;
+  43:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+  44:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+  45:fltk-1.3.4-1/jpeg/jdpostct.c **** /* Forward declarations */
+  46:fltk-1.3.4-1/jpeg/jdpostct.c **** METHODDEF(void) post_process_1pass
+  47:fltk-1.3.4-1/jpeg/jdpostct.c **** 	JPP((j_decompress_ptr cinfo,
+  48:fltk-1.3.4-1/jpeg/jdpostct.c **** 	     JSAMPIMAGE input_buf, JDIMENSION *in_row_group_ctr,
+  49:fltk-1.3.4-1/jpeg/jdpostct.c **** 	     JDIMENSION in_row_groups_avail,
+  50:fltk-1.3.4-1/jpeg/jdpostct.c **** 	     JSAMPARRAY output_buf, JDIMENSION *out_row_ctr,
+  51:fltk-1.3.4-1/jpeg/jdpostct.c **** 	     JDIMENSION out_rows_avail));
+  52:fltk-1.3.4-1/jpeg/jdpostct.c **** #ifdef QUANT_2PASS_SUPPORTED
+  53:fltk-1.3.4-1/jpeg/jdpostct.c **** METHODDEF(void) post_process_prepass
+  54:fltk-1.3.4-1/jpeg/jdpostct.c **** 	JPP((j_decompress_ptr cinfo,
+  55:fltk-1.3.4-1/jpeg/jdpostct.c **** 	     JSAMPIMAGE input_buf, JDIMENSION *in_row_group_ctr,
+  56:fltk-1.3.4-1/jpeg/jdpostct.c **** 	     JDIMENSION in_row_groups_avail,
+  57:fltk-1.3.4-1/jpeg/jdpostct.c **** 	     JSAMPARRAY output_buf, JDIMENSION *out_row_ctr,
+  58:fltk-1.3.4-1/jpeg/jdpostct.c **** 	     JDIMENSION out_rows_avail));
+  59:fltk-1.3.4-1/jpeg/jdpostct.c **** METHODDEF(void) post_process_2pass
+  60:fltk-1.3.4-1/jpeg/jdpostct.c **** 	JPP((j_decompress_ptr cinfo,
+  61:fltk-1.3.4-1/jpeg/jdpostct.c **** 	     JSAMPIMAGE input_buf, JDIMENSION *in_row_group_ctr,
+  62:fltk-1.3.4-1/jpeg/jdpostct.c **** 	     JDIMENSION in_row_groups_avail,
+  63:fltk-1.3.4-1/jpeg/jdpostct.c **** 	     JSAMPARRAY output_buf, JDIMENSION *out_row_ctr,
+  64:fltk-1.3.4-1/jpeg/jdpostct.c **** 	     JDIMENSION out_rows_avail));
+  65:fltk-1.3.4-1/jpeg/jdpostct.c **** #endif
+  66:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+  67:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+  68:fltk-1.3.4-1/jpeg/jdpostct.c **** /*
+  69:fltk-1.3.4-1/jpeg/jdpostct.c ****  * Initialize for a processing pass.
+  70:fltk-1.3.4-1/jpeg/jdpostct.c ****  */
+  71:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+  72:fltk-1.3.4-1/jpeg/jdpostct.c **** METHODDEF(void)
+  73:fltk-1.3.4-1/jpeg/jdpostct.c **** start_pass_dpost (j_decompress_ptr cinfo, J_BUF_MODE pass_mode)
+  74:fltk-1.3.4-1/jpeg/jdpostct.c **** {
+  16              		.loc 1 74 0
+  17              		.cfi_startproc
+  18              	.LVL0:
+  75:fltk-1.3.4-1/jpeg/jdpostct.c ****   my_post_ptr post = (my_post_ptr) cinfo->post;
+  76:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+  77:fltk-1.3.4-1/jpeg/jdpostct.c ****   switch (pass_mode) {
+  19              		.loc 1 77 0
+  20 0000 83FE02   		cmpl	$2, %esi
+  74:fltk-1.3.4-1/jpeg/jdpostct.c ****   my_post_ptr post = (my_post_ptr) cinfo->post;
+  21              		.loc 1 74 0
+  22 0003 53       		pushq	%rbx
+  23              		.cfi_def_cfa_offset 16
+  24              		.cfi_offset 3, -16
+  75:fltk-1.3.4-1/jpeg/jdpostct.c ****   my_post_ptr post = (my_post_ptr) cinfo->post;
+  25              		.loc 1 75 0
+  26 0004 488B9F58 		movq	600(%rdi), %rbx
+  26      020000
+  27              	.LVL1:
+  28              		.loc 1 77 0
+  29 000b 0F848F00 		je	.L3
+  29      0000
+  30 0011 83FE03   		cmpl	$3, %esi
+  31 0014 7462     		je	.L4
+  32 0016 85F6     		testl	%esi, %esi
+  33 0018 7426     		je	.L13
+  78:fltk-1.3.4-1/jpeg/jdpostct.c ****   case JBUF_PASS_THRU:
+  79:fltk-1.3.4-1/jpeg/jdpostct.c ****     if (cinfo->quantize_colors) {
+  80:fltk-1.3.4-1/jpeg/jdpostct.c ****       /* Single-pass processing with color quantization. */
+  81:fltk-1.3.4-1/jpeg/jdpostct.c ****       post->pub.post_process_data = post_process_1pass;
+  82:fltk-1.3.4-1/jpeg/jdpostct.c ****       /* We could be doing buffered-image output before starting a 2-pass
+  83:fltk-1.3.4-1/jpeg/jdpostct.c ****        * color quantization; in that case, jinit_d_post_controller did not
+  84:fltk-1.3.4-1/jpeg/jdpostct.c ****        * allocate a strip buffer.  Use the virtual-array buffer as workspace.
+  85:fltk-1.3.4-1/jpeg/jdpostct.c ****        */
+  86:fltk-1.3.4-1/jpeg/jdpostct.c ****       if (post->buffer == NULL) {
+  87:fltk-1.3.4-1/jpeg/jdpostct.c **** 	post->buffer = (*cinfo->mem->access_virt_sarray)
+  88:fltk-1.3.4-1/jpeg/jdpostct.c **** 	  ((j_common_ptr) cinfo, post->whole_image,
+  89:fltk-1.3.4-1/jpeg/jdpostct.c **** 	   (JDIMENSION) 0, post->strip_height, TRUE);
+  90:fltk-1.3.4-1/jpeg/jdpostct.c ****       }
+  91:fltk-1.3.4-1/jpeg/jdpostct.c ****     } else {
+  92:fltk-1.3.4-1/jpeg/jdpostct.c ****       /* For single-pass processing without color quantization,
+  93:fltk-1.3.4-1/jpeg/jdpostct.c ****        * I have no work to do; just call the upsampler directly.
+  94:fltk-1.3.4-1/jpeg/jdpostct.c ****        */
+  95:fltk-1.3.4-1/jpeg/jdpostct.c ****       post->pub.post_process_data = cinfo->upsample->upsample;
+  96:fltk-1.3.4-1/jpeg/jdpostct.c ****     }
+  97:fltk-1.3.4-1/jpeg/jdpostct.c ****     break;
+  98:fltk-1.3.4-1/jpeg/jdpostct.c **** #ifdef QUANT_2PASS_SUPPORTED
+  99:fltk-1.3.4-1/jpeg/jdpostct.c ****   case JBUF_SAVE_AND_PASS:
+ 100:fltk-1.3.4-1/jpeg/jdpostct.c ****     /* First pass of 2-pass quantization */
+ 101:fltk-1.3.4-1/jpeg/jdpostct.c ****     if (post->whole_image == NULL)
+ 102:fltk-1.3.4-1/jpeg/jdpostct.c ****       ERREXIT(cinfo, JERR_BAD_BUFFER_MODE);
+ 103:fltk-1.3.4-1/jpeg/jdpostct.c ****     post->pub.post_process_data = post_process_prepass;
+ 104:fltk-1.3.4-1/jpeg/jdpostct.c ****     break;
+ 105:fltk-1.3.4-1/jpeg/jdpostct.c ****   case JBUF_CRANK_DEST:
+ 106:fltk-1.3.4-1/jpeg/jdpostct.c ****     /* Second pass of 2-pass quantization */
+ 107:fltk-1.3.4-1/jpeg/jdpostct.c ****     if (post->whole_image == NULL)
+ 108:fltk-1.3.4-1/jpeg/jdpostct.c ****       ERREXIT(cinfo, JERR_BAD_BUFFER_MODE);
+ 109:fltk-1.3.4-1/jpeg/jdpostct.c ****     post->pub.post_process_data = post_process_2pass;
+ 110:fltk-1.3.4-1/jpeg/jdpostct.c ****     break;
+ 111:fltk-1.3.4-1/jpeg/jdpostct.c **** #endif /* QUANT_2PASS_SUPPORTED */
+ 112:fltk-1.3.4-1/jpeg/jdpostct.c ****   default:
+ 113:fltk-1.3.4-1/jpeg/jdpostct.c ****     ERREXIT(cinfo, JERR_BAD_BUFFER_MODE);
+  34              		.loc 1 113 0
+  35 001a 488B07   		movq	(%rdi), %rax
+  36 001d C7402803 		movl	$3, 40(%rax)
+  36      000000
+  37 0024 488B07   		movq	(%rdi), %rax
+  38 0027 FF10     		call	*(%rax)
+  39              	.LVL2:
+  40              	.L7:
+ 114:fltk-1.3.4-1/jpeg/jdpostct.c ****     break;
+ 115:fltk-1.3.4-1/jpeg/jdpostct.c ****   }
+ 116:fltk-1.3.4-1/jpeg/jdpostct.c ****   post->starting_row = post->next_row = 0;
+  41              		.loc 1 116 0
+  42 0029 C7432800 		movl	$0, 40(%rbx)
+  42      000000
+  43 0030 C7432400 		movl	$0, 36(%rbx)
+  43      000000
+ 117:fltk-1.3.4-1/jpeg/jdpostct.c **** }
+  44              		.loc 1 117 0
+  45 0037 5B       		popq	%rbx
+  46              		.cfi_remember_state
+  47              		.cfi_def_cfa_offset 8
+  48              	.LVL3:
+  49 0038 C3       		ret
+  50              	.LVL4:
+  51 0039 0F1F8000 		.p2align 4,,10
+  51      000000
+  52              		.p2align 3
+  53              	.L13:
+  54              		.cfi_restore_state
+  79:fltk-1.3.4-1/jpeg/jdpostct.c ****       /* Single-pass processing with color quantization. */
+  55              		.loc 1 79 0
+  56 0040 8B476C   		movl	108(%rdi), %eax
+  57 0043 85C0     		testl	%eax, %eax
+  58 0045 7479     		je	.L6
+  86:fltk-1.3.4-1/jpeg/jdpostct.c **** 	post->buffer = (*cinfo->mem->access_virt_sarray)
+  59              		.loc 1 86 0
+  60 0047 48837B18 		cmpq	$0, 24(%rbx)
+  60      00
+  81:fltk-1.3.4-1/jpeg/jdpostct.c ****       /* We could be doing buffered-image output before starting a 2-pass
+  61              		.loc 1 81 0
+  62 004c 48C74308 		movq	$post_process_1pass, 8(%rbx)
+  62      00000000 
+  86:fltk-1.3.4-1/jpeg/jdpostct.c **** 	post->buffer = (*cinfo->mem->access_virt_sarray)
+  63              		.loc 1 86 0
+  64 0054 75D3     		jne	.L7
+  87:fltk-1.3.4-1/jpeg/jdpostct.c **** 	  ((j_common_ptr) cinfo, post->whole_image,
+  65              		.loc 1 87 0
+  66 0056 488B4708 		movq	8(%rdi), %rax
+  67 005a 8B4B20   		movl	32(%rbx), %ecx
+  68 005d 41B80100 		movl	$1, %r8d
+  68      0000
+  69 0063 488B7310 		movq	16(%rbx), %rsi
+  70              	.LVL5:
+  71 0067 31D2     		xorl	%edx, %edx
+  72 0069 FF5038   		call	*56(%rax)
+  73              	.LVL6:
+  74 006c 48894318 		movq	%rax, 24(%rbx)
+  75 0070 EBB7     		jmp	.L7
+  76              	.LVL7:
+  77              		.p2align 4,,10
+  78 0072 660F1F44 		.p2align 3
+  78      0000
+  79              	.L4:
+ 101:fltk-1.3.4-1/jpeg/jdpostct.c ****       ERREXIT(cinfo, JERR_BAD_BUFFER_MODE);
+  80              		.loc 1 101 0
+  81 0078 48837B10 		cmpq	$0, 16(%rbx)
+  81      00
+  82 007d 7459     		je	.L14
+  83              	.LVL8:
+  84              	.L8:
+ 103:fltk-1.3.4-1/jpeg/jdpostct.c ****     break;
+  85              		.loc 1 103 0
+  86 007f 48C74308 		movq	$post_process_prepass, 8(%rbx)
+  86      00000000 
+ 116:fltk-1.3.4-1/jpeg/jdpostct.c **** }
+  87              		.loc 1 116 0
+  88 0087 C7432800 		movl	$0, 40(%rbx)
+  88      000000
+  89 008e C7432400 		movl	$0, 36(%rbx)
+  89      000000
+  90              		.loc 1 117 0
+  91 0095 5B       		popq	%rbx
+  92              		.cfi_remember_state
+  93              		.cfi_def_cfa_offset 8
+  94              	.LVL9:
+  95 0096 C3       		ret
+  96              	.LVL10:
+  97 0097 660F1F84 		.p2align 4,,10
+  97      00000000 
+  97      00
+  98              		.p2align 3
+  99              	.L3:
+ 100              		.cfi_restore_state
+ 107:fltk-1.3.4-1/jpeg/jdpostct.c ****       ERREXIT(cinfo, JERR_BAD_BUFFER_MODE);
+ 101              		.loc 1 107 0
+ 102 00a0 48837B10 		cmpq	$0, 16(%rbx)
+ 102      00
+ 103 00a5 7449     		je	.L15
+ 104              	.LVL11:
+ 105              	.L9:
+ 109:fltk-1.3.4-1/jpeg/jdpostct.c ****     break;
+ 106              		.loc 1 109 0
+ 107 00a7 48C74308 		movq	$post_process_2pass, 8(%rbx)
+ 107      00000000 
+ 116:fltk-1.3.4-1/jpeg/jdpostct.c **** }
+ 108              		.loc 1 116 0
+ 109 00af C7432800 		movl	$0, 40(%rbx)
+ 109      000000
+ 110 00b6 C7432400 		movl	$0, 36(%rbx)
+ 110      000000
+ 111              		.loc 1 117 0
+ 112 00bd 5B       		popq	%rbx
+ 113              		.cfi_remember_state
+ 114              		.cfi_def_cfa_offset 8
+ 115              	.LVL12:
+ 116 00be C3       		ret
+ 117              	.LVL13:
+ 118 00bf 90       		.p2align 4,,10
+ 119              		.p2align 3
+ 120              	.L6:
+ 121              		.cfi_restore_state
+  95:fltk-1.3.4-1/jpeg/jdpostct.c ****     }
+ 122              		.loc 1 95 0
+ 123 00c0 488B8780 		movq	640(%rdi), %rax
+ 123      020000
+ 124 00c7 488B4008 		movq	8(%rax), %rax
+ 125 00cb 48894308 		movq	%rax, 8(%rbx)
+ 126 00cf E955FFFF 		jmp	.L7
+ 126      FF
+ 127              		.p2align 4,,10
+ 128 00d4 0F1F4000 		.p2align 3
+ 129              	.L14:
+ 102:fltk-1.3.4-1/jpeg/jdpostct.c ****     post->pub.post_process_data = post_process_prepass;
+ 130              		.loc 1 102 0
+ 131 00d8 488B07   		movq	(%rdi), %rax
+ 132 00db C7402803 		movl	$3, 40(%rax)
+ 132      000000
+ 133 00e2 488B07   		movq	(%rdi), %rax
+ 134 00e5 FF10     		call	*(%rax)
+ 135              	.LVL14:
+ 136 00e7 EB96     		jmp	.L8
+ 137              	.LVL15:
+ 138 00e9 0F1F8000 		.p2align 4,,10
+ 138      000000
+ 139              		.p2align 3
+ 140              	.L15:
+ 108:fltk-1.3.4-1/jpeg/jdpostct.c ****     post->pub.post_process_data = post_process_2pass;
+ 141              		.loc 1 108 0
+ 142 00f0 488B07   		movq	(%rdi), %rax
+ 143 00f3 C7402803 		movl	$3, 40(%rax)
+ 143      000000
+ 144 00fa 488B07   		movq	(%rdi), %rax
+ 145 00fd FF10     		call	*(%rax)
+ 146              	.LVL16:
+ 147 00ff EBA6     		jmp	.L9
+ 148              		.cfi_endproc
+ 149              	.LFE61:
+ 151              		.section	.text.unlikely.start_pass_dpost
+ 152              	.LCOLDE0:
+ 153              		.section	.text.start_pass_dpost
+ 154              	.LHOTE0:
+ 155              		.section	.text.unlikely.post_process_1pass,"ax",@progbits
+ 156              	.LCOLDB1:
+ 157              		.section	.text.post_process_1pass,"ax",@progbits
+ 158              	.LHOTB1:
+ 159              		.p2align 4,,15
+ 161              	post_process_1pass:
+ 162              	.LFB62:
+ 118:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+ 119:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+ 120:fltk-1.3.4-1/jpeg/jdpostct.c **** /*
+ 121:fltk-1.3.4-1/jpeg/jdpostct.c ****  * Process some data in the one-pass (strip buffer) case.
+ 122:fltk-1.3.4-1/jpeg/jdpostct.c ****  * This is used for color precision reduction as well as one-pass quantization.
+ 123:fltk-1.3.4-1/jpeg/jdpostct.c ****  */
+ 124:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+ 125:fltk-1.3.4-1/jpeg/jdpostct.c **** METHODDEF(void)
+ 126:fltk-1.3.4-1/jpeg/jdpostct.c **** post_process_1pass (j_decompress_ptr cinfo,
+ 127:fltk-1.3.4-1/jpeg/jdpostct.c **** 		    JSAMPIMAGE input_buf, JDIMENSION *in_row_group_ctr,
+ 128:fltk-1.3.4-1/jpeg/jdpostct.c **** 		    JDIMENSION in_row_groups_avail,
+ 129:fltk-1.3.4-1/jpeg/jdpostct.c **** 		    JSAMPARRAY output_buf, JDIMENSION *out_row_ctr,
+ 130:fltk-1.3.4-1/jpeg/jdpostct.c **** 		    JDIMENSION out_rows_avail)
+ 131:fltk-1.3.4-1/jpeg/jdpostct.c **** {
+ 163              		.loc 1 131 0
+ 164              		.cfi_startproc
+ 165              	.LVL17:
+ 166 0000 4155     		pushq	%r13
+ 167              		.cfi_def_cfa_offset 16
+ 168              		.cfi_offset 13, -16
+ 169 0002 4154     		pushq	%r12
+ 170              		.cfi_def_cfa_offset 24
+ 171              		.cfi_offset 12, -24
+ 172 0004 4D89C5   		movq	%r8, %r13
+ 173 0007 55       		pushq	%rbp
+ 174              		.cfi_def_cfa_offset 32
+ 175              		.cfi_offset 6, -32
+ 176 0008 53       		pushq	%rbx
+ 177              		.cfi_def_cfa_offset 40
+ 178              		.cfi_offset 3, -40
+ 179 0009 4889FB   		movq	%rdi, %rbx
+ 180 000c 4C89CD   		movq	%r9, %rbp
+ 181 000f 4883EC20 		subq	$32, %rsp
+ 182              		.cfi_def_cfa_offset 72
+ 132:fltk-1.3.4-1/jpeg/jdpostct.c ****   my_post_ptr post = (my_post_ptr) cinfo->post;
+ 183              		.loc 1 132 0
+ 184 0013 4C8BA758 		movq	600(%rdi), %r12
+ 184      020000
+ 185              	.LVL18:
+ 133:fltk-1.3.4-1/jpeg/jdpostct.c ****   JDIMENSION num_rows, max_rows;
+ 134:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+ 135:fltk-1.3.4-1/jpeg/jdpostct.c ****   /* Fill the buffer, but not more than what we can dump out in one go. */
+ 136:fltk-1.3.4-1/jpeg/jdpostct.c ****   /* Note we rely on the upsampler to detect bottom of image. */
+ 137:fltk-1.3.4-1/jpeg/jdpostct.c ****   max_rows = out_rows_avail - *out_row_ctr;
+ 138:fltk-1.3.4-1/jpeg/jdpostct.c ****   if (max_rows > post->strip_height)
+ 139:fltk-1.3.4-1/jpeg/jdpostct.c ****     max_rows = post->strip_height;
+ 140:fltk-1.3.4-1/jpeg/jdpostct.c ****   num_rows = 0;
+ 141:fltk-1.3.4-1/jpeg/jdpostct.c ****   (*cinfo->upsample->upsample) (cinfo,
+ 186              		.loc 1 141 0
+ 187 001a 4C8B9380 		movq	640(%rbx), %r10
+ 187      020000
+ 131:fltk-1.3.4-1/jpeg/jdpostct.c ****   my_post_ptr post = (my_post_ptr) cinfo->post;
+ 188              		.loc 1 131 0
+ 189 0021 64488B04 		movq	%fs:40, %rax
+ 189      25280000 
+ 189      00
+ 190 002a 48894424 		movq	%rax, 16(%rsp)
+ 190      10
+ 191 002f 31C0     		xorl	%eax, %eax
+ 137:fltk-1.3.4-1/jpeg/jdpostct.c ****   if (max_rows > post->strip_height)
+ 192              		.loc 1 137 0
+ 193 0031 8B442448 		movl	72(%rsp), %eax
+ 194 0035 412B01   		subl	(%r9), %eax
+ 195              	.LVL19:
+ 138:fltk-1.3.4-1/jpeg/jdpostct.c ****     max_rows = post->strip_height;
+ 196              		.loc 1 138 0
+ 197 0038 418B7C24 		movl	32(%r12), %edi
+ 197      20
+ 198              	.LVL20:
+ 140:fltk-1.3.4-1/jpeg/jdpostct.c ****   (*cinfo->upsample->upsample) (cinfo,
+ 199              		.loc 1 140 0
+ 200 003d C744240C 		movl	$0, 12(%rsp)
+ 200      00000000 
+ 201              		.loc 1 141 0
+ 202 0045 39F8     		cmpl	%edi, %eax
+ 203 0047 0F47C7   		cmova	%edi, %eax
+ 204              	.LVL21:
+ 205 004a 4889DF   		movq	%rbx, %rdi
+ 206              	.LVL22:
+ 207 004d 50       		pushq	%rax
+ 208              		.cfi_def_cfa_offset 80
+ 209              	.LVL23:
+ 210 004e 4D8B4424 		movq	24(%r12), %r8
+ 210      18
+ 211              	.LVL24:
+ 212 0053 4C8D4C24 		leaq	20(%rsp), %r9
+ 212      14
+ 213              	.LVL25:
+ 214 0058 41FF5208 		call	*8(%r10)
+ 215              	.LVL26:
+ 142:fltk-1.3.4-1/jpeg/jdpostct.c **** 		input_buf, in_row_group_ctr, in_row_groups_avail,
+ 143:fltk-1.3.4-1/jpeg/jdpostct.c **** 		post->buffer, &num_rows, max_rows);
+ 144:fltk-1.3.4-1/jpeg/jdpostct.c ****   /* Quantize and emit data. */
+ 145:fltk-1.3.4-1/jpeg/jdpostct.c ****   (*cinfo->cquantize->color_quantize) (cinfo,
+ 216              		.loc 1 145 0
+ 217 005c 8B4500   		movl	0(%rbp), %eax
+ 218 005f 8B4C2414 		movl	20(%rsp), %ecx
+ 219 0063 4889DF   		movq	%rbx, %rdi
+ 220 0066 498B7424 		movq	24(%r12), %rsi
+ 220      18
+ 221 006b 498D54C5 		leaq	0(%r13,%rax,8), %rdx
+ 221      00
+ 222 0070 488B8390 		movq	656(%rbx), %rax
+ 222      020000
+ 223 0077 FF5008   		call	*8(%rax)
+ 224              	.LVL27:
+ 146:fltk-1.3.4-1/jpeg/jdpostct.c **** 		post->buffer, output_buf + *out_row_ctr, (int) num_rows);
+ 147:fltk-1.3.4-1/jpeg/jdpostct.c ****   *out_row_ctr += num_rows;
+ 225              		.loc 1 147 0
+ 226 007a 8B442414 		movl	20(%rsp), %eax
+ 227 007e 014500   		addl	%eax, 0(%rbp)
+ 148:fltk-1.3.4-1/jpeg/jdpostct.c **** }
+ 228              		.loc 1 148 0
+ 229 0081 58       		popq	%rax
+ 230              		.cfi_def_cfa_offset 72
+ 231 0082 5A       		popq	%rdx
+ 232              		.cfi_def_cfa_offset 64
+ 233 0083 488B4424 		movq	8(%rsp), %rax
+ 233      08
+ 234 0088 64483304 		xorq	%fs:40, %rax
+ 234      25280000 
+ 234      00
+ 235 0091 750B     		jne	.L19
+ 236 0093 4883C418 		addq	$24, %rsp
+ 237              		.cfi_remember_state
+ 238              		.cfi_def_cfa_offset 40
+ 239 0097 5B       		popq	%rbx
+ 240              		.cfi_def_cfa_offset 32
+ 241              	.LVL28:
+ 242 0098 5D       		popq	%rbp
+ 243              		.cfi_def_cfa_offset 24
+ 244              	.LVL29:
+ 245 0099 415C     		popq	%r12
+ 246              		.cfi_def_cfa_offset 16
+ 247              	.LVL30:
+ 248 009b 415D     		popq	%r13
+ 249              		.cfi_def_cfa_offset 8
+ 250              	.LVL31:
+ 251 009d C3       		ret
+ 252              	.LVL32:
+ 253              	.L19:
+ 254              		.cfi_restore_state
+ 255 009e E8000000 		call	__stack_chk_fail
+ 255      00
+ 256              	.LVL33:
+ 257              		.cfi_endproc
+ 258              	.LFE62:
+ 260              		.section	.text.unlikely.post_process_1pass
+ 261              	.LCOLDE1:
+ 262              		.section	.text.post_process_1pass
+ 263              	.LHOTE1:
+ 264              		.section	.text.unlikely.post_process_prepass,"ax",@progbits
+ 265              	.LCOLDB2:
+ 266              		.section	.text.post_process_prepass,"ax",@progbits
+ 267              	.LHOTB2:
+ 268              		.p2align 4,,15
+ 270              	post_process_prepass:
+ 271              	.LFB63:
+ 149:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+ 150:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+ 151:fltk-1.3.4-1/jpeg/jdpostct.c **** #ifdef QUANT_2PASS_SUPPORTED
+ 152:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+ 153:fltk-1.3.4-1/jpeg/jdpostct.c **** /*
+ 154:fltk-1.3.4-1/jpeg/jdpostct.c ****  * Process some data in the first pass of 2-pass quantization.
+ 155:fltk-1.3.4-1/jpeg/jdpostct.c ****  */
+ 156:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+ 157:fltk-1.3.4-1/jpeg/jdpostct.c **** METHODDEF(void)
+ 158:fltk-1.3.4-1/jpeg/jdpostct.c **** post_process_prepass (j_decompress_ptr cinfo,
+ 159:fltk-1.3.4-1/jpeg/jdpostct.c **** 		      JSAMPIMAGE input_buf, JDIMENSION *in_row_group_ctr,
+ 160:fltk-1.3.4-1/jpeg/jdpostct.c **** 		      JDIMENSION in_row_groups_avail,
+ 161:fltk-1.3.4-1/jpeg/jdpostct.c **** 		      JSAMPARRAY output_buf, JDIMENSION *out_row_ctr,
+ 162:fltk-1.3.4-1/jpeg/jdpostct.c **** 		      JDIMENSION out_rows_avail)
+ 163:fltk-1.3.4-1/jpeg/jdpostct.c **** {
+ 272              		.loc 1 163 0
+ 273              		.cfi_startproc
+ 274              	.LVL34:
+ 275 0000 4157     		pushq	%r15
+ 276              		.cfi_def_cfa_offset 16
+ 277              		.cfi_offset 15, -16
+ 278 0002 4156     		pushq	%r14
+ 279              		.cfi_def_cfa_offset 24
+ 280              		.cfi_offset 14, -24
+ 281 0004 4989D7   		movq	%rdx, %r15
+ 282 0007 4155     		pushq	%r13
+ 283              		.cfi_def_cfa_offset 32
+ 284              		.cfi_offset 13, -32
+ 285 0009 4154     		pushq	%r12
+ 286              		.cfi_def_cfa_offset 40
+ 287              		.cfi_offset 12, -40
+ 288 000b 4189CA   		movl	%ecx, %r10d
+ 289 000e 55       		pushq	%rbp
+ 290              		.cfi_def_cfa_offset 48
+ 291              		.cfi_offset 6, -48
+ 292 000f 53       		pushq	%rbx
+ 293              		.cfi_def_cfa_offset 56
+ 294              		.cfi_offset 3, -56
+ 295 0010 4889FD   		movq	%rdi, %rbp
+ 296 0013 4989F4   		movq	%rsi, %r12
+ 297 0016 4D89CE   		movq	%r9, %r14
+ 298 0019 4883EC18 		subq	$24, %rsp
+ 299              		.cfi_def_cfa_offset 80
+ 164:fltk-1.3.4-1/jpeg/jdpostct.c ****   my_post_ptr post = (my_post_ptr) cinfo->post;
+ 300              		.loc 1 164 0
+ 301 001d 488B9F58 		movq	600(%rdi), %rbx
+ 301      020000
+ 302              	.LVL35:
+ 165:fltk-1.3.4-1/jpeg/jdpostct.c ****   JDIMENSION old_next_row, num_rows;
+ 166:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+ 167:fltk-1.3.4-1/jpeg/jdpostct.c ****   /* Reposition virtual buffer if at start of strip. */
+ 168:fltk-1.3.4-1/jpeg/jdpostct.c ****   if (post->next_row == 0) {
+ 303              		.loc 1 168 0
+ 304 0024 448B6B28 		movl	40(%rbx), %r13d
+ 305 0028 4585ED   		testl	%r13d, %r13d
+ 306 002b 7453     		je	.L21
+ 307 002d 4C8B4318 		movq	24(%rbx), %r8
+ 308              	.LVL36:
+ 309              	.L22:
+ 169:fltk-1.3.4-1/jpeg/jdpostct.c ****     post->buffer = (*cinfo->mem->access_virt_sarray)
+ 170:fltk-1.3.4-1/jpeg/jdpostct.c **** 	((j_common_ptr) cinfo, post->whole_image,
+ 171:fltk-1.3.4-1/jpeg/jdpostct.c **** 	 post->starting_row, post->strip_height, TRUE);
+ 172:fltk-1.3.4-1/jpeg/jdpostct.c ****   }
+ 173:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+ 174:fltk-1.3.4-1/jpeg/jdpostct.c ****   /* Upsample some data (up to a strip height's worth). */
+ 175:fltk-1.3.4-1/jpeg/jdpostct.c ****   old_next_row = post->next_row;
+ 176:fltk-1.3.4-1/jpeg/jdpostct.c ****   (*cinfo->upsample->upsample) (cinfo,
+ 310              		.loc 1 176 0
+ 311 0031 488B8580 		movq	640(%rbp), %rax
+ 311      020000
+ 312 0038 8B5320   		movl	32(%rbx), %edx
+ 313 003b 4883EC08 		subq	$8, %rsp
+ 314              		.cfi_def_cfa_offset 88
+ 315 003f 4489D1   		movl	%r10d, %ecx
+ 316 0042 4C8D4B28 		leaq	40(%rbx), %r9
+ 317              	.LVL37:
+ 318 0046 4C89E6   		movq	%r12, %rsi
+ 319 0049 4889EF   		movq	%rbp, %rdi
+ 320 004c 52       		pushq	%rdx
+ 321              		.cfi_def_cfa_offset 96
+ 322              	.LVL38:
+ 323 004d 4C89FA   		movq	%r15, %rdx
+ 324 0050 FF5008   		call	*8(%rax)
+ 325              	.LVL39:
+ 177:fltk-1.3.4-1/jpeg/jdpostct.c **** 		input_buf, in_row_group_ctr, in_row_groups_avail,
+ 178:fltk-1.3.4-1/jpeg/jdpostct.c **** 		post->buffer, &post->next_row, post->strip_height);
+ 179:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+ 180:fltk-1.3.4-1/jpeg/jdpostct.c ****   /* Allow quantizer to scan new data.  No data is emitted, */
+ 181:fltk-1.3.4-1/jpeg/jdpostct.c ****   /* but we advance out_row_ctr so outer loop can tell when we're done. */
+ 182:fltk-1.3.4-1/jpeg/jdpostct.c ****   if (post->next_row > old_next_row) {
+ 326              		.loc 1 182 0
+ 327 0053 8B4B28   		movl	40(%rbx), %ecx
+ 328 0056 58       		popq	%rax
+ 329              		.cfi_def_cfa_offset 88
+ 330 0057 5A       		popq	%rdx
+ 331              		.cfi_def_cfa_offset 80
+ 332 0058 4439E9   		cmpl	%r13d, %ecx
+ 333 005b 7753     		ja	.L26
+ 334              	.LVL40:
+ 335              	.L23:
+ 183:fltk-1.3.4-1/jpeg/jdpostct.c ****     num_rows = post->next_row - old_next_row;
+ 184:fltk-1.3.4-1/jpeg/jdpostct.c ****     (*cinfo->cquantize->color_quantize) (cinfo, post->buffer + old_next_row,
+ 185:fltk-1.3.4-1/jpeg/jdpostct.c **** 					 (JSAMPARRAY) NULL, (int) num_rows);
+ 186:fltk-1.3.4-1/jpeg/jdpostct.c ****     *out_row_ctr += num_rows;
+ 187:fltk-1.3.4-1/jpeg/jdpostct.c ****   }
+ 188:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+ 189:fltk-1.3.4-1/jpeg/jdpostct.c ****   /* Advance if we filled the strip. */
+ 190:fltk-1.3.4-1/jpeg/jdpostct.c ****   if (post->next_row >= post->strip_height) {
+ 336              		.loc 1 190 0
+ 337 005d 8B4320   		movl	32(%rbx), %eax
+ 338 0060 39C8     		cmpl	%ecx, %eax
+ 339 0062 770A     		ja	.L20
+ 191:fltk-1.3.4-1/jpeg/jdpostct.c ****     post->starting_row += post->strip_height;
+ 340              		.loc 1 191 0
+ 341 0064 014324   		addl	%eax, 36(%rbx)
+ 192:fltk-1.3.4-1/jpeg/jdpostct.c ****     post->next_row = 0;
+ 342              		.loc 1 192 0
+ 343 0067 C7432800 		movl	$0, 40(%rbx)
+ 343      000000
+ 344              	.L20:
+ 193:fltk-1.3.4-1/jpeg/jdpostct.c ****   }
+ 194:fltk-1.3.4-1/jpeg/jdpostct.c **** }
+ 345              		.loc 1 194 0
+ 346 006e 4883C418 		addq	$24, %rsp
+ 347              		.cfi_remember_state
+ 348              		.cfi_def_cfa_offset 56
+ 349 0072 5B       		popq	%rbx
+ 350              		.cfi_def_cfa_offset 48
+ 351              	.LVL41:
+ 352 0073 5D       		popq	%rbp
+ 353              		.cfi_def_cfa_offset 40
+ 354              	.LVL42:
+ 355 0074 415C     		popq	%r12
+ 356              		.cfi_def_cfa_offset 32
+ 357 0076 415D     		popq	%r13
+ 358              		.cfi_def_cfa_offset 24
+ 359 0078 415E     		popq	%r14
+ 360              		.cfi_def_cfa_offset 16
+ 361              	.LVL43:
+ 362 007a 415F     		popq	%r15
+ 363              		.cfi_def_cfa_offset 8
+ 364              	.LVL44:
+ 365 007c C3       		ret
+ 366              	.LVL45:
+ 367 007d 0F1F00   		.p2align 4,,10
+ 368              		.p2align 3
+ 369              	.L21:
+ 370              		.cfi_restore_state
+ 169:fltk-1.3.4-1/jpeg/jdpostct.c **** 	((j_common_ptr) cinfo, post->whole_image,
+ 371              		.loc 1 169 0
+ 372 0080 488B4708 		movq	8(%rdi), %rax
+ 373 0084 894C240C 		movl	%ecx, 12(%rsp)
+ 374 0088 41B80100 		movl	$1, %r8d
+ 374      0000
+ 375              	.LVL46:
+ 376 008e 8B4B20   		movl	32(%rbx), %ecx
+ 377              	.LVL47:
+ 378 0091 8B5324   		movl	36(%rbx), %edx
+ 379              	.LVL48:
+ 380 0094 488B7310 		movq	16(%rbx), %rsi
+ 381              	.LVL49:
+ 382 0098 FF5038   		call	*56(%rax)
+ 383              	.LVL50:
+ 384 009b 448B6B28 		movl	40(%rbx), %r13d
+ 385 009f 4989C0   		movq	%rax, %r8
+ 386 00a2 48894318 		movq	%rax, 24(%rbx)
+ 387 00a6 448B5424 		movl	12(%rsp), %r10d
+ 387      0C
+ 388 00ab EB84     		jmp	.L22
+ 389              	.LVL51:
+ 390 00ad 0F1F00   		.p2align 4,,10
+ 391              		.p2align 3
+ 392              	.L26:
+ 184:fltk-1.3.4-1/jpeg/jdpostct.c **** 					 (JSAMPARRAY) NULL, (int) num_rows);
+ 393              		.loc 1 184 0
+ 394 00b0 488B4318 		movq	24(%rbx), %rax
+ 183:fltk-1.3.4-1/jpeg/jdpostct.c ****     (*cinfo->cquantize->color_quantize) (cinfo, post->buffer + old_next_row,
+ 395              		.loc 1 183 0
+ 396 00b4 4429E9   		subl	%r13d, %ecx
+ 184:fltk-1.3.4-1/jpeg/jdpostct.c **** 					 (JSAMPARRAY) NULL, (int) num_rows);
+ 397              		.loc 1 184 0
+ 398 00b7 31D2     		xorl	%edx, %edx
+ 183:fltk-1.3.4-1/jpeg/jdpostct.c ****     (*cinfo->cquantize->color_quantize) (cinfo, post->buffer + old_next_row,
+ 399              		.loc 1 183 0
+ 400 00b9 4189CC   		movl	%ecx, %r12d
+ 401              	.LVL52:
+ 184:fltk-1.3.4-1/jpeg/jdpostct.c **** 					 (JSAMPARRAY) NULL, (int) num_rows);
+ 402              		.loc 1 184 0
+ 403 00bc 4889EF   		movq	%rbp, %rdi
+ 404 00bf 4A8D34E8 		leaq	(%rax,%r13,8), %rsi
+ 405 00c3 488B8590 		movq	656(%rbp), %rax
+ 405      020000
+ 406 00ca FF5008   		call	*8(%rax)
+ 407              	.LVL53:
+ 186:fltk-1.3.4-1/jpeg/jdpostct.c ****   }
+ 408              		.loc 1 186 0
+ 409 00cd 450126   		addl	%r12d, (%r14)
+ 410 00d0 8B4B28   		movl	40(%rbx), %ecx
+ 411 00d3 EB88     		jmp	.L23
+ 412              		.cfi_endproc
+ 413              	.LFE63:
+ 415              		.section	.text.unlikely.post_process_prepass
+ 416              	.LCOLDE2:
+ 417              		.section	.text.post_process_prepass
+ 418              	.LHOTE2:
+ 419              		.section	.text.unlikely.post_process_2pass,"ax",@progbits
+ 420              	.LCOLDB3:
+ 421              		.section	.text.post_process_2pass,"ax",@progbits
+ 422              	.LHOTB3:
+ 423              		.p2align 4,,15
+ 425              	post_process_2pass:
+ 426              	.LFB64:
+ 195:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+ 196:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+ 197:fltk-1.3.4-1/jpeg/jdpostct.c **** /*
+ 198:fltk-1.3.4-1/jpeg/jdpostct.c ****  * Process some data in the second pass of 2-pass quantization.
+ 199:fltk-1.3.4-1/jpeg/jdpostct.c ****  */
+ 200:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+ 201:fltk-1.3.4-1/jpeg/jdpostct.c **** METHODDEF(void)
+ 202:fltk-1.3.4-1/jpeg/jdpostct.c **** post_process_2pass (j_decompress_ptr cinfo,
+ 203:fltk-1.3.4-1/jpeg/jdpostct.c **** 		    JSAMPIMAGE input_buf, JDIMENSION *in_row_group_ctr,
+ 204:fltk-1.3.4-1/jpeg/jdpostct.c **** 		    JDIMENSION in_row_groups_avail,
+ 205:fltk-1.3.4-1/jpeg/jdpostct.c **** 		    JSAMPARRAY output_buf, JDIMENSION *out_row_ctr,
+ 206:fltk-1.3.4-1/jpeg/jdpostct.c **** 		    JDIMENSION out_rows_avail)
+ 207:fltk-1.3.4-1/jpeg/jdpostct.c **** {
+ 427              		.loc 1 207 0
+ 428              		.cfi_startproc
+ 429              	.LVL54:
+ 430 0000 4156     		pushq	%r14
+ 431              		.cfi_def_cfa_offset 16
+ 432              		.cfi_offset 14, -16
+ 433 0002 4155     		pushq	%r13
+ 434              		.cfi_def_cfa_offset 24
+ 435              		.cfi_offset 13, -24
+ 436 0004 4D89CE   		movq	%r9, %r14
+ 437 0007 4154     		pushq	%r12
+ 438              		.cfi_def_cfa_offset 32
+ 439              		.cfi_offset 12, -32
+ 440 0009 55       		pushq	%rbp
+ 441              		.cfi_def_cfa_offset 40
+ 442              		.cfi_offset 6, -40
+ 443 000a 4989FC   		movq	%rdi, %r12
+ 444 000d 53       		pushq	%rbx
+ 445              		.cfi_def_cfa_offset 48
+ 446              		.cfi_offset 3, -48
+ 208:fltk-1.3.4-1/jpeg/jdpostct.c ****   my_post_ptr post = (my_post_ptr) cinfo->post;
+ 447              		.loc 1 208 0
+ 448 000e 488BAF58 		movq	600(%rdi), %rbp
+ 448      020000
+ 449              	.LVL55:
+ 207:fltk-1.3.4-1/jpeg/jdpostct.c ****   my_post_ptr post = (my_post_ptr) cinfo->post;
+ 450              		.loc 1 207 0
+ 451 0015 4D89C5   		movq	%r8, %r13
+ 209:fltk-1.3.4-1/jpeg/jdpostct.c ****   JDIMENSION num_rows, max_rows;
+ 210:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+ 211:fltk-1.3.4-1/jpeg/jdpostct.c ****   /* Reposition virtual buffer if at start of strip. */
+ 212:fltk-1.3.4-1/jpeg/jdpostct.c ****   if (post->next_row == 0) {
+ 452              		.loc 1 212 0
+ 453 0018 8B4D28   		movl	40(%rbp), %ecx
+ 454              	.LVL56:
+ 455 001b 85C9     		testl	%ecx, %ecx
+ 456 001d 7469     		je	.L28
+ 457 001f 488B4518 		movq	24(%rbp), %rax
+ 458              	.LVL57:
+ 459              	.L29:
+ 213:fltk-1.3.4-1/jpeg/jdpostct.c ****     post->buffer = (*cinfo->mem->access_virt_sarray)
+ 214:fltk-1.3.4-1/jpeg/jdpostct.c **** 	((j_common_ptr) cinfo, post->whole_image,
+ 215:fltk-1.3.4-1/jpeg/jdpostct.c **** 	 post->starting_row, post->strip_height, FALSE);
+ 216:fltk-1.3.4-1/jpeg/jdpostct.c ****   }
+ 217:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+ 218:fltk-1.3.4-1/jpeg/jdpostct.c ****   /* Determine number of rows to emit. */
+ 219:fltk-1.3.4-1/jpeg/jdpostct.c ****   num_rows = post->strip_height - post->next_row; /* available in strip */
+ 220:fltk-1.3.4-1/jpeg/jdpostct.c ****   max_rows = out_rows_avail - *out_row_ctr; /* available in output area */
+ 460              		.loc 1 220 0
+ 461 0023 418B36   		movl	(%r14), %esi
+ 462 0026 418B9424 		movl	140(%r12), %edx
+ 462      8C000000 
+ 463 002e 8B5C2430 		movl	48(%rsp), %ebx
+ 464 0032 2B5524   		subl	36(%rbp), %edx
+ 219:fltk-1.3.4-1/jpeg/jdpostct.c ****   max_rows = out_rows_avail - *out_row_ctr; /* available in output area */
+ 465              		.loc 1 219 0
+ 466 0035 8B7D20   		movl	32(%rbp), %edi
+ 467 0038 29F3     		subl	%esi, %ebx
+ 468 003a 29CF     		subl	%ecx, %edi
+ 469              	.LVL58:
+ 470 003c 39DA     		cmpl	%ebx, %edx
+ 471 003e 0F47D3   		cmova	%ebx, %edx
+ 472              	.LVL59:
+ 473 0041 39D7     		cmpl	%edx, %edi
+ 474 0043 0F46D7   		cmovbe	%edi, %edx
+ 221:fltk-1.3.4-1/jpeg/jdpostct.c ****   if (num_rows > max_rows)
+ 222:fltk-1.3.4-1/jpeg/jdpostct.c ****     num_rows = max_rows;
+ 223:fltk-1.3.4-1/jpeg/jdpostct.c ****   /* We have to check bottom of image here, can't depend on upsampler. */
+ 224:fltk-1.3.4-1/jpeg/jdpostct.c ****   max_rows = cinfo->output_height - post->starting_row;
+ 225:fltk-1.3.4-1/jpeg/jdpostct.c ****   if (num_rows > max_rows)
+ 226:fltk-1.3.4-1/jpeg/jdpostct.c ****     num_rows = max_rows;
+ 227:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+ 228:fltk-1.3.4-1/jpeg/jdpostct.c ****   /* Quantize and emit data. */
+ 229:fltk-1.3.4-1/jpeg/jdpostct.c ****   (*cinfo->cquantize->color_quantize) (cinfo,
+ 475              		.loc 1 229 0
+ 476 0046 4C89E7   		movq	%r12, %rdi
+ 477              	.LVL60:
+ 478 0049 89D3     		movl	%edx, %ebx
+ 479              	.LVL61:
+ 480 004b 498D54F5 		leaq	0(%r13,%rsi,8), %rdx
+ 480      00
+ 481              	.LVL62:
+ 482 0050 488D34C8 		leaq	(%rax,%rcx,8), %rsi
+ 483 0054 498B8424 		movq	656(%r12), %rax
+ 483      90020000 
+ 484 005c 89D9     		movl	%ebx, %ecx
+ 485 005e FF5008   		call	*8(%rax)
+ 486              	.LVL63:
+ 230:fltk-1.3.4-1/jpeg/jdpostct.c **** 		post->buffer + post->next_row, output_buf + *out_row_ctr,
+ 231:fltk-1.3.4-1/jpeg/jdpostct.c **** 		(int) num_rows);
+ 232:fltk-1.3.4-1/jpeg/jdpostct.c ****   *out_row_ctr += num_rows;
+ 487              		.loc 1 232 0
+ 488 0061 41011E   		addl	%ebx, (%r14)
+ 233:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+ 234:fltk-1.3.4-1/jpeg/jdpostct.c ****   /* Advance if we filled the strip. */
+ 235:fltk-1.3.4-1/jpeg/jdpostct.c ****   post->next_row += num_rows;
+ 489              		.loc 1 235 0
+ 490 0064 035D28   		addl	40(%rbp), %ebx
+ 491              	.LVL64:
+ 236:fltk-1.3.4-1/jpeg/jdpostct.c ****   if (post->next_row >= post->strip_height) {
+ 492              		.loc 1 236 0
+ 493 0067 8B4520   		movl	32(%rbp), %eax
+ 494 006a 39C3     		cmpl	%eax, %ebx
+ 235:fltk-1.3.4-1/jpeg/jdpostct.c ****   if (post->next_row >= post->strip_height) {
+ 495              		.loc 1 235 0
+ 496 006c 895D28   		movl	%ebx, 40(%rbp)
+ 497              		.loc 1 236 0
+ 498 006f 720A     		jb	.L27
+ 237:fltk-1.3.4-1/jpeg/jdpostct.c ****     post->starting_row += post->strip_height;
+ 499              		.loc 1 237 0
+ 500 0071 014524   		addl	%eax, 36(%rbp)
+ 238:fltk-1.3.4-1/jpeg/jdpostct.c ****     post->next_row = 0;
+ 501              		.loc 1 238 0
+ 502 0074 C7452800 		movl	$0, 40(%rbp)
+ 502      000000
+ 503              	.L27:
+ 239:fltk-1.3.4-1/jpeg/jdpostct.c ****   }
+ 240:fltk-1.3.4-1/jpeg/jdpostct.c **** }
+ 504              		.loc 1 240 0
+ 505 007b 5B       		popq	%rbx
+ 506              		.cfi_remember_state
+ 507              		.cfi_def_cfa_offset 40
+ 508 007c 5D       		popq	%rbp
+ 509              		.cfi_def_cfa_offset 32
+ 510              	.LVL65:
+ 511 007d 415C     		popq	%r12
+ 512              		.cfi_def_cfa_offset 24
+ 513              	.LVL66:
+ 514 007f 415D     		popq	%r13
+ 515              		.cfi_def_cfa_offset 16
+ 516              	.LVL67:
+ 517 0081 415E     		popq	%r14
+ 518              		.cfi_def_cfa_offset 8
+ 519              	.LVL68:
+ 520 0083 C3       		ret
+ 521              	.LVL69:
+ 522              		.p2align 4,,10
+ 523 0084 0F1F4000 		.p2align 3
+ 524              	.L28:
+ 525              		.cfi_restore_state
+ 213:fltk-1.3.4-1/jpeg/jdpostct.c **** 	((j_common_ptr) cinfo, post->whole_image,
+ 526              		.loc 1 213 0
+ 527 0088 488B4708 		movq	8(%rdi), %rax
+ 528 008c 8B4D20   		movl	32(%rbp), %ecx
+ 529 008f 4531C0   		xorl	%r8d, %r8d
+ 530              	.LVL70:
+ 531 0092 8B5524   		movl	36(%rbp), %edx
+ 532              	.LVL71:
+ 533 0095 488B7510 		movq	16(%rbp), %rsi
+ 534              	.LVL72:
+ 535 0099 FF5038   		call	*56(%rax)
+ 536              	.LVL73:
+ 537 009c 8B4D28   		movl	40(%rbp), %ecx
+ 538 009f 48894518 		movq	%rax, 24(%rbp)
+ 539 00a3 E97BFFFF 		jmp	.L29
+ 539      FF
+ 540              		.cfi_endproc
+ 541              	.LFE64:
+ 543              		.section	.text.unlikely.post_process_2pass
+ 544              	.LCOLDE3:
+ 545              		.section	.text.post_process_2pass
+ 546              	.LHOTE3:
+ 547              		.section	.text.unlikely.jinit_d_post_controller,"ax",@progbits
+ 548              	.LCOLDB4:
+ 549              		.section	.text.jinit_d_post_controller,"ax",@progbits
+ 550              	.LHOTB4:
+ 551              		.p2align 4,,15
+ 552              		.globl	jinit_d_post_controller
+ 554              	jinit_d_post_controller:
+ 555              	.LFB65:
+ 241:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+ 242:fltk-1.3.4-1/jpeg/jdpostct.c **** #endif /* QUANT_2PASS_SUPPORTED */
+ 243:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+ 244:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+ 245:fltk-1.3.4-1/jpeg/jdpostct.c **** /*
+ 246:fltk-1.3.4-1/jpeg/jdpostct.c ****  * Initialize postprocessing controller.
+ 247:fltk-1.3.4-1/jpeg/jdpostct.c ****  */
+ 248:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+ 249:fltk-1.3.4-1/jpeg/jdpostct.c **** GLOBAL(void)
+ 250:fltk-1.3.4-1/jpeg/jdpostct.c **** jinit_d_post_controller (j_decompress_ptr cinfo, boolean need_full_buffer)
+ 251:fltk-1.3.4-1/jpeg/jdpostct.c **** {
+ 556              		.loc 1 251 0
+ 557              		.cfi_startproc
+ 558              	.LVL74:
+ 559 0000 4155     		pushq	%r13
+ 560              		.cfi_def_cfa_offset 16
+ 561              		.cfi_offset 13, -16
+ 562 0002 4154     		pushq	%r12
+ 563              		.cfi_def_cfa_offset 24
+ 564              		.cfi_offset 12, -24
+ 252:fltk-1.3.4-1/jpeg/jdpostct.c ****   my_post_ptr post;
+ 253:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+ 254:fltk-1.3.4-1/jpeg/jdpostct.c ****   post = (my_post_ptr)
+ 565              		.loc 1 254 0
+ 566 0004 BA300000 		movl	$48, %edx
+ 566      00
+ 251:fltk-1.3.4-1/jpeg/jdpostct.c ****   my_post_ptr post;
+ 567              		.loc 1 251 0
+ 568 0009 55       		pushq	%rbp
+ 569              		.cfi_def_cfa_offset 32
+ 570              		.cfi_offset 6, -32
+ 571 000a 53       		pushq	%rbx
+ 572              		.cfi_def_cfa_offset 40
+ 573              		.cfi_offset 3, -40
+ 574 000b 4889FB   		movq	%rdi, %rbx
+ 575 000e 4189F5   		movl	%esi, %r13d
+ 576              		.loc 1 254 0
+ 577 0011 BE010000 		movl	$1, %esi
+ 577      00
+ 578              	.LVL75:
+ 251:fltk-1.3.4-1/jpeg/jdpostct.c ****   my_post_ptr post;
+ 579              		.loc 1 251 0
+ 580 0016 4883EC08 		subq	$8, %rsp
+ 581              		.cfi_def_cfa_offset 48
+ 255:fltk-1.3.4-1/jpeg/jdpostct.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 582              		.loc 1 255 0
+ 583 001a 488B4708 		movq	8(%rdi), %rax
+ 254:fltk-1.3.4-1/jpeg/jdpostct.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 584              		.loc 1 254 0
+ 585 001e FF10     		call	*(%rax)
+ 586              	.LVL76:
+ 256:fltk-1.3.4-1/jpeg/jdpostct.c **** 				SIZEOF(my_post_controller));
+ 257:fltk-1.3.4-1/jpeg/jdpostct.c ****   cinfo->post = (struct jpeg_d_post_controller *) post;
+ 587              		.loc 1 257 0
+ 588 0020 48898358 		movq	%rax, 600(%rbx)
+ 588      020000
+ 258:fltk-1.3.4-1/jpeg/jdpostct.c ****   post->pub.start_pass = start_pass_dpost;
+ 589              		.loc 1 258 0
+ 590 0027 48C70000 		movq	$start_pass_dpost, (%rax)
+ 590      000000
+ 259:fltk-1.3.4-1/jpeg/jdpostct.c ****   post->whole_image = NULL;	/* flag for no virtual arrays */
+ 591              		.loc 1 259 0
+ 592 002e 48C74010 		movq	$0, 16(%rax)
+ 592      00000000 
+ 260:fltk-1.3.4-1/jpeg/jdpostct.c ****   post->buffer = NULL;		/* flag for no strip buffer */
+ 593              		.loc 1 260 0
+ 594 0036 48C74018 		movq	$0, 24(%rax)
+ 594      00000000 
+ 261:fltk-1.3.4-1/jpeg/jdpostct.c **** 
+ 262:fltk-1.3.4-1/jpeg/jdpostct.c ****   /* Create the quantization buffer, if needed */
+ 263:fltk-1.3.4-1/jpeg/jdpostct.c ****   if (cinfo->quantize_colors) {
+ 595              		.loc 1 263 0
+ 596 003e 8B536C   		movl	108(%rbx), %edx
+ 597 0041 85D2     		testl	%edx, %edx
+ 598 0043 7436     		je	.L32
+ 264:fltk-1.3.4-1/jpeg/jdpostct.c ****     /* The buffer strip height is max_v_samp_factor, which is typically
+ 265:fltk-1.3.4-1/jpeg/jdpostct.c ****      * an efficient number of rows for upsampling to return.
+ 266:fltk-1.3.4-1/jpeg/jdpostct.c ****      * (In the presence of output rescaling, we might want to be smarter?)
+ 267:fltk-1.3.4-1/jpeg/jdpostct.c ****      */
+ 268:fltk-1.3.4-1/jpeg/jdpostct.c ****     post->strip_height = (JDIMENSION) cinfo->max_v_samp_factor;
+ 599              		.loc 1 268 0
+ 600 0045 448BA3A4 		movl	420(%rbx), %r12d
+ 600      010000
+ 269:fltk-1.3.4-1/jpeg/jdpostct.c ****     if (need_full_buffer) {
+ 601              		.loc 1 269 0
+ 602 004c 4585ED   		testl	%r13d, %r13d
+ 603 004f 4889C5   		movq	%rax, %rbp
+ 268:fltk-1.3.4-1/jpeg/jdpostct.c ****     if (need_full_buffer) {
+ 604              		.loc 1 268 0
+ 605 0052 44896020 		movl	%r12d, 32(%rax)
+ 606              		.loc 1 269 0
+ 607 0056 7538     		jne	.L36
+ 270:fltk-1.3.4-1/jpeg/jdpostct.c ****       /* Two-pass color quantization: need full-image storage. */
+ 271:fltk-1.3.4-1/jpeg/jdpostct.c ****       /* We round up the number of rows to a multiple of the strip height. */
+ 272:fltk-1.3.4-1/jpeg/jdpostct.c **** #ifdef QUANT_2PASS_SUPPORTED
+ 273:fltk-1.3.4-1/jpeg/jdpostct.c ****       post->whole_image = (*cinfo->mem->request_virt_sarray)
+ 274:fltk-1.3.4-1/jpeg/jdpostct.c **** 	((j_common_ptr) cinfo, JPOOL_IMAGE, FALSE,
+ 275:fltk-1.3.4-1/jpeg/jdpostct.c **** 	 cinfo->output_width * cinfo->out_color_components,
+ 276:fltk-1.3.4-1/jpeg/jdpostct.c **** 	 (JDIMENSION) jround_up((long) cinfo->output_height,
+ 277:fltk-1.3.4-1/jpeg/jdpostct.c **** 				(long) post->strip_height),
+ 278:fltk-1.3.4-1/jpeg/jdpostct.c **** 	 post->strip_height);
+ 279:fltk-1.3.4-1/jpeg/jdpostct.c **** #else
+ 280:fltk-1.3.4-1/jpeg/jdpostct.c ****       ERREXIT(cinfo, JERR_BAD_BUFFER_MODE);
+ 281:fltk-1.3.4-1/jpeg/jdpostct.c **** #endif /* QUANT_2PASS_SUPPORTED */
+ 282:fltk-1.3.4-1/jpeg/jdpostct.c ****     } else {
+ 283:fltk-1.3.4-1/jpeg/jdpostct.c ****       /* One-pass color quantization: just make a strip buffer. */
+ 284:fltk-1.3.4-1/jpeg/jdpostct.c ****       post->buffer = (*cinfo->mem->alloc_sarray)
+ 608              		.loc 1 284 0
+ 609 0058 8B938800 		movl	136(%rbx), %edx
+ 609      0000
+ 610 005e 488B4308 		movq	8(%rbx), %rax
+ 611              	.LVL77:
+ 612 0062 4489E1   		movl	%r12d, %ecx
+ 613 0065 0FAF9390 		imull	144(%rbx), %edx
+ 613      000000
+ 614 006c BE010000 		movl	$1, %esi
+ 614      00
+ 615 0071 4889DF   		movq	%rbx, %rdi
+ 616 0074 FF5010   		call	*16(%rax)
+ 617              	.LVL78:
+ 618 0077 48894518 		movq	%rax, 24(%rbp)
+ 619              	.LVL79:
+ 620              	.L32:
+ 285:fltk-1.3.4-1/jpeg/jdpostct.c **** 	((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 286:fltk-1.3.4-1/jpeg/jdpostct.c **** 	 cinfo->output_width * cinfo->out_color_components,
+ 287:fltk-1.3.4-1/jpeg/jdpostct.c **** 	 post->strip_height);
+ 288:fltk-1.3.4-1/jpeg/jdpostct.c ****     }
+ 289:fltk-1.3.4-1/jpeg/jdpostct.c ****   }
+ 290:fltk-1.3.4-1/jpeg/jdpostct.c **** }
+ 621              		.loc 1 290 0
+ 622 007b 4883C408 		addq	$8, %rsp
+ 623              		.cfi_remember_state
+ 624              		.cfi_def_cfa_offset 40
+ 625 007f 5B       		popq	%rbx
+ 626              		.cfi_def_cfa_offset 32
+ 627              	.LVL80:
+ 628 0080 5D       		popq	%rbp
+ 629              		.cfi_def_cfa_offset 24
+ 630 0081 415C     		popq	%r12
+ 631              		.cfi_def_cfa_offset 16
+ 632 0083 415D     		popq	%r13
+ 633              		.cfi_def_cfa_offset 8
+ 634              	.LVL81:
+ 635 0085 C3       		ret
+ 636              	.LVL82:
+ 637 0086 662E0F1F 		.p2align 4,,10
+ 637      84000000 
+ 637      0000
+ 638              		.p2align 3
+ 639              	.L36:
+ 640              		.cfi_restore_state
+ 276:fltk-1.3.4-1/jpeg/jdpostct.c **** 				(long) post->strip_height),
+ 641              		.loc 1 276 0
+ 642 0090 8BBB8C00 		movl	140(%rbx), %edi
+ 642      0000
+ 273:fltk-1.3.4-1/jpeg/jdpostct.c **** 	((j_common_ptr) cinfo, JPOOL_IMAGE, FALSE,
+ 643              		.loc 1 273 0
+ 644 0096 488B4308 		movq	8(%rbx), %rax
+ 645              	.LVL83:
+ 276:fltk-1.3.4-1/jpeg/jdpostct.c **** 				(long) post->strip_height),
+ 646              		.loc 1 276 0
+ 647 009a 4489E6   		movl	%r12d, %esi
+ 273:fltk-1.3.4-1/jpeg/jdpostct.c **** 	((j_common_ptr) cinfo, JPOOL_IMAGE, FALSE,
+ 648              		.loc 1 273 0
+ 649 009d 4C8B6820 		movq	32(%rax), %r13
+ 650              	.LVL84:
+ 276:fltk-1.3.4-1/jpeg/jdpostct.c **** 				(long) post->strip_height),
+ 651              		.loc 1 276 0
+ 652 00a1 E8000000 		call	jround_up
+ 652      00
+ 653              	.LVL85:
+ 273:fltk-1.3.4-1/jpeg/jdpostct.c **** 	((j_common_ptr) cinfo, JPOOL_IMAGE, FALSE,
+ 654              		.loc 1 273 0
+ 655 00a6 8B8B8800 		movl	136(%rbx), %ecx
+ 655      0000
+ 656 00ac 4589E1   		movl	%r12d, %r9d
+ 657 00af 4889DF   		movq	%rbx, %rdi
+ 658 00b2 0FAF8B90 		imull	144(%rbx), %ecx
+ 658      000000
+ 659 00b9 4189C0   		movl	%eax, %r8d
+ 660 00bc 31D2     		xorl	%edx, %edx
+ 661 00be BE010000 		movl	$1, %esi
+ 661      00
+ 662 00c3 41FFD5   		call	*%r13
+ 663              	.LVL86:
+ 664 00c6 48894510 		movq	%rax, 16(%rbp)
+ 665              		.loc 1 290 0
+ 666 00ca 4883C408 		addq	$8, %rsp
+ 667              		.cfi_def_cfa_offset 40
+ 668 00ce 5B       		popq	%rbx
+ 669              		.cfi_def_cfa_offset 32
+ 670              	.LVL87:
+ 671 00cf 5D       		popq	%rbp
+ 672              		.cfi_def_cfa_offset 24
+ 673              	.LVL88:
+ 674 00d0 415C     		popq	%r12
+ 675              		.cfi_def_cfa_offset 16
+ 676 00d2 415D     		popq	%r13
+ 677              		.cfi_def_cfa_offset 8
+ 678 00d4 C3       		ret
+ 679              		.cfi_endproc
+ 680              	.LFE65:
+ 682              		.section	.text.unlikely.jinit_d_post_controller
+ 683              	.LCOLDE4:
+ 684              		.section	.text.jinit_d_post_controller
+ 685              	.LHOTE4:
+ 686              		.text
+ 687              	.Letext0:
+ 688              		.section	.text.unlikely.start_pass_dpost
+ 689              	.Letext_cold0:
+ 690              		.file 2 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
+ 691              		.file 3 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 692              		.file 4 "/usr/include/libio.h"
+ 693              		.file 5 "fltk-1.3.4-1/jpeg/jmorecfg.h"
+ 694              		.file 6 "fltk-1.3.4-1/jpeg/jpeglib.h"
+ 695              		.file 7 "fltk-1.3.4-1/jpeg/jpegint.h"
+ 696              		.file 8 "fltk-1.3.4-1/jpeg/jerror.h"
+ 697              		.file 9 "/usr/include/stdio.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 jdpostct.c
+     /tmp/ccoqQ083.s:13     .text.start_pass_dpost:0000000000000000 start_pass_dpost
+     /tmp/ccoqQ083.s:161    .text.post_process_1pass:0000000000000000 post_process_1pass
+     /tmp/ccoqQ083.s:270    .text.post_process_prepass:0000000000000000 post_process_prepass
+     /tmp/ccoqQ083.s:425    .text.post_process_2pass:0000000000000000 post_process_2pass
+     /tmp/ccoqQ083.s:554    .text.jinit_d_post_controller:0000000000000000 jinit_d_post_controller
+                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
+                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+                           .group:0000000000000000 wm4.jconfig.h.10.247fc3ff67998f3074970b1373c70333
+                           .group:0000000000000000 wm4.features.h.19.24da27e0a4d0d521fd057013d982b8b5
+                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
+                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
+                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
+                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
+                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
+                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
+                           .group:0000000000000000 wm4.waitflags.h.25.e401b8bcfee800b540b27abd7cc78de9
+                           .group:0000000000000000 wm4.waitstatus.h.28.93f167f49d64e2b9b99f98d1162a93bf
+                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
+                           .group:0000000000000000 wm4.endian.h.41.24cced64aef71195a51d4daa8e4f4a95
+                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
+                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
+                           .group:0000000000000000 wm4.byteswap.h.38.11ee5fdc0f6cc53a16c505b9233cecef
+                           .group:0000000000000000 wm4.endian.h.63.97272d7c64d5db8020003b32e9289502
+                           .group:0000000000000000 wm4.waitstatus.h.99.408b6270fa6eb71377201a241ef15f79
+                           .group:0000000000000000 wm4.stdlib.h.50.84aeca2ac6f37d40e1e9b3cef757ba2d
+                           .group:0000000000000000 wm4.types.h.23.f6dcbaa72f8f71361acef09804d45a5e
+                           .group:0000000000000000 wm4.time.h.53.beb46e650cd406cb917b6b96b45e640a
+                           .group:0000000000000000 wm4.stddef.h.238.847b6907dabda77be90a9ab7ad789e2e
+                           .group:0000000000000000 wm4.types.h.187.bd5a05039b505b3620e6973f1b2ffeb1
+                           .group:0000000000000000 wm4.select.h.28.eb2f3debdbcffd1442ebddaebc4fb6ff
+                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
+                           .group:0000000000000000 wm4.select.h.36.f76c3b9e55c871743863013cc4cc14c9
+                           .group:0000000000000000 wm4.time.h.66.e70ce69790c975f0efb369340c432e0b
+                           .group:0000000000000000 wm4.time.h.25.ae5284cdff565e87a9198d819340325d
+                           .group:0000000000000000 wm4.select.h.49.e9d2041e5035cc68ebd1a20f7dbc8514
+                           .group:0000000000000000 wm4.select2.h.27.f95f2ab0ffee66dc1b6575014894b21a
+                           .group:0000000000000000 wm4.sysmacros.h.20.8a0c33ff175cd9b434a86c0aaa36f0a2
+                           .group:0000000000000000 wm4.types.h.229.67b3f66bd74b06b451caec392a72a945
+                           .group:0000000000000000 wm4.pthreadtypes.h.25.6892b1493314fcf446bbc76e7362acba
+                           .group:0000000000000000 wm4.alloca.h.19.edefa922a76c1cbaaf1e416903ba2d1c
+                           .group:0000000000000000 wm4.alloca.h.29.156e12058824cc23d961c4d3b13031f6
+                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
+                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
+                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
+                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
+                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
+                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
+                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
+                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
+                           .group:0000000000000000 wm4.stdio.h.80.17b7dd1ca72d8a61987532cb1d80194a
+                           .group:0000000000000000 wm4.stdio_lim.h.23.557290a6cddeba0587f574f29e3a5fb9
+                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
+                           .group:0000000000000000 wm4.stdio.h.26.cae64f7ada9bb8327a89dba6a5e93655
+                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
+                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
+                           .group:0000000000000000 wm4.string2.h.45.00535b99420fc3014c2da41d6645330d
+                           .group:0000000000000000 wm4.string3.h.31.0c4b9301b754a2db05eaafef869657d2
+                           .group:0000000000000000 wm4.jinclude.h.67.b19f941ec97c4845fa4609292c7e2db4
+                           .group:0000000000000000 wm4.jmorecfg.h.33.3b4c5f9cc07b3737823b06caf24d5b05
+                           .group:0000000000000000 wm4.jpeglib.h.40.4f111c27252a38df39328d65454e82f4
+                           .group:0000000000000000 wm4.jpegint.h.26.5219ef5d4e4921371d38e77b6091fd20
+                           .group:0000000000000000 wm4.jerror.h.25.1dbd8674e70ab5215bc0037320e5c2a2
+
+UNDEFINED SYMBOLS
+__stack_chk_fail
+jround_up

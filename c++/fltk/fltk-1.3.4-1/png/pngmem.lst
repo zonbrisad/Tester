@@ -1,0 +1,1407 @@
+   1              		.file	"pngmem.c"
+   2              		.text
+   3              	.Ltext0:
+   4              		.section	.text.unlikely.png_malloc_base,"ax",@progbits
+   5              	.LCOLDB0:
+   6              		.section	.text.png_malloc_base,"ax",@progbits
+   7              	.LHOTB0:
+   8              		.p2align 4,,15
+   9              		.section	.text.unlikely.png_malloc_base
+  10              	.Ltext_cold0:
+  11              		.section	.text.png_malloc_base
+  12              		.globl	png_malloc_base
+  14              	png_malloc_base:
+  15              	.LFB58:
+  16              		.file 1 "fltk-1.3.4-1/png/pngmem.c"
+   1:fltk-1.3.4-1/png/pngmem.c **** 
+   2:fltk-1.3.4-1/png/pngmem.c **** /* pngmem.c - stub functions for memory allocation
+   3:fltk-1.3.4-1/png/pngmem.c ****  *
+   4:fltk-1.3.4-1/png/pngmem.c ****  * Last changed in libpng 1.6.15 [November 20, 2014]
+   5:fltk-1.3.4-1/png/pngmem.c ****  * Copyright (c) 1998-2014 Glenn Randers-Pehrson
+   6:fltk-1.3.4-1/png/pngmem.c ****  * (Version 0.96 Copyright (c) 1996, 1997 Andreas Dilger)
+   7:fltk-1.3.4-1/png/pngmem.c ****  * (Version 0.88 Copyright (c) 1995, 1996 Guy Eric Schalnat, Group 42, Inc.)
+   8:fltk-1.3.4-1/png/pngmem.c ****  *
+   9:fltk-1.3.4-1/png/pngmem.c ****  * This code is released under the libpng license.
+  10:fltk-1.3.4-1/png/pngmem.c ****  * For conditions of distribution and use, see the disclaimer
+  11:fltk-1.3.4-1/png/pngmem.c ****  * and license in png.h
+  12:fltk-1.3.4-1/png/pngmem.c ****  *
+  13:fltk-1.3.4-1/png/pngmem.c ****  * This file provides a location for all memory allocation.  Users who
+  14:fltk-1.3.4-1/png/pngmem.c ****  * need special memory handling are expected to supply replacement
+  15:fltk-1.3.4-1/png/pngmem.c ****  * functions for png_malloc() and png_free(), and to use
+  16:fltk-1.3.4-1/png/pngmem.c ****  * png_create_read_struct_2() and png_create_write_struct_2() to
+  17:fltk-1.3.4-1/png/pngmem.c ****  * identify the replacement functions.
+  18:fltk-1.3.4-1/png/pngmem.c ****  */
+  19:fltk-1.3.4-1/png/pngmem.c **** 
+  20:fltk-1.3.4-1/png/pngmem.c **** #include "pngpriv.h"
+  21:fltk-1.3.4-1/png/pngmem.c **** 
+  22:fltk-1.3.4-1/png/pngmem.c **** #if defined(PNG_READ_SUPPORTED) || defined(PNG_WRITE_SUPPORTED)
+  23:fltk-1.3.4-1/png/pngmem.c **** /* Free a png_struct */
+  24:fltk-1.3.4-1/png/pngmem.c **** void /* PRIVATE */
+  25:fltk-1.3.4-1/png/pngmem.c **** png_destroy_png_struct(png_structrp png_ptr)
+  26:fltk-1.3.4-1/png/pngmem.c **** {
+  27:fltk-1.3.4-1/png/pngmem.c ****    if (png_ptr != NULL)
+  28:fltk-1.3.4-1/png/pngmem.c ****    {
+  29:fltk-1.3.4-1/png/pngmem.c ****       /* png_free might call png_error and may certainly call
+  30:fltk-1.3.4-1/png/pngmem.c ****        * png_get_mem_ptr, so fake a temporary png_struct to support this.
+  31:fltk-1.3.4-1/png/pngmem.c ****        */
+  32:fltk-1.3.4-1/png/pngmem.c ****       png_struct dummy_struct = *png_ptr;
+  33:fltk-1.3.4-1/png/pngmem.c ****       memset(png_ptr, 0, (sizeof *png_ptr));
+  34:fltk-1.3.4-1/png/pngmem.c ****       png_free(&dummy_struct, png_ptr);
+  35:fltk-1.3.4-1/png/pngmem.c **** 
+  36:fltk-1.3.4-1/png/pngmem.c **** #     ifdef PNG_SETJMP_SUPPORTED
+  37:fltk-1.3.4-1/png/pngmem.c ****          /* We may have a jmp_buf left to deallocate. */
+  38:fltk-1.3.4-1/png/pngmem.c ****          png_free_jmpbuf(&dummy_struct);
+  39:fltk-1.3.4-1/png/pngmem.c **** #     endif
+  40:fltk-1.3.4-1/png/pngmem.c ****    }
+  41:fltk-1.3.4-1/png/pngmem.c **** }
+  42:fltk-1.3.4-1/png/pngmem.c **** 
+  43:fltk-1.3.4-1/png/pngmem.c **** /* Allocate memory.  For reasonable files, size should never exceed
+  44:fltk-1.3.4-1/png/pngmem.c ****  * 64K.  However, zlib may allocate more then 64K if you don't tell
+  45:fltk-1.3.4-1/png/pngmem.c ****  * it not to.  See zconf.h and png.h for more information.  zlib does
+  46:fltk-1.3.4-1/png/pngmem.c ****  * need to allocate exactly 64K, so whatever you call here must
+  47:fltk-1.3.4-1/png/pngmem.c ****  * have the ability to do that.
+  48:fltk-1.3.4-1/png/pngmem.c ****  */
+  49:fltk-1.3.4-1/png/pngmem.c **** PNG_FUNCTION(png_voidp,PNGAPI
+  50:fltk-1.3.4-1/png/pngmem.c **** png_calloc,(png_const_structrp png_ptr, png_alloc_size_t size),PNG_ALLOCATED)
+  51:fltk-1.3.4-1/png/pngmem.c **** {
+  52:fltk-1.3.4-1/png/pngmem.c ****    png_voidp ret;
+  53:fltk-1.3.4-1/png/pngmem.c **** 
+  54:fltk-1.3.4-1/png/pngmem.c ****    ret = png_malloc(png_ptr, size);
+  55:fltk-1.3.4-1/png/pngmem.c **** 
+  56:fltk-1.3.4-1/png/pngmem.c ****    if (ret != NULL)
+  57:fltk-1.3.4-1/png/pngmem.c ****       memset(ret, 0, size);
+  58:fltk-1.3.4-1/png/pngmem.c **** 
+  59:fltk-1.3.4-1/png/pngmem.c ****    return ret;
+  60:fltk-1.3.4-1/png/pngmem.c **** }
+  61:fltk-1.3.4-1/png/pngmem.c **** 
+  62:fltk-1.3.4-1/png/pngmem.c **** /* png_malloc_base, an internal function added at libpng 1.6.0, does the work of
+  63:fltk-1.3.4-1/png/pngmem.c ****  * allocating memory, taking into account limits and PNG_USER_MEM_SUPPORTED.
+  64:fltk-1.3.4-1/png/pngmem.c ****  * Checking and error handling must happen outside this routine; it returns NULL
+  65:fltk-1.3.4-1/png/pngmem.c ****  * if the allocation cannot be done (for any reason.)
+  66:fltk-1.3.4-1/png/pngmem.c ****  */
+  67:fltk-1.3.4-1/png/pngmem.c **** PNG_FUNCTION(png_voidp /* PRIVATE */,
+  68:fltk-1.3.4-1/png/pngmem.c **** png_malloc_base,(png_const_structrp png_ptr, png_alloc_size_t size),
+  69:fltk-1.3.4-1/png/pngmem.c ****    PNG_ALLOCATED)
+  70:fltk-1.3.4-1/png/pngmem.c **** {
+  17              		.loc 1 70 0
+  18              		.cfi_startproc
+  19              	.LVL0:
+  71:fltk-1.3.4-1/png/pngmem.c ****    /* Moved to png_malloc_base from png_malloc_default in 1.6.0; the DOS
+  72:fltk-1.3.4-1/png/pngmem.c ****     * allocators have also been removed in 1.6.0, so any 16-bit system now has
+  73:fltk-1.3.4-1/png/pngmem.c ****     * to implement a user memory handler.  This checks to be sure it isn't
+  74:fltk-1.3.4-1/png/pngmem.c ****     * called with big numbers.
+  75:fltk-1.3.4-1/png/pngmem.c ****     */
+  76:fltk-1.3.4-1/png/pngmem.c **** #ifndef PNG_USER_MEM_SUPPORTED
+  77:fltk-1.3.4-1/png/pngmem.c ****    PNG_UNUSED(png_ptr)
+  78:fltk-1.3.4-1/png/pngmem.c **** #endif
+  79:fltk-1.3.4-1/png/pngmem.c **** 
+  80:fltk-1.3.4-1/png/pngmem.c ****    if (size > 0 && size <= PNG_SIZE_MAX
+  20              		.loc 1 80 0
+  21 0000 4885F6   		testq	%rsi, %rsi
+  22 0003 742B     		je	.L2
+  81:fltk-1.3.4-1/png/pngmem.c **** #     ifdef PNG_MAX_MALLOC_64K
+  82:fltk-1.3.4-1/png/pngmem.c ****          && size <= 65536U
+  83:fltk-1.3.4-1/png/pngmem.c **** #     endif
+  84:fltk-1.3.4-1/png/pngmem.c ****       )
+  85:fltk-1.3.4-1/png/pngmem.c ****    {
+  86:fltk-1.3.4-1/png/pngmem.c **** #ifdef PNG_USER_MEM_SUPPORTED
+  87:fltk-1.3.4-1/png/pngmem.c ****       if (png_ptr != NULL && png_ptr->malloc_fn != NULL)
+  23              		.loc 1 87 0
+  24 0005 4885FF   		testq	%rdi, %rdi
+  25 0008 7416     		je	.L3
+  26              		.loc 1 87 0 is_stmt 0 discriminator 1
+  27 000a 488B8728 		movq	1064(%rdi), %rax
+  27      040000
+  28 0011 4885C0   		testq	%rax, %rax
+  29 0014 740A     		je	.L3
+  88:fltk-1.3.4-1/png/pngmem.c ****          return png_ptr->malloc_fn(png_constcast(png_structrp,png_ptr), size);
+  30              		.loc 1 88 0 is_stmt 1
+  31 0016 FFE0     		jmp	*%rax
+  32              	.LVL1:
+  33 0018 0F1F8400 		.p2align 4,,10
+  33      00000000 
+  34              		.p2align 3
+  35              	.L3:
+  89:fltk-1.3.4-1/png/pngmem.c **** 
+  90:fltk-1.3.4-1/png/pngmem.c ****       else
+  91:fltk-1.3.4-1/png/pngmem.c **** #endif
+  92:fltk-1.3.4-1/png/pngmem.c ****          return malloc((size_t)size); /* checked for truncation above */
+  36              		.loc 1 92 0
+  37 0020 4889F7   		movq	%rsi, %rdi
+  38              	.LVL2:
+  39 0023 E9000000 		jmp	malloc
+  39      00
+  40              	.LVL3:
+  41 0028 0F1F8400 		.p2align 4,,10
+  41      00000000 
+  42              		.p2align 3
+  43              	.L2:
+  93:fltk-1.3.4-1/png/pngmem.c ****    }
+  94:fltk-1.3.4-1/png/pngmem.c **** 
+  95:fltk-1.3.4-1/png/pngmem.c ****    else
+  96:fltk-1.3.4-1/png/pngmem.c ****       return NULL;
+  97:fltk-1.3.4-1/png/pngmem.c **** }
+  44              		.loc 1 97 0
+  45 0030 31C0     		xorl	%eax, %eax
+  46 0032 C3       		ret
+  47              		.cfi_endproc
+  48              	.LFE58:
+  50              		.section	.text.unlikely.png_malloc_base
+  51              	.LCOLDE0:
+  52              		.section	.text.png_malloc_base
+  53              	.LHOTE0:
+  54              		.section	.rodata.str1.1,"aMS",@progbits,1
+  55              	.LC1:
+  56 0000 696E7465 		.string	"internal error: array alloc"
+  56      726E616C 
+  56      20657272 
+  56      6F723A20 
+  56      61727261 
+  57              		.section	.text.unlikely.png_malloc_array,"ax",@progbits
+  58              	.LCOLDB2:
+  59              		.section	.text.png_malloc_array,"ax",@progbits
+  60              	.LHOTB2:
+  61              		.p2align 4,,15
+  62              		.globl	png_malloc_array
+  64              	png_malloc_array:
+  65              	.LFB60:
+  98:fltk-1.3.4-1/png/pngmem.c **** 
+  99:fltk-1.3.4-1/png/pngmem.c **** #if defined(PNG_TEXT_SUPPORTED) || defined(PNG_sPLT_SUPPORTED) ||\
+ 100:fltk-1.3.4-1/png/pngmem.c ****    defined(PNG_STORE_UNKNOWN_CHUNKS_SUPPORTED)
+ 101:fltk-1.3.4-1/png/pngmem.c **** /* This is really here only to work round a spurious warning in GCC 4.6 and 4.7
+ 102:fltk-1.3.4-1/png/pngmem.c ****  * that arises because of the checks in png_realloc_array that are repeated in
+ 103:fltk-1.3.4-1/png/pngmem.c ****  * png_malloc_array.
+ 104:fltk-1.3.4-1/png/pngmem.c ****  */
+ 105:fltk-1.3.4-1/png/pngmem.c **** static png_voidp
+ 106:fltk-1.3.4-1/png/pngmem.c **** png_malloc_array_checked(png_const_structrp png_ptr, int nelements,
+ 107:fltk-1.3.4-1/png/pngmem.c ****    size_t element_size)
+ 108:fltk-1.3.4-1/png/pngmem.c **** {
+ 109:fltk-1.3.4-1/png/pngmem.c ****    png_alloc_size_t req = nelements; /* known to be > 0 */
+ 110:fltk-1.3.4-1/png/pngmem.c **** 
+ 111:fltk-1.3.4-1/png/pngmem.c ****    if (req <= PNG_SIZE_MAX/element_size)
+ 112:fltk-1.3.4-1/png/pngmem.c ****       return png_malloc_base(png_ptr, req * element_size);
+ 113:fltk-1.3.4-1/png/pngmem.c **** 
+ 114:fltk-1.3.4-1/png/pngmem.c ****    /* The failure case when the request is too large */
+ 115:fltk-1.3.4-1/png/pngmem.c ****    return NULL;
+ 116:fltk-1.3.4-1/png/pngmem.c **** }
+ 117:fltk-1.3.4-1/png/pngmem.c **** 
+ 118:fltk-1.3.4-1/png/pngmem.c **** PNG_FUNCTION(png_voidp /* PRIVATE */,
+ 119:fltk-1.3.4-1/png/pngmem.c **** png_malloc_array,(png_const_structrp png_ptr, int nelements,
+ 120:fltk-1.3.4-1/png/pngmem.c ****    size_t element_size),PNG_ALLOCATED)
+ 121:fltk-1.3.4-1/png/pngmem.c **** {
+  66              		.loc 1 121 0
+  67              		.cfi_startproc
+  68              	.LVL4:
+  69 0000 4883EC08 		subq	$8, %rsp
+  70              		.cfi_def_cfa_offset 16
+ 122:fltk-1.3.4-1/png/pngmem.c ****    if (nelements <= 0 || element_size == 0)
+  71              		.loc 1 122 0
+  72 0004 85F6     		testl	%esi, %esi
+  73 0006 7E37     		jle	.L15
+  74 0008 4885D2   		testq	%rdx, %rdx
+  75 000b 4889D1   		movq	%rdx, %rcx
+  76 000e 742F     		je	.L15
+  77              	.LVL5:
+  78              	.LBB25:
+  79              	.LBB26:
+ 111:fltk-1.3.4-1/png/pngmem.c ****       return png_malloc_base(png_ptr, req * element_size);
+  80              		.loc 1 111 0
+  81 0010 31D2     		xorl	%edx, %edx
+  82              	.LVL6:
+  83 0012 48C7C0FF 		movq	$-1, %rax
+  83      FFFFFF
+ 109:fltk-1.3.4-1/png/pngmem.c **** 
+  84              		.loc 1 109 0
+  85 0019 4863F6   		movslq	%esi, %rsi
+  86              	.LVL7:
+ 111:fltk-1.3.4-1/png/pngmem.c ****       return png_malloc_base(png_ptr, req * element_size);
+  87              		.loc 1 111 0
+  88 001c 48F7F1   		divq	%rcx
+  89 001f 4839C6   		cmpq	%rax, %rsi
+  90 0022 7714     		ja	.L14
+ 112:fltk-1.3.4-1/png/pngmem.c **** 
+  91              		.loc 1 112 0
+  92 0024 480FAFF1 		imulq	%rcx, %rsi
+  93              	.LVL8:
+  94              	.LBE26:
+  95              	.LBE25:
+ 123:fltk-1.3.4-1/png/pngmem.c ****       png_error(png_ptr, "internal error: array alloc");
+ 124:fltk-1.3.4-1/png/pngmem.c **** 
+ 125:fltk-1.3.4-1/png/pngmem.c ****    return png_malloc_array_checked(png_ptr, nelements, element_size);
+ 126:fltk-1.3.4-1/png/pngmem.c **** }
+  96              		.loc 1 126 0
+  97 0028 4883C408 		addq	$8, %rsp
+  98              		.cfi_remember_state
+  99              		.cfi_def_cfa_offset 8
+ 100              	.LBB28:
+ 101              	.LBB27:
+ 112:fltk-1.3.4-1/png/pngmem.c **** 
+ 102              		.loc 1 112 0
+ 103 002c E9000000 		jmp	png_malloc_base
+ 103      00
+ 104              	.LVL9:
+ 105              		.p2align 4,,10
+ 106 0031 0F1F8000 		.p2align 3
+ 106      000000
+ 107              	.L14:
+ 108              		.cfi_restore_state
+ 109              	.LBE27:
+ 110              	.LBE28:
+ 111              		.loc 1 126 0
+ 112 0038 31C0     		xorl	%eax, %eax
+ 113 003a 4883C408 		addq	$8, %rsp
+ 114              		.cfi_remember_state
+ 115              		.cfi_def_cfa_offset 8
+ 116 003e C3       		ret
+ 117              	.LVL10:
+ 118              	.L15:
+ 119              		.cfi_restore_state
+ 123:fltk-1.3.4-1/png/pngmem.c ****       png_error(png_ptr, "internal error: array alloc");
+ 120              		.loc 1 123 0
+ 121 003f BE000000 		movl	$.LC1, %esi
+ 121      00
+ 122              	.LVL11:
+ 123 0044 E8000000 		call	png_error
+ 123      00
+ 124              	.LVL12:
+ 125              		.cfi_endproc
+ 126              	.LFE60:
+ 128              		.section	.text.unlikely.png_malloc_array
+ 129              	.LCOLDE2:
+ 130              		.section	.text.png_malloc_array
+ 131              	.LHOTE2:
+ 132              		.section	.rodata.str1.1
+ 133              	.LC3:
+ 134 001c 696E7465 		.string	"internal error: array realloc"
+ 134      726E616C 
+ 134      20657272 
+ 134      6F723A20 
+ 134      61727261 
+ 135              		.section	.text.unlikely.png_realloc_array,"ax",@progbits
+ 136              	.LCOLDB4:
+ 137              		.section	.text.png_realloc_array,"ax",@progbits
+ 138              	.LHOTB4:
+ 139              		.p2align 4,,15
+ 140              		.globl	png_realloc_array
+ 142              	png_realloc_array:
+ 143              	.LFB61:
+ 127:fltk-1.3.4-1/png/pngmem.c **** 
+ 128:fltk-1.3.4-1/png/pngmem.c **** PNG_FUNCTION(png_voidp /* PRIVATE */,
+ 129:fltk-1.3.4-1/png/pngmem.c **** png_realloc_array,(png_const_structrp png_ptr, png_const_voidp old_array,
+ 130:fltk-1.3.4-1/png/pngmem.c ****    int old_elements, int add_elements, size_t element_size),PNG_ALLOCATED)
+ 131:fltk-1.3.4-1/png/pngmem.c **** {
+ 144              		.loc 1 131 0
+ 145              		.cfi_startproc
+ 146              	.LVL13:
+ 147 0000 4157     		pushq	%r15
+ 148              		.cfi_def_cfa_offset 16
+ 149              		.cfi_offset 15, -16
+ 150 0002 4156     		pushq	%r14
+ 151              		.cfi_def_cfa_offset 24
+ 152              		.cfi_offset 14, -24
+ 153 0004 4155     		pushq	%r13
+ 154              		.cfi_def_cfa_offset 32
+ 155              		.cfi_offset 13, -32
+ 156 0006 4154     		pushq	%r12
+ 157              		.cfi_def_cfa_offset 40
+ 158              		.cfi_offset 12, -40
+ 159 0008 4189D4   		movl	%edx, %r12d
+ 160 000b 55       		pushq	%rbp
+ 161              		.cfi_def_cfa_offset 48
+ 162              		.cfi_offset 6, -48
+ 163 000c 53       		pushq	%rbx
+ 164              		.cfi_def_cfa_offset 56
+ 165              		.cfi_offset 3, -56
+ 166 000d 4883EC08 		subq	$8, %rsp
+ 167              		.cfi_def_cfa_offset 64
+ 132:fltk-1.3.4-1/png/pngmem.c ****    /* These are internal errors: */
+ 133:fltk-1.3.4-1/png/pngmem.c ****    if (add_elements <= 0 || element_size == 0 || old_elements < 0 ||
+ 168              		.loc 1 133 0
+ 169 0011 85C9     		testl	%ecx, %ecx
+ 170 0013 0F9EC2   		setle	%dl
+ 171              	.LVL14:
+ 172 0016 4D85C0   		testq	%r8, %r8
+ 173 0019 0F94C0   		sete	%al
+ 174 001c 08C2     		orb	%al, %dl
+ 175 001e 0F859E00 		jne	.L18
+ 175      0000
+ 176 0024 4489E0   		movl	%r12d, %eax
+ 177 0027 C1E81F   		shrl	$31, %eax
+ 178 002a 84C0     		testb	%al, %al
+ 179 002c 0F859000 		jne	.L18
+ 179      0000
+ 180              		.loc 1 133 0 is_stmt 0 discriminator 2
+ 181 0032 4885F6   		testq	%rsi, %rsi
+ 182 0035 4989F6   		movq	%rsi, %r14
+ 183 0038 89CD     		movl	%ecx, %ebp
+ 184 003a 4C89C3   		movq	%r8, %rbx
+ 185 003d 7505     		jne	.L19
+ 186 003f 4585E4   		testl	%r12d, %r12d
+ 187 0042 7F7E     		jg	.L18
+ 188              	.L19:
+ 134:fltk-1.3.4-1/png/pngmem.c ****       (old_array == NULL && old_elements > 0))
+ 135:fltk-1.3.4-1/png/pngmem.c ****       png_error(png_ptr, "internal error: array realloc");
+ 136:fltk-1.3.4-1/png/pngmem.c **** 
+ 137:fltk-1.3.4-1/png/pngmem.c ****    /* Check for overflow on the elements count (so the caller does not have to
+ 138:fltk-1.3.4-1/png/pngmem.c ****     * check.)
+ 139:fltk-1.3.4-1/png/pngmem.c ****     */
+ 140:fltk-1.3.4-1/png/pngmem.c ****    if (add_elements <= INT_MAX - old_elements)
+ 189              		.loc 1 140 0 is_stmt 1
+ 190 0044 B8FFFFFF 		movl	$2147483647, %eax
+ 190      7F
+ 191 0049 4429E0   		subl	%r12d, %eax
+ 192 004c 39C5     		cmpl	%eax, %ebp
+ 193 004e 7F19     		jg	.L22
+ 194              	.LVL15:
+ 195              	.LBB29:
+ 196              	.LBB30:
+ 197              	.LBB31:
+ 111:fltk-1.3.4-1/png/pngmem.c ****       return png_malloc_base(png_ptr, req * element_size);
+ 198              		.loc 1 111 0
+ 199 0050 31D2     		xorl	%edx, %edx
+ 200 0052 48C7C0FF 		movq	$-1, %rax
+ 200      FFFFFF
+ 109:fltk-1.3.4-1/png/pngmem.c **** 
+ 201              		.loc 1 109 0
+ 202 0059 428D7425 		leal	0(%rbp,%r12), %esi
+ 202      00
+ 203              	.LVL16:
+ 111:fltk-1.3.4-1/png/pngmem.c ****       return png_malloc_base(png_ptr, req * element_size);
+ 204              		.loc 1 111 0
+ 205 005e 48F7F3   		divq	%rbx
+ 109:fltk-1.3.4-1/png/pngmem.c **** 
+ 206              		.loc 1 109 0
+ 207 0061 4863F6   		movslq	%esi, %rsi
+ 208              	.LVL17:
+ 111:fltk-1.3.4-1/png/pngmem.c ****       return png_malloc_base(png_ptr, req * element_size);
+ 209              		.loc 1 111 0
+ 210 0064 4839C6   		cmpq	%rax, %rsi
+ 211 0067 7617     		jbe	.L36
+ 212              	.LVL18:
+ 213              	.L22:
+ 214              	.LBE31:
+ 215              	.LBE30:
+ 216              	.LBE29:
+ 141:fltk-1.3.4-1/png/pngmem.c ****    {
+ 142:fltk-1.3.4-1/png/pngmem.c ****       png_voidp new_array = png_malloc_array_checked(png_ptr,
+ 143:fltk-1.3.4-1/png/pngmem.c ****          old_elements+add_elements, element_size);
+ 144:fltk-1.3.4-1/png/pngmem.c **** 
+ 145:fltk-1.3.4-1/png/pngmem.c ****       if (new_array != NULL)
+ 146:fltk-1.3.4-1/png/pngmem.c ****       {
+ 147:fltk-1.3.4-1/png/pngmem.c ****          /* Because png_malloc_array worked the size calculations below cannot
+ 148:fltk-1.3.4-1/png/pngmem.c ****           * overflow.
+ 149:fltk-1.3.4-1/png/pngmem.c ****           */
+ 150:fltk-1.3.4-1/png/pngmem.c ****          if (old_elements > 0)
+ 151:fltk-1.3.4-1/png/pngmem.c ****             memcpy(new_array, old_array, element_size*(unsigned)old_elements);
+ 152:fltk-1.3.4-1/png/pngmem.c **** 
+ 153:fltk-1.3.4-1/png/pngmem.c ****          memset((char*)new_array + element_size*(unsigned)old_elements, 0,
+ 154:fltk-1.3.4-1/png/pngmem.c ****             element_size*(unsigned)add_elements);
+ 155:fltk-1.3.4-1/png/pngmem.c **** 
+ 156:fltk-1.3.4-1/png/pngmem.c ****          return new_array;
+ 157:fltk-1.3.4-1/png/pngmem.c ****       }
+ 158:fltk-1.3.4-1/png/pngmem.c ****    }
+ 159:fltk-1.3.4-1/png/pngmem.c **** 
+ 160:fltk-1.3.4-1/png/pngmem.c ****    return NULL; /* error */
+ 217              		.loc 1 160 0
+ 218 0069 4531FF   		xorl	%r15d, %r15d
+ 219              	.L21:
+ 161:fltk-1.3.4-1/png/pngmem.c **** }
+ 220              		.loc 1 161 0
+ 221 006c 4883C408 		addq	$8, %rsp
+ 222              		.cfi_remember_state
+ 223              		.cfi_def_cfa_offset 56
+ 224 0070 4C89F8   		movq	%r15, %rax
+ 225 0073 5B       		popq	%rbx
+ 226              		.cfi_def_cfa_offset 48
+ 227              	.LVL19:
+ 228 0074 5D       		popq	%rbp
+ 229              		.cfi_def_cfa_offset 40
+ 230              	.LVL20:
+ 231 0075 415C     		popq	%r12
+ 232              		.cfi_def_cfa_offset 32
+ 233              	.LVL21:
+ 234 0077 415D     		popq	%r13
+ 235              		.cfi_def_cfa_offset 24
+ 236 0079 415E     		popq	%r14
+ 237              		.cfi_def_cfa_offset 16
+ 238              	.LVL22:
+ 239 007b 415F     		popq	%r15
+ 240              		.cfi_def_cfa_offset 8
+ 241 007d C3       		ret
+ 242              	.LVL23:
+ 243 007e 6690     		.p2align 4,,10
+ 244              		.p2align 3
+ 245              	.L36:
+ 246              		.cfi_restore_state
+ 247              	.LBB42:
+ 248              	.LBB34:
+ 249              	.LBB32:
+ 112:fltk-1.3.4-1/png/pngmem.c **** 
+ 250              		.loc 1 112 0
+ 251 0080 480FAFF3 		imulq	%rbx, %rsi
+ 252              	.LVL24:
+ 253 0084 E8000000 		call	png_malloc_base
+ 253      00
+ 254              	.LVL25:
+ 255              	.LBE32:
+ 256              	.LBE34:
+ 145:fltk-1.3.4-1/png/pngmem.c ****       {
+ 257              		.loc 1 145 0
+ 258 0089 4885C0   		testq	%rax, %rax
+ 259              	.LBB35:
+ 260              	.LBB33:
+ 112:fltk-1.3.4-1/png/pngmem.c **** 
+ 261              		.loc 1 112 0
+ 262 008c 4989C7   		movq	%rax, %r15
+ 263              	.LVL26:
+ 264              	.LBE33:
+ 265              	.LBE35:
+ 145:fltk-1.3.4-1/png/pngmem.c ****       {
+ 266              		.loc 1 145 0
+ 267 008f 74D8     		je	.L22
+ 268 0091 4531ED   		xorl	%r13d, %r13d
+ 150:fltk-1.3.4-1/png/pngmem.c ****             memcpy(new_array, old_array, element_size*(unsigned)old_elements);
+ 269              		.loc 1 150 0
+ 270 0094 4585E4   		testl	%r12d, %r12d
+ 271 0097 7415     		je	.L23
+ 151:fltk-1.3.4-1/png/pngmem.c **** 
+ 272              		.loc 1 151 0
+ 273 0099 4D63EC   		movslq	%r12d, %r13
+ 274              	.LBB36:
+ 275              	.LBB37:
+ 276              		.file 2 "/usr/include/x86_64-linux-gnu/bits/string3.h"
+   1:/usr/include/x86_64-linux-gnu/bits/string3.h **** /* Copyright (C) 2004-2016 Free Software Foundation, Inc.
+   2:/usr/include/x86_64-linux-gnu/bits/string3.h ****    This file is part of the GNU C Library.
+   3:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+   4:/usr/include/x86_64-linux-gnu/bits/string3.h ****    The GNU C Library is free software; you can redistribute it and/or
+   5:/usr/include/x86_64-linux-gnu/bits/string3.h ****    modify it under the terms of the GNU Lesser General Public
+   6:/usr/include/x86_64-linux-gnu/bits/string3.h ****    License as published by the Free Software Foundation; either
+   7:/usr/include/x86_64-linux-gnu/bits/string3.h ****    version 2.1 of the License, or (at your option) any later version.
+   8:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+   9:/usr/include/x86_64-linux-gnu/bits/string3.h ****    The GNU C Library is distributed in the hope that it will be useful,
+  10:/usr/include/x86_64-linux-gnu/bits/string3.h ****    but WITHOUT ANY WARRANTY; without even the implied warranty of
+  11:/usr/include/x86_64-linux-gnu/bits/string3.h ****    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  12:/usr/include/x86_64-linux-gnu/bits/string3.h ****    Lesser General Public License for more details.
+  13:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  14:/usr/include/x86_64-linux-gnu/bits/string3.h ****    You should have received a copy of the GNU Lesser General Public
+  15:/usr/include/x86_64-linux-gnu/bits/string3.h ****    License along with the GNU C Library; if not, see
+  16:/usr/include/x86_64-linux-gnu/bits/string3.h ****    <http://www.gnu.org/licenses/>.  */
+  17:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  18:/usr/include/x86_64-linux-gnu/bits/string3.h **** #ifndef _STRING_H
+  19:/usr/include/x86_64-linux-gnu/bits/string3.h **** # error "Never use <bits/string3.h> directly; include <string.h> instead."
+  20:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  21:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  22:/usr/include/x86_64-linux-gnu/bits/string3.h **** #if !__GNUC_PREREQ (5,0)
+  23:/usr/include/x86_64-linux-gnu/bits/string3.h **** __warndecl (__warn_memset_zero_len,
+  24:/usr/include/x86_64-linux-gnu/bits/string3.h **** 	    "memset used with constant zero length parameter; this could be due to transposed parameters")
+  25:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  26:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  27:/usr/include/x86_64-linux-gnu/bits/string3.h **** #ifndef __cplusplus
+  28:/usr/include/x86_64-linux-gnu/bits/string3.h **** /* XXX This is temporarily.  We should not redefine any of the symbols
+  29:/usr/include/x86_64-linux-gnu/bits/string3.h ****    and instead integrate the error checking into the original
+  30:/usr/include/x86_64-linux-gnu/bits/string3.h ****    definitions.  */
+  31:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memcpy
+  32:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memmove
+  33:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memset
+  34:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strcat
+  35:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strcpy
+  36:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strncat
+  37:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strncpy
+  38:/usr/include/x86_64-linux-gnu/bits/string3.h **** # ifdef __USE_GNU
+  39:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef mempcpy
+  40:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef stpcpy
+  41:/usr/include/x86_64-linux-gnu/bits/string3.h **** # endif
+  42:/usr/include/x86_64-linux-gnu/bits/string3.h **** # ifdef __USE_MISC
+  43:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef bcopy
+  44:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef bzero
+  45:/usr/include/x86_64-linux-gnu/bits/string3.h **** # endif
+  46:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  47:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  48:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  49:/usr/include/x86_64-linux-gnu/bits/string3.h **** __fortify_function void *
+  50:/usr/include/x86_64-linux-gnu/bits/string3.h **** __NTH (memcpy (void *__restrict __dest, const void *__restrict __src,
+  51:/usr/include/x86_64-linux-gnu/bits/string3.h **** 	       size_t __len))
+  52:/usr/include/x86_64-linux-gnu/bits/string3.h **** {
+  53:/usr/include/x86_64-linux-gnu/bits/string3.h ****   return __builtin___memcpy_chk (__dest, __src, __len, __bos0 (__dest));
+ 277              		.loc 2 53 0
+ 278 009c 4C89F6   		movq	%r14, %rsi
+ 279 009f 4889C7   		movq	%rax, %rdi
+ 280              	.LBE37:
+ 281              	.LBE36:
+ 151:fltk-1.3.4-1/png/pngmem.c **** 
+ 282              		.loc 1 151 0
+ 283 00a2 4C0FAFEB 		imulq	%rbx, %r13
+ 284              	.LVL27:
+ 285              	.LBB39:
+ 286              	.LBB38:
+ 287              		.loc 2 53 0
+ 288 00a6 4C89EA   		movq	%r13, %rdx
+ 289 00a9 E8000000 		call	memcpy
+ 289      00
+ 290              	.LVL28:
+ 291              	.L23:
+ 292              	.LBE38:
+ 293              	.LBE39:
+ 294              	.LBB40:
+ 295              	.LBB41:
+  54:/usr/include/x86_64-linux-gnu/bits/string3.h **** }
+  55:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  56:/usr/include/x86_64-linux-gnu/bits/string3.h **** __fortify_function void *
+  57:/usr/include/x86_64-linux-gnu/bits/string3.h **** __NTH (memmove (void *__dest, const void *__src, size_t __len))
+  58:/usr/include/x86_64-linux-gnu/bits/string3.h **** {
+  59:/usr/include/x86_64-linux-gnu/bits/string3.h ****   return __builtin___memmove_chk (__dest, __src, __len, __bos0 (__dest));
+  60:/usr/include/x86_64-linux-gnu/bits/string3.h **** }
+  61:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  62:/usr/include/x86_64-linux-gnu/bits/string3.h **** #ifdef __USE_GNU
+  63:/usr/include/x86_64-linux-gnu/bits/string3.h **** __fortify_function void *
+  64:/usr/include/x86_64-linux-gnu/bits/string3.h **** __NTH (mempcpy (void *__restrict __dest, const void *__restrict __src,
+  65:/usr/include/x86_64-linux-gnu/bits/string3.h **** 		size_t __len))
+  66:/usr/include/x86_64-linux-gnu/bits/string3.h **** {
+  67:/usr/include/x86_64-linux-gnu/bits/string3.h ****   return __builtin___mempcpy_chk (__dest, __src, __len, __bos0 (__dest));
+  68:/usr/include/x86_64-linux-gnu/bits/string3.h **** }
+  69:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  70:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  71:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  72:/usr/include/x86_64-linux-gnu/bits/string3.h **** /* The first two tests here help to catch a somewhat common problem
+  73:/usr/include/x86_64-linux-gnu/bits/string3.h ****    where the second and third parameter are transposed.  This is
+  74:/usr/include/x86_64-linux-gnu/bits/string3.h ****    especially problematic if the intended fill value is zero.  In this
+  75:/usr/include/x86_64-linux-gnu/bits/string3.h ****    case no work is done at all.  We detect these problems by referring
+  76:/usr/include/x86_64-linux-gnu/bits/string3.h ****    non-existing functions.  */
+  77:/usr/include/x86_64-linux-gnu/bits/string3.h **** __fortify_function void *
+  78:/usr/include/x86_64-linux-gnu/bits/string3.h **** __NTH (memset (void *__dest, int __ch, size_t __len))
+  79:/usr/include/x86_64-linux-gnu/bits/string3.h **** {
+  80:/usr/include/x86_64-linux-gnu/bits/string3.h ****   /* GCC-5.0 and newer implements these checks in the compiler, so we don't
+  81:/usr/include/x86_64-linux-gnu/bits/string3.h ****      need them here.  */
+  82:/usr/include/x86_64-linux-gnu/bits/string3.h **** #if !__GNUC_PREREQ (5,0)
+  83:/usr/include/x86_64-linux-gnu/bits/string3.h ****   if (__builtin_constant_p (__len) && __len == 0
+  84:/usr/include/x86_64-linux-gnu/bits/string3.h ****       && (!__builtin_constant_p (__ch) || __ch != 0))
+  85:/usr/include/x86_64-linux-gnu/bits/string3.h ****     {
+  86:/usr/include/x86_64-linux-gnu/bits/string3.h ****       __warn_memset_zero_len ();
+  87:/usr/include/x86_64-linux-gnu/bits/string3.h ****       return __dest;
+  88:/usr/include/x86_64-linux-gnu/bits/string3.h ****     }
+  89:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  90:/usr/include/x86_64-linux-gnu/bits/string3.h ****   return __builtin___memset_chk (__dest, __ch, __len, __bos0 (__dest));
+ 296              		.loc 2 90 0
+ 297 00ae 4863D5   		movslq	%ebp, %rdx
+ 298 00b1 4B8D3C2F 		leaq	(%r15,%r13), %rdi
+ 299              	.LVL29:
+ 300 00b5 31F6     		xorl	%esi, %esi
+ 301 00b7 480FAFD3 		imulq	%rbx, %rdx
+ 302              	.LVL30:
+ 303 00bb E8000000 		call	memset
+ 303      00
+ 304              	.LVL31:
+ 305              	.LBE41:
+ 306              	.LBE40:
+ 156:fltk-1.3.4-1/png/pngmem.c ****       }
+ 307              		.loc 1 156 0
+ 308 00c0 EBAA     		jmp	.L21
+ 309              	.LVL32:
+ 310              	.L18:
+ 311              	.LBE42:
+ 135:fltk-1.3.4-1/png/pngmem.c **** 
+ 312              		.loc 1 135 0
+ 313 00c2 BE000000 		movl	$.LC3, %esi
+ 313      00
+ 314              	.LVL33:
+ 315 00c7 E8000000 		call	png_error
+ 315      00
+ 316              	.LVL34:
+ 317              		.cfi_endproc
+ 318              	.LFE61:
+ 320              		.section	.text.unlikely.png_realloc_array
+ 321              	.LCOLDE4:
+ 322              		.section	.text.png_realloc_array
+ 323              	.LHOTE4:
+ 324              		.section	.rodata.str1.1
+ 325              	.LC5:
+ 326 003a 4F757420 		.string	"Out of memory"
+ 326      6F66206D 
+ 326      656D6F72 
+ 326      7900
+ 327              		.section	.text.unlikely.png_malloc,"ax",@progbits
+ 328              	.LCOLDB6:
+ 329              		.section	.text.png_malloc,"ax",@progbits
+ 330              	.LHOTB6:
+ 331              		.p2align 4,,15
+ 332              		.globl	png_malloc
+ 334              	png_malloc:
+ 335              	.LFB62:
+ 162:fltk-1.3.4-1/png/pngmem.c **** #endif /* TEXT || sPLT || STORE_UNKNOWN_CHUNKS */
+ 163:fltk-1.3.4-1/png/pngmem.c **** 
+ 164:fltk-1.3.4-1/png/pngmem.c **** /* Various functions that have different error handling are derived from this.
+ 165:fltk-1.3.4-1/png/pngmem.c ****  * png_malloc always exists, but if PNG_USER_MEM_SUPPORTED is defined a separate
+ 166:fltk-1.3.4-1/png/pngmem.c ****  * function png_malloc_default is also provided.
+ 167:fltk-1.3.4-1/png/pngmem.c ****  */
+ 168:fltk-1.3.4-1/png/pngmem.c **** PNG_FUNCTION(png_voidp,PNGAPI
+ 169:fltk-1.3.4-1/png/pngmem.c **** png_malloc,(png_const_structrp png_ptr, png_alloc_size_t size),PNG_ALLOCATED)
+ 170:fltk-1.3.4-1/png/pngmem.c **** {
+ 336              		.loc 1 170 0
+ 337              		.cfi_startproc
+ 338              	.LVL35:
+ 171:fltk-1.3.4-1/png/pngmem.c ****    png_voidp ret;
+ 172:fltk-1.3.4-1/png/pngmem.c **** 
+ 173:fltk-1.3.4-1/png/pngmem.c ****    if (png_ptr == NULL)
+ 339              		.loc 1 173 0
+ 340 0000 4885FF   		testq	%rdi, %rdi
+ 341 0003 7413     		je	.L39
+ 170:fltk-1.3.4-1/png/pngmem.c ****    png_voidp ret;
+ 342              		.loc 1 170 0
+ 343 0005 53       		pushq	%rbx
+ 344              		.cfi_def_cfa_offset 16
+ 345              		.cfi_offset 3, -16
+ 346 0006 4889FB   		movq	%rdi, %rbx
+ 174:fltk-1.3.4-1/png/pngmem.c ****       return NULL;
+ 175:fltk-1.3.4-1/png/pngmem.c **** 
+ 176:fltk-1.3.4-1/png/pngmem.c ****    ret = png_malloc_base(png_ptr, size);
+ 347              		.loc 1 176 0
+ 348 0009 E8000000 		call	png_malloc_base
+ 348      00
+ 349              	.LVL36:
+ 177:fltk-1.3.4-1/png/pngmem.c **** 
+ 178:fltk-1.3.4-1/png/pngmem.c ****    if (ret == NULL)
+ 350              		.loc 1 178 0
+ 351 000e 4885C0   		testq	%rax, %rax
+ 352 0011 7408     		je	.L43
+ 179:fltk-1.3.4-1/png/pngmem.c ****        png_error(png_ptr, "Out of memory"); /* 'm' means png_malloc */
+ 180:fltk-1.3.4-1/png/pngmem.c **** 
+ 181:fltk-1.3.4-1/png/pngmem.c ****    return ret;
+ 182:fltk-1.3.4-1/png/pngmem.c **** }
+ 353              		.loc 1 182 0
+ 354 0013 5B       		popq	%rbx
+ 355              		.cfi_restore 3
+ 356              		.cfi_def_cfa_offset 8
+ 357              	.LVL37:
+ 358 0014 C3       		ret
+ 359              	.LVL38:
+ 360              		.p2align 4,,10
+ 361 0015 0F1F00   		.p2align 3
+ 362              	.L39:
+ 174:fltk-1.3.4-1/png/pngmem.c **** 
+ 363              		.loc 1 174 0
+ 364 0018 31C0     		xorl	%eax, %eax
+ 365 001a C3       		ret
+ 366              	.LVL39:
+ 367              	.L43:
+ 368              		.cfi_def_cfa_offset 16
+ 369              		.cfi_offset 3, -16
+ 179:fltk-1.3.4-1/png/pngmem.c ****        png_error(png_ptr, "Out of memory"); /* 'm' means png_malloc */
+ 370              		.loc 1 179 0
+ 371 001b BE000000 		movl	$.LC5, %esi
+ 371      00
+ 372 0020 4889DF   		movq	%rbx, %rdi
+ 373 0023 E8000000 		call	png_error
+ 373      00
+ 374              	.LVL40:
+ 375              		.cfi_endproc
+ 376              	.LFE62:
+ 378              		.section	.text.unlikely.png_malloc
+ 379              	.LCOLDE6:
+ 380              		.section	.text.png_malloc
+ 381              	.LHOTE6:
+ 382              		.section	.text.unlikely.png_calloc,"ax",@progbits
+ 383              	.LCOLDB7:
+ 384              		.section	.text.png_calloc,"ax",@progbits
+ 385              	.LHOTB7:
+ 386              		.p2align 4,,15
+ 387              		.globl	png_calloc
+ 389              	png_calloc:
+ 390              	.LFB57:
+  51:fltk-1.3.4-1/png/pngmem.c ****    png_voidp ret;
+ 391              		.loc 1 51 0
+ 392              		.cfi_startproc
+ 393              	.LVL41:
+ 394 0000 55       		pushq	%rbp
+ 395              		.cfi_def_cfa_offset 16
+ 396              		.cfi_offset 6, -16
+ 397 0001 53       		pushq	%rbx
+ 398              		.cfi_def_cfa_offset 24
+ 399              		.cfi_offset 3, -24
+ 400 0002 4889F5   		movq	%rsi, %rbp
+ 401 0005 4883EC08 		subq	$8, %rsp
+ 402              		.cfi_def_cfa_offset 32
+  54:fltk-1.3.4-1/png/pngmem.c **** 
+ 403              		.loc 1 54 0
+ 404 0009 E8000000 		call	png_malloc
+ 404      00
+ 405              	.LVL42:
+  56:fltk-1.3.4-1/png/pngmem.c ****       memset(ret, 0, size);
+ 406              		.loc 1 56 0
+ 407 000e 4885C0   		testq	%rax, %rax
+  54:fltk-1.3.4-1/png/pngmem.c **** 
+ 408              		.loc 1 54 0
+ 409 0011 4889C3   		movq	%rax, %rbx
+ 410              	.LVL43:
+  56:fltk-1.3.4-1/png/pngmem.c ****       memset(ret, 0, size);
+ 411              		.loc 1 56 0
+ 412 0014 740D     		je	.L45
+ 413              	.LVL44:
+ 414              	.LBB43:
+ 415              	.LBB44:
+ 416              		.loc 2 90 0
+ 417 0016 4889EA   		movq	%rbp, %rdx
+ 418 0019 31F6     		xorl	%esi, %esi
+ 419 001b 4889C7   		movq	%rax, %rdi
+ 420 001e E8000000 		call	memset
+ 420      00
+ 421              	.LVL45:
+ 422              	.L45:
+ 423              	.LBE44:
+ 424              	.LBE43:
+  60:fltk-1.3.4-1/png/pngmem.c **** 
+ 425              		.loc 1 60 0
+ 426 0023 4883C408 		addq	$8, %rsp
+ 427              		.cfi_def_cfa_offset 24
+ 428 0027 4889D8   		movq	%rbx, %rax
+ 429 002a 5B       		popq	%rbx
+ 430              		.cfi_def_cfa_offset 16
+ 431              	.LVL46:
+ 432 002b 5D       		popq	%rbp
+ 433              		.cfi_def_cfa_offset 8
+ 434              	.LVL47:
+ 435 002c C3       		ret
+ 436              		.cfi_endproc
+ 437              	.LFE57:
+ 439              		.section	.text.unlikely.png_calloc
+ 440              	.LCOLDE7:
+ 441              		.section	.text.png_calloc
+ 442              	.LHOTE7:
+ 443              		.section	.rodata.str1.1
+ 444              	.LC8:
+ 445 0048 4F757420 		.string	"Out of Memory"
+ 445      6F66204D 
+ 445      656D6F72 
+ 445      7900
+ 446              		.section	.text.unlikely.png_malloc_default,"ax",@progbits
+ 447              	.LCOLDB9:
+ 448              		.section	.text.png_malloc_default,"ax",@progbits
+ 449              	.LHOTB9:
+ 450              		.p2align 4,,15
+ 451              		.globl	png_malloc_default
+ 453              	png_malloc_default:
+ 454              	.LFB63:
+ 183:fltk-1.3.4-1/png/pngmem.c **** 
+ 184:fltk-1.3.4-1/png/pngmem.c **** #ifdef PNG_USER_MEM_SUPPORTED
+ 185:fltk-1.3.4-1/png/pngmem.c **** PNG_FUNCTION(png_voidp,PNGAPI
+ 186:fltk-1.3.4-1/png/pngmem.c **** png_malloc_default,(png_const_structrp png_ptr, png_alloc_size_t size),
+ 187:fltk-1.3.4-1/png/pngmem.c ****    PNG_ALLOCATED PNG_DEPRECATED)
+ 188:fltk-1.3.4-1/png/pngmem.c **** {
+ 455              		.loc 1 188 0
+ 456              		.cfi_startproc
+ 457              	.LVL48:
+ 189:fltk-1.3.4-1/png/pngmem.c ****    png_voidp ret;
+ 190:fltk-1.3.4-1/png/pngmem.c **** 
+ 191:fltk-1.3.4-1/png/pngmem.c ****    if (png_ptr == NULL)
+ 458              		.loc 1 191 0
+ 459 0000 4885FF   		testq	%rdi, %rdi
+ 460 0003 742B     		je	.L54
+ 461              	.LBB45:
+ 462              	.LBB46:
+  80:fltk-1.3.4-1/png/pngmem.c **** #     ifdef PNG_MAX_MALLOC_64K
+ 463              		.loc 1 80 0
+ 464 0005 4885F6   		testq	%rsi, %rsi
+ 465              	.LBE46:
+ 466              	.LBE45:
+ 188:fltk-1.3.4-1/png/pngmem.c ****    png_voidp ret;
+ 467              		.loc 1 188 0
+ 468 0008 53       		pushq	%rbx
+ 469              		.cfi_def_cfa_offset 16
+ 470              		.cfi_offset 3, -16
+ 471 0009 4889FB   		movq	%rdi, %rbx
+ 472              	.LVL49:
+ 473              	.LBB49:
+ 474              	.LBB47:
+  80:fltk-1.3.4-1/png/pngmem.c **** #     ifdef PNG_MAX_MALLOC_64K
+ 475              		.loc 1 80 0
+ 476 000c 7512     		jne	.L52
+ 477              	.LVL50:
+ 478              	.L53:
+ 479              	.LBE47:
+ 480              	.LBE49:
+ 192:fltk-1.3.4-1/png/pngmem.c ****       return NULL;
+ 193:fltk-1.3.4-1/png/pngmem.c **** 
+ 194:fltk-1.3.4-1/png/pngmem.c ****    /* Passing 'NULL' here bypasses the application provided memory handler. */
+ 195:fltk-1.3.4-1/png/pngmem.c ****    ret = png_malloc_base(NULL/*use malloc*/, size);
+ 196:fltk-1.3.4-1/png/pngmem.c **** 
+ 197:fltk-1.3.4-1/png/pngmem.c ****    if (ret == NULL)
+ 198:fltk-1.3.4-1/png/pngmem.c ****       png_error(png_ptr, "Out of Memory"); /* 'M' means png_malloc_default */
+ 481              		.loc 1 198 0
+ 482 000e BE000000 		movl	$.LC8, %esi
+ 482      00
+ 483 0013 4889DF   		movq	%rbx, %rdi
+ 484 0016 E8000000 		call	png_error
+ 484      00
+ 485              	.LVL51:
+ 486 001b 0F1F4400 		.p2align 4,,10
+ 486      00
+ 487              		.p2align 3
+ 488              	.L52:
+ 489              	.LBB50:
+ 490              	.LBB48:
+  92:fltk-1.3.4-1/png/pngmem.c ****    }
+ 491              		.loc 1 92 0
+ 492 0020 4889F7   		movq	%rsi, %rdi
+ 493 0023 E8000000 		call	malloc
+ 493      00
+ 494              	.LVL52:
+ 495              	.LBE48:
+ 496              	.LBE50:
+ 197:fltk-1.3.4-1/png/pngmem.c ****       png_error(png_ptr, "Out of Memory"); /* 'M' means png_malloc_default */
+ 497              		.loc 1 197 0
+ 498 0028 4885C0   		testq	%rax, %rax
+ 499 002b 74E1     		je	.L53
+ 199:fltk-1.3.4-1/png/pngmem.c **** 
+ 200:fltk-1.3.4-1/png/pngmem.c ****    return ret;
+ 201:fltk-1.3.4-1/png/pngmem.c **** }
+ 500              		.loc 1 201 0
+ 501 002d 5B       		popq	%rbx
+ 502              		.cfi_restore 3
+ 503              		.cfi_def_cfa_offset 8
+ 504              	.LVL53:
+ 505 002e C3       		ret
+ 506              	.LVL54:
+ 507 002f 90       		.p2align 4,,10
+ 508              		.p2align 3
+ 509              	.L54:
+ 192:fltk-1.3.4-1/png/pngmem.c **** 
+ 510              		.loc 1 192 0
+ 511 0030 31C0     		xorl	%eax, %eax
+ 512 0032 C3       		ret
+ 513              		.cfi_endproc
+ 514              	.LFE63:
+ 516              		.section	.text.unlikely.png_malloc_default
+ 517              	.LCOLDE9:
+ 518              		.section	.text.png_malloc_default
+ 519              	.LHOTE9:
+ 520              		.section	.text.unlikely.png_malloc_warn,"ax",@progbits
+ 521              	.LCOLDB10:
+ 522              		.section	.text.png_malloc_warn,"ax",@progbits
+ 523              	.LHOTB10:
+ 524              		.p2align 4,,15
+ 525              		.globl	png_malloc_warn
+ 527              	png_malloc_warn:
+ 528              	.LFB64:
+ 202:fltk-1.3.4-1/png/pngmem.c **** #endif /* USER_MEM */
+ 203:fltk-1.3.4-1/png/pngmem.c **** 
+ 204:fltk-1.3.4-1/png/pngmem.c **** /* This function was added at libpng version 1.2.3.  The png_malloc_warn()
+ 205:fltk-1.3.4-1/png/pngmem.c ****  * function will issue a png_warning and return NULL instead of issuing a
+ 206:fltk-1.3.4-1/png/pngmem.c ****  * png_error, if it fails to allocate the requested memory.
+ 207:fltk-1.3.4-1/png/pngmem.c ****  */
+ 208:fltk-1.3.4-1/png/pngmem.c **** PNG_FUNCTION(png_voidp,PNGAPI
+ 209:fltk-1.3.4-1/png/pngmem.c **** png_malloc_warn,(png_const_structrp png_ptr, png_alloc_size_t size),
+ 210:fltk-1.3.4-1/png/pngmem.c ****    PNG_ALLOCATED)
+ 211:fltk-1.3.4-1/png/pngmem.c **** {
+ 529              		.loc 1 211 0
+ 530              		.cfi_startproc
+ 531              	.LVL55:
+ 212:fltk-1.3.4-1/png/pngmem.c ****    if (png_ptr != NULL)
+ 532              		.loc 1 212 0
+ 533 0000 4885FF   		testq	%rdi, %rdi
+ 534 0003 742B     		je	.L62
+ 211:fltk-1.3.4-1/png/pngmem.c ****    if (png_ptr != NULL)
+ 535              		.loc 1 211 0
+ 536 0005 53       		pushq	%rbx
+ 537              		.cfi_def_cfa_offset 16
+ 538              		.cfi_offset 3, -16
+ 539 0006 4889FB   		movq	%rdi, %rbx
+ 540              	.LBB51:
+ 213:fltk-1.3.4-1/png/pngmem.c ****    {
+ 214:fltk-1.3.4-1/png/pngmem.c ****       png_voidp ret = png_malloc_base(png_ptr, size);
+ 541              		.loc 1 214 0
+ 542 0009 E8000000 		call	png_malloc_base
+ 542      00
+ 543              	.LVL56:
+ 215:fltk-1.3.4-1/png/pngmem.c **** 
+ 216:fltk-1.3.4-1/png/pngmem.c ****       if (ret != NULL)
+ 544              		.loc 1 216 0
+ 545 000e 4885C0   		testq	%rax, %rax
+ 546 0011 7402     		je	.L66
+ 547              	.LBE51:
+ 217:fltk-1.3.4-1/png/pngmem.c ****          return ret;
+ 218:fltk-1.3.4-1/png/pngmem.c **** 
+ 219:fltk-1.3.4-1/png/pngmem.c ****       png_warning(png_ptr, "Out of memory");
+ 220:fltk-1.3.4-1/png/pngmem.c ****    }
+ 221:fltk-1.3.4-1/png/pngmem.c **** 
+ 222:fltk-1.3.4-1/png/pngmem.c ****    return NULL;
+ 223:fltk-1.3.4-1/png/pngmem.c **** }
+ 548              		.loc 1 223 0
+ 549 0013 5B       		popq	%rbx
+ 550              		.cfi_remember_state
+ 551              		.cfi_restore 3
+ 552              		.cfi_def_cfa_offset 8
+ 553              	.LVL57:
+ 554 0014 C3       		ret
+ 555              	.LVL58:
+ 556              	.L66:
+ 557              		.cfi_restore_state
+ 558              	.LBB52:
+ 219:fltk-1.3.4-1/png/pngmem.c ****    }
+ 559              		.loc 1 219 0
+ 560 0015 4889DF   		movq	%rbx, %rdi
+ 561 0018 BE000000 		movl	$.LC5, %esi
+ 561      00
+ 562 001d E8000000 		call	png_warning
+ 562      00
+ 563              	.LVL59:
+ 564              	.LBE52:
+ 222:fltk-1.3.4-1/png/pngmem.c **** }
+ 565              		.loc 1 222 0
+ 566 0022 31C0     		xorl	%eax, %eax
+ 567              		.loc 1 223 0
+ 568 0024 5B       		popq	%rbx
+ 569              		.cfi_restore 3
+ 570              		.cfi_def_cfa_offset 8
+ 571              	.LVL60:
+ 572 0025 C3       		ret
+ 573              	.LVL61:
+ 574 0026 662E0F1F 		.p2align 4,,10
+ 574      84000000 
+ 574      0000
+ 575              		.p2align 3
+ 576              	.L62:
+ 222:fltk-1.3.4-1/png/pngmem.c **** }
+ 577              		.loc 1 222 0
+ 578 0030 31C0     		xorl	%eax, %eax
+ 579 0032 C3       		ret
+ 580              		.cfi_endproc
+ 581              	.LFE64:
+ 583              		.section	.text.unlikely.png_malloc_warn
+ 584              	.LCOLDE10:
+ 585              		.section	.text.png_malloc_warn
+ 586              	.LHOTE10:
+ 587              		.section	.text.unlikely.png_free,"ax",@progbits
+ 588              	.LCOLDB11:
+ 589              		.section	.text.png_free,"ax",@progbits
+ 590              	.LHOTB11:
+ 591              		.p2align 4,,15
+ 592              		.globl	png_free
+ 594              	png_free:
+ 595              	.LFB65:
+ 224:fltk-1.3.4-1/png/pngmem.c **** 
+ 225:fltk-1.3.4-1/png/pngmem.c **** /* Free a pointer allocated by png_malloc().  If ptr is NULL, return
+ 226:fltk-1.3.4-1/png/pngmem.c ****  * without taking any action.
+ 227:fltk-1.3.4-1/png/pngmem.c ****  */
+ 228:fltk-1.3.4-1/png/pngmem.c **** void PNGAPI
+ 229:fltk-1.3.4-1/png/pngmem.c **** png_free(png_const_structrp png_ptr, png_voidp ptr)
+ 230:fltk-1.3.4-1/png/pngmem.c **** {
+ 596              		.loc 1 230 0
+ 597              		.cfi_startproc
+ 598              	.LVL62:
+ 231:fltk-1.3.4-1/png/pngmem.c ****    if (png_ptr == NULL || ptr == NULL)
+ 599              		.loc 1 231 0
+ 600 0000 4885FF   		testq	%rdi, %rdi
+ 601 0003 741B     		je	.L67
+ 602 0005 4885F6   		testq	%rsi, %rsi
+ 603 0008 7416     		je	.L67
+ 232:fltk-1.3.4-1/png/pngmem.c ****       return;
+ 233:fltk-1.3.4-1/png/pngmem.c **** 
+ 234:fltk-1.3.4-1/png/pngmem.c **** #ifdef PNG_USER_MEM_SUPPORTED
+ 235:fltk-1.3.4-1/png/pngmem.c ****    if (png_ptr->free_fn != NULL)
+ 604              		.loc 1 235 0
+ 605 000a 488B8730 		movq	1072(%rdi), %rax
+ 605      040000
+ 606 0011 4885C0   		testq	%rax, %rax
+ 607 0014 7412     		je	.L69
+ 236:fltk-1.3.4-1/png/pngmem.c ****       png_ptr->free_fn(png_constcast(png_structrp,png_ptr), ptr);
+ 608              		.loc 1 236 0
+ 609 0016 FFE0     		jmp	*%rax
+ 610              	.LVL63:
+ 611 0018 0F1F8400 		.p2align 4,,10
+ 611      00000000 
+ 612              		.p2align 3
+ 613              	.L67:
+ 614 0020 F3C3     		rep ret
+ 615              		.p2align 4,,10
+ 616 0022 660F1F44 		.p2align 3
+ 616      0000
+ 617              	.L69:
+ 618              	.LVL64:
+ 619              	.LBB53:
+ 620              	.LBB54:
+ 237:fltk-1.3.4-1/png/pngmem.c **** 
+ 238:fltk-1.3.4-1/png/pngmem.c ****    else
+ 239:fltk-1.3.4-1/png/pngmem.c ****       png_free_default(png_ptr, ptr);
+ 240:fltk-1.3.4-1/png/pngmem.c **** }
+ 241:fltk-1.3.4-1/png/pngmem.c **** 
+ 242:fltk-1.3.4-1/png/pngmem.c **** PNG_FUNCTION(void,PNGAPI
+ 243:fltk-1.3.4-1/png/pngmem.c **** png_free_default,(png_const_structrp png_ptr, png_voidp ptr),PNG_DEPRECATED)
+ 244:fltk-1.3.4-1/png/pngmem.c **** {
+ 245:fltk-1.3.4-1/png/pngmem.c ****    if (png_ptr == NULL || ptr == NULL)
+ 246:fltk-1.3.4-1/png/pngmem.c ****       return;
+ 247:fltk-1.3.4-1/png/pngmem.c **** #endif /* USER_MEM */
+ 248:fltk-1.3.4-1/png/pngmem.c **** 
+ 249:fltk-1.3.4-1/png/pngmem.c ****    free(ptr);
+ 621              		.loc 1 249 0
+ 622 0028 4889F7   		movq	%rsi, %rdi
+ 623              	.LVL65:
+ 624 002b E9000000 		jmp	free
+ 624      00
+ 625              	.LVL66:
+ 626              	.LBE54:
+ 627              	.LBE53:
+ 628              		.cfi_endproc
+ 629              	.LFE65:
+ 631              		.section	.text.unlikely.png_free
+ 632              	.LCOLDE11:
+ 633              		.section	.text.png_free
+ 634              	.LHOTE11:
+ 635              		.section	.text.unlikely.png_destroy_png_struct,"ax",@progbits
+ 636              	.LCOLDB12:
+ 637              		.section	.text.png_destroy_png_struct,"ax",@progbits
+ 638              	.LHOTB12:
+ 639              		.p2align 4,,15
+ 640              		.globl	png_destroy_png_struct
+ 642              	png_destroy_png_struct:
+ 643              	.LFB56:
+  26:fltk-1.3.4-1/png/pngmem.c ****    if (png_ptr != NULL)
+ 644              		.loc 1 26 0
+ 645              		.cfi_startproc
+ 646              	.LVL67:
+ 647 0000 4881EC38 		subq	$1336, %rsp
+ 647      050000
+ 648              		.cfi_def_cfa_offset 1344
+  26:fltk-1.3.4-1/png/pngmem.c ****    if (png_ptr != NULL)
+ 649              		.loc 1 26 0
+ 650 0007 64488B04 		movq	%fs:40, %rax
+ 650      25280000 
+ 650      00
+ 651 0010 48898424 		movq	%rax, 1320(%rsp)
+ 651      28050000 
+ 652 0018 31C0     		xorl	%eax, %eax
+  27:fltk-1.3.4-1/png/pngmem.c ****    {
+ 653              		.loc 1 27 0
+ 654 001a 4885FF   		testq	%rdi, %rdi
+ 655 001d 7456     		je	.L70
+ 656 001f 4889FA   		movq	%rdi, %rdx
+ 657              	.LBB55:
+  32:fltk-1.3.4-1/png/pngmem.c ****       memset(png_ptr, 0, (sizeof *png_ptr));
+ 658              		.loc 1 32 0
+ 659 0022 B8A50000 		movl	$165, %eax
+ 659      00
+ 660 0027 4889E7   		movq	%rsp, %rdi
+ 661              	.LVL68:
+ 662 002a 4889D6   		movq	%rdx, %rsi
+ 663 002d 4889C1   		movq	%rax, %rcx
+ 664 0030 F348A5   		rep movsq
+ 665              	.LBB56:
+ 666              	.LBB57:
+ 667              		.loc 2 90 0
+ 668 0033 488D7A08 		leaq	8(%rdx), %rdi
+ 669 0037 48C70200 		movq	$0, (%rdx)
+ 669      000000
+ 670 003e 48C78220 		movq	$0, 1312(%rdx)
+ 670      05000000 
+ 670      000000
+ 671              	.LBE57:
+ 672              	.LBE56:
+  34:fltk-1.3.4-1/png/pngmem.c **** 
+ 673              		.loc 1 34 0
+ 674 0049 4889D6   		movq	%rdx, %rsi
+ 675              	.LBB60:
+ 676              	.LBB58:
+ 677              		.loc 2 90 0
+ 678 004c 4883E7F8 		andq	$-8, %rdi
+ 679              	.LBE58:
+ 680              	.LBE60:
+  32:fltk-1.3.4-1/png/pngmem.c ****       memset(png_ptr, 0, (sizeof *png_ptr));
+ 681              		.loc 1 32 0
+ 682 0050 4889C8   		movq	%rcx, %rax
+ 683              	.LVL69:
+ 684              	.LBB61:
+ 685              	.LBB59:
+ 686              		.loc 2 90 0
+ 687 0053 4889D1   		movq	%rdx, %rcx
+ 688 0056 4829F9   		subq	%rdi, %rcx
+ 689 0059 81C12805 		addl	$1320, %ecx
+ 689      0000
+ 690 005f C1E903   		shrl	$3, %ecx
+ 691 0062 F348AB   		rep stosq
+ 692              	.LVL70:
+ 693              	.LBE59:
+ 694              	.LBE61:
+  34:fltk-1.3.4-1/png/pngmem.c **** 
+ 695              		.loc 1 34 0
+ 696 0065 4889E7   		movq	%rsp, %rdi
+ 697 0068 E8000000 		call	png_free
+ 697      00
+ 698              	.LVL71:
+  38:fltk-1.3.4-1/png/pngmem.c **** #     endif
+ 699              		.loc 1 38 0
+ 700 006d 4889E7   		movq	%rsp, %rdi
+ 701 0070 E8000000 		call	png_free_jmpbuf
+ 701      00
+ 702              	.LVL72:
+ 703              	.L70:
+ 704              	.LBE55:
+  41:fltk-1.3.4-1/png/pngmem.c **** 
+ 705              		.loc 1 41 0
+ 706 0075 488B8424 		movq	1320(%rsp), %rax
+ 706      28050000 
+ 707 007d 64483304 		xorq	%fs:40, %rax
+ 707      25280000 
+ 707      00
+ 708 0086 7508     		jne	.L77
+ 709 0088 4881C438 		addq	$1336, %rsp
+ 709      050000
+ 710              		.cfi_remember_state
+ 711              		.cfi_def_cfa_offset 8
+ 712 008f C3       		ret
+ 713              	.L77:
+ 714              		.cfi_restore_state
+ 715 0090 E8000000 		call	__stack_chk_fail
+ 715      00
+ 716              	.LVL73:
+ 717              		.cfi_endproc
+ 718              	.LFE56:
+ 720              		.section	.text.unlikely.png_destroy_png_struct
+ 721              	.LCOLDE12:
+ 722              		.section	.text.png_destroy_png_struct
+ 723              	.LHOTE12:
+ 724              		.section	.text.unlikely.png_free_default,"ax",@progbits
+ 725              	.LCOLDB13:
+ 726              		.section	.text.png_free_default,"ax",@progbits
+ 727              	.LHOTB13:
+ 728              		.p2align 4,,15
+ 729              		.globl	png_free_default
+ 731              	png_free_default:
+ 732              	.LFB66:
+ 244:fltk-1.3.4-1/png/pngmem.c ****    if (png_ptr == NULL || ptr == NULL)
+ 733              		.loc 1 244 0
+ 734              		.cfi_startproc
+ 735              	.LVL74:
+ 245:fltk-1.3.4-1/png/pngmem.c ****       return;
+ 736              		.loc 1 245 0
+ 737 0000 4885FF   		testq	%rdi, %rdi
+ 738 0003 7413     		je	.L78
+ 739 0005 4885F6   		testq	%rsi, %rsi
+ 740 0008 740E     		je	.L78
+ 741              		.loc 1 249 0
+ 742 000a 4889F7   		movq	%rsi, %rdi
+ 743              	.LVL75:
+ 744 000d E9000000 		jmp	free
+ 744      00
+ 745              	.LVL76:
+ 746              		.p2align 4,,10
+ 747 0012 660F1F44 		.p2align 3
+ 747      0000
+ 748              	.L78:
+ 749 0018 F3C3     		rep ret
+ 750              		.cfi_endproc
+ 751              	.LFE66:
+ 753              		.section	.text.unlikely.png_free_default
+ 754              	.LCOLDE13:
+ 755              		.section	.text.png_free_default
+ 756              	.LHOTE13:
+ 757              		.section	.text.unlikely.png_set_mem_fn,"ax",@progbits
+ 758              	.LCOLDB14:
+ 759              		.section	.text.png_set_mem_fn,"ax",@progbits
+ 760              	.LHOTB14:
+ 761              		.p2align 4,,15
+ 762              		.globl	png_set_mem_fn
+ 764              	png_set_mem_fn:
+ 765              	.LFB67:
+ 250:fltk-1.3.4-1/png/pngmem.c **** }
+ 251:fltk-1.3.4-1/png/pngmem.c **** 
+ 252:fltk-1.3.4-1/png/pngmem.c **** #ifdef PNG_USER_MEM_SUPPORTED
+ 253:fltk-1.3.4-1/png/pngmem.c **** /* This function is called when the application wants to use another method
+ 254:fltk-1.3.4-1/png/pngmem.c ****  * of allocating and freeing memory.
+ 255:fltk-1.3.4-1/png/pngmem.c ****  */
+ 256:fltk-1.3.4-1/png/pngmem.c **** void PNGAPI
+ 257:fltk-1.3.4-1/png/pngmem.c **** png_set_mem_fn(png_structrp png_ptr, png_voidp mem_ptr, png_malloc_ptr
+ 258:fltk-1.3.4-1/png/pngmem.c ****   malloc_fn, png_free_ptr free_fn)
+ 259:fltk-1.3.4-1/png/pngmem.c **** {
+ 766              		.loc 1 259 0
+ 767              		.cfi_startproc
+ 768              	.LVL77:
+ 260:fltk-1.3.4-1/png/pngmem.c ****    if (png_ptr != NULL)
+ 769              		.loc 1 260 0
+ 770 0000 4885FF   		testq	%rdi, %rdi
+ 771 0003 7415     		je	.L80
+ 261:fltk-1.3.4-1/png/pngmem.c ****    {
+ 262:fltk-1.3.4-1/png/pngmem.c ****       png_ptr->mem_ptr = mem_ptr;
+ 772              		.loc 1 262 0
+ 773 0005 4889B720 		movq	%rsi, 1056(%rdi)
+ 773      040000
+ 263:fltk-1.3.4-1/png/pngmem.c ****       png_ptr->malloc_fn = malloc_fn;
+ 774              		.loc 1 263 0
+ 775 000c 48899728 		movq	%rdx, 1064(%rdi)
+ 775      040000
+ 264:fltk-1.3.4-1/png/pngmem.c ****       png_ptr->free_fn = free_fn;
+ 776              		.loc 1 264 0
+ 777 0013 48898F30 		movq	%rcx, 1072(%rdi)
+ 777      040000
+ 778              	.L80:
+ 779 001a F3C3     		rep ret
+ 780              		.cfi_endproc
+ 781              	.LFE67:
+ 783              		.section	.text.unlikely.png_set_mem_fn
+ 784              	.LCOLDE14:
+ 785              		.section	.text.png_set_mem_fn
+ 786              	.LHOTE14:
+ 787              		.section	.text.unlikely.png_get_mem_ptr,"ax",@progbits
+ 788              	.LCOLDB15:
+ 789              		.section	.text.png_get_mem_ptr,"ax",@progbits
+ 790              	.LHOTB15:
+ 791              		.p2align 4,,15
+ 792              		.globl	png_get_mem_ptr
+ 794              	png_get_mem_ptr:
+ 795              	.LFB68:
+ 265:fltk-1.3.4-1/png/pngmem.c ****    }
+ 266:fltk-1.3.4-1/png/pngmem.c **** }
+ 267:fltk-1.3.4-1/png/pngmem.c **** 
+ 268:fltk-1.3.4-1/png/pngmem.c **** /* This function returns a pointer to the mem_ptr associated with the user
+ 269:fltk-1.3.4-1/png/pngmem.c ****  * functions.  The application should free any memory associated with this
+ 270:fltk-1.3.4-1/png/pngmem.c ****  * pointer before png_write_destroy and png_read_destroy are called.
+ 271:fltk-1.3.4-1/png/pngmem.c ****  */
+ 272:fltk-1.3.4-1/png/pngmem.c **** png_voidp PNGAPI
+ 273:fltk-1.3.4-1/png/pngmem.c **** png_get_mem_ptr(png_const_structrp png_ptr)
+ 274:fltk-1.3.4-1/png/pngmem.c **** {
+ 796              		.loc 1 274 0
+ 797              		.cfi_startproc
+ 798              	.LVL78:
+ 275:fltk-1.3.4-1/png/pngmem.c ****    if (png_ptr == NULL)
+ 799              		.loc 1 275 0
+ 800 0000 4885FF   		testq	%rdi, %rdi
+ 801 0003 740B     		je	.L87
+ 276:fltk-1.3.4-1/png/pngmem.c ****       return NULL;
+ 277:fltk-1.3.4-1/png/pngmem.c **** 
+ 278:fltk-1.3.4-1/png/pngmem.c ****    return png_ptr->mem_ptr;
+ 802              		.loc 1 278 0
+ 803 0005 488B8720 		movq	1056(%rdi), %rax
+ 803      040000
+ 804 000c C3       		ret
+ 805 000d 0F1F00   		.p2align 4,,10
+ 806              		.p2align 3
+ 807              	.L87:
+ 276:fltk-1.3.4-1/png/pngmem.c ****       return NULL;
+ 808              		.loc 1 276 0
+ 809 0010 31C0     		xorl	%eax, %eax
+ 279:fltk-1.3.4-1/png/pngmem.c **** }
+ 810              		.loc 1 279 0
+ 811 0012 C3       		ret
+ 812              		.cfi_endproc
+ 813              	.LFE68:
+ 815              		.section	.text.unlikely.png_get_mem_ptr
+ 816              	.LCOLDE15:
+ 817              		.section	.text.png_get_mem_ptr
+ 818              	.LHOTE15:
+ 819              		.text
+ 820              	.Letext0:
+ 821              		.section	.text.unlikely.png_malloc_base
+ 822              	.Letext_cold0:
+ 823              		.file 3 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
+ 824              		.file 4 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 825              		.file 5 "/usr/include/libio.h"
+ 826              		.file 6 "/usr/include/x86_64-linux-gnu/bits/setjmp.h"
+ 827              		.file 7 "/usr/include/x86_64-linux-gnu/bits/sigset.h"
+ 828              		.file 8 "/usr/include/setjmp.h"
+ 829              		.file 9 "fltk-1.3.4-1/png/pngconf.h"
+ 830              		.file 10 "fltk-1.3.4-1/png/png.h"
+ 831              		.file 11 "fltk-1.3.4-1/png/pngstruct.h"
+ 832              		.file 12 "fltk-1.3.4-1/png/pnginfo.h"
+ 833              		.file 13 "/usr/include/x86_64-linux-gnu/zconf.h"
+ 834              		.file 14 "/usr/include/zlib.h"
+ 835              		.file 15 "/usr/include/stdio.h"
+ 836              		.file 16 "/usr/include/stdlib.h"
+ 837              		.file 17 "fltk-1.3.4-1/png/pngpriv.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 pngmem.c
+     /tmp/cc7tAMZL.s:14     .text.png_malloc_base:0000000000000000 png_malloc_base
+     /tmp/cc7tAMZL.s:64     .text.png_malloc_array:0000000000000000 png_malloc_array
+     /tmp/cc7tAMZL.s:142    .text.png_realloc_array:0000000000000000 png_realloc_array
+     /tmp/cc7tAMZL.s:334    .text.png_malloc:0000000000000000 png_malloc
+     /tmp/cc7tAMZL.s:389    .text.png_calloc:0000000000000000 png_calloc
+     /tmp/cc7tAMZL.s:453    .text.png_malloc_default:0000000000000000 png_malloc_default
+     /tmp/cc7tAMZL.s:527    .text.png_malloc_warn:0000000000000000 png_malloc_warn
+     /tmp/cc7tAMZL.s:594    .text.png_free:0000000000000000 png_free
+     /tmp/cc7tAMZL.s:642    .text.png_destroy_png_struct:0000000000000000 png_destroy_png_struct
+     /tmp/cc7tAMZL.s:731    .text.png_free_default:0000000000000000 png_free_default
+     /tmp/cc7tAMZL.s:764    .text.png_set_mem_fn:0000000000000000 png_set_mem_fn
+     /tmp/cc7tAMZL.s:794    .text.png_get_mem_ptr:0000000000000000 png_get_mem_ptr
+                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
+                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+                           .group:0000000000000000 wm4.pngpriv.h.26.ca3d1719773cd86007410b516123e125
+                           .group:0000000000000000 wm4.features.h.19.22780be97c2f806ec599b8b99aa89f7d
+                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
+                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
+                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
+                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
+                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
+                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
+                           .group:0000000000000000 wm4.stdlib.h.37.e081b308f911db94d3185af615f2b2e2
+                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
+                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
+                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
+                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
+                           .group:0000000000000000 wm4.endian.h.41.27d650ce666b76881e2a2a218ea61984
+                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
+                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
+                           .group:0000000000000000 wm4.string2.h.55.e4a4cfd7781cc64a4341475e67436ab1
+                           .group:0000000000000000 wm4.string3.h.31.2b75bd65145c50aeedb61673ce0d3293
+                           .group:0000000000000000 wm4.pnglibconf.h.15.30e2eea90e566ac06da4f4de487193d7
+                           .group:0000000000000000 wm4.pngpriv.h.130.f65d93453b5b5837849611ffe82d627a
+                           .group:0000000000000000 wm4.png.h.412.12a95b2193a7d0bc2282b72c70a28ce1
+                           .group:0000000000000000 wm4.limits.h.23.f0fd92c175c1576df467c4d5fe2b091a
+                           .group:0000000000000000 wm4.posix1_lim.h.25.28c8eb2d22697e7711efefdec5344a02
+                           .group:0000000000000000 wm4.local_lim.h.25.97ee4129efb08ad296101237bcd3401b
+                           .group:0000000000000000 wm4.limits.h.2.9ff59823e8adcf4502d980ef41362326
+                           .group:0000000000000000 wm4.local_lim.h.42.9dc3935e0e3b94e23cda247e4e39bd8b
+                           .group:0000000000000000 wm4.limits.h.60.eb7066f861c8b8edc7a0a399744b0335
+                           .group:0000000000000000 wm4.stddef.h.39.d5a83c17f38162a5dd6f834eaf38f8ef
+                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
+                           .group:0000000000000000 wm4.stddef.h.161.19e15733342b50ead2919490b095303e
+                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
+                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
+                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
+                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
+                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
+                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
+                           .group:0000000000000000 wm4.stdio.h.120.80cbf0ec1718a5b27e6428218e29c72d
+                           .group:0000000000000000 wm4.stdio_lim.h.23.f8541119d1bcf759d7de9531671fd758
+                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
+                           .group:0000000000000000 wm4.stdio.h.26.e50fc3808d57d965ceefc6f6dd102eb7
+                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
+                           .group:0000000000000000 wm4.setjmp.h.67.51aa194c3c89a841663c00cb93fd90ff
+                           .group:0000000000000000 wm4.time.h.26.6a3cabd4f228e226db6723a3b0c81ba6
+                           .group:0000000000000000 wm4.time.h.40.99bfb90272c7e82357ef3c2f5c6fefc8
+                           .group:0000000000000000 wm4.time.h.53.f8af6908497bac0ca16faea86fb8cd87
+                           .group:0000000000000000 wm4.pngconf.h.86.6636b2584cb7be1618479e118d71e58c
+                           .group:0000000000000000 wm4.png.h.506.fa53b6434c0b20c8e63094b04d7940c5
+                           .group:0000000000000000 wm4.pngpriv.h.298.dc2c896ce0eddc5cfadee24e76e3c417
+                           .group:0000000000000000 wm4.float.h.29.1cf88a0527b6b1225d49fbee2b32acb7
+                           .group:0000000000000000 wm4.math.h.26.671af5ac9cd425a35e0730f7b6d7cde2
+                           .group:0000000000000000 wm4.libmsimddeclstubs.h.34.75644856b74ba3d815155fe5fe7ecc56
+                           .group:0000000000000000 wm4.mathdef.h.23.67c0aa4a204f1f427459dfc651aba565
+                           .group:0000000000000000 wm4.math.h.55.cf380f99c57d42476a5252f30065036a
+                           .group:0000000000000000 wm4.math.h.84.742292806c6be54f49dc607928a827f7
+                           .group:0000000000000000 wm4.math.h.105.59ff0f83ebf6a04e70e145cef2d1185e
+                           .group:0000000000000000 wm4.math.h.152.48a142bc1575e748473ff86330dee044
+                           .group:0000000000000000 wm4.math.h.30.7cada3efe024725df2da4c705b6566be
+                           .group:0000000000000000 wm4.pngpriv.h.481.f98e7c29eaaa759546a3f9808bc25c74
+                           .group:0000000000000000 wm4.pngstruct.h.22.7b9573417641055ab8f42438aa8afadf
+                           .group:0000000000000000 wm4.zconf.h.9.bbc7b5783b51507f7721a5620139b4ee
+                           .group:0000000000000000 wm4.zconf.h.397.69c03305677a9a6792fe2a94f7c9f69b
+                           .group:0000000000000000 wm4.types.h.23.92678977f3921b8dce508274ac68f78d
+                           .group:0000000000000000 wm4.types.h.187.12f6c32afb936b45a5f241219964ce93
+                           .group:0000000000000000 wm4.stdarg.h.31.48e922dd0aaedfb616aafd8a7b7a4949
+                           .group:0000000000000000 wm4.unistd.h.23.c85a58a698f53edadcf64287ab24fecb
+                           .group:0000000000000000 wm4.posix_opt.h.20.9a8aece77957db1725bd2b9521e5f9c5
+                           .group:0000000000000000 wm4.unistd.h.213.4c582e35260d661b081322974b7c1e74
+                           .group:0000000000000000 wm4.unistd.h.284.7e168706bc8bd978e02fd1da439d9bc3
+                           .group:0000000000000000 wm4.confname.h.27.6b00117a32f457cc72e5ac810a9adade
+                           .group:0000000000000000 wm4.zconf.h.457.505c3613686dd75e492569d7a56a6eb0
+                           .group:0000000000000000 wm4.zlib.h.40.5a15529ab8e285cee4b0ddab32502c27
+                           .group:0000000000000000 wm4.pngstruct.h.44.bc957704556ff8ddcb697678a008ffae
+                           .group:0000000000000000 wm4.pngpriv.h.853.4585af3e74cfb155d8486c5333b94adf
+                           .group:0000000000000000 wm4.pngdebug.h.36.e9c57d5f35e3128225fb629498ec6fc8
+
+UNDEFINED SYMBOLS
+malloc
+png_error
+memcpy
+memset
+png_warning
+free
+png_free_jmpbuf
+__stack_chk_fail

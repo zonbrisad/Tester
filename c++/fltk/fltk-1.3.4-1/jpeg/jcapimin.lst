@@ -1,0 +1,1330 @@
+   1              		.file	"jcapimin.c"
+   2              		.text
+   3              	.Ltext0:
+   4              		.section	.text.unlikely.jpeg_CreateCompress,"ax",@progbits
+   5              	.LCOLDB1:
+   6              		.section	.text.jpeg_CreateCompress,"ax",@progbits
+   7              	.LHOTB1:
+   8              		.p2align 4,,15
+   9              		.section	.text.unlikely.jpeg_CreateCompress
+  10              	.Ltext_cold0:
+  11              		.section	.text.jpeg_CreateCompress
+  12              		.globl	jpeg_CreateCompress
+  14              	jpeg_CreateCompress:
+  15              	.LFB61:
+  16              		.file 1 "fltk-1.3.4-1/jpeg/jcapimin.c"
+   1:fltk-1.3.4-1/jpeg/jcapimin.c **** /*
+   2:fltk-1.3.4-1/jpeg/jcapimin.c ****  * jcapimin.c
+   3:fltk-1.3.4-1/jpeg/jcapimin.c ****  *
+   4:fltk-1.3.4-1/jpeg/jcapimin.c ****  * Copyright (C) 1994-1998, Thomas G. Lane.
+   5:fltk-1.3.4-1/jpeg/jcapimin.c ****  * Modified 2003-2010 by Guido Vollbeding.
+   6:fltk-1.3.4-1/jpeg/jcapimin.c ****  * This file is part of the Independent JPEG Group's software.
+   7:fltk-1.3.4-1/jpeg/jcapimin.c ****  * For conditions of distribution and use, see the accompanying README file.
+   8:fltk-1.3.4-1/jpeg/jcapimin.c ****  *
+   9:fltk-1.3.4-1/jpeg/jcapimin.c ****  * This file contains application interface code for the compression half
+  10:fltk-1.3.4-1/jpeg/jcapimin.c ****  * of the JPEG library.  These are the "minimum" API routines that may be
+  11:fltk-1.3.4-1/jpeg/jcapimin.c ****  * needed in either the normal full-compression case or the transcoding-only
+  12:fltk-1.3.4-1/jpeg/jcapimin.c ****  * case.
+  13:fltk-1.3.4-1/jpeg/jcapimin.c ****  *
+  14:fltk-1.3.4-1/jpeg/jcapimin.c ****  * Most of the routines intended to be called directly by an application
+  15:fltk-1.3.4-1/jpeg/jcapimin.c ****  * are in this file or in jcapistd.c.  But also see jcparam.c for
+  16:fltk-1.3.4-1/jpeg/jcapimin.c ****  * parameter-setup helper routines, jcomapi.c for routines shared by
+  17:fltk-1.3.4-1/jpeg/jcapimin.c ****  * compression and decompression, and jctrans.c for the transcoding case.
+  18:fltk-1.3.4-1/jpeg/jcapimin.c ****  */
+  19:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+  20:fltk-1.3.4-1/jpeg/jcapimin.c **** #define JPEG_INTERNALS
+  21:fltk-1.3.4-1/jpeg/jcapimin.c **** #include "jinclude.h"
+  22:fltk-1.3.4-1/jpeg/jcapimin.c **** #include "jpeglib.h"
+  23:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+  24:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+  25:fltk-1.3.4-1/jpeg/jcapimin.c **** /*
+  26:fltk-1.3.4-1/jpeg/jcapimin.c ****  * Initialization of a JPEG compression object.
+  27:fltk-1.3.4-1/jpeg/jcapimin.c ****  * The error manager must already be set up (in case memory manager fails).
+  28:fltk-1.3.4-1/jpeg/jcapimin.c ****  */
+  29:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+  30:fltk-1.3.4-1/jpeg/jcapimin.c **** GLOBAL(void)
+  31:fltk-1.3.4-1/jpeg/jcapimin.c **** jpeg_CreateCompress (j_compress_ptr cinfo, int version, size_t structsize)
+  32:fltk-1.3.4-1/jpeg/jcapimin.c **** {
+  17              		.loc 1 32 0
+  18              		.cfi_startproc
+  19              	.LVL0:
+  20 0000 55       		pushq	%rbp
+  21              		.cfi_def_cfa_offset 16
+  22              		.cfi_offset 6, -16
+  23 0001 53       		pushq	%rbx
+  24              		.cfi_def_cfa_offset 24
+  25              		.cfi_offset 3, -24
+  26 0002 4889D5   		movq	%rdx, %rbp
+  27 0005 4889FB   		movq	%rdi, %rbx
+  28 0008 4883EC08 		subq	$8, %rsp
+  29              		.cfi_def_cfa_offset 32
+  33:fltk-1.3.4-1/jpeg/jcapimin.c ****   int i;
+  34:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+  35:fltk-1.3.4-1/jpeg/jcapimin.c ****   /* Guard against version mismatches between library and caller. */
+  36:fltk-1.3.4-1/jpeg/jcapimin.c ****   cinfo->mem = NULL;		/* so jpeg_destroy knows mem mgr not called */
+  37:fltk-1.3.4-1/jpeg/jcapimin.c ****   if (version != JPEG_LIB_VERSION)
+  30              		.loc 1 37 0
+  31 000c 83FE5A   		cmpl	$90, %esi
+  36:fltk-1.3.4-1/jpeg/jcapimin.c ****   if (version != JPEG_LIB_VERSION)
+  32              		.loc 1 36 0
+  33 000f 48C74708 		movq	$0, 8(%rdi)
+  33      00000000 
+  34              		.loc 1 37 0
+  35 0017 741F     		je	.L2
+  38:fltk-1.3.4-1/jpeg/jcapimin.c ****     ERREXIT2(cinfo, JERR_BAD_LIB_VERSION, JPEG_LIB_VERSION, version);
+  36              		.loc 1 38 0
+  37 0019 488B07   		movq	(%rdi), %rax
+  38 001c C740280D 		movl	$13, 40(%rax)
+  38      000000
+  39 0023 488B07   		movq	(%rdi), %rax
+  40 0026 C7402C5A 		movl	$90, 44(%rax)
+  40      000000
+  41 002d 488B07   		movq	(%rdi), %rax
+  42 0030 897030   		movl	%esi, 48(%rax)
+  43 0033 488B07   		movq	(%rdi), %rax
+  44 0036 FF10     		call	*(%rax)
+  45              	.LVL1:
+  46              	.L2:
+  39:fltk-1.3.4-1/jpeg/jcapimin.c ****   if (structsize != SIZEOF(struct jpeg_compress_struct))
+  47              		.loc 1 39 0
+  48 0038 4881FD48 		cmpq	$584, %rbp
+  48      020000
+  49 003f 7422     		je	.L3
+  40:fltk-1.3.4-1/jpeg/jcapimin.c ****     ERREXIT2(cinfo, JERR_BAD_STRUCT_SIZE, 
+  50              		.loc 1 40 0
+  51 0041 488B03   		movq	(%rbx), %rax
+  52 0044 4889DF   		movq	%rbx, %rdi
+  53 0047 C7402816 		movl	$22, 40(%rax)
+  53      000000
+  54 004e 488B03   		movq	(%rbx), %rax
+  55 0051 C7402C48 		movl	$584, 44(%rax)
+  55      020000
+  56 0058 488B03   		movq	(%rbx), %rax
+  57 005b 896830   		movl	%ebp, 48(%rax)
+  58 005e 488B03   		movq	(%rbx), %rax
+  59 0061 FF10     		call	*(%rax)
+  60              	.LVL2:
+  61              	.L3:
+  62              	.LBB5:
+  63              	.LBB6:
+  64              	.LBB7:
+  65              		.file 2 "/usr/include/x86_64-linux-gnu/bits/string3.h"
+   1:/usr/include/x86_64-linux-gnu/bits/string3.h **** /* Copyright (C) 2004-2016 Free Software Foundation, Inc.
+   2:/usr/include/x86_64-linux-gnu/bits/string3.h ****    This file is part of the GNU C Library.
+   3:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+   4:/usr/include/x86_64-linux-gnu/bits/string3.h ****    The GNU C Library is free software; you can redistribute it and/or
+   5:/usr/include/x86_64-linux-gnu/bits/string3.h ****    modify it under the terms of the GNU Lesser General Public
+   6:/usr/include/x86_64-linux-gnu/bits/string3.h ****    License as published by the Free Software Foundation; either
+   7:/usr/include/x86_64-linux-gnu/bits/string3.h ****    version 2.1 of the License, or (at your option) any later version.
+   8:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+   9:/usr/include/x86_64-linux-gnu/bits/string3.h ****    The GNU C Library is distributed in the hope that it will be useful,
+  10:/usr/include/x86_64-linux-gnu/bits/string3.h ****    but WITHOUT ANY WARRANTY; without even the implied warranty of
+  11:/usr/include/x86_64-linux-gnu/bits/string3.h ****    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  12:/usr/include/x86_64-linux-gnu/bits/string3.h ****    Lesser General Public License for more details.
+  13:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  14:/usr/include/x86_64-linux-gnu/bits/string3.h ****    You should have received a copy of the GNU Lesser General Public
+  15:/usr/include/x86_64-linux-gnu/bits/string3.h ****    License along with the GNU C Library; if not, see
+  16:/usr/include/x86_64-linux-gnu/bits/string3.h ****    <http://www.gnu.org/licenses/>.  */
+  17:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  18:/usr/include/x86_64-linux-gnu/bits/string3.h **** #ifndef _STRING_H
+  19:/usr/include/x86_64-linux-gnu/bits/string3.h **** # error "Never use <bits/string3.h> directly; include <string.h> instead."
+  20:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  21:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  22:/usr/include/x86_64-linux-gnu/bits/string3.h **** #if !__GNUC_PREREQ (5,0)
+  23:/usr/include/x86_64-linux-gnu/bits/string3.h **** __warndecl (__warn_memset_zero_len,
+  24:/usr/include/x86_64-linux-gnu/bits/string3.h **** 	    "memset used with constant zero length parameter; this could be due to transposed parameters")
+  25:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  26:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  27:/usr/include/x86_64-linux-gnu/bits/string3.h **** #ifndef __cplusplus
+  28:/usr/include/x86_64-linux-gnu/bits/string3.h **** /* XXX This is temporarily.  We should not redefine any of the symbols
+  29:/usr/include/x86_64-linux-gnu/bits/string3.h ****    and instead integrate the error checking into the original
+  30:/usr/include/x86_64-linux-gnu/bits/string3.h ****    definitions.  */
+  31:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memcpy
+  32:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memmove
+  33:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memset
+  34:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strcat
+  35:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strcpy
+  36:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strncat
+  37:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strncpy
+  38:/usr/include/x86_64-linux-gnu/bits/string3.h **** # ifdef __USE_GNU
+  39:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef mempcpy
+  40:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef stpcpy
+  41:/usr/include/x86_64-linux-gnu/bits/string3.h **** # endif
+  42:/usr/include/x86_64-linux-gnu/bits/string3.h **** # ifdef __USE_MISC
+  43:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef bcopy
+  44:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef bzero
+  45:/usr/include/x86_64-linux-gnu/bits/string3.h **** # endif
+  46:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  47:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  48:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  49:/usr/include/x86_64-linux-gnu/bits/string3.h **** __fortify_function void *
+  50:/usr/include/x86_64-linux-gnu/bits/string3.h **** __NTH (memcpy (void *__restrict __dest, const void *__restrict __src,
+  51:/usr/include/x86_64-linux-gnu/bits/string3.h **** 	       size_t __len))
+  52:/usr/include/x86_64-linux-gnu/bits/string3.h **** {
+  53:/usr/include/x86_64-linux-gnu/bits/string3.h ****   return __builtin___memcpy_chk (__dest, __src, __len, __bos0 (__dest));
+  54:/usr/include/x86_64-linux-gnu/bits/string3.h **** }
+  55:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  56:/usr/include/x86_64-linux-gnu/bits/string3.h **** __fortify_function void *
+  57:/usr/include/x86_64-linux-gnu/bits/string3.h **** __NTH (memmove (void *__dest, const void *__src, size_t __len))
+  58:/usr/include/x86_64-linux-gnu/bits/string3.h **** {
+  59:/usr/include/x86_64-linux-gnu/bits/string3.h ****   return __builtin___memmove_chk (__dest, __src, __len, __bos0 (__dest));
+  60:/usr/include/x86_64-linux-gnu/bits/string3.h **** }
+  61:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  62:/usr/include/x86_64-linux-gnu/bits/string3.h **** #ifdef __USE_GNU
+  63:/usr/include/x86_64-linux-gnu/bits/string3.h **** __fortify_function void *
+  64:/usr/include/x86_64-linux-gnu/bits/string3.h **** __NTH (mempcpy (void *__restrict __dest, const void *__restrict __src,
+  65:/usr/include/x86_64-linux-gnu/bits/string3.h **** 		size_t __len))
+  66:/usr/include/x86_64-linux-gnu/bits/string3.h **** {
+  67:/usr/include/x86_64-linux-gnu/bits/string3.h ****   return __builtin___mempcpy_chk (__dest, __src, __len, __bos0 (__dest));
+  68:/usr/include/x86_64-linux-gnu/bits/string3.h **** }
+  69:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  70:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  71:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  72:/usr/include/x86_64-linux-gnu/bits/string3.h **** /* The first two tests here help to catch a somewhat common problem
+  73:/usr/include/x86_64-linux-gnu/bits/string3.h ****    where the second and third parameter are transposed.  This is
+  74:/usr/include/x86_64-linux-gnu/bits/string3.h ****    especially problematic if the intended fill value is zero.  In this
+  75:/usr/include/x86_64-linux-gnu/bits/string3.h ****    case no work is done at all.  We detect these problems by referring
+  76:/usr/include/x86_64-linux-gnu/bits/string3.h ****    non-existing functions.  */
+  77:/usr/include/x86_64-linux-gnu/bits/string3.h **** __fortify_function void *
+  78:/usr/include/x86_64-linux-gnu/bits/string3.h **** __NTH (memset (void *__dest, int __ch, size_t __len))
+  79:/usr/include/x86_64-linux-gnu/bits/string3.h **** {
+  80:/usr/include/x86_64-linux-gnu/bits/string3.h ****   /* GCC-5.0 and newer implements these checks in the compiler, so we don't
+  81:/usr/include/x86_64-linux-gnu/bits/string3.h ****      need them here.  */
+  82:/usr/include/x86_64-linux-gnu/bits/string3.h **** #if !__GNUC_PREREQ (5,0)
+  83:/usr/include/x86_64-linux-gnu/bits/string3.h ****   if (__builtin_constant_p (__len) && __len == 0
+  84:/usr/include/x86_64-linux-gnu/bits/string3.h ****       && (!__builtin_constant_p (__ch) || __ch != 0))
+  85:/usr/include/x86_64-linux-gnu/bits/string3.h ****     {
+  86:/usr/include/x86_64-linux-gnu/bits/string3.h ****       __warn_memset_zero_len ();
+  87:/usr/include/x86_64-linux-gnu/bits/string3.h ****       return __dest;
+  88:/usr/include/x86_64-linux-gnu/bits/string3.h ****     }
+  89:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  90:/usr/include/x86_64-linux-gnu/bits/string3.h ****   return __builtin___memset_chk (__dest, __ch, __len, __bos0 (__dest));
+  66              		.loc 2 90 0
+  67 0063 488D7B08 		leaq	8(%rbx), %rdi
+  68 0067 4889D9   		movq	%rbx, %rcx
+  69 006a 31C0     		xorl	%eax, %eax
+  70              	.LBE7:
+  71              	.LBE6:
+  41:fltk-1.3.4-1/jpeg/jcapimin.c **** 	     (int) SIZEOF(struct jpeg_compress_struct), (int) structsize);
+  42:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+  43:fltk-1.3.4-1/jpeg/jcapimin.c ****   /* For debugging purposes, we zero the whole master structure.
+  44:fltk-1.3.4-1/jpeg/jcapimin.c ****    * But the application has already set the err pointer, and may have set
+  45:fltk-1.3.4-1/jpeg/jcapimin.c ****    * client_data, so we have to save and restore those fields.
+  46:fltk-1.3.4-1/jpeg/jcapimin.c ****    * Note: if application hasn't set client_data, tools like Purify may
+  47:fltk-1.3.4-1/jpeg/jcapimin.c ****    * complain here.
+  48:fltk-1.3.4-1/jpeg/jcapimin.c ****    */
+  49:fltk-1.3.4-1/jpeg/jcapimin.c ****   {
+  50:fltk-1.3.4-1/jpeg/jcapimin.c ****     struct jpeg_error_mgr * err = cinfo->err;
+  72              		.loc 1 50 0
+  73 006c 488B33   		movq	(%rbx), %rsi
+  74              	.LVL3:
+  51:fltk-1.3.4-1/jpeg/jcapimin.c ****     void * client_data = cinfo->client_data; /* ignore Purify complaint here */
+  75              		.loc 1 51 0
+  76 006f 488B5318 		movq	24(%rbx), %rdx
+  77              	.LVL4:
+  78              	.LBB9:
+  79              	.LBB8:
+  80              		.loc 2 90 0
+  81 0073 4883E7F8 		andq	$-8, %rdi
+  82 0077 48C78340 		movq	$0, 576(%rbx)
+  82      02000000 
+  82      000000
+  83 0082 4829F9   		subq	%rdi, %rcx
+  84              	.LVL5:
+  85 0085 81C14802 		addl	$584, %ecx
+  85      0000
+  86 008b C1E903   		shrl	$3, %ecx
+  87 008e F348AB   		rep stosq
+  88              	.LVL6:
+  89              	.LBE8:
+  90              	.LBE9:
+  52:fltk-1.3.4-1/jpeg/jcapimin.c ****     MEMZERO(cinfo, SIZEOF(struct jpeg_compress_struct));
+  53:fltk-1.3.4-1/jpeg/jcapimin.c ****     cinfo->err = err;
+  91              		.loc 1 53 0
+  92 0091 488933   		movq	%rsi, (%rbx)
+  54:fltk-1.3.4-1/jpeg/jcapimin.c ****     cinfo->client_data = client_data;
+  93              		.loc 1 54 0
+  94 0094 48895318 		movq	%rdx, 24(%rbx)
+  95              	.LBE5:
+  55:fltk-1.3.4-1/jpeg/jcapimin.c ****   }
+  56:fltk-1.3.4-1/jpeg/jcapimin.c ****   cinfo->is_decompressor = FALSE;
+  57:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+  58:fltk-1.3.4-1/jpeg/jcapimin.c ****   /* Initialize a memory manager instance for this object */
+  59:fltk-1.3.4-1/jpeg/jcapimin.c ****   jinit_memory_mgr((j_common_ptr) cinfo);
+  96              		.loc 1 59 0
+  97 0098 4889DF   		movq	%rbx, %rdi
+  56:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+  98              		.loc 1 56 0
+  99 009b C7432000 		movl	$0, 32(%rbx)
+  99      000000
+ 100              		.loc 1 59 0
+ 101 00a2 E8000000 		call	jinit_memory_mgr
+ 101      00
+ 102              	.LVL7:
+  60:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+  61:fltk-1.3.4-1/jpeg/jcapimin.c ****   /* Zero out pointers to permanent structures. */
+  62:fltk-1.3.4-1/jpeg/jcapimin.c ****   cinfo->progress = NULL;
+  63:fltk-1.3.4-1/jpeg/jcapimin.c ****   cinfo->dest = NULL;
+  64:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+  65:fltk-1.3.4-1/jpeg/jcapimin.c ****   cinfo->comp_info = NULL;
+  66:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+  67:fltk-1.3.4-1/jpeg/jcapimin.c ****   for (i = 0; i < NUM_QUANT_TBLS; i++) {
+  68:fltk-1.3.4-1/jpeg/jcapimin.c ****     cinfo->quant_tbl_ptrs[i] = NULL;
+  69:fltk-1.3.4-1/jpeg/jcapimin.c ****     cinfo->q_scale_factor[i] = 100;
+  70:fltk-1.3.4-1/jpeg/jcapimin.c ****   }
+  71:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+  72:fltk-1.3.4-1/jpeg/jcapimin.c ****   for (i = 0; i < NUM_HUFF_TBLS; i++) {
+  73:fltk-1.3.4-1/jpeg/jcapimin.c ****     cinfo->dc_huff_tbl_ptrs[i] = NULL;
+  74:fltk-1.3.4-1/jpeg/jcapimin.c ****     cinfo->ac_huff_tbl_ptrs[i] = NULL;
+  75:fltk-1.3.4-1/jpeg/jcapimin.c ****   }
+  76:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+  77:fltk-1.3.4-1/jpeg/jcapimin.c ****   /* Must do it here for emit_dqt in case jpeg_write_tables is used */
+  78:fltk-1.3.4-1/jpeg/jcapimin.c ****   cinfo->block_size = DCTSIZE;
+  79:fltk-1.3.4-1/jpeg/jcapimin.c ****   cinfo->natural_order = jpeg_natural_order;
+  80:fltk-1.3.4-1/jpeg/jcapimin.c ****   cinfo->lim_Se = DCTSIZE2-1;
+  81:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+  82:fltk-1.3.4-1/jpeg/jcapimin.c ****   cinfo->script_space = NULL;
+  83:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+  84:fltk-1.3.4-1/jpeg/jcapimin.c ****   cinfo->input_gamma = 1.0;	/* in case application forgets */
+ 103              		.loc 1 84 0
+ 104 00a7 F20F1005 		movsd	.LC0(%rip), %xmm0
+ 104      00000000 
+  62:fltk-1.3.4-1/jpeg/jcapimin.c ****   cinfo->dest = NULL;
+ 105              		.loc 1 62 0
+ 106 00af 48C74310 		movq	$0, 16(%rbx)
+ 106      00000000 
+  63:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 107              		.loc 1 63 0
+ 108 00b7 48C74328 		movq	$0, 40(%rbx)
+ 108      00000000 
+  65:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 109              		.loc 1 65 0
+ 110 00bf 48C74368 		movq	$0, 104(%rbx)
+ 110      00000000 
+ 111              	.LVL8:
+  68:fltk-1.3.4-1/jpeg/jcapimin.c ****     cinfo->q_scale_factor[i] = 100;
+ 112              		.loc 1 68 0
+ 113 00c7 48C74370 		movq	$0, 112(%rbx)
+ 113      00000000 
+  69:fltk-1.3.4-1/jpeg/jcapimin.c ****   }
+ 114              		.loc 1 69 0
+ 115 00cf C7839000 		movl	$100, 144(%rbx)
+ 115      00006400 
+ 115      0000
+ 116              	.LVL9:
+ 117              		.loc 1 84 0
+ 118 00d9 F20F1143 		movsd	%xmm0, 64(%rbx)
+ 118      40
+  68:fltk-1.3.4-1/jpeg/jcapimin.c ****     cinfo->q_scale_factor[i] = 100;
+ 119              		.loc 1 68 0
+ 120 00de 48C74378 		movq	$0, 120(%rbx)
+ 120      00000000 
+  69:fltk-1.3.4-1/jpeg/jcapimin.c ****   }
+ 121              		.loc 1 69 0
+ 122 00e6 C7839400 		movl	$100, 148(%rbx)
+ 122      00006400 
+ 122      0000
+ 123              	.LVL10:
+  68:fltk-1.3.4-1/jpeg/jcapimin.c ****     cinfo->q_scale_factor[i] = 100;
+ 124              		.loc 1 68 0
+ 125 00f0 48C78380 		movq	$0, 128(%rbx)
+ 125      00000000 
+ 125      000000
+  69:fltk-1.3.4-1/jpeg/jcapimin.c ****   }
+ 126              		.loc 1 69 0
+ 127 00fb C7839800 		movl	$100, 152(%rbx)
+ 127      00006400 
+ 127      0000
+ 128              	.LVL11:
+  68:fltk-1.3.4-1/jpeg/jcapimin.c ****     cinfo->q_scale_factor[i] = 100;
+ 129              		.loc 1 68 0
+ 130 0105 48C78388 		movq	$0, 136(%rbx)
+ 130      00000000 
+ 130      000000
+  69:fltk-1.3.4-1/jpeg/jcapimin.c ****   }
+ 131              		.loc 1 69 0
+ 132 0110 C7839C00 		movl	$100, 156(%rbx)
+ 132      00006400 
+ 132      0000
+ 133              	.LVL12:
+  73:fltk-1.3.4-1/jpeg/jcapimin.c ****     cinfo->ac_huff_tbl_ptrs[i] = NULL;
+ 134              		.loc 1 73 0
+ 135 011a 48C783A0 		movq	$0, 160(%rbx)
+ 135      00000000 
+ 135      000000
+  74:fltk-1.3.4-1/jpeg/jcapimin.c ****   }
+ 136              		.loc 1 74 0
+ 137 0125 48C783C0 		movq	$0, 192(%rbx)
+ 137      00000000 
+ 137      000000
+ 138              	.LVL13:
+  73:fltk-1.3.4-1/jpeg/jcapimin.c ****     cinfo->ac_huff_tbl_ptrs[i] = NULL;
+ 139              		.loc 1 73 0
+ 140 0130 48C783A8 		movq	$0, 168(%rbx)
+ 140      00000000 
+ 140      000000
+  74:fltk-1.3.4-1/jpeg/jcapimin.c ****   }
+ 141              		.loc 1 74 0
+ 142 013b 48C783C8 		movq	$0, 200(%rbx)
+ 142      00000000 
+ 142      000000
+ 143              	.LVL14:
+  73:fltk-1.3.4-1/jpeg/jcapimin.c ****     cinfo->ac_huff_tbl_ptrs[i] = NULL;
+ 144              		.loc 1 73 0
+ 145 0146 48C783B0 		movq	$0, 176(%rbx)
+ 145      00000000 
+ 145      000000
+  74:fltk-1.3.4-1/jpeg/jcapimin.c ****   }
+ 146              		.loc 1 74 0
+ 147 0151 48C783D0 		movq	$0, 208(%rbx)
+ 147      00000000 
+ 147      000000
+ 148              	.LVL15:
+  73:fltk-1.3.4-1/jpeg/jcapimin.c ****     cinfo->ac_huff_tbl_ptrs[i] = NULL;
+ 149              		.loc 1 73 0
+ 150 015c 48C783B8 		movq	$0, 184(%rbx)
+ 150      00000000 
+ 150      000000
+  74:fltk-1.3.4-1/jpeg/jcapimin.c ****   }
+ 151              		.loc 1 74 0
+ 152 0167 48C783D8 		movq	$0, 216(%rbx)
+ 152      00000000 
+ 152      000000
+ 153              	.LVL16:
+  78:fltk-1.3.4-1/jpeg/jcapimin.c ****   cinfo->natural_order = jpeg_natural_order;
+ 154              		.loc 1 78 0
+ 155 0172 C783DC01 		movl	$8, 476(%rbx)
+ 155      00000800 
+ 155      0000
+  79:fltk-1.3.4-1/jpeg/jcapimin.c ****   cinfo->lim_Se = DCTSIZE2-1;
+ 156              		.loc 1 79 0
+ 157 017c 48C783E0 		movq	$jpeg_natural_order, 480(%rbx)
+ 157      01000000 
+ 157      000000
+  80:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 158              		.loc 1 80 0
+ 159 0187 C783E801 		movl	$63, 488(%rbx)
+ 159      00003F00 
+ 159      0000
+  82:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 160              		.loc 1 82 0
+ 161 0191 48C78338 		movq	$0, 568(%rbx)
+ 161      02000000 
+ 161      000000
+  85:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+  86:fltk-1.3.4-1/jpeg/jcapimin.c ****   /* OK, I'm ready */
+  87:fltk-1.3.4-1/jpeg/jcapimin.c ****   cinfo->global_state = CSTATE_START;
+ 162              		.loc 1 87 0
+ 163 019c C7432464 		movl	$100, 36(%rbx)
+ 163      000000
+  88:fltk-1.3.4-1/jpeg/jcapimin.c **** }
+ 164              		.loc 1 88 0
+ 165 01a3 4883C408 		addq	$8, %rsp
+ 166              		.cfi_def_cfa_offset 24
+ 167 01a7 5B       		popq	%rbx
+ 168              		.cfi_def_cfa_offset 16
+ 169              	.LVL17:
+ 170 01a8 5D       		popq	%rbp
+ 171              		.cfi_def_cfa_offset 8
+ 172              	.LVL18:
+ 173 01a9 C3       		ret
+ 174              		.cfi_endproc
+ 175              	.LFE61:
+ 177              		.section	.text.unlikely.jpeg_CreateCompress
+ 178              	.LCOLDE1:
+ 179              		.section	.text.jpeg_CreateCompress
+ 180              	.LHOTE1:
+ 181              		.section	.text.unlikely.jpeg_destroy_compress,"ax",@progbits
+ 182              	.LCOLDB2:
+ 183              		.section	.text.jpeg_destroy_compress,"ax",@progbits
+ 184              	.LHOTB2:
+ 185              		.p2align 4,,15
+ 186              		.globl	jpeg_destroy_compress
+ 188              	jpeg_destroy_compress:
+ 189              	.LFB62:
+  89:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+  90:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+  91:fltk-1.3.4-1/jpeg/jcapimin.c **** /*
+  92:fltk-1.3.4-1/jpeg/jcapimin.c ****  * Destruction of a JPEG compression object
+  93:fltk-1.3.4-1/jpeg/jcapimin.c ****  */
+  94:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+  95:fltk-1.3.4-1/jpeg/jcapimin.c **** GLOBAL(void)
+  96:fltk-1.3.4-1/jpeg/jcapimin.c **** jpeg_destroy_compress (j_compress_ptr cinfo)
+  97:fltk-1.3.4-1/jpeg/jcapimin.c **** {
+ 190              		.loc 1 97 0
+ 191              		.cfi_startproc
+ 192              	.LVL19:
+  98:fltk-1.3.4-1/jpeg/jcapimin.c ****   jpeg_destroy((j_common_ptr) cinfo); /* use common routine */
+ 193              		.loc 1 98 0
+ 194 0000 E9000000 		jmp	jpeg_destroy
+ 194      00
+ 195              	.LVL20:
+ 196              		.cfi_endproc
+ 197              	.LFE62:
+ 199              		.section	.text.unlikely.jpeg_destroy_compress
+ 200              	.LCOLDE2:
+ 201              		.section	.text.jpeg_destroy_compress
+ 202              	.LHOTE2:
+ 203              		.section	.text.unlikely.jpeg_abort_compress,"ax",@progbits
+ 204              	.LCOLDB3:
+ 205              		.section	.text.jpeg_abort_compress,"ax",@progbits
+ 206              	.LHOTB3:
+ 207              		.p2align 4,,15
+ 208              		.globl	jpeg_abort_compress
+ 210              	jpeg_abort_compress:
+ 211              	.LFB63:
+  99:fltk-1.3.4-1/jpeg/jcapimin.c **** }
+ 100:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 101:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 102:fltk-1.3.4-1/jpeg/jcapimin.c **** /*
+ 103:fltk-1.3.4-1/jpeg/jcapimin.c ****  * Abort processing of a JPEG compression operation,
+ 104:fltk-1.3.4-1/jpeg/jcapimin.c ****  * but don't destroy the object itself.
+ 105:fltk-1.3.4-1/jpeg/jcapimin.c ****  */
+ 106:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 107:fltk-1.3.4-1/jpeg/jcapimin.c **** GLOBAL(void)
+ 108:fltk-1.3.4-1/jpeg/jcapimin.c **** jpeg_abort_compress (j_compress_ptr cinfo)
+ 109:fltk-1.3.4-1/jpeg/jcapimin.c **** {
+ 212              		.loc 1 109 0
+ 213              		.cfi_startproc
+ 214              	.LVL21:
+ 110:fltk-1.3.4-1/jpeg/jcapimin.c ****   jpeg_abort((j_common_ptr) cinfo); /* use common routine */
+ 215              		.loc 1 110 0
+ 216 0000 E9000000 		jmp	jpeg_abort
+ 216      00
+ 217              	.LVL22:
+ 218              		.cfi_endproc
+ 219              	.LFE63:
+ 221              		.section	.text.unlikely.jpeg_abort_compress
+ 222              	.LCOLDE3:
+ 223              		.section	.text.jpeg_abort_compress
+ 224              	.LHOTE3:
+ 225              		.section	.text.unlikely.jpeg_suppress_tables,"ax",@progbits
+ 226              	.LCOLDB4:
+ 227              		.section	.text.jpeg_suppress_tables,"ax",@progbits
+ 228              	.LHOTB4:
+ 229              		.p2align 4,,15
+ 230              		.globl	jpeg_suppress_tables
+ 232              	jpeg_suppress_tables:
+ 233              	.LFB64:
+ 111:fltk-1.3.4-1/jpeg/jcapimin.c **** }
+ 112:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 113:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 114:fltk-1.3.4-1/jpeg/jcapimin.c **** /*
+ 115:fltk-1.3.4-1/jpeg/jcapimin.c ****  * Forcibly suppress or un-suppress all quantization and Huffman tables.
+ 116:fltk-1.3.4-1/jpeg/jcapimin.c ****  * Marks all currently defined tables as already written (if suppress)
+ 117:fltk-1.3.4-1/jpeg/jcapimin.c ****  * or not written (if !suppress).  This will control whether they get emitted
+ 118:fltk-1.3.4-1/jpeg/jcapimin.c ****  * by a subsequent jpeg_start_compress call.
+ 119:fltk-1.3.4-1/jpeg/jcapimin.c ****  *
+ 120:fltk-1.3.4-1/jpeg/jcapimin.c ****  * This routine is exported for use by applications that want to produce
+ 121:fltk-1.3.4-1/jpeg/jcapimin.c ****  * abbreviated JPEG datastreams.  It logically belongs in jcparam.c, but
+ 122:fltk-1.3.4-1/jpeg/jcapimin.c ****  * since it is called by jpeg_start_compress, we put it here --- otherwise
+ 123:fltk-1.3.4-1/jpeg/jcapimin.c ****  * jcparam.o would be linked whether the application used it or not.
+ 124:fltk-1.3.4-1/jpeg/jcapimin.c ****  */
+ 125:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 126:fltk-1.3.4-1/jpeg/jcapimin.c **** GLOBAL(void)
+ 127:fltk-1.3.4-1/jpeg/jcapimin.c **** jpeg_suppress_tables (j_compress_ptr cinfo, boolean suppress)
+ 128:fltk-1.3.4-1/jpeg/jcapimin.c **** {
+ 234              		.loc 1 128 0
+ 235              		.cfi_startproc
+ 236              	.LVL23:
+ 237 0000 488D4770 		leaq	112(%rdi), %rax
+ 238 0004 488D8F90 		leaq	144(%rdi), %rcx
+ 238      000000
+ 239              	.LVL24:
+ 240              	.L16:
+ 129:fltk-1.3.4-1/jpeg/jcapimin.c ****   int i;
+ 130:fltk-1.3.4-1/jpeg/jcapimin.c ****   JQUANT_TBL * qtbl;
+ 131:fltk-1.3.4-1/jpeg/jcapimin.c ****   JHUFF_TBL * htbl;
+ 132:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 133:fltk-1.3.4-1/jpeg/jcapimin.c ****   for (i = 0; i < NUM_QUANT_TBLS; i++) {
+ 134:fltk-1.3.4-1/jpeg/jcapimin.c ****     if ((qtbl = cinfo->quant_tbl_ptrs[i]) != NULL)
+ 241              		.loc 1 134 0
+ 242 000b 488B10   		movq	(%rax), %rdx
+ 243              	.LVL25:
+ 244 000e 4885D2   		testq	%rdx, %rdx
+ 245 0011 7406     		je	.L15
+ 135:fltk-1.3.4-1/jpeg/jcapimin.c ****       qtbl->sent_table = suppress;
+ 246              		.loc 1 135 0
+ 247 0013 89B28000 		movl	%esi, 128(%rdx)
+ 247      0000
+ 248              	.L15:
+ 249 0019 4883C008 		addq	$8, %rax
+ 133:fltk-1.3.4-1/jpeg/jcapimin.c ****     if ((qtbl = cinfo->quant_tbl_ptrs[i]) != NULL)
+ 250              		.loc 1 133 0 discriminator 2
+ 251 001d 4839C8   		cmpq	%rcx, %rax
+ 252 0020 75E9     		jne	.L16
+ 253 0022 488D87A0 		leaq	160(%rdi), %rax
+ 253      000000
+ 254 0029 4881C7C0 		addq	$192, %rdi
+ 254      000000
+ 255              	.LVL26:
+ 256              	.L19:
+ 136:fltk-1.3.4-1/jpeg/jcapimin.c ****   }
+ 137:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 138:fltk-1.3.4-1/jpeg/jcapimin.c ****   for (i = 0; i < NUM_HUFF_TBLS; i++) {
+ 139:fltk-1.3.4-1/jpeg/jcapimin.c ****     if ((htbl = cinfo->dc_huff_tbl_ptrs[i]) != NULL)
+ 257              		.loc 1 139 0
+ 258 0030 488B10   		movq	(%rax), %rdx
+ 259              	.LVL27:
+ 260 0033 4885D2   		testq	%rdx, %rdx
+ 261 0036 7406     		je	.L17
+ 140:fltk-1.3.4-1/jpeg/jcapimin.c ****       htbl->sent_table = suppress;
+ 262              		.loc 1 140 0
+ 263 0038 89B21401 		movl	%esi, 276(%rdx)
+ 263      0000
+ 264              	.L17:
+ 141:fltk-1.3.4-1/jpeg/jcapimin.c ****     if ((htbl = cinfo->ac_huff_tbl_ptrs[i]) != NULL)
+ 265              		.loc 1 141 0
+ 266 003e 488B5020 		movq	32(%rax), %rdx
+ 267              	.LVL28:
+ 268 0042 4885D2   		testq	%rdx, %rdx
+ 269 0045 7406     		je	.L18
+ 142:fltk-1.3.4-1/jpeg/jcapimin.c ****       htbl->sent_table = suppress;
+ 270              		.loc 1 142 0
+ 271 0047 89B21401 		movl	%esi, 276(%rdx)
+ 271      0000
+ 272              	.L18:
+ 273 004d 4883C008 		addq	$8, %rax
+ 138:fltk-1.3.4-1/jpeg/jcapimin.c ****     if ((htbl = cinfo->dc_huff_tbl_ptrs[i]) != NULL)
+ 274              		.loc 1 138 0 discriminator 2
+ 275 0051 4839F8   		cmpq	%rdi, %rax
+ 276 0054 75DA     		jne	.L19
+ 143:fltk-1.3.4-1/jpeg/jcapimin.c ****   }
+ 144:fltk-1.3.4-1/jpeg/jcapimin.c **** }
+ 277              		.loc 1 144 0
+ 278 0056 F3C3     		rep ret
+ 279              		.cfi_endproc
+ 280              	.LFE64:
+ 282              		.section	.text.unlikely.jpeg_suppress_tables
+ 283              	.LCOLDE4:
+ 284              		.section	.text.jpeg_suppress_tables
+ 285              	.LHOTE4:
+ 286              		.section	.text.unlikely.jpeg_finish_compress,"ax",@progbits
+ 287              	.LCOLDB5:
+ 288              		.section	.text.jpeg_finish_compress,"ax",@progbits
+ 289              	.LHOTB5:
+ 290              		.p2align 4,,15
+ 291              		.globl	jpeg_finish_compress
+ 293              	jpeg_finish_compress:
+ 294              	.LFB65:
+ 145:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 146:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 147:fltk-1.3.4-1/jpeg/jcapimin.c **** /*
+ 148:fltk-1.3.4-1/jpeg/jcapimin.c ****  * Finish JPEG compression.
+ 149:fltk-1.3.4-1/jpeg/jcapimin.c ****  *
+ 150:fltk-1.3.4-1/jpeg/jcapimin.c ****  * If a multipass operating mode was selected, this may do a great deal of
+ 151:fltk-1.3.4-1/jpeg/jcapimin.c ****  * work including most of the actual output.
+ 152:fltk-1.3.4-1/jpeg/jcapimin.c ****  */
+ 153:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 154:fltk-1.3.4-1/jpeg/jcapimin.c **** GLOBAL(void)
+ 155:fltk-1.3.4-1/jpeg/jcapimin.c **** jpeg_finish_compress (j_compress_ptr cinfo)
+ 156:fltk-1.3.4-1/jpeg/jcapimin.c **** {
+ 295              		.loc 1 156 0
+ 296              		.cfi_startproc
+ 297              	.LVL29:
+ 298 0000 55       		pushq	%rbp
+ 299              		.cfi_def_cfa_offset 16
+ 300              		.cfi_offset 6, -16
+ 301 0001 53       		pushq	%rbx
+ 302              		.cfi_def_cfa_offset 24
+ 303              		.cfi_offset 3, -24
+ 304 0002 4889FB   		movq	%rdi, %rbx
+ 305 0005 4883EC08 		subq	$8, %rsp
+ 306              		.cfi_def_cfa_offset 32
+ 157:fltk-1.3.4-1/jpeg/jcapimin.c ****   JDIMENSION iMCU_row;
+ 158:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 159:fltk-1.3.4-1/jpeg/jcapimin.c ****   if (cinfo->global_state == CSTATE_SCANNING ||
+ 307              		.loc 1 159 0
+ 308 0009 8B4724   		movl	36(%rdi), %eax
+ 309 000c 8D509B   		leal	-101(%rax), %edx
+ 310 000f 83FA01   		cmpl	$1, %edx
+ 311 0012 0F86F500 		jbe	.L55
+ 311      0000
+ 160:fltk-1.3.4-1/jpeg/jcapimin.c ****       cinfo->global_state == CSTATE_RAW_OK) {
+ 161:fltk-1.3.4-1/jpeg/jcapimin.c ****     /* Terminate first pass */
+ 162:fltk-1.3.4-1/jpeg/jcapimin.c ****     if (cinfo->next_scanline < cinfo->image_height)
+ 163:fltk-1.3.4-1/jpeg/jcapimin.c ****       ERREXIT(cinfo, JERR_TOO_LITTLE_DATA);
+ 164:fltk-1.3.4-1/jpeg/jcapimin.c ****     (*cinfo->master->finish_pass) (cinfo);
+ 165:fltk-1.3.4-1/jpeg/jcapimin.c ****   } else if (cinfo->global_state != CSTATE_WRCOEFS)
+ 312              		.loc 1 165 0
+ 313 0018 83F867   		cmpl	$103, %eax
+ 314 001b 7418     		je	.L35
+ 166:fltk-1.3.4-1/jpeg/jcapimin.c ****     ERREXIT1(cinfo, JERR_BAD_STATE, cinfo->global_state);
+ 315              		.loc 1 166 0
+ 316 001d 488B07   		movq	(%rdi), %rax
+ 317 0020 C7402815 		movl	$21, 40(%rax)
+ 317      000000
+ 318 0027 488B07   		movq	(%rdi), %rax
+ 319 002a 8B5724   		movl	36(%rdi), %edx
+ 320 002d 89502C   		movl	%edx, 44(%rax)
+ 321 0030 488B07   		movq	(%rdi), %rax
+ 322 0033 FF10     		call	*(%rax)
+ 323              	.LVL30:
+ 324              	.L35:
+ 167:fltk-1.3.4-1/jpeg/jcapimin.c ****   /* Perform any remaining passes */
+ 168:fltk-1.3.4-1/jpeg/jcapimin.c ****   while (! cinfo->master->is_last_pass) {
+ 325              		.loc 1 168 0
+ 326 0035 488B83F0 		movq	496(%rbx), %rax
+ 326      010000
+ 327 003c 8B501C   		movl	28(%rax), %edx
+ 328 003f 85D2     		testl	%edx, %edx
+ 329 0041 0F85A100 		jne	.L56
+ 329      0000
+ 330 0047 660F1F84 		.p2align 4,,10
+ 330      00000000 
+ 330      00
+ 331              		.p2align 3
+ 332              	.L47:
+ 169:fltk-1.3.4-1/jpeg/jcapimin.c ****     (*cinfo->master->prepare_for_pass) (cinfo);
+ 333              		.loc 1 169 0
+ 334 0050 4889DF   		movq	%rbx, %rdi
+ 170:fltk-1.3.4-1/jpeg/jcapimin.c ****     for (iMCU_row = 0; iMCU_row < cinfo->total_iMCU_rows; iMCU_row++) {
+ 335              		.loc 1 170 0
+ 336 0053 31ED     		xorl	%ebp, %ebp
+ 169:fltk-1.3.4-1/jpeg/jcapimin.c ****     (*cinfo->master->prepare_for_pass) (cinfo);
+ 337              		.loc 1 169 0
+ 338 0055 FF10     		call	*(%rax)
+ 339              	.LVL31:
+ 340              		.loc 1 170 0
+ 341 0057 8B837001 		movl	368(%rbx), %eax
+ 341      0000
+ 342 005d 85C0     		testl	%eax, %eax
+ 343 005f 7512     		jne	.L48
+ 344 0061 EB66     		jmp	.L33
+ 345              	.LVL32:
+ 346              		.p2align 4,,10
+ 347 0063 0F1F4400 		.p2align 3
+ 347      00
+ 348              	.L40:
+ 349              		.loc 1 170 0 is_stmt 0 discriminator 2
+ 350 0068 83C501   		addl	$1, %ebp
+ 351              	.LVL33:
+ 352 006b 39AB7001 		cmpl	%ebp, 368(%rbx)
+ 352      0000
+ 353 0071 7656     		jbe	.L33
+ 354              	.LVL34:
+ 355              	.L48:
+ 171:fltk-1.3.4-1/jpeg/jcapimin.c ****       if (cinfo->progress != NULL) {
+ 356              		.loc 1 171 0 is_stmt 1
+ 357 0073 488B4310 		movq	16(%rbx), %rax
+ 358 0077 4885C0   		testq	%rax, %rax
+ 359 007a 741D     		je	.L39
+ 172:fltk-1.3.4-1/jpeg/jcapimin.c **** 	cinfo->progress->pass_counter = (long) iMCU_row;
+ 360              		.loc 1 172 0
+ 361 007c 89E9     		movl	%ebp, %ecx
+ 173:fltk-1.3.4-1/jpeg/jcapimin.c **** 	cinfo->progress->pass_limit = (long) cinfo->total_iMCU_rows;
+ 174:fltk-1.3.4-1/jpeg/jcapimin.c **** 	(*cinfo->progress->progress_monitor) ((j_common_ptr) cinfo);
+ 362              		.loc 1 174 0
+ 363 007e 4889DF   		movq	%rbx, %rdi
+ 172:fltk-1.3.4-1/jpeg/jcapimin.c **** 	cinfo->progress->pass_counter = (long) iMCU_row;
+ 364              		.loc 1 172 0
+ 365 0081 48894808 		movq	%rcx, 8(%rax)
+ 173:fltk-1.3.4-1/jpeg/jcapimin.c **** 	cinfo->progress->pass_limit = (long) cinfo->total_iMCU_rows;
+ 366              		.loc 1 173 0
+ 367 0085 8B937001 		movl	368(%rbx), %edx
+ 367      0000
+ 368 008b 488B4310 		movq	16(%rbx), %rax
+ 369 008f 48895010 		movq	%rdx, 16(%rax)
+ 370              		.loc 1 174 0
+ 371 0093 488B4310 		movq	16(%rbx), %rax
+ 372 0097 FF10     		call	*(%rax)
+ 373              	.LVL35:
+ 374              	.L39:
+ 175:fltk-1.3.4-1/jpeg/jcapimin.c ****       }
+ 176:fltk-1.3.4-1/jpeg/jcapimin.c ****       /* We bypass the main controller and invoke coef controller directly;
+ 177:fltk-1.3.4-1/jpeg/jcapimin.c ****        * all work is being done from the coefficient buffer.
+ 178:fltk-1.3.4-1/jpeg/jcapimin.c ****        */
+ 179:fltk-1.3.4-1/jpeg/jcapimin.c ****       if (! (*cinfo->coef->compress_data) (cinfo, (JSAMPIMAGE) NULL))
+ 375              		.loc 1 179 0
+ 376 0099 488B8308 		movq	520(%rbx), %rax
+ 376      020000
+ 377 00a0 31F6     		xorl	%esi, %esi
+ 378 00a2 4889DF   		movq	%rbx, %rdi
+ 379 00a5 FF5008   		call	*8(%rax)
+ 380              	.LVL36:
+ 381 00a8 85C0     		testl	%eax, %eax
+ 382 00aa 75BC     		jne	.L40
+ 180:fltk-1.3.4-1/jpeg/jcapimin.c **** 	ERREXIT(cinfo, JERR_CANT_SUSPEND);
+ 383              		.loc 1 180 0
+ 384 00ac 488B03   		movq	(%rbx), %rax
+ 385 00af 4889DF   		movq	%rbx, %rdi
+ 170:fltk-1.3.4-1/jpeg/jcapimin.c ****       if (cinfo->progress != NULL) {
+ 386              		.loc 1 170 0
+ 387 00b2 83C501   		addl	$1, %ebp
+ 388              	.LVL37:
+ 389              		.loc 1 180 0
+ 390 00b5 C7402819 		movl	$25, 40(%rax)
+ 390      000000
+ 391 00bc 488B03   		movq	(%rbx), %rax
+ 392 00bf FF10     		call	*(%rax)
+ 393              	.LVL38:
+ 170:fltk-1.3.4-1/jpeg/jcapimin.c ****       if (cinfo->progress != NULL) {
+ 394              		.loc 1 170 0
+ 395 00c1 39AB7001 		cmpl	%ebp, 368(%rbx)
+ 395      0000
+ 396 00c7 77AA     		ja	.L48
+ 397              	.LVL39:
+ 398              	.L33:
+ 164:fltk-1.3.4-1/jpeg/jcapimin.c ****   } else if (cinfo->global_state != CSTATE_WRCOEFS)
+ 399              		.loc 1 164 0
+ 400 00c9 488B83F0 		movq	496(%rbx), %rax
+ 400      010000
+ 401 00d0 4889DF   		movq	%rbx, %rdi
+ 402 00d3 FF5010   		call	*16(%rax)
+ 403              	.LVL40:
+ 168:fltk-1.3.4-1/jpeg/jcapimin.c ****     (*cinfo->master->prepare_for_pass) (cinfo);
+ 404              		.loc 1 168 0
+ 405 00d6 488B83F0 		movq	496(%rbx), %rax
+ 405      010000
+ 406 00dd 8B501C   		movl	28(%rax), %edx
+ 407 00e0 85D2     		testl	%edx, %edx
+ 408 00e2 0F8468FF 		je	.L47
+ 408      FFFF
+ 409              	.L56:
+ 181:fltk-1.3.4-1/jpeg/jcapimin.c ****     }
+ 182:fltk-1.3.4-1/jpeg/jcapimin.c ****     (*cinfo->master->finish_pass) (cinfo);
+ 183:fltk-1.3.4-1/jpeg/jcapimin.c ****   }
+ 184:fltk-1.3.4-1/jpeg/jcapimin.c ****   /* Write EOI, do final cleanup */
+ 185:fltk-1.3.4-1/jpeg/jcapimin.c ****   (*cinfo->marker->write_file_trailer) (cinfo);
+ 410              		.loc 1 185 0
+ 411 00e8 488B8310 		movq	528(%rbx), %rax
+ 411      020000
+ 412 00ef 4889DF   		movq	%rbx, %rdi
+ 413 00f2 FF5018   		call	*24(%rax)
+ 414              	.LVL41:
+ 186:fltk-1.3.4-1/jpeg/jcapimin.c ****   (*cinfo->dest->term_destination) (cinfo);
+ 415              		.loc 1 186 0
+ 416 00f5 488B4328 		movq	40(%rbx), %rax
+ 417 00f9 4889DF   		movq	%rbx, %rdi
+ 418 00fc FF5020   		call	*32(%rax)
+ 419              	.LVL42:
+ 187:fltk-1.3.4-1/jpeg/jcapimin.c ****   /* We can use jpeg_abort to release memory and reset global_state */
+ 188:fltk-1.3.4-1/jpeg/jcapimin.c ****   jpeg_abort((j_common_ptr) cinfo);
+ 189:fltk-1.3.4-1/jpeg/jcapimin.c **** }
+ 420              		.loc 1 189 0
+ 421 00ff 4883C408 		addq	$8, %rsp
+ 422              		.cfi_remember_state
+ 423              		.cfi_def_cfa_offset 24
+ 188:fltk-1.3.4-1/jpeg/jcapimin.c **** }
+ 424              		.loc 1 188 0
+ 425 0103 4889DF   		movq	%rbx, %rdi
+ 426              		.loc 1 189 0
+ 427 0106 5B       		popq	%rbx
+ 428              		.cfi_def_cfa_offset 16
+ 429              	.LVL43:
+ 430 0107 5D       		popq	%rbp
+ 431              		.cfi_def_cfa_offset 8
+ 188:fltk-1.3.4-1/jpeg/jcapimin.c **** }
+ 432              		.loc 1 188 0
+ 433 0108 E9000000 		jmp	jpeg_abort
+ 433      00
+ 434              	.LVL44:
+ 435              	.L55:
+ 436              		.cfi_restore_state
+ 162:fltk-1.3.4-1/jpeg/jcapimin.c ****       ERREXIT(cinfo, JERR_TOO_LITTLE_DATA);
+ 437              		.loc 1 162 0
+ 438 010d 8B4734   		movl	52(%rdi), %eax
+ 439 0110 39875801 		cmpl	%eax, 344(%rdi)
+ 439      0000
+ 440 0116 73B1     		jnb	.L33
+ 163:fltk-1.3.4-1/jpeg/jcapimin.c ****     (*cinfo->master->finish_pass) (cinfo);
+ 441              		.loc 1 163 0
+ 442 0118 488B07   		movq	(%rdi), %rax
+ 443 011b C7402845 		movl	$69, 40(%rax)
+ 443      000000
+ 444 0122 488B07   		movq	(%rdi), %rax
+ 445 0125 FF10     		call	*(%rax)
+ 446              	.LVL45:
+ 447 0127 EBA0     		jmp	.L33
+ 448              		.cfi_endproc
+ 449              	.LFE65:
+ 451              		.section	.text.unlikely.jpeg_finish_compress
+ 452              	.LCOLDE5:
+ 453              		.section	.text.jpeg_finish_compress
+ 454              	.LHOTE5:
+ 455              		.section	.text.unlikely.jpeg_write_marker,"ax",@progbits
+ 456              	.LCOLDB6:
+ 457              		.section	.text.jpeg_write_marker,"ax",@progbits
+ 458              	.LHOTB6:
+ 459              		.p2align 4,,15
+ 460              		.globl	jpeg_write_marker
+ 462              	jpeg_write_marker:
+ 463              	.LFB66:
+ 190:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 191:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 192:fltk-1.3.4-1/jpeg/jcapimin.c **** /*
+ 193:fltk-1.3.4-1/jpeg/jcapimin.c ****  * Write a special marker.
+ 194:fltk-1.3.4-1/jpeg/jcapimin.c ****  * This is only recommended for writing COM or APPn markers.
+ 195:fltk-1.3.4-1/jpeg/jcapimin.c ****  * Must be called after jpeg_start_compress() and before
+ 196:fltk-1.3.4-1/jpeg/jcapimin.c ****  * first call to jpeg_write_scanlines() or jpeg_write_raw_data().
+ 197:fltk-1.3.4-1/jpeg/jcapimin.c ****  */
+ 198:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 199:fltk-1.3.4-1/jpeg/jcapimin.c **** GLOBAL(void)
+ 200:fltk-1.3.4-1/jpeg/jcapimin.c **** jpeg_write_marker (j_compress_ptr cinfo, int marker,
+ 201:fltk-1.3.4-1/jpeg/jcapimin.c **** 		   const JOCTET *dataptr, unsigned int datalen)
+ 202:fltk-1.3.4-1/jpeg/jcapimin.c **** {
+ 464              		.loc 1 202 0
+ 465              		.cfi_startproc
+ 466              	.LVL46:
+ 467 0000 4156     		pushq	%r14
+ 468              		.cfi_def_cfa_offset 16
+ 469              		.cfi_offset 14, -16
+ 470 0002 4155     		pushq	%r13
+ 471              		.cfi_def_cfa_offset 24
+ 472              		.cfi_offset 13, -24
+ 473 0004 4189CE   		movl	%ecx, %r14d
+ 474 0007 4154     		pushq	%r12
+ 475              		.cfi_def_cfa_offset 32
+ 476              		.cfi_offset 12, -32
+ 477 0009 55       		pushq	%rbp
+ 478              		.cfi_def_cfa_offset 40
+ 479              		.cfi_offset 6, -40
+ 480 000a 4889FD   		movq	%rdi, %rbp
+ 481 000d 53       		pushq	%rbx
+ 482              		.cfi_def_cfa_offset 48
+ 483              		.cfi_offset 3, -48
+ 484 000e 4889D3   		movq	%rdx, %rbx
+ 485 0011 4883EC10 		subq	$16, %rsp
+ 486              		.cfi_def_cfa_offset 64
+ 203:fltk-1.3.4-1/jpeg/jcapimin.c ****   JMETHOD(void, write_marker_byte, (j_compress_ptr info, int val));
+ 204:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 205:fltk-1.3.4-1/jpeg/jcapimin.c ****   if (cinfo->next_scanline != 0 ||
+ 487              		.loc 1 205 0
+ 488 0015 8B875801 		movl	344(%rdi), %eax
+ 488      0000
+ 489 001b 85C0     		testl	%eax, %eax
+ 490 001d 7561     		jne	.L58
+ 491              		.loc 1 205 0 is_stmt 0 discriminator 1
+ 492 001f 8B4724   		movl	36(%rdi), %eax
+ 493 0022 83E865   		subl	$101, %eax
+ 494 0025 83F802   		cmpl	$2, %eax
+ 495 0028 7756     		ja	.L58
+ 496              	.LVL47:
+ 497              	.L59:
+ 206:fltk-1.3.4-1/jpeg/jcapimin.c ****       (cinfo->global_state != CSTATE_SCANNING &&
+ 207:fltk-1.3.4-1/jpeg/jcapimin.c ****        cinfo->global_state != CSTATE_RAW_OK &&
+ 208:fltk-1.3.4-1/jpeg/jcapimin.c ****        cinfo->global_state != CSTATE_WRCOEFS))
+ 209:fltk-1.3.4-1/jpeg/jcapimin.c ****     ERREXIT1(cinfo, JERR_BAD_STATE, cinfo->global_state);
+ 210:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 211:fltk-1.3.4-1/jpeg/jcapimin.c ****   (*cinfo->marker->write_marker_header) (cinfo, marker, datalen);
+ 498              		.loc 1 211 0 is_stmt 1
+ 499 002a 488B8510 		movq	528(%rbp), %rax
+ 499      020000
+ 500 0031 4489F2   		movl	%r14d, %edx
+ 501 0034 4889EF   		movq	%rbp, %rdi
+ 502 0037 FF5028   		call	*40(%rax)
+ 503              	.LVL48:
+ 212:fltk-1.3.4-1/jpeg/jcapimin.c ****   write_marker_byte = cinfo->marker->write_marker_byte;	/* copy for speed */
+ 504              		.loc 1 212 0
+ 505 003a 488B8510 		movq	528(%rbp), %rax
+ 505      020000
+ 213:fltk-1.3.4-1/jpeg/jcapimin.c ****   while (datalen--) {
+ 506              		.loc 1 213 0
+ 507 0041 4585F6   		testl	%r14d, %r14d
+ 212:fltk-1.3.4-1/jpeg/jcapimin.c ****   write_marker_byte = cinfo->marker->write_marker_byte;	/* copy for speed */
+ 508              		.loc 1 212 0
+ 509 0044 4C8B6830 		movq	48(%rax), %r13
+ 510              	.LVL49:
+ 511 0048 418D46FF 		leal	-1(%r14), %eax
+ 512 004c 4C8D6403 		leaq	1(%rbx,%rax), %r12
+ 512      01
+ 513              		.loc 1 213 0
+ 514 0051 7417     		je	.L57
+ 515              	.LVL50:
+ 516              		.p2align 4,,10
+ 517 0053 0F1F4400 		.p2align 3
+ 517      00
+ 518              	.L63:
+ 214:fltk-1.3.4-1/jpeg/jcapimin.c ****     (*write_marker_byte) (cinfo, *dataptr);
+ 519              		.loc 1 214 0
+ 520 0058 0FB633   		movzbl	(%rbx), %esi
+ 215:fltk-1.3.4-1/jpeg/jcapimin.c ****     dataptr++;
+ 521              		.loc 1 215 0
+ 522 005b 4883C301 		addq	$1, %rbx
+ 523              	.LVL51:
+ 214:fltk-1.3.4-1/jpeg/jcapimin.c ****     (*write_marker_byte) (cinfo, *dataptr);
+ 524              		.loc 1 214 0
+ 525 005f 4889EF   		movq	%rbp, %rdi
+ 526 0062 41FFD5   		call	*%r13
+ 527              	.LVL52:
+ 213:fltk-1.3.4-1/jpeg/jcapimin.c ****   while (datalen--) {
+ 528              		.loc 1 213 0
+ 529 0065 4C39E3   		cmpq	%r12, %rbx
+ 530 0068 75EE     		jne	.L63
+ 531              	.LVL53:
+ 532              	.L57:
+ 216:fltk-1.3.4-1/jpeg/jcapimin.c ****   }
+ 217:fltk-1.3.4-1/jpeg/jcapimin.c **** }
+ 533              		.loc 1 217 0
+ 534 006a 4883C410 		addq	$16, %rsp
+ 535              		.cfi_remember_state
+ 536              		.cfi_def_cfa_offset 48
+ 537 006e 5B       		popq	%rbx
+ 538              		.cfi_def_cfa_offset 40
+ 539              	.LVL54:
+ 540 006f 5D       		popq	%rbp
+ 541              		.cfi_def_cfa_offset 32
+ 542              	.LVL55:
+ 543 0070 415C     		popq	%r12
+ 544              		.cfi_def_cfa_offset 24
+ 545 0072 415D     		popq	%r13
+ 546              		.cfi_def_cfa_offset 16
+ 547              	.LVL56:
+ 548 0074 415E     		popq	%r14
+ 549              		.cfi_def_cfa_offset 8
+ 550 0076 C3       		ret
+ 551              	.LVL57:
+ 552 0077 660F1F84 		.p2align 4,,10
+ 552      00000000 
+ 552      00
+ 553              		.p2align 3
+ 554              	.L58:
+ 555              		.cfi_restore_state
+ 209:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 556              		.loc 1 209 0
+ 557 0080 488B4500 		movq	0(%rbp), %rax
+ 558 0084 8974240C 		movl	%esi, 12(%rsp)
+ 559 0088 4889EF   		movq	%rbp, %rdi
+ 560              	.LVL58:
+ 561 008b C7402815 		movl	$21, 40(%rax)
+ 561      000000
+ 562 0092 488B4500 		movq	0(%rbp), %rax
+ 563 0096 8B5524   		movl	36(%rbp), %edx
+ 564              	.LVL59:
+ 565 0099 89502C   		movl	%edx, 44(%rax)
+ 566 009c 488B4500 		movq	0(%rbp), %rax
+ 567 00a0 FF10     		call	*(%rax)
+ 568              	.LVL60:
+ 569 00a2 8B74240C 		movl	12(%rsp), %esi
+ 570 00a6 EB82     		jmp	.L59
+ 571              		.cfi_endproc
+ 572              	.LFE66:
+ 574              		.section	.text.unlikely.jpeg_write_marker
+ 575              	.LCOLDE6:
+ 576              		.section	.text.jpeg_write_marker
+ 577              	.LHOTE6:
+ 578              		.section	.text.unlikely.jpeg_write_m_header,"ax",@progbits
+ 579              	.LCOLDB7:
+ 580              		.section	.text.jpeg_write_m_header,"ax",@progbits
+ 581              	.LHOTB7:
+ 582              		.p2align 4,,15
+ 583              		.globl	jpeg_write_m_header
+ 585              	jpeg_write_m_header:
+ 586              	.LFB67:
+ 218:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 219:fltk-1.3.4-1/jpeg/jcapimin.c **** /* Same, but piecemeal. */
+ 220:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 221:fltk-1.3.4-1/jpeg/jcapimin.c **** GLOBAL(void)
+ 222:fltk-1.3.4-1/jpeg/jcapimin.c **** jpeg_write_m_header (j_compress_ptr cinfo, int marker, unsigned int datalen)
+ 223:fltk-1.3.4-1/jpeg/jcapimin.c **** {
+ 587              		.loc 1 223 0
+ 588              		.cfi_startproc
+ 589              	.LVL61:
+ 590 0000 53       		pushq	%rbx
+ 591              		.cfi_def_cfa_offset 16
+ 592              		.cfi_offset 3, -16
+ 593 0001 4889FB   		movq	%rdi, %rbx
+ 594 0004 4883EC10 		subq	$16, %rsp
+ 595              		.cfi_def_cfa_offset 32
+ 224:fltk-1.3.4-1/jpeg/jcapimin.c ****   if (cinfo->next_scanline != 0 ||
+ 596              		.loc 1 224 0
+ 597 0008 8B875801 		movl	344(%rdi), %eax
+ 597      0000
+ 598 000e 85C0     		testl	%eax, %eax
+ 599 0010 750B     		jne	.L67
+ 600              		.loc 1 224 0 is_stmt 0 discriminator 1
+ 601 0012 8B4724   		movl	36(%rdi), %eax
+ 602 0015 83E865   		subl	$101, %eax
+ 603 0018 83F802   		cmpl	$2, %eax
+ 604 001b 762B     		jbe	.L68
+ 605              	.L67:
+ 225:fltk-1.3.4-1/jpeg/jcapimin.c ****       (cinfo->global_state != CSTATE_SCANNING &&
+ 226:fltk-1.3.4-1/jpeg/jcapimin.c ****        cinfo->global_state != CSTATE_RAW_OK &&
+ 227:fltk-1.3.4-1/jpeg/jcapimin.c ****        cinfo->global_state != CSTATE_WRCOEFS))
+ 228:fltk-1.3.4-1/jpeg/jcapimin.c ****     ERREXIT1(cinfo, JERR_BAD_STATE, cinfo->global_state);
+ 606              		.loc 1 228 0 is_stmt 1
+ 607 001d 488B03   		movq	(%rbx), %rax
+ 608 0020 8954240C 		movl	%edx, 12(%rsp)
+ 609 0024 4889DF   		movq	%rbx, %rdi
+ 610              	.LVL62:
+ 611 0027 89742408 		movl	%esi, 8(%rsp)
+ 612 002b C7402815 		movl	$21, 40(%rax)
+ 612      000000
+ 613 0032 488B03   		movq	(%rbx), %rax
+ 614 0035 8B4B24   		movl	36(%rbx), %ecx
+ 615 0038 89482C   		movl	%ecx, 44(%rax)
+ 616 003b 488B03   		movq	(%rbx), %rax
+ 617 003e FF10     		call	*(%rax)
+ 618              	.LVL63:
+ 619 0040 8B54240C 		movl	12(%rsp), %edx
+ 620 0044 8B742408 		movl	8(%rsp), %esi
+ 621              	.LVL64:
+ 622              	.L68:
+ 229:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 230:fltk-1.3.4-1/jpeg/jcapimin.c ****   (*cinfo->marker->write_marker_header) (cinfo, marker, datalen);
+ 623              		.loc 1 230 0
+ 624 0048 488B8310 		movq	528(%rbx), %rax
+ 624      020000
+ 625 004f 4889DF   		movq	%rbx, %rdi
+ 626 0052 488B4028 		movq	40(%rax), %rax
+ 231:fltk-1.3.4-1/jpeg/jcapimin.c **** }
+ 627              		.loc 1 231 0
+ 628 0056 4883C410 		addq	$16, %rsp
+ 629              		.cfi_def_cfa_offset 16
+ 630 005a 5B       		popq	%rbx
+ 631              		.cfi_def_cfa_offset 8
+ 632              	.LVL65:
+ 230:fltk-1.3.4-1/jpeg/jcapimin.c **** }
+ 633              		.loc 1 230 0
+ 634 005b FFE0     		jmp	*%rax
+ 635              	.LVL66:
+ 636              		.cfi_endproc
+ 637              	.LFE67:
+ 639              		.section	.text.unlikely.jpeg_write_m_header
+ 640              	.LCOLDE7:
+ 641              		.section	.text.jpeg_write_m_header
+ 642              	.LHOTE7:
+ 643              		.section	.text.unlikely.jpeg_write_m_byte,"ax",@progbits
+ 644              	.LCOLDB8:
+ 645              		.section	.text.jpeg_write_m_byte,"ax",@progbits
+ 646              	.LHOTB8:
+ 647              		.p2align 4,,15
+ 648              		.globl	jpeg_write_m_byte
+ 650              	jpeg_write_m_byte:
+ 651              	.LFB68:
+ 232:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 233:fltk-1.3.4-1/jpeg/jcapimin.c **** GLOBAL(void)
+ 234:fltk-1.3.4-1/jpeg/jcapimin.c **** jpeg_write_m_byte (j_compress_ptr cinfo, int val)
+ 235:fltk-1.3.4-1/jpeg/jcapimin.c **** {
+ 652              		.loc 1 235 0
+ 653              		.cfi_startproc
+ 654              	.LVL67:
+ 236:fltk-1.3.4-1/jpeg/jcapimin.c ****   (*cinfo->marker->write_marker_byte) (cinfo, val);
+ 655              		.loc 1 236 0
+ 656 0000 488B8710 		movq	528(%rdi), %rax
+ 656      020000
+ 657 0007 FF6030   		jmp	*48(%rax)
+ 658              	.LVL68:
+ 659              		.cfi_endproc
+ 660              	.LFE68:
+ 662              		.section	.text.unlikely.jpeg_write_m_byte
+ 663              	.LCOLDE8:
+ 664              		.section	.text.jpeg_write_m_byte
+ 665              	.LHOTE8:
+ 666              		.section	.text.unlikely.jpeg_write_tables,"ax",@progbits
+ 667              	.LCOLDB9:
+ 668              		.section	.text.jpeg_write_tables,"ax",@progbits
+ 669              	.LHOTB9:
+ 670              		.p2align 4,,15
+ 671              		.globl	jpeg_write_tables
+ 673              	jpeg_write_tables:
+ 674              	.LFB69:
+ 237:fltk-1.3.4-1/jpeg/jcapimin.c **** }
+ 238:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 239:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 240:fltk-1.3.4-1/jpeg/jcapimin.c **** /*
+ 241:fltk-1.3.4-1/jpeg/jcapimin.c ****  * Alternate compression function: just write an abbreviated table file.
+ 242:fltk-1.3.4-1/jpeg/jcapimin.c ****  * Before calling this, all parameters and a data destination must be set up.
+ 243:fltk-1.3.4-1/jpeg/jcapimin.c ****  *
+ 244:fltk-1.3.4-1/jpeg/jcapimin.c ****  * To produce a pair of files containing abbreviated tables and abbreviated
+ 245:fltk-1.3.4-1/jpeg/jcapimin.c ****  * image data, one would proceed as follows:
+ 246:fltk-1.3.4-1/jpeg/jcapimin.c ****  *
+ 247:fltk-1.3.4-1/jpeg/jcapimin.c ****  *		initialize JPEG object
+ 248:fltk-1.3.4-1/jpeg/jcapimin.c ****  *		set JPEG parameters
+ 249:fltk-1.3.4-1/jpeg/jcapimin.c ****  *		set destination to table file
+ 250:fltk-1.3.4-1/jpeg/jcapimin.c ****  *		jpeg_write_tables(cinfo);
+ 251:fltk-1.3.4-1/jpeg/jcapimin.c ****  *		set destination to image file
+ 252:fltk-1.3.4-1/jpeg/jcapimin.c ****  *		jpeg_start_compress(cinfo, FALSE);
+ 253:fltk-1.3.4-1/jpeg/jcapimin.c ****  *		write data...
+ 254:fltk-1.3.4-1/jpeg/jcapimin.c ****  *		jpeg_finish_compress(cinfo);
+ 255:fltk-1.3.4-1/jpeg/jcapimin.c ****  *
+ 256:fltk-1.3.4-1/jpeg/jcapimin.c ****  * jpeg_write_tables has the side effect of marking all tables written
+ 257:fltk-1.3.4-1/jpeg/jcapimin.c ****  * (same as jpeg_suppress_tables(..., TRUE)).  Thus a subsequent start_compress
+ 258:fltk-1.3.4-1/jpeg/jcapimin.c ****  * will not re-emit the tables unless it is passed write_all_tables=TRUE.
+ 259:fltk-1.3.4-1/jpeg/jcapimin.c ****  */
+ 260:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 261:fltk-1.3.4-1/jpeg/jcapimin.c **** GLOBAL(void)
+ 262:fltk-1.3.4-1/jpeg/jcapimin.c **** jpeg_write_tables (j_compress_ptr cinfo)
+ 263:fltk-1.3.4-1/jpeg/jcapimin.c **** {
+ 675              		.loc 1 263 0
+ 676              		.cfi_startproc
+ 677              	.LVL69:
+ 678 0000 53       		pushq	%rbx
+ 679              		.cfi_def_cfa_offset 16
+ 680              		.cfi_offset 3, -16
+ 264:fltk-1.3.4-1/jpeg/jcapimin.c ****   if (cinfo->global_state != CSTATE_START)
+ 681              		.loc 1 264 0
+ 682 0001 837F2464 		cmpl	$100, 36(%rdi)
+ 263:fltk-1.3.4-1/jpeg/jcapimin.c ****   if (cinfo->global_state != CSTATE_START)
+ 683              		.loc 1 263 0
+ 684 0005 4889FB   		movq	%rdi, %rbx
+ 685              		.loc 1 264 0
+ 686 0008 7418     		je	.L72
+ 265:fltk-1.3.4-1/jpeg/jcapimin.c ****     ERREXIT1(cinfo, JERR_BAD_STATE, cinfo->global_state);
+ 687              		.loc 1 265 0
+ 688 000a 488B07   		movq	(%rdi), %rax
+ 689 000d C7402815 		movl	$21, 40(%rax)
+ 689      000000
+ 690 0014 488B07   		movq	(%rdi), %rax
+ 691 0017 8B5724   		movl	36(%rdi), %edx
+ 692 001a 89502C   		movl	%edx, 44(%rax)
+ 693 001d 488B07   		movq	(%rdi), %rax
+ 694 0020 FF10     		call	*(%rax)
+ 695              	.LVL70:
+ 696              	.L72:
+ 266:fltk-1.3.4-1/jpeg/jcapimin.c **** 
+ 267:fltk-1.3.4-1/jpeg/jcapimin.c ****   /* (Re)initialize error mgr and destination modules */
+ 268:fltk-1.3.4-1/jpeg/jcapimin.c ****   (*cinfo->err->reset_error_mgr) ((j_common_ptr) cinfo);
+ 697              		.loc 1 268 0
+ 698 0022 488B03   		movq	(%rbx), %rax
+ 699 0025 4889DF   		movq	%rbx, %rdi
+ 700 0028 FF5020   		call	*32(%rax)
+ 701              	.LVL71:
+ 269:fltk-1.3.4-1/jpeg/jcapimin.c ****   (*cinfo->dest->init_destination) (cinfo);
+ 702              		.loc 1 269 0
+ 703 002b 488B4328 		movq	40(%rbx), %rax
+ 704 002f 4889DF   		movq	%rbx, %rdi
+ 705 0032 FF5010   		call	*16(%rax)
+ 706              	.LVL72:
+ 270:fltk-1.3.4-1/jpeg/jcapimin.c ****   /* Initialize the marker writer ... bit of a crock to do it here. */
+ 271:fltk-1.3.4-1/jpeg/jcapimin.c ****   jinit_marker_writer(cinfo);
+ 707              		.loc 1 271 0
+ 708 0035 4889DF   		movq	%rbx, %rdi
+ 709 0038 E8000000 		call	jinit_marker_writer
+ 709      00
+ 710              	.LVL73:
+ 272:fltk-1.3.4-1/jpeg/jcapimin.c ****   /* Write them tables! */
+ 273:fltk-1.3.4-1/jpeg/jcapimin.c ****   (*cinfo->marker->write_tables_only) (cinfo);
+ 711              		.loc 1 273 0
+ 712 003d 488B8310 		movq	528(%rbx), %rax
+ 712      020000
+ 713 0044 4889DF   		movq	%rbx, %rdi
+ 714 0047 FF5020   		call	*32(%rax)
+ 715              	.LVL74:
+ 274:fltk-1.3.4-1/jpeg/jcapimin.c ****   /* And clean up. */
+ 275:fltk-1.3.4-1/jpeg/jcapimin.c ****   (*cinfo->dest->term_destination) (cinfo);
+ 716              		.loc 1 275 0
+ 717 004a 488B4328 		movq	40(%rbx), %rax
+ 718 004e 4889DF   		movq	%rbx, %rdi
+ 276:fltk-1.3.4-1/jpeg/jcapimin.c ****   /*
+ 277:fltk-1.3.4-1/jpeg/jcapimin.c ****    * In library releases up through v6a, we called jpeg_abort() here to free
+ 278:fltk-1.3.4-1/jpeg/jcapimin.c ****    * any working memory allocated by the destination manager and marker
+ 279:fltk-1.3.4-1/jpeg/jcapimin.c ****    * writer.  Some applications had a problem with that: they allocated space
+ 280:fltk-1.3.4-1/jpeg/jcapimin.c ****    * of their own from the library memory manager, and didn't want it to go
+ 281:fltk-1.3.4-1/jpeg/jcapimin.c ****    * away during write_tables.  So now we do nothing.  This will cause a
+ 282:fltk-1.3.4-1/jpeg/jcapimin.c ****    * memory leak if an app calls write_tables repeatedly without doing a full
+ 283:fltk-1.3.4-1/jpeg/jcapimin.c ****    * compression cycle or otherwise resetting the JPEG object.  However, that
+ 284:fltk-1.3.4-1/jpeg/jcapimin.c ****    * seems less bad than unexpectedly freeing memory in the normal case.
+ 285:fltk-1.3.4-1/jpeg/jcapimin.c ****    * An app that prefers the old behavior can call jpeg_abort for itself after
+ 286:fltk-1.3.4-1/jpeg/jcapimin.c ****    * each call to jpeg_write_tables().
+ 287:fltk-1.3.4-1/jpeg/jcapimin.c ****    */
+ 288:fltk-1.3.4-1/jpeg/jcapimin.c **** }
+ 719              		.loc 1 288 0
+ 720 0051 5B       		popq	%rbx
+ 721              		.cfi_def_cfa_offset 8
+ 722              	.LVL75:
+ 275:fltk-1.3.4-1/jpeg/jcapimin.c ****   /*
+ 723              		.loc 1 275 0
+ 724 0052 488B4020 		movq	32(%rax), %rax
+ 725 0056 FFE0     		jmp	*%rax
+ 726              	.LVL76:
+ 727              		.cfi_endproc
+ 728              	.LFE69:
+ 730              		.section	.text.unlikely.jpeg_write_tables
+ 731              	.LCOLDE9:
+ 732              		.section	.text.jpeg_write_tables
+ 733              	.LHOTE9:
+ 734              		.section	.rodata.cst8,"aM",@progbits,8
+ 735              		.align 8
+ 736              	.LC0:
+ 737 0000 00000000 		.long	0
+ 738 0004 0000F03F 		.long	1072693248
+ 739              		.text
+ 740              	.Letext0:
+ 741              		.section	.text.unlikely.jpeg_CreateCompress
+ 742              	.Letext_cold0:
+ 743              		.file 3 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
+ 744              		.file 4 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 745              		.file 5 "/usr/include/libio.h"
+ 746              		.file 6 "fltk-1.3.4-1/jpeg/jmorecfg.h"
+ 747              		.file 7 "fltk-1.3.4-1/jpeg/jpeglib.h"
+ 748              		.file 8 "fltk-1.3.4-1/jpeg/jpegint.h"
+ 749              		.file 9 "fltk-1.3.4-1/jpeg/jerror.h"
+ 750              		.file 10 "/usr/include/stdio.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 jcapimin.c
+     /tmp/cc9mkwS0.s:14     .text.jpeg_CreateCompress:0000000000000000 jpeg_CreateCompress
+     /tmp/cc9mkwS0.s:188    .text.jpeg_destroy_compress:0000000000000000 jpeg_destroy_compress
+     /tmp/cc9mkwS0.s:210    .text.jpeg_abort_compress:0000000000000000 jpeg_abort_compress
+     /tmp/cc9mkwS0.s:232    .text.jpeg_suppress_tables:0000000000000000 jpeg_suppress_tables
+     /tmp/cc9mkwS0.s:293    .text.jpeg_finish_compress:0000000000000000 jpeg_finish_compress
+     /tmp/cc9mkwS0.s:462    .text.jpeg_write_marker:0000000000000000 jpeg_write_marker
+     /tmp/cc9mkwS0.s:585    .text.jpeg_write_m_header:0000000000000000 jpeg_write_m_header
+     /tmp/cc9mkwS0.s:650    .text.jpeg_write_m_byte:0000000000000000 jpeg_write_m_byte
+     /tmp/cc9mkwS0.s:673    .text.jpeg_write_tables:0000000000000000 jpeg_write_tables
+     /tmp/cc9mkwS0.s:736    .rodata.cst8:0000000000000000 .LC0
+                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
+                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+                           .group:0000000000000000 wm4.jconfig.h.10.247fc3ff67998f3074970b1373c70333
+                           .group:0000000000000000 wm4.features.h.19.24da27e0a4d0d521fd057013d982b8b5
+                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
+                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
+                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
+                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
+                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
+                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
+                           .group:0000000000000000 wm4.waitflags.h.25.e401b8bcfee800b540b27abd7cc78de9
+                           .group:0000000000000000 wm4.waitstatus.h.28.93f167f49d64e2b9b99f98d1162a93bf
+                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
+                           .group:0000000000000000 wm4.endian.h.41.24cced64aef71195a51d4daa8e4f4a95
+                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
+                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
+                           .group:0000000000000000 wm4.byteswap.h.38.11ee5fdc0f6cc53a16c505b9233cecef
+                           .group:0000000000000000 wm4.endian.h.63.97272d7c64d5db8020003b32e9289502
+                           .group:0000000000000000 wm4.waitstatus.h.99.408b6270fa6eb71377201a241ef15f79
+                           .group:0000000000000000 wm4.stdlib.h.50.84aeca2ac6f37d40e1e9b3cef757ba2d
+                           .group:0000000000000000 wm4.types.h.23.f6dcbaa72f8f71361acef09804d45a5e
+                           .group:0000000000000000 wm4.time.h.53.beb46e650cd406cb917b6b96b45e640a
+                           .group:0000000000000000 wm4.stddef.h.238.847b6907dabda77be90a9ab7ad789e2e
+                           .group:0000000000000000 wm4.types.h.187.bd5a05039b505b3620e6973f1b2ffeb1
+                           .group:0000000000000000 wm4.select.h.28.eb2f3debdbcffd1442ebddaebc4fb6ff
+                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
+                           .group:0000000000000000 wm4.select.h.36.f76c3b9e55c871743863013cc4cc14c9
+                           .group:0000000000000000 wm4.time.h.66.e70ce69790c975f0efb369340c432e0b
+                           .group:0000000000000000 wm4.time.h.25.ae5284cdff565e87a9198d819340325d
+                           .group:0000000000000000 wm4.select.h.49.e9d2041e5035cc68ebd1a20f7dbc8514
+                           .group:0000000000000000 wm4.select2.h.27.f95f2ab0ffee66dc1b6575014894b21a
+                           .group:0000000000000000 wm4.sysmacros.h.20.8a0c33ff175cd9b434a86c0aaa36f0a2
+                           .group:0000000000000000 wm4.types.h.229.67b3f66bd74b06b451caec392a72a945
+                           .group:0000000000000000 wm4.pthreadtypes.h.25.6892b1493314fcf446bbc76e7362acba
+                           .group:0000000000000000 wm4.alloca.h.19.edefa922a76c1cbaaf1e416903ba2d1c
+                           .group:0000000000000000 wm4.alloca.h.29.156e12058824cc23d961c4d3b13031f6
+                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
+                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
+                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
+                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
+                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
+                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
+                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
+                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
+                           .group:0000000000000000 wm4.stdio.h.80.17b7dd1ca72d8a61987532cb1d80194a
+                           .group:0000000000000000 wm4.stdio_lim.h.23.557290a6cddeba0587f574f29e3a5fb9
+                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
+                           .group:0000000000000000 wm4.stdio.h.26.cae64f7ada9bb8327a89dba6a5e93655
+                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
+                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
+                           .group:0000000000000000 wm4.string2.h.45.00535b99420fc3014c2da41d6645330d
+                           .group:0000000000000000 wm4.string3.h.31.0c4b9301b754a2db05eaafef869657d2
+                           .group:0000000000000000 wm4.jinclude.h.67.b19f941ec97c4845fa4609292c7e2db4
+                           .group:0000000000000000 wm4.jmorecfg.h.33.3b4c5f9cc07b3737823b06caf24d5b05
+                           .group:0000000000000000 wm4.jpeglib.h.40.4f111c27252a38df39328d65454e82f4
+                           .group:0000000000000000 wm4.jpegint.h.26.5219ef5d4e4921371d38e77b6091fd20
+                           .group:0000000000000000 wm4.jerror.h.25.1dbd8674e70ab5215bc0037320e5c2a2
+
+UNDEFINED SYMBOLS
+jinit_memory_mgr
+jpeg_natural_order
+jpeg_destroy
+jpeg_abort
+jinit_marker_writer

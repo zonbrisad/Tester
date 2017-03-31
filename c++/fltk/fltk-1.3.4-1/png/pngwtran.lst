@@ -1,0 +1,2425 @@
+   1              		.file	"pngwtran.c"
+   2              		.text
+   3              	.Ltext0:
+   4              		.section	.text.unlikely.png_do_write_transformations,"ax",@progbits
+   5              	.LCOLDB0:
+   6              		.section	.text.png_do_write_transformations,"ax",@progbits
+   7              	.LHOTB0:
+   8              		.p2align 4,,15
+   9              		.section	.text.unlikely.png_do_write_transformations
+  10              	.Ltext_cold0:
+  11              		.section	.text.png_do_write_transformations
+  12              		.globl	png_do_write_transformations
+  14              	png_do_write_transformations:
+  15              	.LFB60:
+  16              		.file 1 "fltk-1.3.4-1/png/pngwtran.c"
+   1:fltk-1.3.4-1/png/pngwtran.c **** 
+   2:fltk-1.3.4-1/png/pngwtran.c **** /* pngwtran.c - transforms the data in a row for PNG writers
+   3:fltk-1.3.4-1/png/pngwtran.c ****  *
+   4:fltk-1.3.4-1/png/pngwtran.c ****  * Last changed in libpng 1.6.15 [November 20, 2014]
+   5:fltk-1.3.4-1/png/pngwtran.c ****  * Copyright (c) 1998-2014 Glenn Randers-Pehrson
+   6:fltk-1.3.4-1/png/pngwtran.c ****  * (Version 0.96 Copyright (c) 1996, 1997 Andreas Dilger)
+   7:fltk-1.3.4-1/png/pngwtran.c ****  * (Version 0.88 Copyright (c) 1995, 1996 Guy Eric Schalnat, Group 42, Inc.)
+   8:fltk-1.3.4-1/png/pngwtran.c ****  *
+   9:fltk-1.3.4-1/png/pngwtran.c ****  * This code is released under the libpng license.
+  10:fltk-1.3.4-1/png/pngwtran.c ****  * For conditions of distribution and use, see the disclaimer
+  11:fltk-1.3.4-1/png/pngwtran.c ****  * and license in png.h
+  12:fltk-1.3.4-1/png/pngwtran.c ****  */
+  13:fltk-1.3.4-1/png/pngwtran.c **** 
+  14:fltk-1.3.4-1/png/pngwtran.c **** #include "pngpriv.h"
+  15:fltk-1.3.4-1/png/pngwtran.c **** 
+  16:fltk-1.3.4-1/png/pngwtran.c **** #ifdef PNG_WRITE_SUPPORTED
+  17:fltk-1.3.4-1/png/pngwtran.c **** #ifdef PNG_WRITE_TRANSFORMS_SUPPORTED
+  18:fltk-1.3.4-1/png/pngwtran.c **** 
+  19:fltk-1.3.4-1/png/pngwtran.c **** #ifdef PNG_WRITE_PACK_SUPPORTED
+  20:fltk-1.3.4-1/png/pngwtran.c **** /* Pack pixels into bytes.  Pass the true bit depth in bit_depth.  The
+  21:fltk-1.3.4-1/png/pngwtran.c ****  * row_info bit depth should be 8 (one pixel per byte).  The channels
+  22:fltk-1.3.4-1/png/pngwtran.c ****  * should be 1 (this only happens on grayscale and paletted images).
+  23:fltk-1.3.4-1/png/pngwtran.c ****  */
+  24:fltk-1.3.4-1/png/pngwtran.c **** static void
+  25:fltk-1.3.4-1/png/pngwtran.c **** png_do_pack(png_row_infop row_info, png_bytep row, png_uint_32 bit_depth)
+  26:fltk-1.3.4-1/png/pngwtran.c **** {
+  27:fltk-1.3.4-1/png/pngwtran.c ****    png_debug(1, "in png_do_pack");
+  28:fltk-1.3.4-1/png/pngwtran.c **** 
+  29:fltk-1.3.4-1/png/pngwtran.c ****    if (row_info->bit_depth == 8 &&
+  30:fltk-1.3.4-1/png/pngwtran.c ****       row_info->channels == 1)
+  31:fltk-1.3.4-1/png/pngwtran.c ****    {
+  32:fltk-1.3.4-1/png/pngwtran.c ****       switch ((int)bit_depth)
+  33:fltk-1.3.4-1/png/pngwtran.c ****       {
+  34:fltk-1.3.4-1/png/pngwtran.c ****          case 1:
+  35:fltk-1.3.4-1/png/pngwtran.c ****          {
+  36:fltk-1.3.4-1/png/pngwtran.c ****             png_bytep sp, dp;
+  37:fltk-1.3.4-1/png/pngwtran.c ****             int mask, v;
+  38:fltk-1.3.4-1/png/pngwtran.c ****             png_uint_32 i;
+  39:fltk-1.3.4-1/png/pngwtran.c ****             png_uint_32 row_width = row_info->width;
+  40:fltk-1.3.4-1/png/pngwtran.c **** 
+  41:fltk-1.3.4-1/png/pngwtran.c ****             sp = row;
+  42:fltk-1.3.4-1/png/pngwtran.c ****             dp = row;
+  43:fltk-1.3.4-1/png/pngwtran.c ****             mask = 0x80;
+  44:fltk-1.3.4-1/png/pngwtran.c ****             v = 0;
+  45:fltk-1.3.4-1/png/pngwtran.c **** 
+  46:fltk-1.3.4-1/png/pngwtran.c ****             for (i = 0; i < row_width; i++)
+  47:fltk-1.3.4-1/png/pngwtran.c ****             {
+  48:fltk-1.3.4-1/png/pngwtran.c ****                if (*sp != 0)
+  49:fltk-1.3.4-1/png/pngwtran.c ****                   v |= mask;
+  50:fltk-1.3.4-1/png/pngwtran.c **** 
+  51:fltk-1.3.4-1/png/pngwtran.c ****                sp++;
+  52:fltk-1.3.4-1/png/pngwtran.c **** 
+  53:fltk-1.3.4-1/png/pngwtran.c ****                if (mask > 1)
+  54:fltk-1.3.4-1/png/pngwtran.c ****                   mask >>= 1;
+  55:fltk-1.3.4-1/png/pngwtran.c **** 
+  56:fltk-1.3.4-1/png/pngwtran.c ****                else
+  57:fltk-1.3.4-1/png/pngwtran.c ****                {
+  58:fltk-1.3.4-1/png/pngwtran.c ****                   mask = 0x80;
+  59:fltk-1.3.4-1/png/pngwtran.c ****                   *dp = (png_byte)v;
+  60:fltk-1.3.4-1/png/pngwtran.c ****                   dp++;
+  61:fltk-1.3.4-1/png/pngwtran.c ****                   v = 0;
+  62:fltk-1.3.4-1/png/pngwtran.c ****                }
+  63:fltk-1.3.4-1/png/pngwtran.c ****             }
+  64:fltk-1.3.4-1/png/pngwtran.c **** 
+  65:fltk-1.3.4-1/png/pngwtran.c ****             if (mask != 0x80)
+  66:fltk-1.3.4-1/png/pngwtran.c ****                *dp = (png_byte)v;
+  67:fltk-1.3.4-1/png/pngwtran.c **** 
+  68:fltk-1.3.4-1/png/pngwtran.c ****             break;
+  69:fltk-1.3.4-1/png/pngwtran.c ****          }
+  70:fltk-1.3.4-1/png/pngwtran.c **** 
+  71:fltk-1.3.4-1/png/pngwtran.c ****          case 2:
+  72:fltk-1.3.4-1/png/pngwtran.c ****          {
+  73:fltk-1.3.4-1/png/pngwtran.c ****             png_bytep sp, dp;
+  74:fltk-1.3.4-1/png/pngwtran.c ****             int shift, v;
+  75:fltk-1.3.4-1/png/pngwtran.c ****             png_uint_32 i;
+  76:fltk-1.3.4-1/png/pngwtran.c ****             png_uint_32 row_width = row_info->width;
+  77:fltk-1.3.4-1/png/pngwtran.c **** 
+  78:fltk-1.3.4-1/png/pngwtran.c ****             sp = row;
+  79:fltk-1.3.4-1/png/pngwtran.c ****             dp = row;
+  80:fltk-1.3.4-1/png/pngwtran.c ****             shift = 6;
+  81:fltk-1.3.4-1/png/pngwtran.c ****             v = 0;
+  82:fltk-1.3.4-1/png/pngwtran.c **** 
+  83:fltk-1.3.4-1/png/pngwtran.c ****             for (i = 0; i < row_width; i++)
+  84:fltk-1.3.4-1/png/pngwtran.c ****             {
+  85:fltk-1.3.4-1/png/pngwtran.c ****                png_byte value;
+  86:fltk-1.3.4-1/png/pngwtran.c **** 
+  87:fltk-1.3.4-1/png/pngwtran.c ****                value = (png_byte)(*sp & 0x03);
+  88:fltk-1.3.4-1/png/pngwtran.c ****                v |= (value << shift);
+  89:fltk-1.3.4-1/png/pngwtran.c **** 
+  90:fltk-1.3.4-1/png/pngwtran.c ****                if (shift == 0)
+  91:fltk-1.3.4-1/png/pngwtran.c ****                {
+  92:fltk-1.3.4-1/png/pngwtran.c ****                   shift = 6;
+  93:fltk-1.3.4-1/png/pngwtran.c ****                   *dp = (png_byte)v;
+  94:fltk-1.3.4-1/png/pngwtran.c ****                   dp++;
+  95:fltk-1.3.4-1/png/pngwtran.c ****                   v = 0;
+  96:fltk-1.3.4-1/png/pngwtran.c ****                }
+  97:fltk-1.3.4-1/png/pngwtran.c **** 
+  98:fltk-1.3.4-1/png/pngwtran.c ****                else
+  99:fltk-1.3.4-1/png/pngwtran.c ****                   shift -= 2;
+ 100:fltk-1.3.4-1/png/pngwtran.c **** 
+ 101:fltk-1.3.4-1/png/pngwtran.c ****                sp++;
+ 102:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 103:fltk-1.3.4-1/png/pngwtran.c **** 
+ 104:fltk-1.3.4-1/png/pngwtran.c ****             if (shift != 6)
+ 105:fltk-1.3.4-1/png/pngwtran.c ****                *dp = (png_byte)v;
+ 106:fltk-1.3.4-1/png/pngwtran.c **** 
+ 107:fltk-1.3.4-1/png/pngwtran.c ****             break;
+ 108:fltk-1.3.4-1/png/pngwtran.c ****          }
+ 109:fltk-1.3.4-1/png/pngwtran.c **** 
+ 110:fltk-1.3.4-1/png/pngwtran.c ****          case 4:
+ 111:fltk-1.3.4-1/png/pngwtran.c ****          {
+ 112:fltk-1.3.4-1/png/pngwtran.c ****             png_bytep sp, dp;
+ 113:fltk-1.3.4-1/png/pngwtran.c ****             int shift, v;
+ 114:fltk-1.3.4-1/png/pngwtran.c ****             png_uint_32 i;
+ 115:fltk-1.3.4-1/png/pngwtran.c ****             png_uint_32 row_width = row_info->width;
+ 116:fltk-1.3.4-1/png/pngwtran.c **** 
+ 117:fltk-1.3.4-1/png/pngwtran.c ****             sp = row;
+ 118:fltk-1.3.4-1/png/pngwtran.c ****             dp = row;
+ 119:fltk-1.3.4-1/png/pngwtran.c ****             shift = 4;
+ 120:fltk-1.3.4-1/png/pngwtran.c ****             v = 0;
+ 121:fltk-1.3.4-1/png/pngwtran.c **** 
+ 122:fltk-1.3.4-1/png/pngwtran.c ****             for (i = 0; i < row_width; i++)
+ 123:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 124:fltk-1.3.4-1/png/pngwtran.c ****                png_byte value;
+ 125:fltk-1.3.4-1/png/pngwtran.c **** 
+ 126:fltk-1.3.4-1/png/pngwtran.c ****                value = (png_byte)(*sp & 0x0f);
+ 127:fltk-1.3.4-1/png/pngwtran.c ****                v |= (value << shift);
+ 128:fltk-1.3.4-1/png/pngwtran.c **** 
+ 129:fltk-1.3.4-1/png/pngwtran.c ****                if (shift == 0)
+ 130:fltk-1.3.4-1/png/pngwtran.c ****                {
+ 131:fltk-1.3.4-1/png/pngwtran.c ****                   shift = 4;
+ 132:fltk-1.3.4-1/png/pngwtran.c ****                   *dp = (png_byte)v;
+ 133:fltk-1.3.4-1/png/pngwtran.c ****                   dp++;
+ 134:fltk-1.3.4-1/png/pngwtran.c ****                   v = 0;
+ 135:fltk-1.3.4-1/png/pngwtran.c ****                }
+ 136:fltk-1.3.4-1/png/pngwtran.c **** 
+ 137:fltk-1.3.4-1/png/pngwtran.c ****                else
+ 138:fltk-1.3.4-1/png/pngwtran.c ****                   shift -= 4;
+ 139:fltk-1.3.4-1/png/pngwtran.c **** 
+ 140:fltk-1.3.4-1/png/pngwtran.c ****                sp++;
+ 141:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 142:fltk-1.3.4-1/png/pngwtran.c **** 
+ 143:fltk-1.3.4-1/png/pngwtran.c ****             if (shift != 4)
+ 144:fltk-1.3.4-1/png/pngwtran.c ****                *dp = (png_byte)v;
+ 145:fltk-1.3.4-1/png/pngwtran.c **** 
+ 146:fltk-1.3.4-1/png/pngwtran.c ****             break;
+ 147:fltk-1.3.4-1/png/pngwtran.c ****          }
+ 148:fltk-1.3.4-1/png/pngwtran.c **** 
+ 149:fltk-1.3.4-1/png/pngwtran.c ****          default:
+ 150:fltk-1.3.4-1/png/pngwtran.c ****             break;
+ 151:fltk-1.3.4-1/png/pngwtran.c ****       }
+ 152:fltk-1.3.4-1/png/pngwtran.c **** 
+ 153:fltk-1.3.4-1/png/pngwtran.c ****       row_info->bit_depth = (png_byte)bit_depth;
+ 154:fltk-1.3.4-1/png/pngwtran.c ****       row_info->pixel_depth = (png_byte)(bit_depth * row_info->channels);
+ 155:fltk-1.3.4-1/png/pngwtran.c ****       row_info->rowbytes = PNG_ROWBYTES(row_info->pixel_depth,
+ 156:fltk-1.3.4-1/png/pngwtran.c ****           row_info->width);
+ 157:fltk-1.3.4-1/png/pngwtran.c ****    }
+ 158:fltk-1.3.4-1/png/pngwtran.c **** }
+ 159:fltk-1.3.4-1/png/pngwtran.c **** #endif
+ 160:fltk-1.3.4-1/png/pngwtran.c **** 
+ 161:fltk-1.3.4-1/png/pngwtran.c **** #ifdef PNG_WRITE_SHIFT_SUPPORTED
+ 162:fltk-1.3.4-1/png/pngwtran.c **** /* Shift pixel values to take advantage of whole range.  Pass the
+ 163:fltk-1.3.4-1/png/pngwtran.c ****  * true number of bits in bit_depth.  The row should be packed
+ 164:fltk-1.3.4-1/png/pngwtran.c ****  * according to row_info->bit_depth.  Thus, if you had a row of
+ 165:fltk-1.3.4-1/png/pngwtran.c ****  * bit depth 4, but the pixels only had values from 0 to 7, you
+ 166:fltk-1.3.4-1/png/pngwtran.c ****  * would pass 3 as bit_depth, and this routine would translate the
+ 167:fltk-1.3.4-1/png/pngwtran.c ****  * data to 0 to 15.
+ 168:fltk-1.3.4-1/png/pngwtran.c ****  */
+ 169:fltk-1.3.4-1/png/pngwtran.c **** static void
+ 170:fltk-1.3.4-1/png/pngwtran.c **** png_do_shift(png_row_infop row_info, png_bytep row,
+ 171:fltk-1.3.4-1/png/pngwtran.c ****     png_const_color_8p bit_depth)
+ 172:fltk-1.3.4-1/png/pngwtran.c **** {
+ 173:fltk-1.3.4-1/png/pngwtran.c ****    png_debug(1, "in png_do_shift");
+ 174:fltk-1.3.4-1/png/pngwtran.c **** 
+ 175:fltk-1.3.4-1/png/pngwtran.c ****    if (row_info->color_type != PNG_COLOR_TYPE_PALETTE)
+ 176:fltk-1.3.4-1/png/pngwtran.c ****    {
+ 177:fltk-1.3.4-1/png/pngwtran.c ****       int shift_start[4], shift_dec[4];
+ 178:fltk-1.3.4-1/png/pngwtran.c ****       int channels = 0;
+ 179:fltk-1.3.4-1/png/pngwtran.c **** 
+ 180:fltk-1.3.4-1/png/pngwtran.c ****       if ((row_info->color_type & PNG_COLOR_MASK_COLOR) != 0)
+ 181:fltk-1.3.4-1/png/pngwtran.c ****       {
+ 182:fltk-1.3.4-1/png/pngwtran.c ****          shift_start[channels] = row_info->bit_depth - bit_depth->red;
+ 183:fltk-1.3.4-1/png/pngwtran.c ****          shift_dec[channels] = bit_depth->red;
+ 184:fltk-1.3.4-1/png/pngwtran.c ****          channels++;
+ 185:fltk-1.3.4-1/png/pngwtran.c **** 
+ 186:fltk-1.3.4-1/png/pngwtran.c ****          shift_start[channels] = row_info->bit_depth - bit_depth->green;
+ 187:fltk-1.3.4-1/png/pngwtran.c ****          shift_dec[channels] = bit_depth->green;
+ 188:fltk-1.3.4-1/png/pngwtran.c ****          channels++;
+ 189:fltk-1.3.4-1/png/pngwtran.c **** 
+ 190:fltk-1.3.4-1/png/pngwtran.c ****          shift_start[channels] = row_info->bit_depth - bit_depth->blue;
+ 191:fltk-1.3.4-1/png/pngwtran.c ****          shift_dec[channels] = bit_depth->blue;
+ 192:fltk-1.3.4-1/png/pngwtran.c ****          channels++;
+ 193:fltk-1.3.4-1/png/pngwtran.c ****       }
+ 194:fltk-1.3.4-1/png/pngwtran.c **** 
+ 195:fltk-1.3.4-1/png/pngwtran.c ****       else
+ 196:fltk-1.3.4-1/png/pngwtran.c ****       {
+ 197:fltk-1.3.4-1/png/pngwtran.c ****          shift_start[channels] = row_info->bit_depth - bit_depth->gray;
+ 198:fltk-1.3.4-1/png/pngwtran.c ****          shift_dec[channels] = bit_depth->gray;
+ 199:fltk-1.3.4-1/png/pngwtran.c ****          channels++;
+ 200:fltk-1.3.4-1/png/pngwtran.c ****       }
+ 201:fltk-1.3.4-1/png/pngwtran.c **** 
+ 202:fltk-1.3.4-1/png/pngwtran.c ****       if ((row_info->color_type & PNG_COLOR_MASK_ALPHA) != 0)
+ 203:fltk-1.3.4-1/png/pngwtran.c ****       {
+ 204:fltk-1.3.4-1/png/pngwtran.c ****          shift_start[channels] = row_info->bit_depth - bit_depth->alpha;
+ 205:fltk-1.3.4-1/png/pngwtran.c ****          shift_dec[channels] = bit_depth->alpha;
+ 206:fltk-1.3.4-1/png/pngwtran.c ****          channels++;
+ 207:fltk-1.3.4-1/png/pngwtran.c ****       }
+ 208:fltk-1.3.4-1/png/pngwtran.c **** 
+ 209:fltk-1.3.4-1/png/pngwtran.c ****       /* With low row depths, could only be grayscale, so one channel */
+ 210:fltk-1.3.4-1/png/pngwtran.c ****       if (row_info->bit_depth < 8)
+ 211:fltk-1.3.4-1/png/pngwtran.c ****       {
+ 212:fltk-1.3.4-1/png/pngwtran.c ****          png_bytep bp = row;
+ 213:fltk-1.3.4-1/png/pngwtran.c ****          png_size_t i;
+ 214:fltk-1.3.4-1/png/pngwtran.c ****          unsigned int mask;
+ 215:fltk-1.3.4-1/png/pngwtran.c ****          png_size_t row_bytes = row_info->rowbytes;
+ 216:fltk-1.3.4-1/png/pngwtran.c **** 
+ 217:fltk-1.3.4-1/png/pngwtran.c ****          if (bit_depth->gray == 1 && row_info->bit_depth == 2)
+ 218:fltk-1.3.4-1/png/pngwtran.c ****             mask = 0x55;
+ 219:fltk-1.3.4-1/png/pngwtran.c **** 
+ 220:fltk-1.3.4-1/png/pngwtran.c ****          else if (row_info->bit_depth == 4 && bit_depth->gray == 3)
+ 221:fltk-1.3.4-1/png/pngwtran.c ****             mask = 0x11;
+ 222:fltk-1.3.4-1/png/pngwtran.c **** 
+ 223:fltk-1.3.4-1/png/pngwtran.c ****          else
+ 224:fltk-1.3.4-1/png/pngwtran.c ****             mask = 0xff;
+ 225:fltk-1.3.4-1/png/pngwtran.c **** 
+ 226:fltk-1.3.4-1/png/pngwtran.c ****          for (i = 0; i < row_bytes; i++, bp++)
+ 227:fltk-1.3.4-1/png/pngwtran.c ****          {
+ 228:fltk-1.3.4-1/png/pngwtran.c ****             int j;
+ 229:fltk-1.3.4-1/png/pngwtran.c ****             unsigned int v, out;
+ 230:fltk-1.3.4-1/png/pngwtran.c **** 
+ 231:fltk-1.3.4-1/png/pngwtran.c ****             v = *bp;
+ 232:fltk-1.3.4-1/png/pngwtran.c ****             out = 0;
+ 233:fltk-1.3.4-1/png/pngwtran.c **** 
+ 234:fltk-1.3.4-1/png/pngwtran.c ****             for (j = shift_start[0]; j > -shift_dec[0]; j -= shift_dec[0])
+ 235:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 236:fltk-1.3.4-1/png/pngwtran.c ****                if (j > 0)
+ 237:fltk-1.3.4-1/png/pngwtran.c ****                   out |= v << j;
+ 238:fltk-1.3.4-1/png/pngwtran.c **** 
+ 239:fltk-1.3.4-1/png/pngwtran.c ****                else
+ 240:fltk-1.3.4-1/png/pngwtran.c ****                   out |= (v >> (-j)) & mask;
+ 241:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 242:fltk-1.3.4-1/png/pngwtran.c **** 
+ 243:fltk-1.3.4-1/png/pngwtran.c ****             *bp = (png_byte)(out & 0xff);
+ 244:fltk-1.3.4-1/png/pngwtran.c ****          }
+ 245:fltk-1.3.4-1/png/pngwtran.c ****       }
+ 246:fltk-1.3.4-1/png/pngwtran.c **** 
+ 247:fltk-1.3.4-1/png/pngwtran.c ****       else if (row_info->bit_depth == 8)
+ 248:fltk-1.3.4-1/png/pngwtran.c ****       {
+ 249:fltk-1.3.4-1/png/pngwtran.c ****          png_bytep bp = row;
+ 250:fltk-1.3.4-1/png/pngwtran.c ****          png_uint_32 i;
+ 251:fltk-1.3.4-1/png/pngwtran.c ****          png_uint_32 istop = channels * row_info->width;
+ 252:fltk-1.3.4-1/png/pngwtran.c **** 
+ 253:fltk-1.3.4-1/png/pngwtran.c ****          for (i = 0; i < istop; i++, bp++)
+ 254:fltk-1.3.4-1/png/pngwtran.c ****          {
+ 255:fltk-1.3.4-1/png/pngwtran.c **** 
+ 256:fltk-1.3.4-1/png/pngwtran.c ****             const unsigned int c = i%channels;
+ 257:fltk-1.3.4-1/png/pngwtran.c ****             int j;
+ 258:fltk-1.3.4-1/png/pngwtran.c ****             unsigned int v, out;
+ 259:fltk-1.3.4-1/png/pngwtran.c **** 
+ 260:fltk-1.3.4-1/png/pngwtran.c ****             v = *bp;
+ 261:fltk-1.3.4-1/png/pngwtran.c ****             out = 0;
+ 262:fltk-1.3.4-1/png/pngwtran.c **** 
+ 263:fltk-1.3.4-1/png/pngwtran.c ****             for (j = shift_start[c]; j > -shift_dec[c]; j -= shift_dec[c])
+ 264:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 265:fltk-1.3.4-1/png/pngwtran.c ****                if (j > 0)
+ 266:fltk-1.3.4-1/png/pngwtran.c ****                   out |= v << j;
+ 267:fltk-1.3.4-1/png/pngwtran.c **** 
+ 268:fltk-1.3.4-1/png/pngwtran.c ****                else
+ 269:fltk-1.3.4-1/png/pngwtran.c ****                   out |= v >> (-j);
+ 270:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 271:fltk-1.3.4-1/png/pngwtran.c **** 
+ 272:fltk-1.3.4-1/png/pngwtran.c ****             *bp = (png_byte)(out & 0xff);
+ 273:fltk-1.3.4-1/png/pngwtran.c ****          }
+ 274:fltk-1.3.4-1/png/pngwtran.c ****       }
+ 275:fltk-1.3.4-1/png/pngwtran.c **** 
+ 276:fltk-1.3.4-1/png/pngwtran.c ****       else
+ 277:fltk-1.3.4-1/png/pngwtran.c ****       {
+ 278:fltk-1.3.4-1/png/pngwtran.c ****          png_bytep bp;
+ 279:fltk-1.3.4-1/png/pngwtran.c ****          png_uint_32 i;
+ 280:fltk-1.3.4-1/png/pngwtran.c ****          png_uint_32 istop = channels * row_info->width;
+ 281:fltk-1.3.4-1/png/pngwtran.c **** 
+ 282:fltk-1.3.4-1/png/pngwtran.c ****          for (bp = row, i = 0; i < istop; i++)
+ 283:fltk-1.3.4-1/png/pngwtran.c ****          {
+ 284:fltk-1.3.4-1/png/pngwtran.c ****             const unsigned int c = i%channels;
+ 285:fltk-1.3.4-1/png/pngwtran.c ****             int j;
+ 286:fltk-1.3.4-1/png/pngwtran.c ****             unsigned int value, v;
+ 287:fltk-1.3.4-1/png/pngwtran.c **** 
+ 288:fltk-1.3.4-1/png/pngwtran.c ****             v = png_get_uint_16(bp);
+ 289:fltk-1.3.4-1/png/pngwtran.c ****             value = 0;
+ 290:fltk-1.3.4-1/png/pngwtran.c **** 
+ 291:fltk-1.3.4-1/png/pngwtran.c ****             for (j = shift_start[c]; j > -shift_dec[c]; j -= shift_dec[c])
+ 292:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 293:fltk-1.3.4-1/png/pngwtran.c ****                if (j > 0)
+ 294:fltk-1.3.4-1/png/pngwtran.c ****                   value |= v << j;
+ 295:fltk-1.3.4-1/png/pngwtran.c **** 
+ 296:fltk-1.3.4-1/png/pngwtran.c ****                else
+ 297:fltk-1.3.4-1/png/pngwtran.c ****                   value |= v >> (-j);
+ 298:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 299:fltk-1.3.4-1/png/pngwtran.c ****             *bp++ = (png_byte)((value >> 8) & 0xff);
+ 300:fltk-1.3.4-1/png/pngwtran.c ****             *bp++ = (png_byte)(value & 0xff);
+ 301:fltk-1.3.4-1/png/pngwtran.c ****          }
+ 302:fltk-1.3.4-1/png/pngwtran.c ****       }
+ 303:fltk-1.3.4-1/png/pngwtran.c ****    }
+ 304:fltk-1.3.4-1/png/pngwtran.c **** }
+ 305:fltk-1.3.4-1/png/pngwtran.c **** #endif
+ 306:fltk-1.3.4-1/png/pngwtran.c **** 
+ 307:fltk-1.3.4-1/png/pngwtran.c **** #ifdef PNG_WRITE_SWAP_ALPHA_SUPPORTED
+ 308:fltk-1.3.4-1/png/pngwtran.c **** static void
+ 309:fltk-1.3.4-1/png/pngwtran.c **** png_do_write_swap_alpha(png_row_infop row_info, png_bytep row)
+ 310:fltk-1.3.4-1/png/pngwtran.c **** {
+ 311:fltk-1.3.4-1/png/pngwtran.c ****    png_debug(1, "in png_do_write_swap_alpha");
+ 312:fltk-1.3.4-1/png/pngwtran.c **** 
+ 313:fltk-1.3.4-1/png/pngwtran.c ****    {
+ 314:fltk-1.3.4-1/png/pngwtran.c ****       if (row_info->color_type == PNG_COLOR_TYPE_RGB_ALPHA)
+ 315:fltk-1.3.4-1/png/pngwtran.c ****       {
+ 316:fltk-1.3.4-1/png/pngwtran.c ****          if (row_info->bit_depth == 8)
+ 317:fltk-1.3.4-1/png/pngwtran.c ****          {
+ 318:fltk-1.3.4-1/png/pngwtran.c ****             /* This converts from ARGB to RGBA */
+ 319:fltk-1.3.4-1/png/pngwtran.c ****             png_bytep sp, dp;
+ 320:fltk-1.3.4-1/png/pngwtran.c ****             png_uint_32 i;
+ 321:fltk-1.3.4-1/png/pngwtran.c ****             png_uint_32 row_width = row_info->width;
+ 322:fltk-1.3.4-1/png/pngwtran.c **** 
+ 323:fltk-1.3.4-1/png/pngwtran.c ****             for (i = 0, sp = dp = row; i < row_width; i++)
+ 324:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 325:fltk-1.3.4-1/png/pngwtran.c ****                png_byte save = *(sp++);
+ 326:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 327:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 328:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 329:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = save;
+ 330:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 331:fltk-1.3.4-1/png/pngwtran.c ****          }
+ 332:fltk-1.3.4-1/png/pngwtran.c **** 
+ 333:fltk-1.3.4-1/png/pngwtran.c **** #ifdef PNG_WRITE_16BIT_SUPPORTED
+ 334:fltk-1.3.4-1/png/pngwtran.c ****          else
+ 335:fltk-1.3.4-1/png/pngwtran.c ****          {
+ 336:fltk-1.3.4-1/png/pngwtran.c ****             /* This converts from AARRGGBB to RRGGBBAA */
+ 337:fltk-1.3.4-1/png/pngwtran.c ****             png_bytep sp, dp;
+ 338:fltk-1.3.4-1/png/pngwtran.c ****             png_uint_32 i;
+ 339:fltk-1.3.4-1/png/pngwtran.c ****             png_uint_32 row_width = row_info->width;
+ 340:fltk-1.3.4-1/png/pngwtran.c **** 
+ 341:fltk-1.3.4-1/png/pngwtran.c ****             for (i = 0, sp = dp = row; i < row_width; i++)
+ 342:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 343:fltk-1.3.4-1/png/pngwtran.c ****                png_byte save[2];
+ 344:fltk-1.3.4-1/png/pngwtran.c ****                save[0] = *(sp++);
+ 345:fltk-1.3.4-1/png/pngwtran.c ****                save[1] = *(sp++);
+ 346:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 347:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 348:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 349:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 350:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 351:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 352:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = save[0];
+ 353:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = save[1];
+ 354:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 355:fltk-1.3.4-1/png/pngwtran.c ****          }
+ 356:fltk-1.3.4-1/png/pngwtran.c **** #endif /* WRITE_16BIT */
+ 357:fltk-1.3.4-1/png/pngwtran.c ****       }
+ 358:fltk-1.3.4-1/png/pngwtran.c **** 
+ 359:fltk-1.3.4-1/png/pngwtran.c ****       else if (row_info->color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
+ 360:fltk-1.3.4-1/png/pngwtran.c ****       {
+ 361:fltk-1.3.4-1/png/pngwtran.c ****          if (row_info->bit_depth == 8)
+ 362:fltk-1.3.4-1/png/pngwtran.c ****          {
+ 363:fltk-1.3.4-1/png/pngwtran.c ****             /* This converts from AG to GA */
+ 364:fltk-1.3.4-1/png/pngwtran.c ****             png_bytep sp, dp;
+ 365:fltk-1.3.4-1/png/pngwtran.c ****             png_uint_32 i;
+ 366:fltk-1.3.4-1/png/pngwtran.c ****             png_uint_32 row_width = row_info->width;
+ 367:fltk-1.3.4-1/png/pngwtran.c **** 
+ 368:fltk-1.3.4-1/png/pngwtran.c ****             for (i = 0, sp = dp = row; i < row_width; i++)
+ 369:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 370:fltk-1.3.4-1/png/pngwtran.c ****                png_byte save = *(sp++);
+ 371:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 372:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = save;
+ 373:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 374:fltk-1.3.4-1/png/pngwtran.c ****          }
+ 375:fltk-1.3.4-1/png/pngwtran.c **** 
+ 376:fltk-1.3.4-1/png/pngwtran.c **** #ifdef PNG_WRITE_16BIT_SUPPORTED
+ 377:fltk-1.3.4-1/png/pngwtran.c ****          else
+ 378:fltk-1.3.4-1/png/pngwtran.c ****          {
+ 379:fltk-1.3.4-1/png/pngwtran.c ****             /* This converts from AAGG to GGAA */
+ 380:fltk-1.3.4-1/png/pngwtran.c ****             png_bytep sp, dp;
+ 381:fltk-1.3.4-1/png/pngwtran.c ****             png_uint_32 i;
+ 382:fltk-1.3.4-1/png/pngwtran.c ****             png_uint_32 row_width = row_info->width;
+ 383:fltk-1.3.4-1/png/pngwtran.c **** 
+ 384:fltk-1.3.4-1/png/pngwtran.c ****             for (i = 0, sp = dp = row; i < row_width; i++)
+ 385:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 386:fltk-1.3.4-1/png/pngwtran.c ****                png_byte save[2];
+ 387:fltk-1.3.4-1/png/pngwtran.c ****                save[0] = *(sp++);
+ 388:fltk-1.3.4-1/png/pngwtran.c ****                save[1] = *(sp++);
+ 389:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 390:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 391:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = save[0];
+ 392:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = save[1];
+ 393:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 394:fltk-1.3.4-1/png/pngwtran.c ****          }
+ 395:fltk-1.3.4-1/png/pngwtran.c **** #endif /* WRITE_16BIT */
+ 396:fltk-1.3.4-1/png/pngwtran.c ****       }
+ 397:fltk-1.3.4-1/png/pngwtran.c ****    }
+ 398:fltk-1.3.4-1/png/pngwtran.c **** }
+ 399:fltk-1.3.4-1/png/pngwtran.c **** #endif
+ 400:fltk-1.3.4-1/png/pngwtran.c **** 
+ 401:fltk-1.3.4-1/png/pngwtran.c **** #ifdef PNG_WRITE_INVERT_ALPHA_SUPPORTED
+ 402:fltk-1.3.4-1/png/pngwtran.c **** static void
+ 403:fltk-1.3.4-1/png/pngwtran.c **** png_do_write_invert_alpha(png_row_infop row_info, png_bytep row)
+ 404:fltk-1.3.4-1/png/pngwtran.c **** {
+ 405:fltk-1.3.4-1/png/pngwtran.c ****    png_debug(1, "in png_do_write_invert_alpha");
+ 406:fltk-1.3.4-1/png/pngwtran.c **** 
+ 407:fltk-1.3.4-1/png/pngwtran.c ****    {
+ 408:fltk-1.3.4-1/png/pngwtran.c ****       if (row_info->color_type == PNG_COLOR_TYPE_RGB_ALPHA)
+ 409:fltk-1.3.4-1/png/pngwtran.c ****       {
+ 410:fltk-1.3.4-1/png/pngwtran.c ****          if (row_info->bit_depth == 8)
+ 411:fltk-1.3.4-1/png/pngwtran.c ****          {
+ 412:fltk-1.3.4-1/png/pngwtran.c ****             /* This inverts the alpha channel in RGBA */
+ 413:fltk-1.3.4-1/png/pngwtran.c ****             png_bytep sp, dp;
+ 414:fltk-1.3.4-1/png/pngwtran.c ****             png_uint_32 i;
+ 415:fltk-1.3.4-1/png/pngwtran.c ****             png_uint_32 row_width = row_info->width;
+ 416:fltk-1.3.4-1/png/pngwtran.c **** 
+ 417:fltk-1.3.4-1/png/pngwtran.c ****             for (i = 0, sp = dp = row; i < row_width; i++)
+ 418:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 419:fltk-1.3.4-1/png/pngwtran.c ****                /* Does nothing
+ 420:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 421:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 422:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 423:fltk-1.3.4-1/png/pngwtran.c ****                */
+ 424:fltk-1.3.4-1/png/pngwtran.c ****                sp+=3; dp = sp;
+ 425:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = (png_byte)(255 - *(sp++));
+ 426:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 427:fltk-1.3.4-1/png/pngwtran.c ****          }
+ 428:fltk-1.3.4-1/png/pngwtran.c **** 
+ 429:fltk-1.3.4-1/png/pngwtran.c **** #ifdef PNG_WRITE_16BIT_SUPPORTED
+ 430:fltk-1.3.4-1/png/pngwtran.c ****          else
+ 431:fltk-1.3.4-1/png/pngwtran.c ****          {
+ 432:fltk-1.3.4-1/png/pngwtran.c ****             /* This inverts the alpha channel in RRGGBBAA */
+ 433:fltk-1.3.4-1/png/pngwtran.c ****             png_bytep sp, dp;
+ 434:fltk-1.3.4-1/png/pngwtran.c ****             png_uint_32 i;
+ 435:fltk-1.3.4-1/png/pngwtran.c ****             png_uint_32 row_width = row_info->width;
+ 436:fltk-1.3.4-1/png/pngwtran.c **** 
+ 437:fltk-1.3.4-1/png/pngwtran.c ****             for (i = 0, sp = dp = row; i < row_width; i++)
+ 438:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 439:fltk-1.3.4-1/png/pngwtran.c ****                /* Does nothing
+ 440:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 441:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 442:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 443:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 444:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 445:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 446:fltk-1.3.4-1/png/pngwtran.c ****                */
+ 447:fltk-1.3.4-1/png/pngwtran.c ****                sp+=6; dp = sp;
+ 448:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = (png_byte)(255 - *(sp++));
+ 449:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = (png_byte)(255 - *(sp++));
+ 450:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 451:fltk-1.3.4-1/png/pngwtran.c ****          }
+ 452:fltk-1.3.4-1/png/pngwtran.c **** #endif /* WRITE_16BIT */
+ 453:fltk-1.3.4-1/png/pngwtran.c ****       }
+ 454:fltk-1.3.4-1/png/pngwtran.c **** 
+ 455:fltk-1.3.4-1/png/pngwtran.c ****       else if (row_info->color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
+ 456:fltk-1.3.4-1/png/pngwtran.c ****       {
+ 457:fltk-1.3.4-1/png/pngwtran.c ****          if (row_info->bit_depth == 8)
+ 458:fltk-1.3.4-1/png/pngwtran.c ****          {
+ 459:fltk-1.3.4-1/png/pngwtran.c ****             /* This inverts the alpha channel in GA */
+ 460:fltk-1.3.4-1/png/pngwtran.c ****             png_bytep sp, dp;
+ 461:fltk-1.3.4-1/png/pngwtran.c ****             png_uint_32 i;
+ 462:fltk-1.3.4-1/png/pngwtran.c ****             png_uint_32 row_width = row_info->width;
+ 463:fltk-1.3.4-1/png/pngwtran.c **** 
+ 464:fltk-1.3.4-1/png/pngwtran.c ****             for (i = 0, sp = dp = row; i < row_width; i++)
+ 465:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 466:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 467:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = (png_byte)(255 - *(sp++));
+ 468:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 469:fltk-1.3.4-1/png/pngwtran.c ****          }
+ 470:fltk-1.3.4-1/png/pngwtran.c **** 
+ 471:fltk-1.3.4-1/png/pngwtran.c **** #ifdef PNG_WRITE_16BIT_SUPPORTED
+ 472:fltk-1.3.4-1/png/pngwtran.c ****          else
+ 473:fltk-1.3.4-1/png/pngwtran.c ****          {
+ 474:fltk-1.3.4-1/png/pngwtran.c ****             /* This inverts the alpha channel in GGAA */
+ 475:fltk-1.3.4-1/png/pngwtran.c ****             png_bytep sp, dp;
+ 476:fltk-1.3.4-1/png/pngwtran.c ****             png_uint_32 i;
+ 477:fltk-1.3.4-1/png/pngwtran.c ****             png_uint_32 row_width = row_info->width;
+ 478:fltk-1.3.4-1/png/pngwtran.c **** 
+ 479:fltk-1.3.4-1/png/pngwtran.c ****             for (i = 0, sp = dp = row; i < row_width; i++)
+ 480:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 481:fltk-1.3.4-1/png/pngwtran.c ****                /* Does nothing
+ 482:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 483:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 484:fltk-1.3.4-1/png/pngwtran.c ****                */
+ 485:fltk-1.3.4-1/png/pngwtran.c ****                sp+=2; dp = sp;
+ 486:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = (png_byte)(255 - *(sp++));
+ 487:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = (png_byte)(255 - *(sp++));
+ 488:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 489:fltk-1.3.4-1/png/pngwtran.c ****          }
+ 490:fltk-1.3.4-1/png/pngwtran.c **** #endif /* WRITE_16BIT */
+ 491:fltk-1.3.4-1/png/pngwtran.c ****       }
+ 492:fltk-1.3.4-1/png/pngwtran.c ****    }
+ 493:fltk-1.3.4-1/png/pngwtran.c **** }
+ 494:fltk-1.3.4-1/png/pngwtran.c **** #endif
+ 495:fltk-1.3.4-1/png/pngwtran.c **** 
+ 496:fltk-1.3.4-1/png/pngwtran.c **** /* Transform the data according to the user's wishes.  The order of
+ 497:fltk-1.3.4-1/png/pngwtran.c ****  * transformations is significant.
+ 498:fltk-1.3.4-1/png/pngwtran.c ****  */
+ 499:fltk-1.3.4-1/png/pngwtran.c **** void /* PRIVATE */
+ 500:fltk-1.3.4-1/png/pngwtran.c **** png_do_write_transformations(png_structrp png_ptr, png_row_infop row_info)
+ 501:fltk-1.3.4-1/png/pngwtran.c **** {
+  17              		.loc 1 501 0
+  18              		.cfi_startproc
+  19              	.LVL0:
+  20 0000 4156     		pushq	%r14
+  21              		.cfi_def_cfa_offset 16
+  22              		.cfi_offset 14, -16
+  23 0002 4155     		pushq	%r13
+  24              		.cfi_def_cfa_offset 24
+  25              		.cfi_offset 13, -24
+  26 0004 4154     		pushq	%r12
+  27              		.cfi_def_cfa_offset 32
+  28              		.cfi_offset 12, -32
+  29 0006 55       		pushq	%rbp
+  30              		.cfi_def_cfa_offset 40
+  31              		.cfi_offset 6, -40
+  32 0007 53       		pushq	%rbx
+  33              		.cfi_def_cfa_offset 48
+  34              		.cfi_offset 3, -48
+  35 0008 4883EC30 		subq	$48, %rsp
+  36              		.cfi_def_cfa_offset 96
+  37              		.loc 1 501 0
+  38 000c 64488B04 		movq	%fs:40, %rax
+  38      25280000 
+  38      00
+  39 0015 48894424 		movq	%rax, 40(%rsp)
+  39      28
+  40 001a 31C0     		xorl	%eax, %eax
+ 502:fltk-1.3.4-1/png/pngwtran.c ****    png_debug(1, "in png_do_write_transformations");
+ 503:fltk-1.3.4-1/png/pngwtran.c **** 
+ 504:fltk-1.3.4-1/png/pngwtran.c ****    if (png_ptr == NULL)
+  41              		.loc 1 504 0
+  42 001c 4885FF   		testq	%rdi, %rdi
+  43 001f 746E     		je	.L1
+ 505:fltk-1.3.4-1/png/pngwtran.c ****       return;
+ 506:fltk-1.3.4-1/png/pngwtran.c **** 
+ 507:fltk-1.3.4-1/png/pngwtran.c **** #ifdef PNG_WRITE_USER_TRANSFORM_SUPPORTED
+ 508:fltk-1.3.4-1/png/pngwtran.c ****    if ((png_ptr->transformations & PNG_USER_TRANSFORM) != 0)
+  44              		.loc 1 508 0
+  45 0021 8B973401 		movl	308(%rdi), %edx
+  45      0000
+  46 0027 4889FB   		movq	%rdi, %rbx
+  47 002a 4889F5   		movq	%rsi, %rbp
+  48 002d F7C20000 		testl	$1048576, %edx
+  48      1000
+  49 0033 757B     		jne	.L181
+  50              	.L4:
+ 509:fltk-1.3.4-1/png/pngwtran.c ****       if (png_ptr->write_user_transform_fn != NULL)
+ 510:fltk-1.3.4-1/png/pngwtran.c ****          (*(png_ptr->write_user_transform_fn)) /* User write transform
+ 511:fltk-1.3.4-1/png/pngwtran.c ****                                                  function */
+ 512:fltk-1.3.4-1/png/pngwtran.c ****              (png_ptr,  /* png_ptr */
+ 513:fltk-1.3.4-1/png/pngwtran.c ****              row_info,  /* row_info: */
+ 514:fltk-1.3.4-1/png/pngwtran.c ****                 /*  png_uint_32 width;       width of row */
+ 515:fltk-1.3.4-1/png/pngwtran.c ****                 /*  png_size_t rowbytes;     number of bytes in row */
+ 516:fltk-1.3.4-1/png/pngwtran.c ****                 /*  png_byte color_type;     color type of pixels */
+ 517:fltk-1.3.4-1/png/pngwtran.c ****                 /*  png_byte bit_depth;      bit depth of samples */
+ 518:fltk-1.3.4-1/png/pngwtran.c ****                 /*  png_byte channels;       number of channels (1-4) */
+ 519:fltk-1.3.4-1/png/pngwtran.c ****                 /*  png_byte pixel_depth;    bits per pixel (depth*channels) */
+ 520:fltk-1.3.4-1/png/pngwtran.c ****              png_ptr->row_buf + 1);      /* start of pixel data for row */
+ 521:fltk-1.3.4-1/png/pngwtran.c **** #endif
+ 522:fltk-1.3.4-1/png/pngwtran.c **** 
+ 523:fltk-1.3.4-1/png/pngwtran.c **** #ifdef PNG_WRITE_FILLER_SUPPORTED
+ 524:fltk-1.3.4-1/png/pngwtran.c ****    if ((png_ptr->transformations & PNG_FILLER) != 0)
+  51              		.loc 1 524 0
+  52 0035 F6C680   		testb	$128, %dh
+  53 0038 0F85A100 		jne	.L182
+  53      0000
+  54              	.LVL1:
+  55              	.L5:
+ 525:fltk-1.3.4-1/png/pngwtran.c ****       png_do_strip_channel(row_info, png_ptr->row_buf + 1,
+ 526:fltk-1.3.4-1/png/pngwtran.c ****          !(png_ptr->flags & PNG_FLAG_FILLER_AFTER));
+ 527:fltk-1.3.4-1/png/pngwtran.c **** #endif
+ 528:fltk-1.3.4-1/png/pngwtran.c **** 
+ 529:fltk-1.3.4-1/png/pngwtran.c **** #ifdef PNG_WRITE_PACKSWAP_SUPPORTED
+ 530:fltk-1.3.4-1/png/pngwtran.c ****    if ((png_ptr->transformations & PNG_PACKSWAP) != 0)
+  56              		.loc 1 530 0
+  57 003e F7C20000 		testl	$65536, %edx
+  57      0100
+  58 0044 0F85C900 		jne	.L183
+  58      0000
+  59              	.L6:
+ 531:fltk-1.3.4-1/png/pngwtran.c ****       png_do_packswap(row_info, png_ptr->row_buf + 1);
+ 532:fltk-1.3.4-1/png/pngwtran.c **** #endif
+ 533:fltk-1.3.4-1/png/pngwtran.c **** 
+ 534:fltk-1.3.4-1/png/pngwtran.c **** #ifdef PNG_WRITE_PACK_SUPPORTED
+ 535:fltk-1.3.4-1/png/pngwtran.c ****    if ((png_ptr->transformations & PNG_PACK) != 0)
+  60              		.loc 1 535 0
+  61 004a F6C204   		testb	$4, %dl
+  62 004d 0F85E200 		jne	.L184
+  62      0000
+  63              	.L7:
+ 536:fltk-1.3.4-1/png/pngwtran.c ****       png_do_pack(row_info, png_ptr->row_buf + 1,
+ 537:fltk-1.3.4-1/png/pngwtran.c ****           (png_uint_32)png_ptr->bit_depth);
+ 538:fltk-1.3.4-1/png/pngwtran.c **** #endif
+ 539:fltk-1.3.4-1/png/pngwtran.c **** 
+ 540:fltk-1.3.4-1/png/pngwtran.c **** #ifdef PNG_WRITE_SWAP_SUPPORTED
+ 541:fltk-1.3.4-1/png/pngwtran.c **** #  ifdef PNG_16BIT_SUPPORTED
+ 542:fltk-1.3.4-1/png/pngwtran.c ****    if ((png_ptr->transformations & PNG_SWAP_BYTES) != 0)
+  64              		.loc 1 542 0
+  65 0053 F6C210   		testb	$16, %dl
+  66 0056 0F859C03 		jne	.L185
+  66      0000
+  67              	.L28:
+ 543:fltk-1.3.4-1/png/pngwtran.c ****       png_do_swap(row_info, png_ptr->row_buf + 1);
+ 544:fltk-1.3.4-1/png/pngwtran.c **** #  endif
+ 545:fltk-1.3.4-1/png/pngwtran.c **** #endif
+ 546:fltk-1.3.4-1/png/pngwtran.c **** 
+ 547:fltk-1.3.4-1/png/pngwtran.c **** #ifdef PNG_WRITE_SHIFT_SUPPORTED
+ 548:fltk-1.3.4-1/png/pngwtran.c ****    if ((png_ptr->transformations & PNG_SHIFT) != 0)
+  68              		.loc 1 548 0
+  69 005c F6C208   		testb	$8, %dl
+  70 005f 0F857B02 		jne	.L186
+  70      0000
+  71              	.L29:
+ 549:fltk-1.3.4-1/png/pngwtran.c ****       png_do_shift(row_info, png_ptr->row_buf + 1,
+ 550:fltk-1.3.4-1/png/pngwtran.c ****           &(png_ptr->shift));
+ 551:fltk-1.3.4-1/png/pngwtran.c **** #endif
+ 552:fltk-1.3.4-1/png/pngwtran.c **** 
+ 553:fltk-1.3.4-1/png/pngwtran.c **** #ifdef PNG_WRITE_SWAP_ALPHA_SUPPORTED
+ 554:fltk-1.3.4-1/png/pngwtran.c ****    if ((png_ptr->transformations & PNG_SWAP_ALPHA) != 0)
+  72              		.loc 1 554 0
+  73 0065 F7C20000 		testl	$131072, %edx
+  73      0200
+  74 006b 0F858F01 		jne	.L187
+  74      0000
+ 555:fltk-1.3.4-1/png/pngwtran.c ****       png_do_write_swap_alpha(row_info, png_ptr->row_buf + 1);
+ 556:fltk-1.3.4-1/png/pngwtran.c **** #endif
+ 557:fltk-1.3.4-1/png/pngwtran.c **** 
+ 558:fltk-1.3.4-1/png/pngwtran.c **** #ifdef PNG_WRITE_INVERT_ALPHA_SUPPORTED
+ 559:fltk-1.3.4-1/png/pngwtran.c ****    if ((png_ptr->transformations & PNG_INVERT_ALPHA) != 0)
+  75              		.loc 1 559 0
+  76 0071 F7C20000 		testl	$524288, %edx
+  76      0800
+  77 0077 0F850302 		jne	.L188
+  77      0000
+  78              	.L62:
+ 560:fltk-1.3.4-1/png/pngwtran.c ****       png_do_write_invert_alpha(row_info, png_ptr->row_buf + 1);
+ 561:fltk-1.3.4-1/png/pngwtran.c **** #endif
+ 562:fltk-1.3.4-1/png/pngwtran.c **** 
+ 563:fltk-1.3.4-1/png/pngwtran.c **** #ifdef PNG_WRITE_BGR_SUPPORTED
+ 564:fltk-1.3.4-1/png/pngwtran.c ****    if ((png_ptr->transformations & PNG_BGR) != 0)
+  79              		.loc 1 564 0
+  80 007d F6C201   		testb	$1, %dl
+  81 0080 0F855A01 		jne	.L189
+  81      0000
+  82              	.L80:
+ 565:fltk-1.3.4-1/png/pngwtran.c ****       png_do_bgr(row_info, png_ptr->row_buf + 1);
+ 566:fltk-1.3.4-1/png/pngwtran.c **** #endif
+ 567:fltk-1.3.4-1/png/pngwtran.c **** 
+ 568:fltk-1.3.4-1/png/pngwtran.c **** #ifdef PNG_WRITE_INVERT_SUPPORTED
+ 569:fltk-1.3.4-1/png/pngwtran.c ****    if ((png_ptr->transformations & PNG_INVERT_MONO) != 0)
+  83              		.loc 1 569 0
+  84 0086 83E220   		andl	$32, %edx
+  85 0089 0F851901 		jne	.L190
+  85      0000
+  86              	.LVL2:
+  87              	.L1:
+ 570:fltk-1.3.4-1/png/pngwtran.c ****       png_do_invert(row_info, png_ptr->row_buf + 1);
+ 571:fltk-1.3.4-1/png/pngwtran.c **** #endif
+ 572:fltk-1.3.4-1/png/pngwtran.c **** }
+  88              		.loc 1 572 0
+  89 008f 488B4424 		movq	40(%rsp), %rax
+  89      28
+  90 0094 64483304 		xorq	%fs:40, %rax
+  90      25280000 
+  90      00
+  91 009d 0F85C607 		jne	.L177
+  91      0000
+  92 00a3 4883C430 		addq	$48, %rsp
+  93              		.cfi_remember_state
+  94              		.cfi_def_cfa_offset 48
+  95 00a7 5B       		popq	%rbx
+  96              		.cfi_def_cfa_offset 40
+  97 00a8 5D       		popq	%rbp
+  98              		.cfi_def_cfa_offset 32
+  99 00a9 415C     		popq	%r12
+ 100              		.cfi_def_cfa_offset 24
+ 101 00ab 415D     		popq	%r13
+ 102              		.cfi_def_cfa_offset 16
+ 103 00ad 415E     		popq	%r14
+ 104              		.cfi_def_cfa_offset 8
+ 105 00af C3       		ret
+ 106              	.LVL3:
+ 107              		.p2align 4,,10
+ 108              		.p2align 3
+ 109              	.L181:
+ 110              		.cfi_restore_state
+ 509:fltk-1.3.4-1/png/pngwtran.c ****          (*(png_ptr->write_user_transform_fn)) /* User write transform
+ 111              		.loc 1 509 0
+ 112 00b0 488B8718 		movq	280(%rdi), %rax
+ 112      010000
+ 113 00b7 4885C0   		testq	%rax, %rax
+ 114 00ba 0F8475FF 		je	.L4
+ 114      FFFF
+ 510:fltk-1.3.4-1/png/pngwtran.c ****                                                  function */
+ 115              		.loc 1 510 0
+ 116 00c0 488BB728 		movq	552(%rdi), %rsi
+ 116      020000
+ 117              	.LVL4:
+ 118 00c7 488D5601 		leaq	1(%rsi), %rdx
+ 119 00cb 4889EE   		movq	%rbp, %rsi
+ 120 00ce FFD0     		call	*%rax
+ 121              	.LVL5:
+ 122 00d0 8B933401 		movl	308(%rbx), %edx
+ 122      0000
+ 524:fltk-1.3.4-1/png/pngwtran.c ****       png_do_strip_channel(row_info, png_ptr->row_buf + 1,
+ 123              		.loc 1 524 0
+ 124 00d6 F6C680   		testb	$128, %dh
+ 125 00d9 0F845FFF 		je	.L5
+ 125      FFFF
+ 126              	.L182:
+ 525:fltk-1.3.4-1/png/pngwtran.c ****          !(png_ptr->flags & PNG_FLAG_FILLER_AFTER));
+ 127              		.loc 1 525 0
+ 128 00df 8B933001 		movl	304(%rbx), %edx
+ 128      0000
+ 129 00e5 488B8328 		movq	552(%rbx), %rax
+ 129      020000
+ 130 00ec 4889EF   		movq	%rbp, %rdi
+ 131 00ef C1EA07   		shrl	$7, %edx
+ 132 00f2 488D7001 		leaq	1(%rax), %rsi
+ 133 00f6 83F201   		xorl	$1, %edx
+ 134 00f9 83E201   		andl	$1, %edx
+ 135 00fc E8000000 		call	png_do_strip_channel
+ 135      00
+ 136              	.LVL6:
+ 137 0101 8B933401 		movl	308(%rbx), %edx
+ 137      0000
+ 530:fltk-1.3.4-1/png/pngwtran.c ****       png_do_packswap(row_info, png_ptr->row_buf + 1);
+ 138              		.loc 1 530 0
+ 139 0107 F7C20000 		testl	$65536, %edx
+ 139      0100
+ 140 010d 0F8437FF 		je	.L6
+ 140      FFFF
+ 141              	.L183:
+ 531:fltk-1.3.4-1/png/pngwtran.c **** #endif
+ 142              		.loc 1 531 0
+ 143 0113 488B8328 		movq	552(%rbx), %rax
+ 143      020000
+ 144 011a 4889EF   		movq	%rbp, %rdi
+ 145 011d 488D7001 		leaq	1(%rax), %rsi
+ 146 0121 E8000000 		call	png_do_packswap
+ 146      00
+ 147              	.LVL7:
+ 148 0126 8B933401 		movl	308(%rbx), %edx
+ 148      0000
+ 535:fltk-1.3.4-1/png/pngwtran.c ****       png_do_pack(row_info, png_ptr->row_buf + 1,
+ 149              		.loc 1 535 0
+ 150 012c F6C204   		testb	$4, %dl
+ 151 012f 0F841EFF 		je	.L7
+ 151      FFFF
+ 152              	.L184:
+ 153              	.LVL8:
+ 154              	.LBB46:
+ 155              	.LBB47:
+  29:fltk-1.3.4-1/png/pngwtran.c ****       row_info->channels == 1)
+ 156              		.loc 1 29 0
+ 157 0135 8B4510   		movl	16(%rbp), %eax
+ 158 0138 2500FFFF 		andl	$16776960, %eax
+ 158      00
+ 159 013d 3D000801 		cmpl	$67584, %eax
+ 159      00
+ 160 0142 0F850BFF 		jne	.L7
+ 160      FFFF
+ 161              	.LBE47:
+ 162              	.LBE46:
+ 537:fltk-1.3.4-1/png/pngwtran.c **** #endif
+ 163              		.loc 1 537 0
+ 164 0148 0FB68378 		movzbl	632(%rbx), %eax
+ 164      020000
+ 536:fltk-1.3.4-1/png/pngwtran.c ****           (png_uint_32)png_ptr->bit_depth);
+ 165              		.loc 1 536 0
+ 166 014f 488B8B28 		movq	552(%rbx), %rcx
+ 166      020000
+ 167 0156 488D5101 		leaq	1(%rcx), %rdx
+ 168              	.LBB62:
+ 169              	.LBB58:
+  32:fltk-1.3.4-1/png/pngwtran.c ****       {
+ 170              		.loc 1 32 0
+ 171 015a 3C02     		cmpb	$2, %al
+ 172 015c 0F84BA05 		je	.L9
+ 172      0000
+ 173 0162 3C04     		cmpb	$4, %al
+ 174 0164 0F846205 		je	.L10
+ 174      0000
+ 175 016a 3C01     		cmpb	$1, %al
+ 176 016c 0F846A04 		je	.L191
+ 176      0000
+ 177              	.LVL9:
+ 178              	.L173:
+ 179 0172 8B5500   		movl	0(%rbp), %edx
+ 180              	.L12:
+ 153:fltk-1.3.4-1/png/pngwtran.c ****       row_info->pixel_depth = (png_byte)(bit_depth * row_info->channels);
+ 181              		.loc 1 153 0
+ 182 0175 884511   		movb	%al, 17(%rbp)
+ 154:fltk-1.3.4-1/png/pngwtran.c ****       row_info->rowbytes = PNG_ROWBYTES(row_info->pixel_depth,
+ 183              		.loc 1 154 0
+ 184 0178 F66512   		mulb	18(%rbp)
+ 185              	.LVL10:
+ 155:fltk-1.3.4-1/png/pngwtran.c ****           row_info->width);
+ 186              		.loc 1 155 0
+ 187 017b 3C07     		cmpb	$7, %al
+ 154:fltk-1.3.4-1/png/pngwtran.c ****       row_info->rowbytes = PNG_ROWBYTES(row_info->pixel_depth,
+ 188              		.loc 1 154 0
+ 189 017d 884513   		movb	%al, 19(%rbp)
+ 155:fltk-1.3.4-1/png/pngwtran.c ****           row_info->width);
+ 190              		.loc 1 155 0
+ 191 0180 0F864204 		jbe	.L26
+ 191      0000
+ 192 0186 C0E803   		shrb	$3, %al
+ 193 0189 0FB6C8   		movzbl	%al, %ecx
+ 194 018c 89D0     		movl	%edx, %eax
+ 195 018e 480FAFC1 		imulq	%rcx, %rax
+ 196              	.L27:
+ 197 0192 48894508 		movq	%rax, 8(%rbp)
+ 198 0196 8B933401 		movl	308(%rbx), %edx
+ 198      0000
+ 199 019c E9B2FEFF 		jmp	.L7
+ 199      FF
+ 200              	.LVL11:
+ 201              		.p2align 4,,10
+ 202 01a1 0F1F8000 		.p2align 3
+ 202      000000
+ 203              	.L190:
+ 204              	.LBE58:
+ 205              	.LBE62:
+ 570:fltk-1.3.4-1/png/pngwtran.c **** #endif
+ 206              		.loc 1 570 0
+ 207 01a8 488B4424 		movq	40(%rsp), %rax
+ 207      28
+ 208 01ad 64483304 		xorq	%fs:40, %rax
+ 208      25280000 
+ 208      00
+ 209 01b6 0F85AD06 		jne	.L177
+ 209      0000
+ 210 01bc 488BB328 		movq	552(%rbx), %rsi
+ 210      020000
+ 211              		.loc 1 572 0
+ 212 01c3 4883C430 		addq	$48, %rsp
+ 213              		.cfi_remember_state
+ 214              		.cfi_def_cfa_offset 48
+ 570:fltk-1.3.4-1/png/pngwtran.c **** #endif
+ 215              		.loc 1 570 0
+ 216 01c7 4889EF   		movq	%rbp, %rdi
+ 217              		.loc 1 572 0
+ 218 01ca 5B       		popq	%rbx
+ 219              		.cfi_def_cfa_offset 40
+ 220              	.LVL12:
+ 221 01cb 5D       		popq	%rbp
+ 222              		.cfi_def_cfa_offset 32
+ 223              	.LVL13:
+ 224 01cc 415C     		popq	%r12
+ 225              		.cfi_def_cfa_offset 24
+ 226 01ce 415D     		popq	%r13
+ 227              		.cfi_def_cfa_offset 16
+ 228 01d0 415E     		popq	%r14
+ 229              		.cfi_def_cfa_offset 8
+ 570:fltk-1.3.4-1/png/pngwtran.c **** #endif
+ 230              		.loc 1 570 0
+ 231 01d2 4883C601 		addq	$1, %rsi
+ 232 01d6 E9000000 		jmp	png_do_invert
+ 232      00
+ 233              	.LVL14:
+ 234 01db 0F1F4400 		.p2align 4,,10
+ 234      00
+ 235              		.p2align 3
+ 236              	.L189:
+ 237              		.cfi_restore_state
+ 565:fltk-1.3.4-1/png/pngwtran.c **** #endif
+ 238              		.loc 1 565 0
+ 239 01e0 488B8328 		movq	552(%rbx), %rax
+ 239      020000
+ 240 01e7 4889EF   		movq	%rbp, %rdi
+ 241 01ea 488D7001 		leaq	1(%rax), %rsi
+ 242 01ee E8000000 		call	png_do_bgr
+ 242      00
+ 243              	.LVL15:
+ 244 01f3 8B933401 		movl	308(%rbx), %edx
+ 244      0000
+ 245 01f9 E988FEFF 		jmp	.L80
+ 245      FF
+ 246 01fe 6690     		.p2align 4,,10
+ 247              		.p2align 3
+ 248              	.L187:
+ 249 0200 0FB64D10 		movzbl	16(%rbp), %ecx
+ 555:fltk-1.3.4-1/png/pngwtran.c **** #endif
+ 250              		.loc 1 555 0
+ 251 0204 488BB328 		movq	552(%rbx), %rsi
+ 251      020000
+ 252 020b 448B4500 		movl	0(%rbp), %r8d
+ 253 020f 488D4601 		leaq	1(%rsi), %rax
+ 254              	.LVL16:
+ 255              	.LBB63:
+ 256              	.LBB64:
+ 314:fltk-1.3.4-1/png/pngwtran.c ****       {
+ 257              		.loc 1 314 0
+ 258 0213 80F906   		cmpb	$6, %cl
+ 259 0216 0F844602 		je	.L192
+ 259      0000
+ 359:fltk-1.3.4-1/png/pngwtran.c ****       {
+ 260              		.loc 1 359 0
+ 261 021c 80F904   		cmpb	$4, %cl
+ 262 021f 0F8558FE 		jne	.L62
+ 262      FFFF
+ 361:fltk-1.3.4-1/png/pngwtran.c ****          {
+ 263              		.loc 1 361 0
+ 264 0225 807D1108 		cmpb	$8, 17(%rbp)
+ 265 0229 0F84D205 		je	.L63
+ 265      0000
+ 266              	.LVL17:
+ 267 022f 418D48FF 		leal	-1(%r8), %ecx
+ 268              	.LBB65:
+ 384:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 269              		.loc 1 384 0
+ 270 0233 4585C0   		testl	%r8d, %r8d
+ 271 0236 488D7C8E 		leaq	5(%rsi,%rcx,4), %rdi
+ 271      05
+ 272 023b 0F84ED03 		je	.L171
+ 272      0000
+ 273              	.LVL18:
+ 274              		.p2align 4,,10
+ 275 0241 0F1F8000 		.p2align 3
+ 275      000000
+ 276              	.L68:
+ 277              	.LBB66:
+ 389:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 278              		.loc 1 389 0
+ 279 0248 0FB67002 		movzbl	2(%rax), %esi
+ 387:fltk-1.3.4-1/png/pngwtran.c ****                save[1] = *(sp++);
+ 280              		.loc 1 387 0
+ 281 024c 0FB608   		movzbl	(%rax), %ecx
+ 282              	.LVL19:
+ 283 024f 4883C004 		addq	$4, %rax
+ 284              	.LVL20:
+ 388:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 285              		.loc 1 388 0
+ 286 0253 0FB650FD 		movzbl	-3(%rax), %edx
+ 287              	.LVL21:
+ 389:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 288              		.loc 1 389 0
+ 289 0257 408870FC 		movb	%sil, -4(%rax)
+ 290              	.LVL22:
+ 390:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = save[0];
+ 291              		.loc 1 390 0
+ 292 025b 0FB670FF 		movzbl	-1(%rax), %esi
+ 293              	.LBE66:
+ 384:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 294              		.loc 1 384 0
+ 295 025f 4839F8   		cmpq	%rdi, %rax
+ 296              	.LBB67:
+ 391:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = save[1];
+ 297              		.loc 1 391 0
+ 298 0262 8848FE   		movb	%cl, -2(%rax)
+ 392:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 299              		.loc 1 392 0
+ 300 0265 8850FF   		movb	%dl, -1(%rax)
+ 390:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = save[0];
+ 301              		.loc 1 390 0
+ 302 0268 408870FD 		movb	%sil, -3(%rax)
+ 303              	.LVL23:
+ 304              	.LBE67:
+ 384:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 305              		.loc 1 384 0
+ 306 026c 75DA     		jne	.L68
+ 307              	.LVL24:
+ 308              	.L174:
+ 309 026e 8B933401 		movl	308(%rbx), %edx
+ 309      0000
+ 310              	.LBE65:
+ 311              	.LBE64:
+ 312              	.LBE63:
+ 559:fltk-1.3.4-1/png/pngwtran.c ****       png_do_write_invert_alpha(row_info, png_ptr->row_buf + 1);
+ 313              		.loc 1 559 0
+ 314 0274 F7C20000 		testl	$524288, %edx
+ 314      0800
+ 315 027a 0F84FDFD 		je	.L62
+ 315      FFFF
+ 316              	.LVL25:
+ 317              		.p2align 4,,10
+ 318              		.p2align 3
+ 319              	.L188:
+ 320 0280 0FB64D10 		movzbl	16(%rbp), %ecx
+ 560:fltk-1.3.4-1/png/pngwtran.c **** #endif
+ 321              		.loc 1 560 0
+ 322 0284 488B8328 		movq	552(%rbx), %rax
+ 322      020000
+ 323 028b 8B7500   		movl	0(%rbp), %esi
+ 324 028e 4883C001 		addq	$1, %rax
+ 325              	.LVL26:
+ 326              	.LBB79:
+ 327              	.LBB80:
+ 408:fltk-1.3.4-1/png/pngwtran.c ****       {
+ 328              		.loc 1 408 0
+ 329 0292 80F906   		cmpb	$6, %cl
+ 330 0295 0F843002 		je	.L193
+ 330      0000
+ 455:fltk-1.3.4-1/png/pngwtran.c ****       {
+ 331              		.loc 1 455 0
+ 332 029b 80F904   		cmpb	$4, %cl
+ 333 029e 0F85D9FD 		jne	.L62
+ 333      FFFF
+ 457:fltk-1.3.4-1/png/pngwtran.c ****          {
+ 334              		.loc 1 457 0
+ 335 02a4 807D1108 		cmpb	$8, 17(%rbp)
+ 336 02a8 0F847D05 		je	.L75
+ 336      0000
+ 337              	.LVL27:
+ 338 02ae 8D56FF   		leal	-1(%rsi), %edx
+ 339              	.LBB81:
+ 479:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 340              		.loc 1 479 0
+ 341 02b1 85F6     		testl	%esi, %esi
+ 342 02b3 488D5490 		leaq	4(%rax,%rdx,4), %rdx
+ 342      04
+ 343 02b8 7415     		je	.L176
+ 344              	.LVL28:
+ 345 02ba 660F1F44 		.p2align 4,,10
+ 345      0000
+ 346              		.p2align 3
+ 347              	.L79:
+ 486:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = (png_byte)(255 - *(sp++));
+ 348              		.loc 1 486 0
+ 349 02c0 F65002   		notb	2(%rax)
+ 350              	.LVL29:
+ 351 02c3 4883C004 		addq	$4, %rax
+ 352              	.LVL30:
+ 479:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 353              		.loc 1 479 0
+ 354 02c7 4839D0   		cmpq	%rdx, %rax
+ 487:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 355              		.loc 1 487 0
+ 356 02ca F650FF   		notb	-1(%rax)
+ 479:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 357              		.loc 1 479 0
+ 358 02cd 75F1     		jne	.L79
+ 359              	.LVL31:
+ 360              	.L176:
+ 361 02cf 8B933401 		movl	308(%rbx), %edx
+ 361      0000
+ 362 02d5 E9A3FDFF 		jmp	.L62
+ 362      FF
+ 363 02da 660F1F44 		.p2align 4,,10
+ 363      0000
+ 364              		.p2align 3
+ 365              	.L186:
+ 366              	.LBE81:
+ 367              	.LBE80:
+ 368              	.LBE79:
+ 369              	.LBB88:
+ 370              	.LBB89:
+ 175:fltk-1.3.4-1/png/pngwtran.c ****    {
+ 371              		.loc 1 175 0
+ 372 02e0 0FB64510 		movzbl	16(%rbp), %eax
+ 373              	.LBE89:
+ 374              	.LBE88:
+ 549:fltk-1.3.4-1/png/pngwtran.c ****           &(png_ptr->shift));
+ 375              		.loc 1 549 0
+ 376 02e4 488BB328 		movq	552(%rbx), %rsi
+ 376      020000
+ 377 02eb 4C8D4601 		leaq	1(%rsi), %r8
+ 378              	.LVL32:
+ 379              	.LBB111:
+ 380              	.LBB107:
+ 175:fltk-1.3.4-1/png/pngwtran.c ****    {
+ 381              		.loc 1 175 0
+ 382 02ef 3C03     		cmpb	$3, %al
+ 383 02f1 0F846EFD 		je	.L29
+ 383      FFFF
+ 384              	.LVL33:
+ 385              	.LBB90:
+ 182:fltk-1.3.4-1/png/pngwtran.c ****          shift_dec[channels] = bit_depth->red;
+ 386              		.loc 1 182 0
+ 387 02f7 0FB65511 		movzbl	17(%rbp), %edx
+ 180:fltk-1.3.4-1/png/pngwtran.c ****       {
+ 388              		.loc 1 180 0
+ 389 02fb A802     		testb	$2, %al
+ 182:fltk-1.3.4-1/png/pngwtran.c ****          shift_dec[channels] = bit_depth->red;
+ 390              		.loc 1 182 0
+ 391 02fd 89D1     		movl	%edx, %ecx
+ 180:fltk-1.3.4-1/png/pngwtran.c ****       {
+ 392              		.loc 1 180 0
+ 393 02ff 0F851101 		jne	.L194
+ 393      0000
+ 197:fltk-1.3.4-1/png/pngwtran.c ****          shift_dec[channels] = bit_depth->gray;
+ 394              		.loc 1 197 0
+ 395 0305 0FB6BBF0 		movzbl	752(%rbx), %edi
+ 395      020000
+ 396 030c 4189D1   		movl	%edx, %r9d
+ 199:fltk-1.3.4-1/png/pngwtran.c ****       }
+ 397              		.loc 1 199 0
+ 398 030f 41BB0100 		movl	$1, %r11d
+ 398      0000
+ 197:fltk-1.3.4-1/png/pngwtran.c ****          shift_dec[channels] = bit_depth->gray;
+ 399              		.loc 1 197 0
+ 400 0315 4129F9   		subl	%edi, %r9d
+ 198:fltk-1.3.4-1/png/pngwtran.c ****          channels++;
+ 401              		.loc 1 198 0
+ 402 0318 897C2410 		movl	%edi, 16(%rsp)
+ 403              	.LVL34:
+ 197:fltk-1.3.4-1/png/pngwtran.c ****          shift_dec[channels] = bit_depth->gray;
+ 404              		.loc 1 197 0
+ 405 031c 44890C24 		movl	%r9d, (%rsp)
+ 406              	.LVL35:
+ 407              	.L31:
+ 202:fltk-1.3.4-1/png/pngwtran.c ****       {
+ 408              		.loc 1 202 0
+ 409 0320 A804     		testb	$4, %al
+ 410 0322 7417     		je	.L32
+ 204:fltk-1.3.4-1/png/pngwtran.c ****          shift_dec[channels] = bit_depth->alpha;
+ 411              		.loc 1 204 0
+ 412 0324 0FB6BBF1 		movzbl	753(%rbx), %edi
+ 412      020000
+ 413 032b 4963C3   		movslq	%r11d, %rax
+ 206:fltk-1.3.4-1/png/pngwtran.c ****       }
+ 414              		.loc 1 206 0
+ 415 032e 4183C301 		addl	$1, %r11d
+ 416              	.LVL36:
+ 204:fltk-1.3.4-1/png/pngwtran.c ****          shift_dec[channels] = bit_depth->alpha;
+ 417              		.loc 1 204 0
+ 418 0332 29FA     		subl	%edi, %edx
+ 205:fltk-1.3.4-1/png/pngwtran.c ****          channels++;
+ 419              		.loc 1 205 0
+ 420 0334 897C8410 		movl	%edi, 16(%rsp,%rax,4)
+ 204:fltk-1.3.4-1/png/pngwtran.c ****          shift_dec[channels] = bit_depth->alpha;
+ 421              		.loc 1 204 0
+ 422 0338 891484   		movl	%edx, (%rsp,%rax,4)
+ 423              	.L32:
+ 210:fltk-1.3.4-1/png/pngwtran.c ****       {
+ 424              		.loc 1 210 0
+ 425 033b 80F907   		cmpb	$7, %cl
+ 426 033e 0F87CB01 		ja	.L33
+ 426      0000
+ 427              	.LVL37:
+ 428              	.LBB91:
+ 217:fltk-1.3.4-1/png/pngwtran.c ****             mask = 0x55;
+ 429              		.loc 1 217 0
+ 430 0344 0FB693F0 		movzbl	752(%rbx), %edx
+ 430      020000
+ 215:fltk-1.3.4-1/png/pngwtran.c **** 
+ 431              		.loc 1 215 0
+ 432 034b 488B4508 		movq	8(%rbp), %rax
+ 433              	.LVL38:
+ 217:fltk-1.3.4-1/png/pngwtran.c ****             mask = 0x55;
+ 434              		.loc 1 217 0
+ 435 034f 80FA01   		cmpb	$1, %dl
+ 436 0352 750B     		jne	.L92
+ 437 0354 80F902   		cmpb	$2, %cl
+ 218:fltk-1.3.4-1/png/pngwtran.c **** 
+ 438              		.loc 1 218 0
+ 439 0357 41BC5500 		movl	$85, %r12d
+ 439      0000
+ 217:fltk-1.3.4-1/png/pngwtran.c ****             mask = 0x55;
+ 440              		.loc 1 217 0
+ 441 035d 7416     		je	.L34
+ 442              	.L92:
+ 220:fltk-1.3.4-1/png/pngwtran.c ****             mask = 0x11;
+ 443              		.loc 1 220 0
+ 444 035f 80FA03   		cmpb	$3, %dl
+ 445 0362 750B     		jne	.L88
+ 446 0364 80F904   		cmpb	$4, %cl
+ 221:fltk-1.3.4-1/png/pngwtran.c **** 
+ 447              		.loc 1 221 0
+ 448 0367 41BC1100 		movl	$17, %r12d
+ 448      0000
+ 220:fltk-1.3.4-1/png/pngwtran.c ****             mask = 0x11;
+ 449              		.loc 1 220 0
+ 450 036d 7406     		je	.L34
+ 451              	.L88:
+ 224:fltk-1.3.4-1/png/pngwtran.c **** 
+ 452              		.loc 1 224 0
+ 453 036f 41BCFF00 		movl	$255, %r12d
+ 453      0000
+ 454              	.L34:
+ 455              	.LVL39:
+ 226:fltk-1.3.4-1/png/pngwtran.c ****          {
+ 456              		.loc 1 226 0
+ 457 0375 4885C0   		testq	%rax, %rax
+ 458 0378 7470     		je	.L42
+ 459 037a 8B7C2410 		movl	16(%rsp), %edi
+ 460 037e 448B1C24 		movl	(%rsp), %r11d
+ 461              	.LVL40:
+ 462 0382 4C8D6C06 		leaq	1(%rsi,%rax), %r13
+ 462      01
+ 463 0387 4189F9   		movl	%edi, %r9d
+ 464 038a 41F7D9   		negl	%r9d
+ 465              	.LVL41:
+ 466 038d 0F1F00   		.p2align 4,,10
+ 467              		.p2align 3
+ 468              	.L41:
+ 469              	.LBB92:
+ 234:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 470              		.loc 1 234 0
+ 471 0390 4539CB   		cmpl	%r9d, %r11d
+ 231:fltk-1.3.4-1/png/pngwtran.c ****             out = 0;
+ 472              		.loc 1 231 0
+ 473 0393 450FB610 		movzbl	(%r8), %r10d
+ 474              	.LVL42:
+ 234:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 475              		.loc 1 234 0
+ 476 0397 0F8E1E02 		jle	.L89
+ 476      0000
+ 477 039d 4489DE   		movl	%r11d, %esi
+ 478 03a0 4489D8   		movl	%r11d, %eax
+ 479 03a3 31D2     		xorl	%edx, %edx
+ 480 03a5 F7DE     		negl	%esi
+ 481 03a7 EB18     		jmp	.L40
+ 482              	.LVL43:
+ 483 03a9 0F1F8000 		.p2align 4,,10
+ 483      000000
+ 484              		.p2align 3
+ 485              	.L195:
+ 237:fltk-1.3.4-1/png/pngwtran.c **** 
+ 486              		.loc 1 237 0
+ 487 03b0 89C1     		movl	%eax, %ecx
+ 234:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 488              		.loc 1 234 0
+ 489 03b2 29F8     		subl	%edi, %eax
+ 490              	.LVL44:
+ 491 03b4 01FE     		addl	%edi, %esi
+ 237:fltk-1.3.4-1/png/pngwtran.c **** 
+ 492              		.loc 1 237 0
+ 493 03b6 41D3E6   		sall	%cl, %r14d
+ 494 03b9 4409F2   		orl	%r14d, %edx
+ 495              	.LVL45:
+ 234:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 496              		.loc 1 234 0
+ 497 03bc 4439C8   		cmpl	%r9d, %eax
+ 498 03bf 7E1D     		jle	.L37
+ 499              	.LVL46:
+ 500              	.L40:
+ 236:fltk-1.3.4-1/png/pngwtran.c ****                   out |= v << j;
+ 501              		.loc 1 236 0
+ 502 03c1 85C0     		testl	%eax, %eax
+ 237:fltk-1.3.4-1/png/pngwtran.c **** 
+ 503              		.loc 1 237 0
+ 504 03c3 4589D6   		movl	%r10d, %r14d
+ 236:fltk-1.3.4-1/png/pngwtran.c ****                   out |= v << j;
+ 505              		.loc 1 236 0
+ 506 03c6 7FE8     		jg	.L195
+ 240:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 507              		.loc 1 240 0
+ 508 03c8 89F1     		movl	%esi, %ecx
+ 234:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 509              		.loc 1 234 0
+ 510 03ca 29F8     		subl	%edi, %eax
+ 511              	.LVL47:
+ 512 03cc 01FE     		addl	%edi, %esi
+ 240:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 513              		.loc 1 240 0
+ 514 03ce 41D3EE   		shrl	%cl, %r14d
+ 515 03d1 4489F1   		movl	%r14d, %ecx
+ 516 03d4 4421E1   		andl	%r12d, %ecx
+ 517 03d7 09CA     		orl	%ecx, %edx
+ 518              	.LVL48:
+ 234:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 519              		.loc 1 234 0
+ 520 03d9 4439C8   		cmpl	%r9d, %eax
+ 521 03dc 7FE3     		jg	.L40
+ 522              	.LVL49:
+ 523              	.L37:
+ 243:fltk-1.3.4-1/png/pngwtran.c ****          }
+ 524              		.loc 1 243 0
+ 525 03de 418810   		movb	%dl, (%r8)
+ 526              	.LVL50:
+ 527              	.LBE92:
+ 226:fltk-1.3.4-1/png/pngwtran.c ****          {
+ 528              		.loc 1 226 0
+ 529 03e1 4983C001 		addq	$1, %r8
+ 530              	.LVL51:
+ 531 03e5 4D39E8   		cmpq	%r13, %r8
+ 532 03e8 75A6     		jne	.L41
+ 533              	.LVL52:
+ 534              	.L42:
+ 535 03ea 8B933401 		movl	308(%rbx), %edx
+ 535      0000
+ 536 03f0 E970FCFF 		jmp	.L29
+ 536      FF
+ 537              	.LVL53:
+ 538              		.p2align 4,,10
+ 539 03f5 0F1F00   		.p2align 3
+ 540              	.L185:
+ 541              	.LBE91:
+ 542              	.LBE90:
+ 543              	.LBE107:
+ 544              	.LBE111:
+ 543:fltk-1.3.4-1/png/pngwtran.c **** #  endif
+ 545              		.loc 1 543 0
+ 546 03f8 488B8328 		movq	552(%rbx), %rax
+ 546      020000
+ 547 03ff 4889EF   		movq	%rbp, %rdi
+ 548 0402 488D7001 		leaq	1(%rax), %rsi
+ 549 0406 E8000000 		call	png_do_swap
+ 549      00
+ 550              	.LVL54:
+ 551 040b 8B933401 		movl	308(%rbx), %edx
+ 551      0000
+ 552 0411 E946FCFF 		jmp	.L28
+ 552      FF
+ 553              	.LVL55:
+ 554              	.L194:
+ 555              	.LBB112:
+ 556              	.LBB108:
+ 557              	.LBB104:
+ 182:fltk-1.3.4-1/png/pngwtran.c ****          shift_dec[channels] = bit_depth->red;
+ 558              		.loc 1 182 0
+ 559 0416 0FB6BBED 		movzbl	749(%rbx), %edi
+ 559      020000
+ 560 041d 4189D1   		movl	%edx, %r9d
+ 192:fltk-1.3.4-1/png/pngwtran.c ****       }
+ 561              		.loc 1 192 0
+ 562 0420 41BB0300 		movl	$3, %r11d
+ 562      0000
+ 182:fltk-1.3.4-1/png/pngwtran.c ****          shift_dec[channels] = bit_depth->red;
+ 563              		.loc 1 182 0
+ 564 0426 4129F9   		subl	%edi, %r9d
+ 183:fltk-1.3.4-1/png/pngwtran.c ****          channels++;
+ 565              		.loc 1 183 0
+ 566 0429 897C2410 		movl	%edi, 16(%rsp)
+ 567              	.LVL56:
+ 186:fltk-1.3.4-1/png/pngwtran.c ****          shift_dec[channels] = bit_depth->green;
+ 568              		.loc 1 186 0
+ 569 042d 0FB6BBEE 		movzbl	750(%rbx), %edi
+ 569      020000
+ 182:fltk-1.3.4-1/png/pngwtran.c ****          shift_dec[channels] = bit_depth->red;
+ 570              		.loc 1 182 0
+ 571 0434 44890C24 		movl	%r9d, (%rsp)
+ 186:fltk-1.3.4-1/png/pngwtran.c ****          shift_dec[channels] = bit_depth->green;
+ 572              		.loc 1 186 0
+ 573 0438 4189D1   		movl	%edx, %r9d
+ 574 043b 4129F9   		subl	%edi, %r9d
+ 187:fltk-1.3.4-1/png/pngwtran.c ****          channels++;
+ 575              		.loc 1 187 0
+ 576 043e 897C2414 		movl	%edi, 20(%rsp)
+ 577              	.LVL57:
+ 190:fltk-1.3.4-1/png/pngwtran.c ****          shift_dec[channels] = bit_depth->blue;
+ 578              		.loc 1 190 0
+ 579 0442 0FB6BBEF 		movzbl	751(%rbx), %edi
+ 579      020000
+ 186:fltk-1.3.4-1/png/pngwtran.c ****          shift_dec[channels] = bit_depth->green;
+ 580              		.loc 1 186 0
+ 581 0449 44894C24 		movl	%r9d, 4(%rsp)
+ 581      04
+ 190:fltk-1.3.4-1/png/pngwtran.c ****          shift_dec[channels] = bit_depth->blue;
+ 582              		.loc 1 190 0
+ 583 044e 4189D1   		movl	%edx, %r9d
+ 584 0451 4129F9   		subl	%edi, %r9d
+ 191:fltk-1.3.4-1/png/pngwtran.c ****          channels++;
+ 585              		.loc 1 191 0
+ 586 0454 897C2418 		movl	%edi, 24(%rsp)
+ 587              	.LVL58:
+ 190:fltk-1.3.4-1/png/pngwtran.c ****          shift_dec[channels] = bit_depth->blue;
+ 588              		.loc 1 190 0
+ 589 0458 44894C24 		movl	%r9d, 8(%rsp)
+ 589      08
+ 590 045d E9BEFEFF 		jmp	.L31
+ 590      FF
+ 591              	.LVL59:
+ 592              	.L192:
+ 593              	.LBE104:
+ 594              	.LBE108:
+ 595              	.LBE112:
+ 596              	.LBB113:
+ 597              	.LBB77:
+ 316:fltk-1.3.4-1/png/pngwtran.c ****          {
+ 598              		.loc 1 316 0
+ 599 0462 807D1108 		cmpb	$8, 17(%rbp)
+ 600 0466 0F845503 		je	.L56
+ 600      0000
+ 601              	.LVL60:
+ 602 046c 418D48FF 		leal	-1(%r8), %ecx
+ 603              	.LBB68:
+ 341:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 604              		.loc 1 341 0
+ 605 0470 4585C0   		testl	%r8d, %r8d
+ 606 0473 488D7CCE 		leaq	9(%rsi,%rcx,8), %rdi
+ 606      09
+ 607 0478 0F84B001 		je	.L171
+ 607      0000
+ 608              	.LVL61:
+ 609 047e 6690     		.p2align 4,,10
+ 610              		.p2align 3
+ 611              	.L61:
+ 612              	.LBB69:
+ 346:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 613              		.loc 1 346 0
+ 614 0480 0FB67002 		movzbl	2(%rax), %esi
+ 344:fltk-1.3.4-1/png/pngwtran.c ****                save[1] = *(sp++);
+ 615              		.loc 1 344 0
+ 616 0484 0FB608   		movzbl	(%rax), %ecx
+ 617              	.LVL62:
+ 618 0487 4883C008 		addq	$8, %rax
+ 619              	.LVL63:
+ 345:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 620              		.loc 1 345 0
+ 621 048b 0FB650F9 		movzbl	-7(%rax), %edx
+ 622              	.LVL64:
+ 346:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 623              		.loc 1 346 0
+ 624 048f 408870F8 		movb	%sil, -8(%rax)
+ 625              	.LVL65:
+ 347:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 626              		.loc 1 347 0
+ 627 0493 0FB670FB 		movzbl	-5(%rax), %esi
+ 628 0497 408870F9 		movb	%sil, -7(%rax)
+ 629              	.LVL66:
+ 348:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 630              		.loc 1 348 0
+ 631 049b 0FB670FC 		movzbl	-4(%rax), %esi
+ 632 049f 408870FA 		movb	%sil, -6(%rax)
+ 633              	.LVL67:
+ 349:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 634              		.loc 1 349 0
+ 635 04a3 0FB670FD 		movzbl	-3(%rax), %esi
+ 636 04a7 408870FB 		movb	%sil, -5(%rax)
+ 637              	.LVL68:
+ 350:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 638              		.loc 1 350 0
+ 639 04ab 0FB670FE 		movzbl	-2(%rax), %esi
+ 640 04af 408870FC 		movb	%sil, -4(%rax)
+ 641              	.LVL69:
+ 351:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = save[0];
+ 642              		.loc 1 351 0
+ 643 04b3 0FB670FF 		movzbl	-1(%rax), %esi
+ 644              	.LBE69:
+ 341:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 645              		.loc 1 341 0
+ 646 04b7 4839F8   		cmpq	%rdi, %rax
+ 647              	.LBB70:
+ 352:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = save[1];
+ 648              		.loc 1 352 0
+ 649 04ba 8848FE   		movb	%cl, -2(%rax)
+ 353:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 650              		.loc 1 353 0
+ 651 04bd 8850FF   		movb	%dl, -1(%rax)
+ 351:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = save[0];
+ 652              		.loc 1 351 0
+ 653 04c0 408870FD 		movb	%sil, -3(%rax)
+ 654              	.LVL70:
+ 655              	.LBE70:
+ 341:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 656              		.loc 1 341 0
+ 657 04c4 75BA     		jne	.L61
+ 658 04c6 E9A3FDFF 		jmp	.L174
+ 658      FF
+ 659              	.LVL71:
+ 660              	.L193:
+ 661              	.LBE68:
+ 662              	.LBE77:
+ 663              	.LBE113:
+ 664              	.LBB114:
+ 665              	.LBB85:
+ 410:fltk-1.3.4-1/png/pngwtran.c ****          {
+ 666              		.loc 1 410 0
+ 667 04cb 807D1108 		cmpb	$8, 17(%rbp)
+ 668 04cf 0F84C602 		je	.L70
+ 668      0000
+ 669              	.LVL72:
+ 670 04d5 8D56FF   		leal	-1(%rsi), %edx
+ 671              	.LBB82:
+ 437:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 672              		.loc 1 437 0
+ 673 04d8 85F6     		testl	%esi, %esi
+ 674 04da 488D54D0 		leaq	8(%rax,%rdx,8), %rdx
+ 674      08
+ 675 04df 0F84EAFD 		je	.L176
+ 675      FFFF
+ 676              	.LVL73:
+ 677              		.p2align 4,,10
+ 678 04e5 0F1F00   		.p2align 3
+ 679              	.L74:
+ 448:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = (png_byte)(255 - *(sp++));
+ 680              		.loc 1 448 0
+ 681 04e8 F65006   		notb	6(%rax)
+ 682              	.LVL74:
+ 683 04eb 4883C008 		addq	$8, %rax
+ 684              	.LVL75:
+ 437:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 685              		.loc 1 437 0
+ 686 04ef 4839D0   		cmpq	%rdx, %rax
+ 449:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 687              		.loc 1 449 0
+ 688 04f2 F650FF   		notb	-1(%rax)
+ 437:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 689              		.loc 1 437 0
+ 690 04f5 0F84D4FD 		je	.L176
+ 690      FFFF
+ 691              	.LVL76:
+ 448:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = (png_byte)(255 - *(sp++));
+ 692              		.loc 1 448 0
+ 693 04fb F65006   		notb	6(%rax)
+ 694              	.LVL77:
+ 695 04fe 4883C008 		addq	$8, %rax
+ 696              	.LVL78:
+ 437:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 697              		.loc 1 437 0
+ 698 0502 4839D0   		cmpq	%rdx, %rax
+ 449:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 699              		.loc 1 449 0
+ 700 0505 F650FF   		notb	-1(%rax)
+ 437:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 701              		.loc 1 437 0
+ 702 0508 75DE     		jne	.L74
+ 703 050a E9C0FDFF 		jmp	.L176
+ 703      FF
+ 704              	.LVL79:
+ 705              	.L33:
+ 706              	.LBE82:
+ 707              	.LBE85:
+ 708              	.LBE114:
+ 709              	.LBB115:
+ 710              	.LBB109:
+ 711              	.LBB105:
+ 247:fltk-1.3.4-1/png/pngwtran.c ****       {
+ 712              		.loc 1 247 0
+ 713 050f 80F908   		cmpb	$8, %cl
+ 714 0512 0F842801 		je	.L196
+ 714      0000
+ 715              	.LBB94:
+ 280:fltk-1.3.4-1/png/pngwtran.c **** 
+ 716              		.loc 1 280 0
+ 717 0518 448B6500 		movl	0(%rbp), %r12d
+ 718 051c 450FAFE3 		imull	%r11d, %r12d
+ 719              	.LVL80:
+ 282:fltk-1.3.4-1/png/pngwtran.c ****          {
+ 720              		.loc 1 282 0
+ 721 0520 4585E4   		testl	%r12d, %r12d
+ 722 0523 0F84C1FE 		je	.L42
+ 722      FFFF
+ 723 0529 4531D2   		xorl	%r10d, %r10d
+ 724              	.LVL81:
+ 725 052c 0F1F4000 		.p2align 4,,10
+ 726              		.p2align 3
+ 727              	.L53:
+ 728              	.LBB95:
+ 284:fltk-1.3.4-1/png/pngwtran.c ****             int j;
+ 729              		.loc 1 284 0
+ 730 0530 31D2     		xorl	%edx, %edx
+ 731 0532 4489D0   		movl	%r10d, %eax
+ 288:fltk-1.3.4-1/png/pngwtran.c ****             value = 0;
+ 732              		.loc 1 288 0
+ 733 0535 450FB608 		movzbl	(%r8), %r9d
+ 284:fltk-1.3.4-1/png/pngwtran.c ****             int j;
+ 734              		.loc 1 284 0
+ 735 0539 41F7F3   		divl	%r11d
+ 736              	.LVL82:
+ 288:fltk-1.3.4-1/png/pngwtran.c ****             value = 0;
+ 737              		.loc 1 288 0
+ 738 053c 410FB640 		movzbl	1(%r8), %eax
+ 738      01
+ 739 0541 41C1E108 		sall	$8, %r9d
+ 740 0545 4101C1   		addl	%eax, %r9d
+ 291:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 741              		.loc 1 291 0
+ 742 0548 89D2     		movl	%edx, %edx
+ 288:fltk-1.3.4-1/png/pngwtran.c ****             value = 0;
+ 743              		.loc 1 288 0
+ 744 054a 450FB7C9 		movzwl	%r9w, %r9d
+ 745              	.LVL83:
+ 291:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 746              		.loc 1 291 0
+ 747 054e 8B7C9410 		movl	16(%rsp,%rdx,4), %edi
+ 748 0552 8B0494   		movl	(%rsp,%rdx,4), %eax
+ 749              	.LVL84:
+ 750 0555 4189FD   		movl	%edi, %r13d
+ 751 0558 41F7DD   		negl	%r13d
+ 752 055b 4439E8   		cmpl	%r13d, %eax
+ 753 055e 7E62     		jle	.L91
+ 754 0560 89C6     		movl	%eax, %esi
+ 755 0562 31D2     		xorl	%edx, %edx
+ 756              	.LVL85:
+ 757 0564 F7DE     		negl	%esi
+ 758 0566 EB19     		jmp	.L52
+ 759              	.LVL86:
+ 760 0568 0F1F8400 		.p2align 4,,10
+ 760      00000000 
+ 761              		.p2align 3
+ 762              	.L198:
+ 294:fltk-1.3.4-1/png/pngwtran.c **** 
+ 763              		.loc 1 294 0
+ 764 0570 89C1     		movl	%eax, %ecx
+ 291:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 765              		.loc 1 291 0
+ 766 0572 29F8     		subl	%edi, %eax
+ 767              	.LVL87:
+ 768 0574 01FE     		addl	%edi, %esi
+ 294:fltk-1.3.4-1/png/pngwtran.c **** 
+ 769              		.loc 1 294 0
+ 770 0576 41D3E6   		sall	%cl, %r14d
+ 771 0579 4409F2   		orl	%r14d, %edx
+ 772              	.LVL88:
+ 291:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 773              		.loc 1 291 0
+ 774 057c 4439E8   		cmpl	%r13d, %eax
+ 775 057f 7E18     		jle	.L197
+ 776              	.LVL89:
+ 777              	.L52:
+ 293:fltk-1.3.4-1/png/pngwtran.c ****                   value |= v << j;
+ 778              		.loc 1 293 0
+ 779 0581 85C0     		testl	%eax, %eax
+ 294:fltk-1.3.4-1/png/pngwtran.c **** 
+ 780              		.loc 1 294 0
+ 781 0583 4589CE   		movl	%r9d, %r14d
+ 293:fltk-1.3.4-1/png/pngwtran.c ****                   value |= v << j;
+ 782              		.loc 1 293 0
+ 783 0586 7FE8     		jg	.L198
+ 297:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 784              		.loc 1 297 0
+ 785 0588 89F1     		movl	%esi, %ecx
+ 291:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 786              		.loc 1 291 0
+ 787 058a 29F8     		subl	%edi, %eax
+ 788              	.LVL90:
+ 789 058c 01FE     		addl	%edi, %esi
+ 297:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 790              		.loc 1 297 0
+ 791 058e 41D3EE   		shrl	%cl, %r14d
+ 792 0591 4409F2   		orl	%r14d, %edx
+ 793              	.LVL91:
+ 291:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 794              		.loc 1 291 0
+ 795 0594 4439E8   		cmpl	%r13d, %eax
+ 796 0597 7FE8     		jg	.L52
+ 797              	.L197:
+ 798 0599 89D0     		movl	%edx, %eax
+ 799              	.LVL92:
+ 800 059b C1E808   		shrl	$8, %eax
+ 801              	.LVL93:
+ 802              	.L49:
+ 803              	.LBE95:
+ 282:fltk-1.3.4-1/png/pngwtran.c ****          {
+ 804              		.loc 1 282 0
+ 805 059e 4183C201 		addl	$1, %r10d
+ 806              	.LVL94:
+ 807              	.LBB96:
+ 299:fltk-1.3.4-1/png/pngwtran.c ****             *bp++ = (png_byte)(value & 0xff);
+ 808              		.loc 1 299 0
+ 809 05a2 418800   		movb	%al, (%r8)
+ 810              	.LVL95:
+ 811 05a5 4983C002 		addq	$2, %r8
+ 812              	.LVL96:
+ 813              	.LBE96:
+ 282:fltk-1.3.4-1/png/pngwtran.c ****          {
+ 814              		.loc 1 282 0
+ 815 05a9 4539D4   		cmpl	%r10d, %r12d
+ 816              	.LBB97:
+ 300:fltk-1.3.4-1/png/pngwtran.c ****          }
+ 817              		.loc 1 300 0
+ 818 05ac 418850FF 		movb	%dl, -1(%r8)
+ 819              	.LBE97:
+ 282:fltk-1.3.4-1/png/pngwtran.c ****          {
+ 820              		.loc 1 282 0
+ 821 05b0 0F857AFF 		jne	.L53
+ 821      FFFF
+ 822 05b6 E92FFEFF 		jmp	.L42
+ 822      FF
+ 823              	.LVL97:
+ 824              	.L89:
+ 825              	.LBE94:
+ 826              	.LBB99:
+ 827              	.LBB93:
+ 234:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 828              		.loc 1 234 0
+ 829 05bb 31D2     		xorl	%edx, %edx
+ 830 05bd E91CFEFF 		jmp	.L37
+ 830      FF
+ 831              	.LVL98:
+ 832              	.L91:
+ 833              	.LBE93:
+ 834              	.LBE99:
+ 835              	.LBB100:
+ 836              	.LBB98:
+ 291:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 837              		.loc 1 291 0
+ 838 05c2 31D2     		xorl	%edx, %edx
+ 839              	.LVL99:
+ 840 05c4 31C0     		xorl	%eax, %eax
+ 841              	.LVL100:
+ 842 05c6 EBD6     		jmp	.L49
+ 843              	.LVL101:
+ 844              	.L26:
+ 845              	.LBE98:
+ 846              	.LBE100:
+ 847              	.LBE105:
+ 848              	.LBE109:
+ 849              	.LBE115:
+ 850              	.LBB116:
+ 851              	.LBB59:
+ 155:fltk-1.3.4-1/png/pngwtran.c ****           row_info->width);
+ 852              		.loc 1 155 0
+ 853 05c8 0FB6C0   		movzbl	%al, %eax
+ 854 05cb 480FAFC2 		imulq	%rdx, %rax
+ 855 05cf 4883C007 		addq	$7, %rax
+ 856 05d3 48C1E803 		shrq	$3, %rax
+ 857 05d7 E9B6FBFF 		jmp	.L27
+ 857      FF
+ 858              	.LVL102:
+ 859              	.L191:
+ 860              	.LBB48:
+  39:fltk-1.3.4-1/png/pngwtran.c **** 
+ 861              		.loc 1 39 0
+ 862 05dc 8B7500   		movl	0(%rbp), %esi
+ 863              	.LVL103:
+  46:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 864              		.loc 1 46 0
+ 865 05df 85F6     		testl	%esi, %esi
+ 866 05e1 0F846A02 		je	.L86
+ 866      0000
+ 867 05e7 83EE01   		subl	$1, %esi
+ 868              	.LVL104:
+ 869 05ea 4989D1   		movq	%rdx, %r9
+ 870 05ed 4C8D4431 		leaq	2(%rcx,%rsi), %r8
+ 870      02
+ 871 05f2 31F6     		xorl	%esi, %esi
+ 872 05f4 B9800000 		movl	$128, %ecx
+ 872      00
+ 873              	.LVL105:
+ 874 05f9 EB10     		jmp	.L16
+ 875              	.LVL106:
+ 876 05fb 0F1F4400 		.p2align 4,,10
+ 876      00
+ 877              		.p2align 3
+ 878              	.L200:
+  54:fltk-1.3.4-1/png/pngwtran.c **** 
+ 879              		.loc 1 54 0
+ 880 0600 D1F9     		sarl	%ecx
+ 881              	.LVL107:
+ 882              	.L15:
+  46:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 883              		.loc 1 46 0
+ 884 0602 4C39C2   		cmpq	%r8, %rdx
+ 885 0605 0F847C01 		je	.L199
+ 885      0000
+ 886              	.LVL108:
+ 887              	.L16:
+  49:fltk-1.3.4-1/png/pngwtran.c **** 
+ 888              		.loc 1 49 0
+ 889 060b 89F7     		movl	%esi, %edi
+ 890 060d 09CF     		orl	%ecx, %edi
+ 891 060f 803A00   		cmpb	$0, (%rdx)
+ 892 0612 0F45F7   		cmovne	%edi, %esi
+ 893              	.LVL109:
+  51:fltk-1.3.4-1/png/pngwtran.c **** 
+ 894              		.loc 1 51 0
+ 895 0615 4883C201 		addq	$1, %rdx
+ 896              	.LVL110:
+  53:fltk-1.3.4-1/png/pngwtran.c ****                   mask >>= 1;
+ 897              		.loc 1 53 0
+ 898 0619 83F901   		cmpl	$1, %ecx
+ 899 061c 7FE2     		jg	.L200
+ 900              	.LVL111:
+  59:fltk-1.3.4-1/png/pngwtran.c ****                   dp++;
+ 901              		.loc 1 59 0
+ 902 061e 418831   		movb	%sil, (%r9)
+  58:fltk-1.3.4-1/png/pngwtran.c ****                   *dp = (png_byte)v;
+ 903              		.loc 1 58 0
+ 904 0621 B9800000 		movl	$128, %ecx
+ 904      00
+  60:fltk-1.3.4-1/png/pngwtran.c ****                   v = 0;
+ 905              		.loc 1 60 0
+ 906 0626 4983C101 		addq	$1, %r9
+ 907              	.LVL112:
+  61:fltk-1.3.4-1/png/pngwtran.c ****                }
+ 908              		.loc 1 61 0
+ 909 062a 31F6     		xorl	%esi, %esi
+ 910 062c EBD4     		jmp	.L15
+ 911              	.LVL113:
+ 912              	.L171:
+ 913              	.LBE48:
+ 914              	.LBE59:
+ 915              	.LBE116:
+ 559:fltk-1.3.4-1/png/pngwtran.c ****       png_do_write_invert_alpha(row_info, png_ptr->row_buf + 1);
+ 916              		.loc 1 559 0
+ 917 062e F7C20000 		testl	$524288, %edx
+ 917      0800
+ 918 0634 0F8443FA 		je	.L62
+ 918      FFFF
+ 919 063a E990FCFF 		jmp	.L176
+ 919      FF
+ 920              	.LVL114:
+ 921 063f 90       		.p2align 4,,10
+ 922              		.p2align 3
+ 923              	.L196:
+ 924              	.LBB117:
+ 925              	.LBB110:
+ 926              	.LBB106:
+ 927              	.LBB101:
+ 251:fltk-1.3.4-1/png/pngwtran.c **** 
+ 928              		.loc 1 251 0
+ 929 0640 448B5500 		movl	0(%rbp), %r10d
+ 930 0644 450FAFD3 		imull	%r11d, %r10d
+ 931              	.LVL115:
+ 253:fltk-1.3.4-1/png/pngwtran.c ****          {
+ 932              		.loc 1 253 0
+ 933 0648 4585D2   		testl	%r10d, %r10d
+ 934 064b 0F8499FD 		je	.L42
+ 934      FFFF
+ 935 0651 4531C9   		xorl	%r9d, %r9d
+ 936              	.LVL116:
+ 937              		.p2align 4,,10
+ 938 0654 0F1F4000 		.p2align 3
+ 939              	.L48:
+ 940              	.LBB102:
+ 256:fltk-1.3.4-1/png/pngwtran.c ****             int j;
+ 941              		.loc 1 256 0
+ 942 0658 31D2     		xorl	%edx, %edx
+ 943 065a 4489C8   		movl	%r9d, %eax
+ 260:fltk-1.3.4-1/png/pngwtran.c ****             out = 0;
+ 944              		.loc 1 260 0
+ 945 065d 460FB66C 		movzbl	1(%rsi,%r9), %r13d
+ 945      0E01
+ 256:fltk-1.3.4-1/png/pngwtran.c ****             int j;
+ 946              		.loc 1 256 0
+ 947 0663 41F7F3   		divl	%r11d
+ 948              	.LVL117:
+ 263:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 949              		.loc 1 263 0
+ 950 0666 89D2     		movl	%edx, %edx
+ 951 0668 448B4494 		movl	16(%rsp,%rdx,4), %r8d
+ 951      10
+ 952 066d 8B0494   		movl	(%rsp,%rdx,4), %eax
+ 953              	.LVL118:
+ 954 0670 4589C4   		movl	%r8d, %r12d
+ 955 0673 41F7DC   		negl	%r12d
+ 956 0676 4439E0   		cmpl	%r12d, %eax
+ 957 0679 7E4D     		jle	.L90
+ 958 067b 89C7     		movl	%eax, %edi
+ 959 067d 31D2     		xorl	%edx, %edx
+ 960              	.LVL119:
+ 961 067f F7DF     		negl	%edi
+ 962 0681 EB18     		jmp	.L47
+ 963              	.LVL120:
+ 964              		.p2align 4,,10
+ 965 0683 0F1F4400 		.p2align 3
+ 965      00
+ 966              	.L201:
+ 266:fltk-1.3.4-1/png/pngwtran.c **** 
+ 967              		.loc 1 266 0
+ 968 0688 89C1     		movl	%eax, %ecx
+ 263:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 969              		.loc 1 263 0
+ 970 068a 4429C0   		subl	%r8d, %eax
+ 971              	.LVL121:
+ 972 068d 4401C7   		addl	%r8d, %edi
+ 266:fltk-1.3.4-1/png/pngwtran.c **** 
+ 973              		.loc 1 266 0
+ 974 0690 41D3E6   		sall	%cl, %r14d
+ 975 0693 4409F2   		orl	%r14d, %edx
+ 976              	.LVL122:
+ 263:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 977              		.loc 1 263 0
+ 978 0696 4439E0   		cmpl	%r12d, %eax
+ 979 0699 7E1A     		jle	.L44
+ 980              	.LVL123:
+ 981              	.L47:
+ 265:fltk-1.3.4-1/png/pngwtran.c ****                   out |= v << j;
+ 982              		.loc 1 265 0
+ 983 069b 85C0     		testl	%eax, %eax
+ 266:fltk-1.3.4-1/png/pngwtran.c **** 
+ 984              		.loc 1 266 0
+ 985 069d 4589EE   		movl	%r13d, %r14d
+ 265:fltk-1.3.4-1/png/pngwtran.c ****                   out |= v << j;
+ 986              		.loc 1 265 0
+ 987 06a0 7FE6     		jg	.L201
+ 269:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 988              		.loc 1 269 0
+ 989 06a2 89F9     		movl	%edi, %ecx
+ 263:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 990              		.loc 1 263 0
+ 991 06a4 4429C0   		subl	%r8d, %eax
+ 992              	.LVL124:
+ 993 06a7 4401C7   		addl	%r8d, %edi
+ 269:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 994              		.loc 1 269 0
+ 995 06aa 41D3EE   		shrl	%cl, %r14d
+ 996 06ad 4409F2   		orl	%r14d, %edx
+ 997              	.LVL125:
+ 263:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 998              		.loc 1 263 0
+ 999 06b0 4439E0   		cmpl	%r12d, %eax
+ 1000 06b3 7FE6     		jg	.L47
+ 1001              	.LVL126:
+ 1002              	.L44:
+ 272:fltk-1.3.4-1/png/pngwtran.c ****          }
+ 1003              		.loc 1 272 0
+ 1004 06b5 4288540E 		movb	%dl, 1(%rsi,%r9)
+ 1004      01
+ 1005              	.LVL127:
+ 1006 06ba 4983C101 		addq	$1, %r9
+ 1007              	.LVL128:
+ 1008              	.LBE102:
+ 253:fltk-1.3.4-1/png/pngwtran.c ****          {
+ 1009              		.loc 1 253 0
+ 1010 06be 4539CA   		cmpl	%r9d, %r10d
+ 1011 06c1 7795     		ja	.L48
+ 1012 06c3 E922FDFF 		jmp	.L42
+ 1012      FF
+ 1013              	.LVL129:
+ 1014              	.L90:
+ 1015              	.LBB103:
+ 263:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 1016              		.loc 1 263 0
+ 1017 06c8 31D2     		xorl	%edx, %edx
+ 1018              	.LVL130:
+ 1019 06ca EBE9     		jmp	.L44
+ 1020              	.LVL131:
+ 1021              	.L10:
+ 1022              	.LBE103:
+ 1023              	.LBE101:
+ 1024              	.LBE106:
+ 1025              	.LBE110:
+ 1026              	.LBE117:
+ 1027              	.LBB118:
+ 1028              	.LBB60:
+ 1029              	.LBB49:
+ 115:fltk-1.3.4-1/png/pngwtran.c **** 
+ 1030              		.loc 1 115 0
+ 1031 06cc 8B7500   		movl	0(%rbp), %esi
+ 1032              	.LVL132:
+ 122:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 1033              		.loc 1 122 0
+ 1034 06cf 85F6     		testl	%esi, %esi
+ 1035 06d1 0F847A01 		je	.L86
+ 1035      0000
+ 1036 06d7 83EE01   		subl	$1, %esi
+ 1037              	.LVL133:
+ 1038 06da 4889D7   		movq	%rdx, %rdi
+ 1039 06dd 4531C0   		xorl	%r8d, %r8d
+ 1040 06e0 4C8D4C31 		leaq	2(%rcx,%rsi), %r9
+ 1040      02
+ 1041 06e5 B9040000 		movl	$4, %ecx
+ 1041      00
+ 1042              	.LVL134:
+ 1043 06ea EB1C     		jmp	.L24
+ 1044              	.LVL135:
+ 1045 06ec 0F1F4000 		.p2align 4,,10
+ 1046              		.p2align 3
+ 1047              	.L203:
+ 1048              	.LBB50:
+ 132:fltk-1.3.4-1/png/pngwtran.c ****                   dp++;
+ 1049              		.loc 1 132 0
+ 1050 06f0 448802   		movb	%r8b, (%rdx)
+ 1051              	.LVL136:
+ 131:fltk-1.3.4-1/png/pngwtran.c ****                   *dp = (png_byte)v;
+ 1052              		.loc 1 131 0
+ 1053 06f3 B9040000 		movl	$4, %ecx
+ 1053      00
+ 133:fltk-1.3.4-1/png/pngwtran.c ****                   v = 0;
+ 1054              		.loc 1 133 0
+ 1055 06f8 4883C201 		addq	$1, %rdx
+ 1056              	.LVL137:
+ 134:fltk-1.3.4-1/png/pngwtran.c ****                }
+ 1057              		.loc 1 134 0
+ 1058 06fc 4531C0   		xorl	%r8d, %r8d
+ 1059              	.LVL138:
+ 1060              	.L23:
+ 140:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 1061              		.loc 1 140 0
+ 1062 06ff 4883C701 		addq	$1, %rdi
+ 1063              	.LVL139:
+ 1064              	.LBE50:
+ 122:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 1065              		.loc 1 122 0
+ 1066 0703 4C39CF   		cmpq	%r9, %rdi
+ 1067 0706 7475     		je	.L202
+ 1068              	.LVL140:
+ 1069              	.L24:
+ 1070              	.LBB51:
+ 127:fltk-1.3.4-1/png/pngwtran.c **** 
+ 1071              		.loc 1 127 0
+ 1072 0708 0FB637   		movzbl	(%rdi), %esi
+ 1073 070b 83E60F   		andl	$15, %esi
+ 1074 070e D3E6     		sall	%cl, %esi
+ 1075 0710 4109F0   		orl	%esi, %r8d
+ 1076              	.LVL141:
+ 129:fltk-1.3.4-1/png/pngwtran.c ****                {
+ 1077              		.loc 1 129 0
+ 1078 0713 85C9     		testl	%ecx, %ecx
+ 1079 0715 74D9     		je	.L203
+ 138:fltk-1.3.4-1/png/pngwtran.c **** 
+ 1080              		.loc 1 138 0
+ 1081 0717 83E904   		subl	$4, %ecx
+ 1082              	.LVL142:
+ 1083 071a EBE3     		jmp	.L23
+ 1084              	.LVL143:
+ 1085              	.L9:
+ 1086              	.LBE51:
+ 1087              	.LBE49:
+ 1088              	.LBB52:
+  76:fltk-1.3.4-1/png/pngwtran.c **** 
+ 1089              		.loc 1 76 0
+ 1090 071c 8B7500   		movl	0(%rbp), %esi
+ 1091              	.LVL144:
+  83:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 1092              		.loc 1 83 0
+ 1093 071f 85F6     		testl	%esi, %esi
+ 1094 0721 0F842A01 		je	.L86
+ 1094      0000
+ 1095 0727 83EE01   		subl	$1, %esi
+ 1096              	.LVL145:
+ 1097 072a 4889D7   		movq	%rdx, %rdi
+ 1098 072d 4531C0   		xorl	%r8d, %r8d
+ 1099 0730 4C8D4C31 		leaq	2(%rcx,%rsi), %r9
+ 1099      02
+ 1100 0735 B9060000 		movl	$6, %ecx
+ 1100      00
+ 1101              	.LVL146:
+ 1102 073a EB1C     		jmp	.L20
+ 1103              	.LVL147:
+ 1104 073c 0F1F4000 		.p2align 4,,10
+ 1105              		.p2align 3
+ 1106              	.L205:
+ 1107              	.LBB53:
+  93:fltk-1.3.4-1/png/pngwtran.c ****                   dp++;
+ 1108              		.loc 1 93 0
+ 1109 0740 448802   		movb	%r8b, (%rdx)
+ 1110              	.LVL148:
+  92:fltk-1.3.4-1/png/pngwtran.c ****                   *dp = (png_byte)v;
+ 1111              		.loc 1 92 0
+ 1112 0743 B9060000 		movl	$6, %ecx
+ 1112      00
+  94:fltk-1.3.4-1/png/pngwtran.c ****                   v = 0;
+ 1113              		.loc 1 94 0
+ 1114 0748 4883C201 		addq	$1, %rdx
+ 1115              	.LVL149:
+  95:fltk-1.3.4-1/png/pngwtran.c ****                }
+ 1116              		.loc 1 95 0
+ 1117 074c 4531C0   		xorl	%r8d, %r8d
+ 1118              	.LVL150:
+ 1119              	.L19:
+ 101:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 1120              		.loc 1 101 0
+ 1121 074f 4883C701 		addq	$1, %rdi
+ 1122              	.LVL151:
+ 1123              	.LBE53:
+  83:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 1124              		.loc 1 83 0
+ 1125 0753 4C39CF   		cmpq	%r9, %rdi
+ 1126 0756 7414     		je	.L204
+ 1127              	.LVL152:
+ 1128              	.L20:
+ 1129              	.LBB54:
+  88:fltk-1.3.4-1/png/pngwtran.c **** 
+ 1130              		.loc 1 88 0
+ 1131 0758 0FB637   		movzbl	(%rdi), %esi
+ 1132 075b 83E603   		andl	$3, %esi
+ 1133 075e D3E6     		sall	%cl, %esi
+ 1134 0760 4109F0   		orl	%esi, %r8d
+ 1135              	.LVL153:
+  90:fltk-1.3.4-1/png/pngwtran.c ****                {
+ 1136              		.loc 1 90 0
+ 1137 0763 85C9     		testl	%ecx, %ecx
+ 1138 0765 74D9     		je	.L205
+  99:fltk-1.3.4-1/png/pngwtran.c **** 
+ 1139              		.loc 1 99 0
+ 1140 0767 83E902   		subl	$2, %ecx
+ 1141              	.LVL154:
+ 1142 076a EBE3     		jmp	.L19
+ 1143              	.LVL155:
+ 1144              	.L204:
+ 1145              	.LBE54:
+ 104:fltk-1.3.4-1/png/pngwtran.c ****                *dp = (png_byte)v;
+ 1146              		.loc 1 104 0
+ 1147 076c 83F906   		cmpl	$6, %ecx
+ 1148 076f 0F84FDF9 		je	.L173
+ 1148      FFFF
+ 1149              	.LVL156:
+ 1150              	.L25:
+ 1151              	.LBE52:
+ 1152              	.LBB55:
+ 144:fltk-1.3.4-1/png/pngwtran.c **** 
+ 1153              		.loc 1 144 0
+ 1154 0775 448802   		movb	%r8b, (%rdx)
+ 1155 0778 E9F5F9FF 		jmp	.L173
+ 1155      FF
+ 1156              	.LVL157:
+ 1157              	.L202:
+ 143:fltk-1.3.4-1/png/pngwtran.c ****                *dp = (png_byte)v;
+ 1158              		.loc 1 143 0
+ 1159 077d 83F904   		cmpl	$4, %ecx
+ 1160 0780 75F3     		jne	.L25
+ 1161 0782 E9EBF9FF 		jmp	.L173
+ 1161      FF
+ 1162              	.LVL158:
+ 1163              	.L199:
+ 1164              	.LBE55:
+ 1165              	.LBB56:
+  65:fltk-1.3.4-1/png/pngwtran.c ****                *dp = (png_byte)v;
+ 1166              		.loc 1 65 0
+ 1167 0787 83C180   		addl	$-128, %ecx
+ 1168              	.LVL159:
+ 1169 078a 0F84E2F9 		je	.L173
+ 1169      FFFF
+  66:fltk-1.3.4-1/png/pngwtran.c **** 
+ 1170              		.loc 1 66 0
+ 1171 0790 418831   		movb	%sil, (%r9)
+ 1172 0793 8B5500   		movl	0(%rbp), %edx
+ 1173              	.LVL160:
+ 1174 0796 E9DAF9FF 		jmp	.L12
+ 1174      FF
+ 1175              	.LVL161:
+ 1176              	.L70:
+ 1177              	.LBE56:
+ 1178              	.LBE60:
+ 1179              	.LBE118:
+ 1180              	.LBB119:
+ 1181              	.LBB86:
+ 1182              	.LBB83:
+ 417:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 1183              		.loc 1 417 0
+ 1184 079b 85F6     		testl	%esi, %esi
+ 1185 079d 0F842CFB 		je	.L176
+ 1185      FFFF
+ 1186 07a3 8D56FF   		leal	-1(%rsi), %edx
+ 1187 07a6 488D5490 		leaq	4(%rax,%rdx,4), %rdx
+ 1187      04
+ 1188              	.LVL162:
+ 1189 07ab 0F1F4400 		.p2align 4,,10
+ 1189      00
+ 1190              		.p2align 3
+ 1191              	.L73:
+ 1192 07b0 4883C004 		addq	$4, %rax
+ 1193              	.LVL163:
+ 1194 07b4 4839C2   		cmpq	%rax, %rdx
+ 425:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 1195              		.loc 1 425 0
+ 1196 07b7 F650FF   		notb	-1(%rax)
+ 417:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 1197              		.loc 1 417 0
+ 1198 07ba 75F4     		jne	.L73
+ 1199 07bc E90EFBFF 		jmp	.L176
+ 1199      FF
+ 1200              	.LVL164:
+ 1201              	.L56:
+ 1202              	.LBE83:
+ 1203              	.LBE86:
+ 1204              	.LBE119:
+ 1205              	.LBB120:
+ 1206              	.LBB78:
+ 1207              	.LBB71:
+ 323:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 1208              		.loc 1 323 0
+ 1209 07c1 4585C0   		testl	%r8d, %r8d
+ 1210 07c4 0F8464FE 		je	.L171
+ 1210      FFFF
+ 1211 07ca 418D50FF 		leal	-1(%r8), %edx
+ 1212 07ce 488D7496 		leaq	5(%rsi,%rdx,4), %rsi
+ 1212      05
+ 1213              	.LVL165:
+ 1214              		.p2align 4,,10
+ 1215 07d3 0F1F4400 		.p2align 3
+ 1215      00
+ 1216              	.L60:
+ 1217              	.LBB72:
+ 326:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 1218              		.loc 1 326 0
+ 1219 07d8 0FB64801 		movzbl	1(%rax), %ecx
+ 325:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 1220              		.loc 1 325 0
+ 1221 07dc 0FB610   		movzbl	(%rax), %edx
+ 1222              	.LVL166:
+ 1223 07df 4883C004 		addq	$4, %rax
+ 1224              	.LVL167:
+ 326:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 1225              		.loc 1 326 0
+ 1226 07e3 8848FC   		movb	%cl, -4(%rax)
+ 1227              	.LVL168:
+ 327:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 1228              		.loc 1 327 0
+ 1229 07e6 0FB648FE 		movzbl	-2(%rax), %ecx
+ 1230 07ea 8848FD   		movb	%cl, -3(%rax)
+ 1231              	.LVL169:
+ 328:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = save;
+ 1232              		.loc 1 328 0
+ 1233 07ed 0FB648FF 		movzbl	-1(%rax), %ecx
+ 1234              	.LBE72:
+ 323:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 1235              		.loc 1 323 0
+ 1236 07f1 4839F0   		cmpq	%rsi, %rax
+ 1237              	.LBB73:
+ 329:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 1238              		.loc 1 329 0
+ 1239 07f4 8850FF   		movb	%dl, -1(%rax)
+ 328:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = save;
+ 1240              		.loc 1 328 0
+ 1241 07f7 8848FE   		movb	%cl, -2(%rax)
+ 1242              	.LVL170:
+ 1243              	.LBE73:
+ 323:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 1244              		.loc 1 323 0
+ 1245 07fa 75DC     		jne	.L60
+ 1246 07fc E96DFAFF 		jmp	.L174
+ 1246      FF
+ 1247              	.LVL171:
+ 1248              	.L63:
+ 1249              	.LBE71:
+ 1250              	.LBB74:
+ 368:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 1251              		.loc 1 368 0
+ 1252 0801 4585C0   		testl	%r8d, %r8d
+ 1253 0804 7452     		je	.L66
+ 1254 0806 418D50FF 		leal	-1(%r8), %edx
+ 1255 080a 488D7456 		leaq	3(%rsi,%rdx,2), %rsi
+ 1255      03
+ 1256              	.LVL172:
+ 1257 080f 90       		.p2align 4,,10
+ 1258              		.p2align 3
+ 1259              	.L67:
+ 1260              	.LBB75:
+ 371:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = save;
+ 1261              		.loc 1 371 0
+ 1262 0810 0FB64801 		movzbl	1(%rax), %ecx
+ 370:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = *(sp++);
+ 1263              		.loc 1 370 0
+ 1264 0814 0FB610   		movzbl	(%rax), %edx
+ 1265              	.LVL173:
+ 1266 0817 4883C002 		addq	$2, %rax
+ 1267              	.LVL174:
+ 371:fltk-1.3.4-1/png/pngwtran.c ****                *(dp++) = save;
+ 1268              		.loc 1 371 0
+ 1269 081b 8848FE   		movb	%cl, -2(%rax)
+ 1270              	.LVL175:
+ 1271              	.LBE75:
+ 368:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 1272              		.loc 1 368 0
+ 1273 081e 4839F0   		cmpq	%rsi, %rax
+ 1274              	.LBB76:
+ 372:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 1275              		.loc 1 372 0
+ 1276 0821 8850FF   		movb	%dl, -1(%rax)
+ 1277              	.LBE76:
+ 368:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 1278              		.loc 1 368 0
+ 1279 0824 75EA     		jne	.L67
+ 1280 0826 E943FAFF 		jmp	.L174
+ 1280      FF
+ 1281              	.LVL176:
+ 1282              	.L75:
+ 1283              	.LBE74:
+ 1284              	.LBE78:
+ 1285              	.LBE120:
+ 1286              	.LBB121:
+ 1287              	.LBB87:
+ 1288              	.LBB84:
+ 464:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 1289              		.loc 1 464 0
+ 1290 082b 85F6     		testl	%esi, %esi
+ 1291 082d 0F849CFA 		je	.L176
+ 1291      FFFF
+ 1292 0833 8D56FF   		leal	-1(%rsi), %edx
+ 1293 0836 488D5450 		leaq	2(%rax,%rdx,2), %rdx
+ 1293      02
+ 1294              	.LVL177:
+ 1295 083b 0F1F4400 		.p2align 4,,10
+ 1295      00
+ 1296              		.p2align 3
+ 1297              	.L78:
+ 1298 0840 4883C002 		addq	$2, %rax
+ 1299              	.LVL178:
+ 1300 0844 4839D0   		cmpq	%rdx, %rax
+ 467:fltk-1.3.4-1/png/pngwtran.c ****             }
+ 1301              		.loc 1 467 0
+ 1302 0847 F650FF   		notb	-1(%rax)
+ 464:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 1303              		.loc 1 464 0
+ 1304 084a 75F4     		jne	.L78
+ 1305 084c E97EFAFF 		jmp	.L176
+ 1305      FF
+ 1306              	.LVL179:
+ 1307              	.L86:
+ 1308              	.LBE84:
+ 1309              	.LBE87:
+ 1310              	.LBE121:
+ 1311              	.LBB122:
+ 1312              	.LBB61:
+ 1313              	.LBB57:
+ 122:fltk-1.3.4-1/png/pngwtran.c ****             {
+ 1314              		.loc 1 122 0
+ 1315 0851 31D2     		xorl	%edx, %edx
+ 1316 0853 E91DF9FF 		jmp	.L12
+ 1316      FF
+ 1317              	.LVL180:
+ 1318              	.L66:
+ 1319              	.LBE57:
+ 1320              	.LBE61:
+ 1321              	.LBE122:
+ 559:fltk-1.3.4-1/png/pngwtran.c ****       png_do_write_invert_alpha(row_info, png_ptr->row_buf + 1);
+ 1322              		.loc 1 559 0
+ 1323 0858 F7C20000 		testl	$524288, %edx
+ 1323      0800
+ 1324 085e 0F856BFA 		jne	.L176
+ 1324      FFFF
+ 1325 0864 E914F8FF 		jmp	.L62
+ 1325      FF
+ 1326              	.LVL181:
+ 1327              	.L177:
+ 1328              		.loc 1 572 0
+ 1329 0869 E8000000 		call	__stack_chk_fail
+ 1329      00
+ 1330              	.LVL182:
+ 1331              		.cfi_endproc
+ 1332              	.LFE60:
+ 1334              		.section	.text.unlikely.png_do_write_transformations
+ 1335              	.LCOLDE0:
+ 1336              		.section	.text.png_do_write_transformations
+ 1337              	.LHOTE0:
+ 1338              		.text
+ 1339              	.Letext0:
+ 1340              		.section	.text.unlikely.png_do_write_transformations
+ 1341              	.Letext_cold0:
+ 1342              		.file 2 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
+ 1343              		.file 3 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 1344              		.file 4 "/usr/include/libio.h"
+ 1345              		.file 5 "/usr/include/x86_64-linux-gnu/bits/setjmp.h"
+ 1346              		.file 6 "/usr/include/x86_64-linux-gnu/bits/sigset.h"
+ 1347              		.file 7 "/usr/include/setjmp.h"
+ 1348              		.file 8 "fltk-1.3.4-1/png/pngconf.h"
+ 1349              		.file 9 "fltk-1.3.4-1/png/png.h"
+ 1350              		.file 10 "fltk-1.3.4-1/png/pngstruct.h"
+ 1351              		.file 11 "fltk-1.3.4-1/png/pnginfo.h"
+ 1352              		.file 12 "/usr/include/x86_64-linux-gnu/zconf.h"
+ 1353              		.file 13 "/usr/include/zlib.h"
+ 1354              		.file 14 "/usr/include/stdio.h"
+ 1355              		.file 15 "fltk-1.3.4-1/png/pngpriv.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 pngwtran.c
+     /tmp/ccoHSPTH.s:14     .text.png_do_write_transformations:0000000000000000 png_do_write_transformations
+                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
+                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+                           .group:0000000000000000 wm4.pngpriv.h.26.ca3d1719773cd86007410b516123e125
+                           .group:0000000000000000 wm4.features.h.19.22780be97c2f806ec599b8b99aa89f7d
+                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
+                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
+                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
+                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
+                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
+                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
+                           .group:0000000000000000 wm4.stdlib.h.37.e081b308f911db94d3185af615f2b2e2
+                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
+                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
+                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
+                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
+                           .group:0000000000000000 wm4.endian.h.41.27d650ce666b76881e2a2a218ea61984
+                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
+                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
+                           .group:0000000000000000 wm4.string2.h.55.e4a4cfd7781cc64a4341475e67436ab1
+                           .group:0000000000000000 wm4.string3.h.31.2b75bd65145c50aeedb61673ce0d3293
+                           .group:0000000000000000 wm4.pnglibconf.h.15.30e2eea90e566ac06da4f4de487193d7
+                           .group:0000000000000000 wm4.pngpriv.h.130.f65d93453b5b5837849611ffe82d627a
+                           .group:0000000000000000 wm4.png.h.412.12a95b2193a7d0bc2282b72c70a28ce1
+                           .group:0000000000000000 wm4.limits.h.23.f0fd92c175c1576df467c4d5fe2b091a
+                           .group:0000000000000000 wm4.posix1_lim.h.25.28c8eb2d22697e7711efefdec5344a02
+                           .group:0000000000000000 wm4.local_lim.h.25.97ee4129efb08ad296101237bcd3401b
+                           .group:0000000000000000 wm4.limits.h.2.9ff59823e8adcf4502d980ef41362326
+                           .group:0000000000000000 wm4.local_lim.h.42.9dc3935e0e3b94e23cda247e4e39bd8b
+                           .group:0000000000000000 wm4.limits.h.60.eb7066f861c8b8edc7a0a399744b0335
+                           .group:0000000000000000 wm4.stddef.h.39.d5a83c17f38162a5dd6f834eaf38f8ef
+                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
+                           .group:0000000000000000 wm4.stddef.h.161.19e15733342b50ead2919490b095303e
+                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
+                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
+                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
+                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
+                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
+                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
+                           .group:0000000000000000 wm4.stdio.h.120.80cbf0ec1718a5b27e6428218e29c72d
+                           .group:0000000000000000 wm4.stdio_lim.h.23.f8541119d1bcf759d7de9531671fd758
+                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
+                           .group:0000000000000000 wm4.stdio.h.26.e50fc3808d57d965ceefc6f6dd102eb7
+                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
+                           .group:0000000000000000 wm4.setjmp.h.67.51aa194c3c89a841663c00cb93fd90ff
+                           .group:0000000000000000 wm4.time.h.26.6a3cabd4f228e226db6723a3b0c81ba6
+                           .group:0000000000000000 wm4.time.h.40.99bfb90272c7e82357ef3c2f5c6fefc8
+                           .group:0000000000000000 wm4.time.h.53.f8af6908497bac0ca16faea86fb8cd87
+                           .group:0000000000000000 wm4.pngconf.h.86.6636b2584cb7be1618479e118d71e58c
+                           .group:0000000000000000 wm4.png.h.506.fa53b6434c0b20c8e63094b04d7940c5
+                           .group:0000000000000000 wm4.pngpriv.h.298.dc2c896ce0eddc5cfadee24e76e3c417
+                           .group:0000000000000000 wm4.float.h.29.1cf88a0527b6b1225d49fbee2b32acb7
+                           .group:0000000000000000 wm4.math.h.26.671af5ac9cd425a35e0730f7b6d7cde2
+                           .group:0000000000000000 wm4.libmsimddeclstubs.h.34.75644856b74ba3d815155fe5fe7ecc56
+                           .group:0000000000000000 wm4.mathdef.h.23.67c0aa4a204f1f427459dfc651aba565
+                           .group:0000000000000000 wm4.math.h.55.cf380f99c57d42476a5252f30065036a
+                           .group:0000000000000000 wm4.math.h.84.742292806c6be54f49dc607928a827f7
+                           .group:0000000000000000 wm4.math.h.105.59ff0f83ebf6a04e70e145cef2d1185e
+                           .group:0000000000000000 wm4.math.h.152.48a142bc1575e748473ff86330dee044
+                           .group:0000000000000000 wm4.math.h.30.7cada3efe024725df2da4c705b6566be
+                           .group:0000000000000000 wm4.pngpriv.h.481.f98e7c29eaaa759546a3f9808bc25c74
+                           .group:0000000000000000 wm4.pngstruct.h.22.7b9573417641055ab8f42438aa8afadf
+                           .group:0000000000000000 wm4.zconf.h.9.bbc7b5783b51507f7721a5620139b4ee
+                           .group:0000000000000000 wm4.zconf.h.397.69c03305677a9a6792fe2a94f7c9f69b
+                           .group:0000000000000000 wm4.types.h.23.92678977f3921b8dce508274ac68f78d
+                           .group:0000000000000000 wm4.types.h.187.12f6c32afb936b45a5f241219964ce93
+                           .group:0000000000000000 wm4.stdarg.h.31.48e922dd0aaedfb616aafd8a7b7a4949
+                           .group:0000000000000000 wm4.unistd.h.23.c85a58a698f53edadcf64287ab24fecb
+                           .group:0000000000000000 wm4.posix_opt.h.20.9a8aece77957db1725bd2b9521e5f9c5
+                           .group:0000000000000000 wm4.unistd.h.213.4c582e35260d661b081322974b7c1e74
+                           .group:0000000000000000 wm4.unistd.h.284.7e168706bc8bd978e02fd1da439d9bc3
+                           .group:0000000000000000 wm4.confname.h.27.6b00117a32f457cc72e5ac810a9adade
+                           .group:0000000000000000 wm4.zconf.h.457.505c3613686dd75e492569d7a56a6eb0
+                           .group:0000000000000000 wm4.zlib.h.40.5a15529ab8e285cee4b0ddab32502c27
+                           .group:0000000000000000 wm4.pngstruct.h.44.bc957704556ff8ddcb697678a008ffae
+                           .group:0000000000000000 wm4.pngpriv.h.853.4585af3e74cfb155d8486c5333b94adf
+                           .group:0000000000000000 wm4.pngdebug.h.36.e9c57d5f35e3128225fb629498ec6fc8
+
+UNDEFINED SYMBOLS
+png_do_strip_channel
+png_do_packswap
+png_do_invert
+png_do_bgr
+png_do_swap
+__stack_chk_fail

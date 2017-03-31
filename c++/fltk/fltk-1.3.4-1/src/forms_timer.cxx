@@ -1,0 +1,3301 @@
+   1              		.file	"forms_timer.cxx"
+   2              		.text
+   3              	.Ltext0:
+   4              		.section	.text.unlikely._ZN9Fl_Widget8as_groupEv,"axG",@progbits,_ZN9Fl_Widget8as_groupEv,comdat
+   5              		.align 2
+   6              	.LCOLDB0:
+   7              		.section	.text._ZN9Fl_Widget8as_groupEv,"axG",@progbits,_ZN9Fl_Widget8as_groupEv,comdat
+   8              	.LHOTB0:
+   9              		.align 2
+  10              		.p2align 4,,15
+  11              		.section	.text.unlikely._ZN9Fl_Widget8as_groupEv,"axG",@progbits,_ZN9Fl_Widget8as_groupEv,comdat
+  12              	.Ltext_cold0:
+  13              		.section	.text._ZN9Fl_Widget8as_groupEv,"axG",@progbits,_ZN9Fl_Widget8as_groupEv,comdat
+  14              		.weak	_ZN9Fl_Widget8as_groupEv
+  16              	_ZN9Fl_Widget8as_groupEv:
+  17              	.LFB232:
+  18              		.file 1 "fltk-1.3.4-1/FL/Fl_Widget.H"
+   1:fltk-1.3.4-1/FL/Fl_Widget.H **** //
+   2:fltk-1.3.4-1/FL/Fl_Widget.H **** // "$Id: Fl_Widget.H 10677 2015-04-05 09:04:44Z AlbrechtS $"
+   3:fltk-1.3.4-1/FL/Fl_Widget.H **** //
+   4:fltk-1.3.4-1/FL/Fl_Widget.H **** // Widget header file for the Fast Light Tool Kit (FLTK).
+   5:fltk-1.3.4-1/FL/Fl_Widget.H **** //
+   6:fltk-1.3.4-1/FL/Fl_Widget.H **** // Copyright 1998-2015 by Bill Spitzak and others.
+   7:fltk-1.3.4-1/FL/Fl_Widget.H **** //
+   8:fltk-1.3.4-1/FL/Fl_Widget.H **** // This library is free software. Distribution and use rights are outlined in
+   9:fltk-1.3.4-1/FL/Fl_Widget.H **** // the file "COPYING" which should have been included with this file.  If this
+  10:fltk-1.3.4-1/FL/Fl_Widget.H **** // file is missing or damaged, see the license at:
+  11:fltk-1.3.4-1/FL/Fl_Widget.H **** //
+  12:fltk-1.3.4-1/FL/Fl_Widget.H **** //     http://www.fltk.org/COPYING.php
+  13:fltk-1.3.4-1/FL/Fl_Widget.H **** //
+  14:fltk-1.3.4-1/FL/Fl_Widget.H **** // Please report all bugs and problems on the following page:
+  15:fltk-1.3.4-1/FL/Fl_Widget.H **** //
+  16:fltk-1.3.4-1/FL/Fl_Widget.H **** //     http://www.fltk.org/str.php
+  17:fltk-1.3.4-1/FL/Fl_Widget.H **** //
+  18:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+  19:fltk-1.3.4-1/FL/Fl_Widget.H **** /** \file
+  20:fltk-1.3.4-1/FL/Fl_Widget.H ****    Fl_Widget, Fl_Label classes . */
+  21:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+  22:fltk-1.3.4-1/FL/Fl_Widget.H **** #ifndef Fl_Widget_H
+  23:fltk-1.3.4-1/FL/Fl_Widget.H **** #define Fl_Widget_H
+  24:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+  25:fltk-1.3.4-1/FL/Fl_Widget.H **** #include "Enumerations.H"
+  26:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+  27:fltk-1.3.4-1/FL/Fl_Widget.H **** /**
+  28:fltk-1.3.4-1/FL/Fl_Widget.H ****   \todo	typedef's fl_intptr_t and fl_uintptr_t should be documented.
+  29:fltk-1.3.4-1/FL/Fl_Widget.H **** */
+  30:fltk-1.3.4-1/FL/Fl_Widget.H **** #ifdef _WIN64
+  31:fltk-1.3.4-1/FL/Fl_Widget.H **** #if defined(__GNUC__) || defined(__clang__)
+  32:fltk-1.3.4-1/FL/Fl_Widget.H **** #include <stdint.h>
+  33:fltk-1.3.4-1/FL/Fl_Widget.H **** #else
+  34:fltk-1.3.4-1/FL/Fl_Widget.H **** #include <stddef.h>  // M$VC
+  35:fltk-1.3.4-1/FL/Fl_Widget.H **** #endif
+  36:fltk-1.3.4-1/FL/Fl_Widget.H **** typedef intptr_t fl_intptr_t;
+  37:fltk-1.3.4-1/FL/Fl_Widget.H **** typedef uintptr_t fl_uintptr_t;
+  38:fltk-1.3.4-1/FL/Fl_Widget.H **** #else
+  39:fltk-1.3.4-1/FL/Fl_Widget.H **** typedef long fl_intptr_t;
+  40:fltk-1.3.4-1/FL/Fl_Widget.H **** typedef unsigned long fl_uintptr_t;
+  41:fltk-1.3.4-1/FL/Fl_Widget.H **** #endif
+  42:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+  43:fltk-1.3.4-1/FL/Fl_Widget.H **** class Fl_Widget;
+  44:fltk-1.3.4-1/FL/Fl_Widget.H **** class Fl_Window;
+  45:fltk-1.3.4-1/FL/Fl_Widget.H **** class Fl_Group;
+  46:fltk-1.3.4-1/FL/Fl_Widget.H **** class Fl_Image;
+  47:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+  48:fltk-1.3.4-1/FL/Fl_Widget.H **** /** Default callback type definition for all fltk widgets (by far the most used) */
+  49:fltk-1.3.4-1/FL/Fl_Widget.H **** typedef void (Fl_Callback )(Fl_Widget*, void*);
+  50:fltk-1.3.4-1/FL/Fl_Widget.H **** /** Default callback type pointer definition for all fltk widgets */
+  51:fltk-1.3.4-1/FL/Fl_Widget.H **** typedef Fl_Callback* Fl_Callback_p; // needed for BORLAND
+  52:fltk-1.3.4-1/FL/Fl_Widget.H **** /** One parameter callback type definition passing only the widget */
+  53:fltk-1.3.4-1/FL/Fl_Widget.H **** typedef void (Fl_Callback0)(Fl_Widget*);
+  54:fltk-1.3.4-1/FL/Fl_Widget.H **** /** Callback type definition passing the widget and a long data value */
+  55:fltk-1.3.4-1/FL/Fl_Widget.H **** typedef void (Fl_Callback1)(Fl_Widget*, long);
+  56:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+  57:fltk-1.3.4-1/FL/Fl_Widget.H **** /** This struct stores all information for a text or mixed graphics label.
+  58:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+  59:fltk-1.3.4-1/FL/Fl_Widget.H ****     \todo There is an aspiration that the Fl_Label type will become a widget by itself.
+  60:fltk-1.3.4-1/FL/Fl_Widget.H ****           That way we will be avoiding a lot of code duplication by handling labels in
+  61:fltk-1.3.4-1/FL/Fl_Widget.H ****           a similar fashion to widgets containing text. We also provide an easy
+  62:fltk-1.3.4-1/FL/Fl_Widget.H ****           interface for very complex labels, containing html or vector graphics.
+  63:fltk-1.3.4-1/FL/Fl_Widget.H ****           However, this re-factoring is not in place in this release.
+  64:fltk-1.3.4-1/FL/Fl_Widget.H ****  */
+  65:fltk-1.3.4-1/FL/Fl_Widget.H **** struct FL_EXPORT Fl_Label {
+  66:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** label text */
+  67:fltk-1.3.4-1/FL/Fl_Widget.H ****   const char* value;
+  68:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** optional image for an active label */
+  69:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Image* image;
+  70:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** optional image for a deactivated label */
+  71:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Image* deimage;
+  72:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** label font used in text */
+  73:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Font font;
+  74:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** size of label font */
+  75:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Fontsize size;
+  76:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** text color */
+  77:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Color color;
+  78:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** alignment of label */
+  79:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Align align_;
+  80:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** type of label. \see Fl_Labeltype */
+  81:fltk-1.3.4-1/FL/Fl_Widget.H ****   uchar type;
+  82:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+  83:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Draws the label aligned to the given box */
+  84:fltk-1.3.4-1/FL/Fl_Widget.H ****   void draw(int,int,int,int, Fl_Align) const ;
+  85:fltk-1.3.4-1/FL/Fl_Widget.H ****   void measure(int &w, int &h) const ;
+  86:fltk-1.3.4-1/FL/Fl_Widget.H **** };
+  87:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+  88:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+  89:fltk-1.3.4-1/FL/Fl_Widget.H **** /** Fl_Widget is the base class for all widgets in FLTK.  
+  90:fltk-1.3.4-1/FL/Fl_Widget.H ****   
+  91:fltk-1.3.4-1/FL/Fl_Widget.H ****     You can't create one of these because the constructor is not public.
+  92:fltk-1.3.4-1/FL/Fl_Widget.H ****     However you can subclass it.  
+  93:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+  94:fltk-1.3.4-1/FL/Fl_Widget.H ****     All "property" accessing methods, such as color(), parent(), or argument() 
+  95:fltk-1.3.4-1/FL/Fl_Widget.H ****     are implemented as trivial inline functions and thus are as fast and small 
+  96:fltk-1.3.4-1/FL/Fl_Widget.H ****     as accessing fields in a structure. Unless otherwise noted, the property 
+  97:fltk-1.3.4-1/FL/Fl_Widget.H ****     setting methods such as color(n) or label(s) are also trivial inline 
+  98:fltk-1.3.4-1/FL/Fl_Widget.H ****     functions, even if they change the widget's appearance. It is up to the 
+  99:fltk-1.3.4-1/FL/Fl_Widget.H ****     user code to call redraw() after these.
+ 100:fltk-1.3.4-1/FL/Fl_Widget.H ****  */
+ 101:fltk-1.3.4-1/FL/Fl_Widget.H **** class FL_EXPORT Fl_Widget {
+ 102:fltk-1.3.4-1/FL/Fl_Widget.H ****   friend class Fl_Group;
+ 103:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 104:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Group* parent_;
+ 105:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Callback* callback_;
+ 106:fltk-1.3.4-1/FL/Fl_Widget.H ****   void* user_data_;
+ 107:fltk-1.3.4-1/FL/Fl_Widget.H ****   int x_,y_,w_,h_;
+ 108:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Label label_;
+ 109:fltk-1.3.4-1/FL/Fl_Widget.H ****   unsigned int flags_;
+ 110:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Color color_;
+ 111:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Color color2_;
+ 112:fltk-1.3.4-1/FL/Fl_Widget.H ****   uchar type_;
+ 113:fltk-1.3.4-1/FL/Fl_Widget.H ****   uchar damage_;
+ 114:fltk-1.3.4-1/FL/Fl_Widget.H ****   uchar box_;
+ 115:fltk-1.3.4-1/FL/Fl_Widget.H ****   uchar when_;
+ 116:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 117:fltk-1.3.4-1/FL/Fl_Widget.H ****   const char *tooltip_;
+ 118:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 119:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** unimplemented copy ctor */
+ 120:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Widget(const Fl_Widget &);
+ 121:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** unimplemented assignment operator */
+ 122:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Widget& operator=(const Fl_Widget &);
+ 123:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 124:fltk-1.3.4-1/FL/Fl_Widget.H **** protected:
+ 125:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 126:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Creates a widget at the given position and size.
+ 127:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 128:fltk-1.3.4-1/FL/Fl_Widget.H ****       The Fl_Widget is a protected constructor, but all derived widgets have a 
+ 129:fltk-1.3.4-1/FL/Fl_Widget.H ****       matching public constructor. It takes a value for x(), y(), w(), h(), and 
+ 130:fltk-1.3.4-1/FL/Fl_Widget.H ****       an optional value for label().
+ 131:fltk-1.3.4-1/FL/Fl_Widget.H ****     
+ 132:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] x, y the position of the widget relative to the enclosing window
+ 133:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] w, h size of the widget in pixels
+ 134:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] label optional text for the widget label
+ 135:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 136:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Widget(int x, int y, int w, int h, const char *label=0L);
+ 137:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 138:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Internal use only. Use position(int,int), size(int,int) or resize(int,int,int,int) instead. *
+ 139:fltk-1.3.4-1/FL/Fl_Widget.H ****   void x(int v) {x_ = v;}
+ 140:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Internal use only. Use position(int,int), size(int,int) or resize(int,int,int,int) instead. *
+ 141:fltk-1.3.4-1/FL/Fl_Widget.H ****   void y(int v) {y_ = v;}
+ 142:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Internal use only. Use position(int,int), size(int,int) or resize(int,int,int,int) instead. *
+ 143:fltk-1.3.4-1/FL/Fl_Widget.H ****   void w(int v) {w_ = v;}
+ 144:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Internal use only. Use position(int,int), size(int,int) or resize(int,int,int,int) instead. *
+ 145:fltk-1.3.4-1/FL/Fl_Widget.H ****   void h(int v) {h_ = v;}
+ 146:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Gets the widget flags mask */
+ 147:fltk-1.3.4-1/FL/Fl_Widget.H ****   unsigned int flags() const {return flags_;}
+ 148:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets a flag in the flags mask */
+ 149:fltk-1.3.4-1/FL/Fl_Widget.H ****   void set_flag(unsigned int c) {flags_ |= c;}
+ 150:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Clears a flag in the flags mask */
+ 151:fltk-1.3.4-1/FL/Fl_Widget.H ****   void clear_flag(unsigned int c) {flags_ &= ~c;}
+ 152:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** flags possible values enumeration.
+ 153:fltk-1.3.4-1/FL/Fl_Widget.H ****       See activate(), output(), visible(), changed(), set_visible_focus()
+ 154:fltk-1.3.4-1/FL/Fl_Widget.H ****   */
+ 155:fltk-1.3.4-1/FL/Fl_Widget.H ****   enum {
+ 156:fltk-1.3.4-1/FL/Fl_Widget.H ****         INACTIVE        = 1<<0,   ///< the widget can't receive focus, and is disabled but potentia
+ 157:fltk-1.3.4-1/FL/Fl_Widget.H ****         INVISIBLE       = 1<<1,   ///< the widget is not drawn, but can receive a few special event
+ 158:fltk-1.3.4-1/FL/Fl_Widget.H ****         OUTPUT          = 1<<2,   ///< for output only
+ 159:fltk-1.3.4-1/FL/Fl_Widget.H ****         NOBORDER        = 1<<3,   ///< don't draw a decoration (Fl_Window)
+ 160:fltk-1.3.4-1/FL/Fl_Widget.H ****         FORCE_POSITION  = 1<<4,   ///< don't let the window manager position the window (Fl_Window)
+ 161:fltk-1.3.4-1/FL/Fl_Widget.H ****         NON_MODAL       = 1<<5,   ///< this is a hovering toolbar window (Fl_Window)
+ 162:fltk-1.3.4-1/FL/Fl_Widget.H ****         SHORTCUT_LABEL  = 1<<6,   ///< the label contains a shortcut we need to draw
+ 163:fltk-1.3.4-1/FL/Fl_Widget.H ****         CHANGED         = 1<<7,   ///< the widget value changed
+ 164:fltk-1.3.4-1/FL/Fl_Widget.H ****         OVERRIDE        = 1<<8,   ///< position window on top (Fl_Window)
+ 165:fltk-1.3.4-1/FL/Fl_Widget.H ****         VISIBLE_FOCUS   = 1<<9,   ///< accepts keyboard focus navigation if the widget can have the
+ 166:fltk-1.3.4-1/FL/Fl_Widget.H ****         COPIED_LABEL    = 1<<10,  ///< the widget label is internally copied, its destruction is ha
+ 167:fltk-1.3.4-1/FL/Fl_Widget.H ****         CLIP_CHILDREN   = 1<<11,  ///< all drawing within this widget will be clipped (Fl_Group)
+ 168:fltk-1.3.4-1/FL/Fl_Widget.H ****         MENU_WINDOW     = 1<<12,  ///< a temporary popup window, dismissed by clicking outside (Fl_
+ 169:fltk-1.3.4-1/FL/Fl_Widget.H ****         TOOLTIP_WINDOW  = 1<<13,  ///< a temporary popup, transparent to events, and dismissed easi
+ 170:fltk-1.3.4-1/FL/Fl_Widget.H ****         MODAL           = 1<<14,  ///< a window blocking input to all other winows (Fl_Window)
+ 171:fltk-1.3.4-1/FL/Fl_Widget.H ****         NO_OVERLAY      = 1<<15,  ///< window not using a hardware overlay plane (Fl_Menu_Window)
+ 172:fltk-1.3.4-1/FL/Fl_Widget.H ****         GROUP_RELATIVE  = 1<<16,  ///< position this widget relative to the parent group, not to th
+ 173:fltk-1.3.4-1/FL/Fl_Widget.H ****         COPIED_TOOLTIP  = 1<<17,  ///< the widget tooltip is internally copied, its destruction is 
+ 174:fltk-1.3.4-1/FL/Fl_Widget.H ****         FULLSCREEN      = 1<<18,  ///< a fullscreen window (Fl_Window)
+ 175:fltk-1.3.4-1/FL/Fl_Widget.H ****         MAC_USE_ACCENTS_MENU = 1<<19, ///< On the Mac OS platform, pressing and holding a key on th
+ 176:fltk-1.3.4-1/FL/Fl_Widget.H ****         // (space for more flags)
+ 177:fltk-1.3.4-1/FL/Fl_Widget.H ****         USERFLAG3       = 1<<29,  ///< reserved for 3rd party extensions
+ 178:fltk-1.3.4-1/FL/Fl_Widget.H ****         USERFLAG2       = 1<<30,  ///< reserved for 3rd party extensions
+ 179:fltk-1.3.4-1/FL/Fl_Widget.H ****         USERFLAG1       = 1<<31   ///< reserved for 3rd party extensions
+ 180:fltk-1.3.4-1/FL/Fl_Widget.H ****   };
+ 181:fltk-1.3.4-1/FL/Fl_Widget.H ****   void draw_box() const;
+ 182:fltk-1.3.4-1/FL/Fl_Widget.H ****   void draw_box(Fl_Boxtype t, Fl_Color c) const;
+ 183:fltk-1.3.4-1/FL/Fl_Widget.H ****   void draw_box(Fl_Boxtype t, int x,int y,int w,int h, Fl_Color c) const;
+ 184:fltk-1.3.4-1/FL/Fl_Widget.H ****   void draw_backdrop() const;
+ 185:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** draws a focus rectangle around the widget */
+ 186:fltk-1.3.4-1/FL/Fl_Widget.H ****   void draw_focus() {draw_focus(box(),x(),y(),w(),h());}
+ 187:fltk-1.3.4-1/FL/Fl_Widget.H ****   void draw_focus(Fl_Boxtype t, int x,int y,int w,int h) const;
+ 188:fltk-1.3.4-1/FL/Fl_Widget.H ****   void draw_label() const;
+ 189:fltk-1.3.4-1/FL/Fl_Widget.H ****   void draw_label(int, int, int, int) const;
+ 190:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 191:fltk-1.3.4-1/FL/Fl_Widget.H **** public:
+ 192:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 193:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Destroys the widget.
+ 194:fltk-1.3.4-1/FL/Fl_Widget.H ****       Destroying single widgets is not very common. You almost always want to 
+ 195:fltk-1.3.4-1/FL/Fl_Widget.H ****       destroy the parent group instead, which will destroy all of the child widgets 
+ 196:fltk-1.3.4-1/FL/Fl_Widget.H ****       and groups in that group.
+ 197:fltk-1.3.4-1/FL/Fl_Widget.H ****       
+ 198:fltk-1.3.4-1/FL/Fl_Widget.H ****       \since FLTK 1.3, the widget's destructor removes the widget from its parent
+ 199:fltk-1.3.4-1/FL/Fl_Widget.H ****       group, if it is member of a group.
+ 200:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 201:fltk-1.3.4-1/FL/Fl_Widget.H ****   virtual ~Fl_Widget();
+ 202:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 203:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Draws the widget.
+ 204:fltk-1.3.4-1/FL/Fl_Widget.H ****       Never call this function directly. FLTK will schedule redrawing whenever
+ 205:fltk-1.3.4-1/FL/Fl_Widget.H ****       needed. If your widget must be redrawn as soon as possible, call redraw()
+ 206:fltk-1.3.4-1/FL/Fl_Widget.H ****       instead.
+ 207:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 208:fltk-1.3.4-1/FL/Fl_Widget.H ****       Override this function to draw your own widgets.
+ 209:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 210:fltk-1.3.4-1/FL/Fl_Widget.H ****       If you ever need to call another widget's draw method <I>from within your
+ 211:fltk-1.3.4-1/FL/Fl_Widget.H ****       own draw() method</I>, e.g. for an embedded scrollbar, you can do it
+ 212:fltk-1.3.4-1/FL/Fl_Widget.H ****       (because draw() is virtual) like this:
+ 213:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 214:fltk-1.3.4-1/FL/Fl_Widget.H ****       \code
+ 215:fltk-1.3.4-1/FL/Fl_Widget.H ****         Fl_Widget *s = &scroll;		// scroll is an embedded Fl_Scrollbar
+ 216:fltk-1.3.4-1/FL/Fl_Widget.H **** 	s->draw();			// calls Fl_Scrollbar::draw()
+ 217:fltk-1.3.4-1/FL/Fl_Widget.H ****       \endcode
+ 218:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 219:fltk-1.3.4-1/FL/Fl_Widget.H ****   virtual void draw() = 0;
+ 220:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 221:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Handles the specified event. 
+ 222:fltk-1.3.4-1/FL/Fl_Widget.H ****       You normally don't call this method directly, but instead let FLTK do 
+ 223:fltk-1.3.4-1/FL/Fl_Widget.H ****       it when the user interacts with the widget.
+ 224:fltk-1.3.4-1/FL/Fl_Widget.H ****      
+ 225:fltk-1.3.4-1/FL/Fl_Widget.H ****       When implemented in a widget, this function must return 0 if the 
+ 226:fltk-1.3.4-1/FL/Fl_Widget.H ****       widget does not use the event or 1 otherwise.
+ 227:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 228:fltk-1.3.4-1/FL/Fl_Widget.H ****       Most of the time, you want to call the inherited handle() method in 
+ 229:fltk-1.3.4-1/FL/Fl_Widget.H ****       your overridden method so that you don't short-circuit events that you 
+ 230:fltk-1.3.4-1/FL/Fl_Widget.H ****       don't handle. In this last case you should return the callee retval.
+ 231:fltk-1.3.4-1/FL/Fl_Widget.H ****     
+ 232:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] event the kind of event received
+ 233:fltk-1.3.4-1/FL/Fl_Widget.H ****       \retval 0 if the event was not used or understood
+ 234:fltk-1.3.4-1/FL/Fl_Widget.H ****       \retval 1 if the event was used and can be deleted
+ 235:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see Fl_Event
+ 236:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 237:fltk-1.3.4-1/FL/Fl_Widget.H ****   virtual int handle(int event);
+ 238:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 239:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Returns whether the current label was assigned with copy_label().
+ 240:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 241:fltk-1.3.4-1/FL/Fl_Widget.H ****       This can be useful for temporarily overwriting the widget's label
+ 242:fltk-1.3.4-1/FL/Fl_Widget.H ****       and restoring it later.
+ 243:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 244:fltk-1.3.4-1/FL/Fl_Widget.H ****       \retval 0 current label was assigned with label().
+ 245:fltk-1.3.4-1/FL/Fl_Widget.H ****       \retval 1 current label was assigned with copy_label().
+ 246:fltk-1.3.4-1/FL/Fl_Widget.H ****   */
+ 247:fltk-1.3.4-1/FL/Fl_Widget.H ****   int is_label_copied() const {return ((flags_ & COPIED_LABEL) ? 1 : 0);}
+ 248:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 249:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Returns a pointer to the parent widget.  
+ 250:fltk-1.3.4-1/FL/Fl_Widget.H ****       Usually this is a Fl_Group or Fl_Window. 
+ 251:fltk-1.3.4-1/FL/Fl_Widget.H ****       \retval NULL if the widget has no parent
+ 252:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see Fl_Group::add(Fl_Widget*)
+ 253:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 254:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Group* parent() const {return parent_;}
+ 255:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 256:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Internal use only - "for hacks only".
+ 257:fltk-1.3.4-1/FL/Fl_Widget.H ****   
+ 258:fltk-1.3.4-1/FL/Fl_Widget.H ****       It is \em \b STRONGLY recommended not to use this method, because it
+ 259:fltk-1.3.4-1/FL/Fl_Widget.H ****       short-circuits Fl_Group's normal widget adding and removing methods,
+ 260:fltk-1.3.4-1/FL/Fl_Widget.H ****       if the widget is already a child widget of another Fl_Group.
+ 261:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 262:fltk-1.3.4-1/FL/Fl_Widget.H ****       Use Fl_Group::add(Fl_Widget*) and/or Fl_Group::remove(Fl_Widget*) instead.
+ 263:fltk-1.3.4-1/FL/Fl_Widget.H ****   */
+ 264:fltk-1.3.4-1/FL/Fl_Widget.H ****   void parent(Fl_Group* p) {parent_ = p;} // for hacks only, use Fl_Group::add()
+ 265:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 266:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Gets the widget type.
+ 267:fltk-1.3.4-1/FL/Fl_Widget.H ****       Returns the widget type value, which is used for Forms compatibility
+ 268:fltk-1.3.4-1/FL/Fl_Widget.H ****       and to simulate RTTI.
+ 269:fltk-1.3.4-1/FL/Fl_Widget.H ****       
+ 270:fltk-1.3.4-1/FL/Fl_Widget.H ****       \todo Explain "simulate RTTI" (currently only used to decide if a widget
+ 271:fltk-1.3.4-1/FL/Fl_Widget.H ****       is a window, i.e. type()>=FL_WINDOW ?). Is type() really used in a way
+ 272:fltk-1.3.4-1/FL/Fl_Widget.H ****       that ensures "Forms compatibility" ?
+ 273:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 274:fltk-1.3.4-1/FL/Fl_Widget.H ****   uchar type() const {return type_;}
+ 275:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 276:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets the widget type.
+ 277:fltk-1.3.4-1/FL/Fl_Widget.H ****       This is used for Forms compatibility.
+ 278:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 279:fltk-1.3.4-1/FL/Fl_Widget.H ****   void type(uchar t) {type_ = t;}
+ 280:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 281:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Gets the widget position in its window.
+ 282:fltk-1.3.4-1/FL/Fl_Widget.H ****       \return the x position relative to the window
+ 283:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 284:fltk-1.3.4-1/FL/Fl_Widget.H ****   int x() const {return x_;}
+ 285:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 286:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Gets the widget position in its window.
+ 287:fltk-1.3.4-1/FL/Fl_Widget.H ****       \return the y position relative to the window
+ 288:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 289:fltk-1.3.4-1/FL/Fl_Widget.H ****   int y() const {return y_;}
+ 290:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 291:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Gets the widget width.
+ 292:fltk-1.3.4-1/FL/Fl_Widget.H ****       \return the width of the widget in pixels.
+ 293:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 294:fltk-1.3.4-1/FL/Fl_Widget.H ****   int w() const {return w_;}
+ 295:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 296:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Gets the widget height.
+ 297:fltk-1.3.4-1/FL/Fl_Widget.H ****       \return the height of the widget in pixels.
+ 298:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 299:fltk-1.3.4-1/FL/Fl_Widget.H ****   int h() const {return h_;}
+ 300:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 301:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Changes the size or position of the widget.
+ 302:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 303:fltk-1.3.4-1/FL/Fl_Widget.H ****       This is a virtual function so that the widget may implement its 
+ 304:fltk-1.3.4-1/FL/Fl_Widget.H ****       own handling of resizing. The default version does \e not
+ 305:fltk-1.3.4-1/FL/Fl_Widget.H ****       call the redraw() method, but instead relies on the parent widget 
+ 306:fltk-1.3.4-1/FL/Fl_Widget.H ****       to do so because the parent may know a faster way to update the 
+ 307:fltk-1.3.4-1/FL/Fl_Widget.H ****       display, such as scrolling from the old position.  
+ 308:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 309:fltk-1.3.4-1/FL/Fl_Widget.H ****       Some window managers under X11 call resize() a lot more often 
+ 310:fltk-1.3.4-1/FL/Fl_Widget.H ****       than needed. Please verify that the position or size of a widget 
+ 311:fltk-1.3.4-1/FL/Fl_Widget.H ****       did actually change before doing any extensive calculations.
+ 312:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 313:fltk-1.3.4-1/FL/Fl_Widget.H ****       position(X, Y) is a shortcut for resize(X, Y, w(), h()), 
+ 314:fltk-1.3.4-1/FL/Fl_Widget.H ****       and size(W, H) is a shortcut for resize(x(), y(), W, H).
+ 315:fltk-1.3.4-1/FL/Fl_Widget.H ****     
+ 316:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] x, y new position relative to the parent window 
+ 317:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] w, h new size
+ 318:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see position(int,int), size(int,int)
+ 319:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 320:fltk-1.3.4-1/FL/Fl_Widget.H ****   virtual void resize(int x, int y, int w, int h);
+ 321:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 322:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Internal use only. */
+ 323:fltk-1.3.4-1/FL/Fl_Widget.H ****   int damage_resize(int,int,int,int);
+ 324:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 325:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Repositions the window or widget.
+ 326:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 327:fltk-1.3.4-1/FL/Fl_Widget.H ****       position(X, Y) is a shortcut for resize(X, Y, w(), h()).
+ 328:fltk-1.3.4-1/FL/Fl_Widget.H ****     
+ 329:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] X, Y new position relative to the parent window 
+ 330:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see resize(int,int,int,int), size(int,int)
+ 331:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 332:fltk-1.3.4-1/FL/Fl_Widget.H ****   void position(int X,int Y) {resize(X,Y,w_,h_);}
+ 333:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 334:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Changes the size of the widget.
+ 335:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 336:fltk-1.3.4-1/FL/Fl_Widget.H ****       size(W, H) is a shortcut for resize(x(), y(), W, H).
+ 337:fltk-1.3.4-1/FL/Fl_Widget.H ****     
+ 338:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] W, H new size
+ 339:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see position(int,int), resize(int,int,int,int)
+ 340:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 341:fltk-1.3.4-1/FL/Fl_Widget.H ****   void size(int W,int H) {resize(x_,y_,W,H);}
+ 342:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 343:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Gets the label alignment.
+ 344:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 345:fltk-1.3.4-1/FL/Fl_Widget.H ****       \return label alignment
+ 346:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see label(), align(Fl_Align), Fl_Align
+ 347:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 348:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Align align() const {return label_.align_;}
+ 349:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 350:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets the label alignment.
+ 351:fltk-1.3.4-1/FL/Fl_Widget.H ****       This controls how the label is displayed next to or inside the widget. 
+ 352:fltk-1.3.4-1/FL/Fl_Widget.H ****       The default value is FL_ALIGN_CENTER, which centers the label inside 
+ 353:fltk-1.3.4-1/FL/Fl_Widget.H ****       the widget.
+ 354:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] alignment new label alignment
+ 355:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see align(), Fl_Align
+ 356:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 357:fltk-1.3.4-1/FL/Fl_Widget.H ****   void align(Fl_Align alignment) {label_.align_ = alignment;}
+ 358:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 359:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Gets the box type of the widget.
+ 360:fltk-1.3.4-1/FL/Fl_Widget.H ****       \return the current box type
+ 361:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see box(Fl_Boxtype), Fl_Boxtype
+ 362:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 363:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Boxtype box() const {return (Fl_Boxtype)box_;}
+ 364:fltk-1.3.4-1/FL/Fl_Widget.H ****   
+ 365:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets the box type for the widget. 
+ 366:fltk-1.3.4-1/FL/Fl_Widget.H ****       This identifies a routine that draws the background of the widget.
+ 367:fltk-1.3.4-1/FL/Fl_Widget.H ****       See Fl_Boxtype for the available types. The default depends on the 
+ 368:fltk-1.3.4-1/FL/Fl_Widget.H ****       widget, but is usually FL_NO_BOX or FL_UP_BOX.
+ 369:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] new_box the new box type
+ 370:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see box(), Fl_Boxtype
+ 371:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 372:fltk-1.3.4-1/FL/Fl_Widget.H ****   void box(Fl_Boxtype new_box) {box_ = new_box;}
+ 373:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 374:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Gets the background color of the widget.
+ 375:fltk-1.3.4-1/FL/Fl_Widget.H ****       \return current background color
+ 376:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see color(Fl_Color), color(Fl_Color, Fl_Color)
+ 377:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 378:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Color color() const {return color_;}
+ 379:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 380:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets the background color of the widget. 
+ 381:fltk-1.3.4-1/FL/Fl_Widget.H ****       The color is passed to the box routine. The color is either an index into 
+ 382:fltk-1.3.4-1/FL/Fl_Widget.H ****       an internal table of RGB colors or an RGB color value generated using 
+ 383:fltk-1.3.4-1/FL/Fl_Widget.H ****       fl_rgb_color().
+ 384:fltk-1.3.4-1/FL/Fl_Widget.H ****       
+ 385:fltk-1.3.4-1/FL/Fl_Widget.H ****       The default for most widgets is FL_BACKGROUND_COLOR. Use Fl::set_color()
+ 386:fltk-1.3.4-1/FL/Fl_Widget.H ****       to redefine colors in the color map.
+ 387:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] bg background color
+ 388:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see color(), color(Fl_Color, Fl_Color), selection_color(Fl_Color)
+ 389:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 390:fltk-1.3.4-1/FL/Fl_Widget.H ****   void color(Fl_Color bg) {color_ = bg;}
+ 391:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 392:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Gets the selection color.
+ 393:fltk-1.3.4-1/FL/Fl_Widget.H ****       \return the current selection color
+ 394:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see selection_color(Fl_Color), color(Fl_Color, Fl_Color)
+ 395:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 396:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Color selection_color() const {return color2_;}
+ 397:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 398:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets the selection color.
+ 399:fltk-1.3.4-1/FL/Fl_Widget.H ****       The selection color is defined for Forms compatibility and is usually 
+ 400:fltk-1.3.4-1/FL/Fl_Widget.H ****       used to color the widget when it is selected, although some widgets 
+ 401:fltk-1.3.4-1/FL/Fl_Widget.H ****       use this color for other purposes. You can set both colors at once 
+ 402:fltk-1.3.4-1/FL/Fl_Widget.H ****       with color(Fl_Color bg, Fl_Color sel).
+ 403:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] a the new selection color
+ 404:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see selection_color(), color(Fl_Color, Fl_Color)
+ 405:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 406:fltk-1.3.4-1/FL/Fl_Widget.H ****   void selection_color(Fl_Color a) {color2_ = a;}
+ 407:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 408:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets the background and selection color of the widget. 
+ 409:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 410:fltk-1.3.4-1/FL/Fl_Widget.H ****       The two color form sets both the background and selection colors. 
+ 411:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] bg background color
+ 412:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] sel selection color
+ 413:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see color(unsigned), selection_color(unsigned)
+ 414:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 415:fltk-1.3.4-1/FL/Fl_Widget.H ****   void color(Fl_Color bg, Fl_Color sel) {color_=bg; color2_=sel;}
+ 416:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 417:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Gets the current label text.
+ 418:fltk-1.3.4-1/FL/Fl_Widget.H ****       \return a pointer to the current label text
+ 419:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see label(const char *), copy_label(const char *)
+ 420:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 421:fltk-1.3.4-1/FL/Fl_Widget.H ****   const char* label() const {return label_.value;}
+ 422:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 423:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets the current label pointer.
+ 424:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 425:fltk-1.3.4-1/FL/Fl_Widget.H ****       The label is shown somewhere on or next to the widget. The passed pointer 
+ 426:fltk-1.3.4-1/FL/Fl_Widget.H ****       is stored unchanged in the widget (the string is \em not copied), so if 
+ 427:fltk-1.3.4-1/FL/Fl_Widget.H ****       you need to set the label to a formatted value, make sure the buffer is 
+ 428:fltk-1.3.4-1/FL/Fl_Widget.H ****       static, global, or allocated. The copy_label() method can be used 
+ 429:fltk-1.3.4-1/FL/Fl_Widget.H ****       to make a copy of the label string automatically.
+ 430:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] text pointer to new label text
+ 431:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see copy_label()
+ 432:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 433:fltk-1.3.4-1/FL/Fl_Widget.H ****   void label(const char* text);
+ 434:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 435:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets the current label. 
+ 436:fltk-1.3.4-1/FL/Fl_Widget.H ****       Unlike label(), this method allocates a copy of the label 
+ 437:fltk-1.3.4-1/FL/Fl_Widget.H ****       string instead of using the original string pointer.
+ 438:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 439:fltk-1.3.4-1/FL/Fl_Widget.H ****       The internal copy will automatically be freed whenever you assign
+ 440:fltk-1.3.4-1/FL/Fl_Widget.H ****       a new label or when the widget is destroyed.
+ 441:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 442:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] new_label the new label text
+ 443:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see label()
+ 444:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 445:fltk-1.3.4-1/FL/Fl_Widget.H ****   void copy_label(const char *new_label);
+ 446:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 447:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Shortcut to set the label text and type in one call.
+ 448:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see label(const char *), labeltype(Fl_Labeltype)
+ 449:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 450:fltk-1.3.4-1/FL/Fl_Widget.H ****   void label(Fl_Labeltype a, const char* b) {label_.type = a; label_.value = b;}
+ 451:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 452:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Gets the label type.
+ 453:fltk-1.3.4-1/FL/Fl_Widget.H ****       \return the current label type.
+ 454:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see Fl_Labeltype
+ 455:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 456:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Labeltype labeltype() const {return (Fl_Labeltype)label_.type;}
+ 457:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 458:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets the label type. 
+ 459:fltk-1.3.4-1/FL/Fl_Widget.H ****       The label type identifies the function that draws the label of the widget. 
+ 460:fltk-1.3.4-1/FL/Fl_Widget.H ****       This is generally used for special effects such as embossing or for using 
+ 461:fltk-1.3.4-1/FL/Fl_Widget.H ****       the label() pointer as another form of data such as an icon. The value 
+ 462:fltk-1.3.4-1/FL/Fl_Widget.H ****       FL_NORMAL_LABEL prints the label as plain text.
+ 463:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] a new label type
+ 464:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see Fl_Labeltype
+ 465:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 466:fltk-1.3.4-1/FL/Fl_Widget.H ****   void labeltype(Fl_Labeltype a) {label_.type = a;}
+ 467:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 468:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Gets the label color. 
+ 469:fltk-1.3.4-1/FL/Fl_Widget.H ****       The default color is FL_FOREGROUND_COLOR. 
+ 470:fltk-1.3.4-1/FL/Fl_Widget.H ****       \return the current label color
+ 471:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 472:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Color labelcolor() const {return label_.color;}
+ 473:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 474:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets the label color. 
+ 475:fltk-1.3.4-1/FL/Fl_Widget.H ****       The default color is FL_FOREGROUND_COLOR. 
+ 476:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] c the new label color
+ 477:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 478:fltk-1.3.4-1/FL/Fl_Widget.H ****   void labelcolor(Fl_Color c) {label_.color=c;}
+ 479:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 480:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Gets the font to use. 
+ 481:fltk-1.3.4-1/FL/Fl_Widget.H ****       Fonts are identified by indexes into a table. The default value
+ 482:fltk-1.3.4-1/FL/Fl_Widget.H ****       uses a Helvetica typeface (Arial for Microsoft&reg; Windows&reg;).
+ 483:fltk-1.3.4-1/FL/Fl_Widget.H ****       The function Fl::set_font() can define new typefaces.
+ 484:fltk-1.3.4-1/FL/Fl_Widget.H ****       \return current font used by the label
+ 485:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see Fl_Font
+ 486:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 487:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Font labelfont() const {return label_.font;}
+ 488:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 489:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets the font to use. 
+ 490:fltk-1.3.4-1/FL/Fl_Widget.H ****       Fonts are identified by indexes into a table. The default value
+ 491:fltk-1.3.4-1/FL/Fl_Widget.H ****       uses a Helvetica typeface (Arial for Microsoft&reg; Windows&reg;).
+ 492:fltk-1.3.4-1/FL/Fl_Widget.H ****       The function Fl::set_font() can define new typefaces.
+ 493:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] f the new font for the label
+ 494:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see Fl_Font
+ 495:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 496:fltk-1.3.4-1/FL/Fl_Widget.H ****   void labelfont(Fl_Font f) {label_.font=f;}
+ 497:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 498:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Gets the font size in pixels. 
+ 499:fltk-1.3.4-1/FL/Fl_Widget.H ****       The default size is 14 pixels.
+ 500:fltk-1.3.4-1/FL/Fl_Widget.H ****       \return the current font size
+ 501:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 502:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Fontsize labelsize() const {return label_.size;}
+ 503:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 504:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets the font size in pixels.
+ 505:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] pix the new font size
+ 506:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see Fl_Fontsize labelsize()
+ 507:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 508:fltk-1.3.4-1/FL/Fl_Widget.H ****   void labelsize(Fl_Fontsize pix) {label_.size=pix;}
+ 509:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 510:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Gets the image that is used as part of the widget label.
+ 511:fltk-1.3.4-1/FL/Fl_Widget.H ****       This image is used when drawing the widget in the active state.
+ 512:fltk-1.3.4-1/FL/Fl_Widget.H ****       \return the current image
+ 513:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 514:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Image* image() {return label_.image;}
+ 515:fltk-1.3.4-1/FL/Fl_Widget.H ****   const Fl_Image* image() const {return label_.image;}
+ 516:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 517:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets the image to use as part of the widget label.
+ 518:fltk-1.3.4-1/FL/Fl_Widget.H ****       This image is used when drawing the widget in the active state.
+ 519:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] img the new image for the label 
+ 520:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 521:fltk-1.3.4-1/FL/Fl_Widget.H ****   void image(Fl_Image* img) {label_.image=img;}
+ 522:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 523:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets the image to use as part of the widget label.
+ 524:fltk-1.3.4-1/FL/Fl_Widget.H ****       This image is used when drawing the widget in the active state.
+ 525:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] img the new image for the label 
+ 526:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 527:fltk-1.3.4-1/FL/Fl_Widget.H ****   void image(Fl_Image& img) {label_.image=&img;}
+ 528:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 529:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Gets the image that is used as part of the widget label.  
+ 530:fltk-1.3.4-1/FL/Fl_Widget.H ****       This image is used when drawing the widget in the inactive state.
+ 531:fltk-1.3.4-1/FL/Fl_Widget.H ****       \return the current image for the deactivated widget
+ 532:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 533:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Image* deimage() {return label_.deimage;}
+ 534:fltk-1.3.4-1/FL/Fl_Widget.H ****   const Fl_Image* deimage() const {return label_.deimage;}
+ 535:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 536:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets the image to use as part of the widget label.  
+ 537:fltk-1.3.4-1/FL/Fl_Widget.H ****       This image is used when drawing the widget in the inactive state.
+ 538:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] img the new image for the deactivated widget
+ 539:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 540:fltk-1.3.4-1/FL/Fl_Widget.H ****   void deimage(Fl_Image* img) {label_.deimage=img;}
+ 541:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 542:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets the image to use as part of the widget label.  
+ 543:fltk-1.3.4-1/FL/Fl_Widget.H ****       This image is used when drawing the widget in the inactive state.
+ 544:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] img the new image for the deactivated widget
+ 545:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 546:fltk-1.3.4-1/FL/Fl_Widget.H ****   void deimage(Fl_Image& img) {label_.deimage=&img;}
+ 547:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 548:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Gets the current tooltip text.
+ 549:fltk-1.3.4-1/FL/Fl_Widget.H ****       \return a pointer to the tooltip text or NULL
+ 550:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see tooltip(const char*), copy_tooltip(const char*)
+ 551:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 552:fltk-1.3.4-1/FL/Fl_Widget.H ****   const char *tooltip() const {return tooltip_;}
+ 553:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 554:fltk-1.3.4-1/FL/Fl_Widget.H ****   void tooltip(const char *text);		// see Fl_Tooltip
+ 555:fltk-1.3.4-1/FL/Fl_Widget.H ****   void copy_tooltip(const char *text);		// see Fl_Tooltip
+ 556:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 557:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Gets the current callback function for the widget.
+ 558:fltk-1.3.4-1/FL/Fl_Widget.H ****       Each widget has a single callback.
+ 559:fltk-1.3.4-1/FL/Fl_Widget.H ****       \return current callback
+ 560:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 561:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Callback_p callback() const {return callback_;}
+ 562:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 563:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets the current callback function for the widget.
+ 564:fltk-1.3.4-1/FL/Fl_Widget.H ****       Each widget has a single callback.
+ 565:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] cb new callback
+ 566:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] p user data
+ 567:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 568:fltk-1.3.4-1/FL/Fl_Widget.H ****   void callback(Fl_Callback* cb, void* p) {callback_=cb; user_data_=p;}
+ 569:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 570:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets the current callback function for the widget.
+ 571:fltk-1.3.4-1/FL/Fl_Widget.H ****       Each widget has a single callback.
+ 572:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] cb new callback
+ 573:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 574:fltk-1.3.4-1/FL/Fl_Widget.H ****   void callback(Fl_Callback* cb) {callback_=cb;}
+ 575:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 576:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets the current callback function for the widget.
+ 577:fltk-1.3.4-1/FL/Fl_Widget.H ****       Each widget has a single callback.
+ 578:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] cb new callback
+ 579:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 580:fltk-1.3.4-1/FL/Fl_Widget.H ****   void callback(Fl_Callback0*cb) {callback_=(Fl_Callback*)cb;}
+ 581:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 582:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets the current callback function for the widget.
+ 583:fltk-1.3.4-1/FL/Fl_Widget.H ****       Each widget has a single callback.
+ 584:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] cb new callback
+ 585:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] p user data
+ 586:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 587:fltk-1.3.4-1/FL/Fl_Widget.H ****   void callback(Fl_Callback1*cb, long p=0) {callback_=(Fl_Callback*)cb; user_data_=(void*)(fl_intpt
+ 588:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 589:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Gets the user data for this widget.
+ 590:fltk-1.3.4-1/FL/Fl_Widget.H ****       Gets the current user data (void *) argument that is passed to the callback function.
+ 591:fltk-1.3.4-1/FL/Fl_Widget.H ****       \return user data as a pointer
+ 592:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 593:fltk-1.3.4-1/FL/Fl_Widget.H ****   void* user_data() const {return user_data_;}
+ 594:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 595:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets the user data for this widget.
+ 596:fltk-1.3.4-1/FL/Fl_Widget.H ****       Sets the new user data (void *) argument that is passed to the callback function.
+ 597:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] v new user data
+ 598:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 599:fltk-1.3.4-1/FL/Fl_Widget.H ****   void user_data(void* v) {user_data_ = v;}
+ 600:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 601:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Gets the current user data (long) argument that is passed to the callback function.
+ 602:fltk-1.3.4-1/FL/Fl_Widget.H ****       \todo The user data value must be implemented using \em intptr_t or similar
+ 603:fltk-1.3.4-1/FL/Fl_Widget.H ****       to avoid 64-bit machine incompatibilities.
+ 604:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 605:fltk-1.3.4-1/FL/Fl_Widget.H ****   long argument() const {return (long)(fl_intptr_t)user_data_;}
+ 606:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 607:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets the current user data (long) argument that is passed to the callback function.
+ 608:fltk-1.3.4-1/FL/Fl_Widget.H ****       \todo The user data value must be implemented using \em intptr_t or similar
+ 609:fltk-1.3.4-1/FL/Fl_Widget.H ****       to avoid 64-bit machine incompatibilities.
+ 610:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 611:fltk-1.3.4-1/FL/Fl_Widget.H ****   void argument(long v) {user_data_ = (void*)(fl_intptr_t)v;}
+ 612:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 613:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Returns the conditions under which the callback is called.
+ 614:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 615:fltk-1.3.4-1/FL/Fl_Widget.H ****       You can set the flags with when(uchar), the default value is
+ 616:fltk-1.3.4-1/FL/Fl_Widget.H ****       FL_WHEN_RELEASE.
+ 617:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 618:fltk-1.3.4-1/FL/Fl_Widget.H ****       \return set of flags
+ 619:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see when(uchar)
+ 620:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 621:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_When when() const {return (Fl_When)when_;}
+ 622:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 623:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets the flags used to decide when a callback is called.
+ 624:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 625:fltk-1.3.4-1/FL/Fl_Widget.H ****      This controls when callbacks are done. The following values are useful,
+ 626:fltk-1.3.4-1/FL/Fl_Widget.H ****      the default value is FL_WHEN_RELEASE:
+ 627:fltk-1.3.4-1/FL/Fl_Widget.H ****      
+ 628:fltk-1.3.4-1/FL/Fl_Widget.H ****      \li 0: The callback is not done, but changed() is turned on.
+ 629:fltk-1.3.4-1/FL/Fl_Widget.H ****      \li FL_WHEN_CHANGED: The callback is done each time the text is
+ 630:fltk-1.3.4-1/FL/Fl_Widget.H ****          changed by the user.
+ 631:fltk-1.3.4-1/FL/Fl_Widget.H ****      \li FL_WHEN_RELEASE: The callback will be done when this widget loses 
+ 632:fltk-1.3.4-1/FL/Fl_Widget.H ****          the focus, including when the window is unmapped. This is a useful 
+ 633:fltk-1.3.4-1/FL/Fl_Widget.H **** 	 value for text fields in a panel where doing the callback on every
+ 634:fltk-1.3.4-1/FL/Fl_Widget.H ****   	 change is wasteful. However the callback will also happen if the 
+ 635:fltk-1.3.4-1/FL/Fl_Widget.H **** 	 mouse is moved out of the window, which means it should not do 
+ 636:fltk-1.3.4-1/FL/Fl_Widget.H **** 	 anything visible (like pop up an error message).
+ 637:fltk-1.3.4-1/FL/Fl_Widget.H **** 	 You might do better setting this to zero, and scanning all the
+ 638:fltk-1.3.4-1/FL/Fl_Widget.H **** 	 items for changed() when the OK button on a panel is pressed.
+ 639:fltk-1.3.4-1/FL/Fl_Widget.H ****      \li FL_WHEN_ENTER_KEY: If the user types the Enter key, the entire 
+ 640:fltk-1.3.4-1/FL/Fl_Widget.H ****          text is selected, and the callback is done if the text has changed. 
+ 641:fltk-1.3.4-1/FL/Fl_Widget.H **** 	 Normally the Enter key will navigate to the next field (or insert 
+ 642:fltk-1.3.4-1/FL/Fl_Widget.H **** 	 a newline for a Fl_Multiline_Input) - this changes the behavior.
+ 643:fltk-1.3.4-1/FL/Fl_Widget.H ****      \li FL_WHEN_ENTER_KEY|FL_WHEN_NOT_CHANGED: The Enter key will do the
+ 644:fltk-1.3.4-1/FL/Fl_Widget.H ****          callback even if the text has not changed. Useful for command fields.
+ 645:fltk-1.3.4-1/FL/Fl_Widget.H ****       Fl_Widget::when() is a set of bitflags used by subclasses of 
+ 646:fltk-1.3.4-1/FL/Fl_Widget.H ****       Fl_Widget to decide when to do the callback.
+ 647:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 648:fltk-1.3.4-1/FL/Fl_Widget.H ****       If the value is zero then the callback is never done. Other values 
+ 649:fltk-1.3.4-1/FL/Fl_Widget.H ****       are described  in the individual widgets. This field is in the base 
+ 650:fltk-1.3.4-1/FL/Fl_Widget.H ****       class so that you can scan a panel and do_callback() on all the ones
+ 651:fltk-1.3.4-1/FL/Fl_Widget.H ****       that don't do their own callbacks in response to an "OK" button.
+ 652:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] i set of flags
+ 653:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 654:fltk-1.3.4-1/FL/Fl_Widget.H ****   void when(uchar i) {when_ = i;}
+ 655:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 656:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Returns whether a widget is visible.
+ 657:fltk-1.3.4-1/FL/Fl_Widget.H ****       \retval 0 if the widget is not drawn and hence invisible.
+ 658:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see show(), hide(), visible_r()
+ 659:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 660:fltk-1.3.4-1/FL/Fl_Widget.H ****   unsigned int visible() const {return !(flags_&INVISIBLE);}
+ 661:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 662:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Returns whether a widget and all its parents are visible.
+ 663:fltk-1.3.4-1/FL/Fl_Widget.H ****       \retval 0 if the widget or any of its parents are invisible.
+ 664:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see show(), hide(), visible()
+ 665:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 666:fltk-1.3.4-1/FL/Fl_Widget.H ****   int visible_r() const;
+ 667:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 668:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Makes a widget visible.
+ 669:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 670:fltk-1.3.4-1/FL/Fl_Widget.H ****       An invisible widget never gets redrawn and does not get keyboard
+ 671:fltk-1.3.4-1/FL/Fl_Widget.H ****       or mouse events, but can receive a few other events like FL_SHOW.
+ 672:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 673:fltk-1.3.4-1/FL/Fl_Widget.H ****       The visible() method returns true if the widget is set to be
+ 674:fltk-1.3.4-1/FL/Fl_Widget.H ****       visible. The visible_r() method returns true if the widget and
+ 675:fltk-1.3.4-1/FL/Fl_Widget.H ****       all of its parents are visible. A widget is only visible if
+ 676:fltk-1.3.4-1/FL/Fl_Widget.H ****       visible() is true on it <I>and all of its parents</I>.
+ 677:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 678:fltk-1.3.4-1/FL/Fl_Widget.H ****       Changing it will send FL_SHOW or FL_HIDE events to the widget.
+ 679:fltk-1.3.4-1/FL/Fl_Widget.H ****       <I>Do not change it if the parent is not visible, as this
+ 680:fltk-1.3.4-1/FL/Fl_Widget.H ****       will send false FL_SHOW or FL_HIDE events to the widget</I>.
+ 681:fltk-1.3.4-1/FL/Fl_Widget.H ****       redraw() is called if necessary on this or the parent.
+ 682:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 683:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see hide(), visible(), visible_r()
+ 684:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 685:fltk-1.3.4-1/FL/Fl_Widget.H ****   virtual void show();
+ 686:fltk-1.3.4-1/FL/Fl_Widget.H ****   
+ 687:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Makes a widget invisible.
+ 688:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see show(), visible(), visible_r()
+ 689:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 690:fltk-1.3.4-1/FL/Fl_Widget.H ****   virtual void hide();
+ 691:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 692:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Makes the widget visible. 
+ 693:fltk-1.3.4-1/FL/Fl_Widget.H ****       You must still redraw the parent widget to see a change in the 
+ 694:fltk-1.3.4-1/FL/Fl_Widget.H ****       window. Normally you want to use the show() method instead.
+ 695:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 696:fltk-1.3.4-1/FL/Fl_Widget.H ****   void set_visible() {flags_ &= ~INVISIBLE;}
+ 697:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 698:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Hides the widget. 
+ 699:fltk-1.3.4-1/FL/Fl_Widget.H ****       You must still redraw the parent to see a change in the window. 
+ 700:fltk-1.3.4-1/FL/Fl_Widget.H ****       Normally you want to use the hide() method instead.
+ 701:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 702:fltk-1.3.4-1/FL/Fl_Widget.H ****   void clear_visible() {flags_ |= INVISIBLE;}
+ 703:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 704:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Returns whether the widget is active.
+ 705:fltk-1.3.4-1/FL/Fl_Widget.H ****       \retval 0 if the widget is inactive
+ 706:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see active_r(), activate(), deactivate()
+ 707:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 708:fltk-1.3.4-1/FL/Fl_Widget.H ****   unsigned int active() const {return !(flags_&INACTIVE);}
+ 709:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 710:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Returns whether the widget and all of its parents are active. 
+ 711:fltk-1.3.4-1/FL/Fl_Widget.H ****       \retval 0 if this or any of the parent widgets are inactive
+ 712:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see active(), activate(), deactivate()
+ 713:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 714:fltk-1.3.4-1/FL/Fl_Widget.H ****   int active_r() const;
+ 715:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 716:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Activates the widget.
+ 717:fltk-1.3.4-1/FL/Fl_Widget.H ****       Changing this value will send FL_ACTIVATE to the widget if 
+ 718:fltk-1.3.4-1/FL/Fl_Widget.H ****       active_r() is true.
+ 719:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see active(), active_r(), deactivate()
+ 720:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 721:fltk-1.3.4-1/FL/Fl_Widget.H ****   void activate();
+ 722:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 723:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Deactivates the widget.
+ 724:fltk-1.3.4-1/FL/Fl_Widget.H ****       Inactive widgets will be drawn "grayed out", e.g. with less contrast 
+ 725:fltk-1.3.4-1/FL/Fl_Widget.H ****       than the active widget. Inactive widgets will not receive any keyboard 
+ 726:fltk-1.3.4-1/FL/Fl_Widget.H ****       or mouse button events. Other events (including FL_ENTER, FL_MOVE, 
+ 727:fltk-1.3.4-1/FL/Fl_Widget.H ****       FL_LEAVE, FL_SHORTCUT, and others) will still be sent. A widget is 
+ 728:fltk-1.3.4-1/FL/Fl_Widget.H ****       only active if active() is true on it <I>and all of its parents</I>.  
+ 729:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 730:fltk-1.3.4-1/FL/Fl_Widget.H ****       Changing this value will send FL_DEACTIVATE to the widget if 
+ 731:fltk-1.3.4-1/FL/Fl_Widget.H ****       active_r() is true.
+ 732:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 733:fltk-1.3.4-1/FL/Fl_Widget.H ****       Currently you cannot deactivate Fl_Window widgets.
+ 734:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 735:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see activate(), active(), active_r()
+ 736:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 737:fltk-1.3.4-1/FL/Fl_Widget.H ****   void deactivate();
+ 738:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 739:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Returns if a widget is used for output only.
+ 740:fltk-1.3.4-1/FL/Fl_Widget.H ****       output() means the same as !active() except it does not change how the 
+ 741:fltk-1.3.4-1/FL/Fl_Widget.H ****       widget is drawn. The widget will not receive any events. This is useful 
+ 742:fltk-1.3.4-1/FL/Fl_Widget.H ****       for making scrollbars or buttons that work as displays rather than input 
+ 743:fltk-1.3.4-1/FL/Fl_Widget.H ****       devices.
+ 744:fltk-1.3.4-1/FL/Fl_Widget.H ****       \retval 0 if the widget is used for input and output
+ 745:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see set_output(), clear_output() 
+ 746:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 747:fltk-1.3.4-1/FL/Fl_Widget.H ****   unsigned int output() const {return (flags_&OUTPUT);}
+ 748:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 749:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets a widget to output only.
+ 750:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see output(), clear_output() 
+ 751:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 752:fltk-1.3.4-1/FL/Fl_Widget.H ****   void set_output() {flags_ |= OUTPUT;}
+ 753:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 754:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets a widget to accept input.
+ 755:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see set_output(), output() 
+ 756:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 757:fltk-1.3.4-1/FL/Fl_Widget.H ****   void clear_output() {flags_ &= ~OUTPUT;}
+ 758:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 759:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Returns if the widget is able to take events.
+ 760:fltk-1.3.4-1/FL/Fl_Widget.H ****       This is the same as (active() && !output() && visible())
+ 761:fltk-1.3.4-1/FL/Fl_Widget.H ****       but is faster.
+ 762:fltk-1.3.4-1/FL/Fl_Widget.H ****       \retval 0 if the widget takes no events
+ 763:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 764:fltk-1.3.4-1/FL/Fl_Widget.H ****   unsigned int takesevents() const {return !(flags_&(INACTIVE|INVISIBLE|OUTPUT));}
+ 765:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 766:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** 
+ 767:fltk-1.3.4-1/FL/Fl_Widget.H ****       Checks if the widget value changed since the last callback.
+ 768:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 769:fltk-1.3.4-1/FL/Fl_Widget.H ****       "Changed" is a flag that is turned on when the user changes the value 
+ 770:fltk-1.3.4-1/FL/Fl_Widget.H ****       stored in the widget. This is only used by subclasses of Fl_Widget that 
+ 771:fltk-1.3.4-1/FL/Fl_Widget.H ****       store values, but is in the base class so it is easier to scan all the 
+ 772:fltk-1.3.4-1/FL/Fl_Widget.H ****       widgets in a panel and do_callback() on the changed ones in response 
+ 773:fltk-1.3.4-1/FL/Fl_Widget.H ****       to an "OK" button.
+ 774:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 775:fltk-1.3.4-1/FL/Fl_Widget.H ****       Most widgets turn this flag off when they do the callback, and when 
+ 776:fltk-1.3.4-1/FL/Fl_Widget.H ****       the program sets the stored value.
+ 777:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 778:fltk-1.3.4-1/FL/Fl_Widget.H ****      \retval 0 if the value did not change
+ 779:fltk-1.3.4-1/FL/Fl_Widget.H ****      \see set_changed(), clear_changed()
+ 780:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 781:fltk-1.3.4-1/FL/Fl_Widget.H ****   unsigned int changed() const {return flags_&CHANGED;}
+ 782:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 783:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Marks the value of the widget as changed.
+ 784:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see changed(), clear_changed()
+ 785:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 786:fltk-1.3.4-1/FL/Fl_Widget.H ****   void set_changed() {flags_ |= CHANGED;}
+ 787:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 788:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Marks the value of the widget as unchanged.
+ 789:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see changed(), set_changed()
+ 790:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 791:fltk-1.3.4-1/FL/Fl_Widget.H ****   void clear_changed() {flags_ &= ~CHANGED;}
+ 792:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 793:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Marks the widget as inactive without sending events or changing focus.
+ 794:fltk-1.3.4-1/FL/Fl_Widget.H ****       This is mainly for specialized use, for normal cases you want deactivate().
+ 795:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see deactivate()
+ 796:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 797:fltk-1.3.4-1/FL/Fl_Widget.H ****   void clear_active() {flags_ |= INACTIVE;}
+ 798:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 799:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Marks the widget as active without sending events or changing focus.
+ 800:fltk-1.3.4-1/FL/Fl_Widget.H ****       This is mainly for specialized use, for normal cases you want activate().
+ 801:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see activate()
+ 802:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 803:fltk-1.3.4-1/FL/Fl_Widget.H ****   void set_active() {flags_ &= ~INACTIVE;}
+ 804:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 805:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Gives the widget the keyboard focus.
+ 806:fltk-1.3.4-1/FL/Fl_Widget.H ****       Tries to make this widget be the Fl::focus() widget, by first sending 
+ 807:fltk-1.3.4-1/FL/Fl_Widget.H ****       it an FL_FOCUS event, and if it returns non-zero, setting 
+ 808:fltk-1.3.4-1/FL/Fl_Widget.H ****       Fl::focus() to this widget. You should use this method to 
+ 809:fltk-1.3.4-1/FL/Fl_Widget.H ****       assign the focus to a widget.  
+ 810:fltk-1.3.4-1/FL/Fl_Widget.H ****       \return true if the widget accepted the focus.
+ 811:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 812:fltk-1.3.4-1/FL/Fl_Widget.H ****   int take_focus();
+ 813:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 814:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Enables keyboard focus navigation with this widget. 
+ 815:fltk-1.3.4-1/FL/Fl_Widget.H ****       Note, however, that this will not necessarily mean that the widget
+ 816:fltk-1.3.4-1/FL/Fl_Widget.H ****       will accept focus, but for widgets that can accept focus, this method
+ 817:fltk-1.3.4-1/FL/Fl_Widget.H ****       enables it if it has been disabled.
+ 818:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see visible_focus(), clear_visible_focus(), visible_focus(int) 
+ 819:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 820:fltk-1.3.4-1/FL/Fl_Widget.H ****   void set_visible_focus() { flags_ |= VISIBLE_FOCUS; }
+ 821:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 822:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Disables keyboard focus navigation with this widget. 
+ 823:fltk-1.3.4-1/FL/Fl_Widget.H ****       Normally, all widgets participate in keyboard focus navigation.
+ 824:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see set_visible_focus(), visible_focus(), visible_focus(int) 
+ 825:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 826:fltk-1.3.4-1/FL/Fl_Widget.H ****   void clear_visible_focus() { flags_ &= ~VISIBLE_FOCUS; }
+ 827:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 828:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Modifies keyboard focus navigation. 
+ 829:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] v set or clear visible focus
+ 830:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see set_visible_focus(), clear_visible_focus(), visible_focus() 
+ 831:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 832:fltk-1.3.4-1/FL/Fl_Widget.H ****   void visible_focus(int v) { if (v) set_visible_focus(); else clear_visible_focus(); }
+ 833:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 834:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Checks whether this widget has a visible focus.
+ 835:fltk-1.3.4-1/FL/Fl_Widget.H ****       \retval 0 if this widget has no visible focus.
+ 836:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see visible_focus(int), set_visible_focus(), clear_visible_focus()
+ 837:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 838:fltk-1.3.4-1/FL/Fl_Widget.H ****   unsigned int  visible_focus() { return flags_ & VISIBLE_FOCUS; }
+ 839:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 840:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** The default callback for all widgets that don't set a callback.
+ 841:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 842:fltk-1.3.4-1/FL/Fl_Widget.H ****     This callback function puts a pointer to the widget on the queue
+ 843:fltk-1.3.4-1/FL/Fl_Widget.H ****     returned by Fl::readqueue().
+ 844:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 845:fltk-1.3.4-1/FL/Fl_Widget.H ****     Relying on the default callback and reading the callback queue with
+ 846:fltk-1.3.4-1/FL/Fl_Widget.H ****     Fl::readqueue() is not recommended. If you need a callback, you should
+ 847:fltk-1.3.4-1/FL/Fl_Widget.H ****     set one with Fl_Widget::callback(Fl_Callback *cb, void *data)
+ 848:fltk-1.3.4-1/FL/Fl_Widget.H ****     or one of its variants.
+ 849:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 850:fltk-1.3.4-1/FL/Fl_Widget.H ****     \param[in] cb the widget given to the callback
+ 851:fltk-1.3.4-1/FL/Fl_Widget.H ****     \param[in] d user data associated with that callback
+ 852:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 853:fltk-1.3.4-1/FL/Fl_Widget.H ****     \see callback(), do_callback(), Fl::readqueue()
+ 854:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 855:fltk-1.3.4-1/FL/Fl_Widget.H ****   static void default_callback(Fl_Widget *cb, void *d);
+ 856:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 857:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Calls the widget callback.
+ 858:fltk-1.3.4-1/FL/Fl_Widget.H ****       Causes a widget to invoke its callback function with default arguments.
+ 859:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see callback()
+ 860:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 861:fltk-1.3.4-1/FL/Fl_Widget.H ****   void do_callback() {do_callback(this,user_data_);}
+ 862:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 863:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Calls the widget callback.
+ 864:fltk-1.3.4-1/FL/Fl_Widget.H ****       Causes a widget to invoke its callback function with arbitrary arguments.
+ 865:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] o call the callback with \p o as the widget argument
+ 866:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] arg call the callback with \p arg as the user data argument
+ 867:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see callback()
+ 868:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 869:fltk-1.3.4-1/FL/Fl_Widget.H ****   void do_callback(Fl_Widget* o,long arg) {do_callback(o,(void*)(fl_intptr_t)arg);}
+ 870:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 871:fltk-1.3.4-1/FL/Fl_Widget.H ****   // Causes a widget to invoke its callback function with arbitrary arguments.
+ 872:fltk-1.3.4-1/FL/Fl_Widget.H ****   // Documentation and implementation in Fl_Widget.cxx
+ 873:fltk-1.3.4-1/FL/Fl_Widget.H ****   void do_callback(Fl_Widget* o,void* arg=0);
+ 874:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 875:fltk-1.3.4-1/FL/Fl_Widget.H ****   /* Internal use only. */
+ 876:fltk-1.3.4-1/FL/Fl_Widget.H ****   int test_shortcut();
+ 877:fltk-1.3.4-1/FL/Fl_Widget.H ****   /* Internal use only. */
+ 878:fltk-1.3.4-1/FL/Fl_Widget.H ****   static unsigned int label_shortcut(const char *t);
+ 879:fltk-1.3.4-1/FL/Fl_Widget.H ****   /* Internal use only. */
+ 880:fltk-1.3.4-1/FL/Fl_Widget.H ****   static int test_shortcut(const char*, const bool require_alt = false);
+ 881:fltk-1.3.4-1/FL/Fl_Widget.H ****   /* Internal use only. */
+ 882:fltk-1.3.4-1/FL/Fl_Widget.H ****   void _set_fullscreen() {flags_ |= FULLSCREEN;}
+ 883:fltk-1.3.4-1/FL/Fl_Widget.H ****   void _clear_fullscreen() {flags_ &= ~FULLSCREEN;}
+ 884:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 885:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Checks if w is a child of this widget.
+ 886:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] w potential child widget
+ 887:fltk-1.3.4-1/FL/Fl_Widget.H ****       \return Returns 1 if \p w is a child of this widget, or is
+ 888:fltk-1.3.4-1/FL/Fl_Widget.H ****       equal to this widget. Returns 0 if \p w is NULL.
+ 889:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 890:fltk-1.3.4-1/FL/Fl_Widget.H ****   int contains(const Fl_Widget *w) const ;
+ 891:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 892:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Checks if this widget is a child of \p wgt.
+ 893:fltk-1.3.4-1/FL/Fl_Widget.H ****       Returns 1 if this widget is a child of \p wgt, or is
+ 894:fltk-1.3.4-1/FL/Fl_Widget.H ****       equal to \p wgt. Returns 0 if \p wgt is NULL.
+ 895:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] wgt the possible parent widget.
+ 896:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see contains()
+ 897:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 898:fltk-1.3.4-1/FL/Fl_Widget.H ****   int inside(const Fl_Widget* wgt) const {return wgt ? wgt->contains(this) : 0;}
+ 899:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 900:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Schedules the drawing of the widget.
+ 901:fltk-1.3.4-1/FL/Fl_Widget.H ****       Marks the widget as needing its draw() routine called.
+ 902:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 903:fltk-1.3.4-1/FL/Fl_Widget.H ****   void redraw();
+ 904:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 905:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Schedules the drawing of the label.
+ 906:fltk-1.3.4-1/FL/Fl_Widget.H ****      Marks the widget or the parent as needing a redraw for the label area 
+ 907:fltk-1.3.4-1/FL/Fl_Widget.H ****      of a widget.
+ 908:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 909:fltk-1.3.4-1/FL/Fl_Widget.H ****   void redraw_label();
+ 910:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 911:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Returns non-zero if draw() needs to be called. 
+ 912:fltk-1.3.4-1/FL/Fl_Widget.H ****       The damage value is actually a bit field that the widget 
+ 913:fltk-1.3.4-1/FL/Fl_Widget.H ****       subclass can use to figure out what parts to draw.
+ 914:fltk-1.3.4-1/FL/Fl_Widget.H ****       \return a bitmap of flags describing the kind of damage to the widget
+ 915:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see damage(uchar), clear_damage(uchar)
+ 916:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 917:fltk-1.3.4-1/FL/Fl_Widget.H ****   uchar damage() const {return damage_;}
+ 918:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 919:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Clears or sets the damage flags.
+ 920:fltk-1.3.4-1/FL/Fl_Widget.H ****       Damage flags are cleared when parts of the widget drawing is repaired.
+ 921:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 922:fltk-1.3.4-1/FL/Fl_Widget.H ****       The optional argument \p c specifies the bits that <b>are set</b>
+ 923:fltk-1.3.4-1/FL/Fl_Widget.H ****       after the call (default: 0) and \b not the bits that are cleared!
+ 924:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 925:fltk-1.3.4-1/FL/Fl_Widget.H ****       \note Therefore it is possible to set damage bits with this method, but
+ 926:fltk-1.3.4-1/FL/Fl_Widget.H ****       this should be avoided. Use damage(uchar) instead.
+ 927:fltk-1.3.4-1/FL/Fl_Widget.H ****       
+ 928:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] c new bitmask of damage flags (default: 0)
+ 929:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see damage(uchar), damage()
+ 930:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 931:fltk-1.3.4-1/FL/Fl_Widget.H ****   void clear_damage(uchar c = 0) {damage_ = c;}
+ 932:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 933:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets the damage bits for the widget.
+ 934:fltk-1.3.4-1/FL/Fl_Widget.H ****       Setting damage bits will schedule the widget for the next redraw.
+ 935:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] c bitmask of flags to set
+ 936:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see damage(), clear_damage(uchar)
+ 937:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 938:fltk-1.3.4-1/FL/Fl_Widget.H ****   void damage(uchar c);
+ 939:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 940:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets the damage bits for an area inside the widget.
+ 941:fltk-1.3.4-1/FL/Fl_Widget.H ****       Setting damage bits will schedule the widget for the next redraw.
+ 942:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] c bitmask of flags to set
+ 943:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] x, y, w, h size of damaged area
+ 944:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see damage(), clear_damage(uchar)
+ 945:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 946:fltk-1.3.4-1/FL/Fl_Widget.H ****   void damage(uchar c, int x, int y, int w, int h);
+ 947:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 948:fltk-1.3.4-1/FL/Fl_Widget.H ****   void draw_label(int, int, int, int, Fl_Align) const;
+ 949:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 950:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets width ww and height hh accordingly with the label size.
+ 951:fltk-1.3.4-1/FL/Fl_Widget.H ****       Labels with images will return w() and h() of the image.
+ 952:fltk-1.3.4-1/FL/Fl_Widget.H ****       
+ 953:fltk-1.3.4-1/FL/Fl_Widget.H ****       This calls fl_measure() internally. For more information about
+ 954:fltk-1.3.4-1/FL/Fl_Widget.H ****       the arguments \p ww and \p hh and word wrapping
+ 955:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see fl_measure(const char*, int&, int&, int)
+ 956:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 957:fltk-1.3.4-1/FL/Fl_Widget.H ****   void measure_label(int& ww, int& hh) const {label_.measure(ww, hh);}
+ 958:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 959:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Window* window() const ;
+ 960:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Window* top_window() const;
+ 961:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Window* top_window_offset(int& xoff, int& yoff) const;
+ 962:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 963:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Returns an Fl_Group pointer if this widget is an Fl_Group.
+ 964:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 965:fltk-1.3.4-1/FL/Fl_Widget.H ****       Use this method if you have a widget (pointer) and need to
+ 966:fltk-1.3.4-1/FL/Fl_Widget.H ****       know whether this widget is derived from Fl_Group. If it returns
+ 967:fltk-1.3.4-1/FL/Fl_Widget.H ****       non-NULL, then the widget in question is derived from Fl_Group,
+ 968:fltk-1.3.4-1/FL/Fl_Widget.H ****       and you can use the returned pointer to access its children
+ 969:fltk-1.3.4-1/FL/Fl_Widget.H ****       or other Fl_Group-specific methods.
+ 970:fltk-1.3.4-1/FL/Fl_Widget.H ****       
+ 971:fltk-1.3.4-1/FL/Fl_Widget.H ****       Example:
+ 972:fltk-1.3.4-1/FL/Fl_Widget.H ****       \code
+ 973:fltk-1.3.4-1/FL/Fl_Widget.H ****       void my_callback (Fl_Widget *w, void *) {
+ 974:fltk-1.3.4-1/FL/Fl_Widget.H ****         Fl_Group *g = w->as_group();
+ 975:fltk-1.3.4-1/FL/Fl_Widget.H **** 	if (g)
+ 976:fltk-1.3.4-1/FL/Fl_Widget.H **** 	  printf ("This group has %d children\n",g->children());
+ 977:fltk-1.3.4-1/FL/Fl_Widget.H **** 	else
+ 978:fltk-1.3.4-1/FL/Fl_Widget.H **** 	  printf ("This widget is not a group!\n");
+ 979:fltk-1.3.4-1/FL/Fl_Widget.H ****       }
+ 980:fltk-1.3.4-1/FL/Fl_Widget.H ****       \endcode
+ 981:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 982:fltk-1.3.4-1/FL/Fl_Widget.H ****       \retval NULL if this widget is not derived from Fl_Group.
+ 983:fltk-1.3.4-1/FL/Fl_Widget.H ****       \note This method is provided to avoid dynamic_cast.
+ 984:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see Fl_Widget::as_window(), Fl_Widget::as_gl_window()
+ 985:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 986:fltk-1.3.4-1/FL/Fl_Widget.H ****   virtual Fl_Group* as_group() {return 0;}
+  19              		.loc 1 986 0
+  20              		.cfi_startproc
+  21              	.LVL0:
+  22              		.loc 1 986 0
+  23 0000 31C0     		xorl	%eax, %eax
+  24 0002 C3       		ret
+  25              		.cfi_endproc
+  26              	.LFE232:
+  28              		.section	.text.unlikely._ZN9Fl_Widget8as_groupEv,"axG",@progbits,_ZN9Fl_Widget8as_groupEv,comdat
+  29              	.LCOLDE0:
+  30              		.section	.text._ZN9Fl_Widget8as_groupEv,"axG",@progbits,_ZN9Fl_Widget8as_groupEv,comdat
+  31              	.LHOTE0:
+  32              		.section	.text.unlikely._ZN9Fl_Widget9as_windowEv,"axG",@progbits,_ZN9Fl_Widget9as_windowEv,comdat
+  33              		.align 2
+  34              	.LCOLDB1:
+  35              		.section	.text._ZN9Fl_Widget9as_windowEv,"axG",@progbits,_ZN9Fl_Widget9as_windowEv,comdat
+  36              	.LHOTB1:
+  37              		.align 2
+  38              		.p2align 4,,15
+  39              		.weak	_ZN9Fl_Widget9as_windowEv
+  41              	_ZN9Fl_Widget9as_windowEv:
+  42              	.LFB233:
+ 987:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 988:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Returns an Fl_Window pointer if this widget is an Fl_Window.
+ 989:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 990:fltk-1.3.4-1/FL/Fl_Widget.H ****       Use this method if you have a widget (pointer) and need to
+ 991:fltk-1.3.4-1/FL/Fl_Widget.H ****       know whether this widget is derived from Fl_Window. If it returns
+ 992:fltk-1.3.4-1/FL/Fl_Widget.H ****       non-NULL, then the widget in question is derived from Fl_Window,
+ 993:fltk-1.3.4-1/FL/Fl_Widget.H ****       and you can use the returned pointer to access its children
+ 994:fltk-1.3.4-1/FL/Fl_Widget.H ****       or other Fl_Window-specific methods.
+ 995:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 996:fltk-1.3.4-1/FL/Fl_Widget.H ****       \retval NULL if this widget is not derived from Fl_Window.
+ 997:fltk-1.3.4-1/FL/Fl_Widget.H ****       \note This method is provided to avoid dynamic_cast.
+ 998:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see Fl_Widget::as_group(), Fl_Widget::as_gl_window()
+ 999:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+1000:fltk-1.3.4-1/FL/Fl_Widget.H ****   virtual Fl_Window* as_window() {return 0;}
+  43              		.loc 1 1000 0
+  44              		.cfi_startproc
+  45              	.LVL1:
+  46              		.loc 1 1000 0
+  47 0000 31C0     		xorl	%eax, %eax
+  48 0002 C3       		ret
+  49              		.cfi_endproc
+  50              	.LFE233:
+  52              		.section	.text.unlikely._ZN9Fl_Widget9as_windowEv,"axG",@progbits,_ZN9Fl_Widget9as_windowEv,comdat
+  53              	.LCOLDE1:
+  54              		.section	.text._ZN9Fl_Widget9as_windowEv,"axG",@progbits,_ZN9Fl_Widget9as_windowEv,comdat
+  55              	.LHOTE1:
+  56              		.section	.text.unlikely._ZN9Fl_Widget12as_gl_windowEv,"axG",@progbits,_ZN9Fl_Widget12as_gl_windowE
+  57              		.align 2
+  58              	.LCOLDB2:
+  59              		.section	.text._ZN9Fl_Widget12as_gl_windowEv,"axG",@progbits,_ZN9Fl_Widget12as_gl_windowEv,comdat
+  60              	.LHOTB2:
+  61              		.align 2
+  62              		.p2align 4,,15
+  63              		.weak	_ZN9Fl_Widget12as_gl_windowEv
+  65              	_ZN9Fl_Widget12as_gl_windowEv:
+  66              	.LFB234:
+1001:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+1002:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Returns an Fl_Gl_Window pointer if this widget is an Fl_Gl_Window.
+1003:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+1004:fltk-1.3.4-1/FL/Fl_Widget.H ****       Use this method if you have a widget (pointer) and need to
+1005:fltk-1.3.4-1/FL/Fl_Widget.H ****       know whether this widget is derived from Fl_Gl_Window. If it returns
+1006:fltk-1.3.4-1/FL/Fl_Widget.H ****       non-NULL, then the widget in question is derived from Fl_Gl_Window.
+1007:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+1008:fltk-1.3.4-1/FL/Fl_Widget.H ****       \retval NULL if this widget is not derived from Fl_Gl_Window.
+1009:fltk-1.3.4-1/FL/Fl_Widget.H ****       \note This method is provided to avoid dynamic_cast.
+1010:fltk-1.3.4-1/FL/Fl_Widget.H ****       \see Fl_Widget::as_group(), Fl_Widget::as_window()
+1011:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+1012:fltk-1.3.4-1/FL/Fl_Widget.H ****   virtual class Fl_Gl_Window* as_gl_window() {return 0;}
+  67              		.loc 1 1012 0
+  68              		.cfi_startproc
+  69              	.LVL2:
+  70              		.loc 1 1012 0
+  71 0000 31C0     		xorl	%eax, %eax
+  72 0002 C3       		ret
+  73              		.cfi_endproc
+  74              	.LFE234:
+  76              		.section	.text.unlikely._ZN9Fl_Widget12as_gl_windowEv,"axG",@progbits,_ZN9Fl_Widget12as_gl_windowE
+  77              	.LCOLDE2:
+  78              		.section	.text._ZN9Fl_Widget12as_gl_windowEv,"axG",@progbits,_ZN9Fl_Widget12as_gl_windowEv,comdat
+  79              	.LHOTE2:
+  80              		.section	.rodata.str1.1,"aMS",@progbits,1
+  81              	.LC6:
+  82 0000 252E3166 		.string	"%.1f"
+  82      00
+  83              	.LC8:
+  84 0005 25643A25 		.string	"%d:%04.1f"
+  84      30342E31 
+  84      6600
+  85              		.section	.text.unlikely._ZN8Fl_Timer4drawEv,"ax",@progbits
+  86              		.align 2
+  87              	.LCOLDB9:
+  88              		.section	.text._ZN8Fl_Timer4drawEv,"ax",@progbits
+  89              	.LHOTB9:
+  90              		.align 2
+  91              		.p2align 4,,15
+  92              		.globl	_ZN8Fl_Timer4drawEv
+  94              	_ZN8Fl_Timer4drawEv:
+  95              	.LFB970:
+  96              		.file 2 "fltk-1.3.4-1/src/forms_timer.cxx"
+   1:fltk-1.3.4-1/src/forms_timer.cxx ****    1              		.file	"forms_timer.cxx"
+   2:fltk-1.3.4-1/src/forms_timer.cxx ****    2              		.text
+   3:fltk-1.3.4-1/src/forms_timer.cxx ****    3              	.Ltext0:
+   4:fltk-1.3.4-1/src/forms_timer.cxx ****    4              		.section	.text.unlikely._ZN9Fl_Widget8as_groupEv,"axG",@progbits,_ZN9Fl_Widget8
+   5:fltk-1.3.4-1/src/forms_timer.cxx ****    5              		.align 2
+   6:fltk-1.3.4-1/src/forms_timer.cxx ****    6              	.LCOLDB0:
+   7:fltk-1.3.4-1/src/forms_timer.cxx ****    7              		.section	.text._ZN9Fl_Widget8as_groupEv,"axG",@progbits,_ZN9Fl_Widget8as_groupE
+   8:fltk-1.3.4-1/src/forms_timer.cxx ****    8              	.LHOTB0:
+   9:fltk-1.3.4-1/src/forms_timer.cxx ****    9              		.align 2
+  10:fltk-1.3.4-1/src/forms_timer.cxx ****   10              		.p2align 4,,15
+  11:fltk-1.3.4-1/src/forms_timer.cxx ****   11              		.section	.text.unlikely._ZN9Fl_Widget8as_groupEv,"axG",@progbits,_ZN9Fl_Widget8
+  12:fltk-1.3.4-1/src/forms_timer.cxx ****   12              	.Ltext_cold0:
+  13:fltk-1.3.4-1/src/forms_timer.cxx ****   13              		.section	.text._ZN9Fl_Widget8as_groupEv,"axG",@progbits,_ZN9Fl_Widget8as_groupE
+  14:fltk-1.3.4-1/src/forms_timer.cxx ****   14              		.weak	_ZN9Fl_Widget8as_groupEv
+  15:fltk-1.3.4-1/src/forms_timer.cxx ****   16              	_ZN9Fl_Widget8as_groupEv:
+  16:fltk-1.3.4-1/src/forms_timer.cxx ****   17              	.LFB232:
+  17:fltk-1.3.4-1/src/forms_timer.cxx ****   18              		.file 1 "fltk-1.3.4-1/FL/Fl_Widget.H"
+  18:fltk-1.3.4-1/src/forms_timer.cxx ****    1:fltk-1.3.4-1/FL/Fl_Widget.H **** //
+  19:fltk-1.3.4-1/src/forms_timer.cxx ****    2:fltk-1.3.4-1/FL/Fl_Widget.H **** // "$Id: Fl_Widget.H 10677 2015-04-05 09:04:44Z AlbrechtS $"
+  20:fltk-1.3.4-1/src/forms_timer.cxx ****    3:fltk-1.3.4-1/FL/Fl_Widget.H **** //
+  21:fltk-1.3.4-1/src/forms_timer.cxx ****    4:fltk-1.3.4-1/FL/Fl_Widget.H **** // Widget header file for the Fast Light Tool Kit (FLTK).
+  22:fltk-1.3.4-1/src/forms_timer.cxx ****    5:fltk-1.3.4-1/FL/Fl_Widget.H **** //
+  23:fltk-1.3.4-1/src/forms_timer.cxx ****    6:fltk-1.3.4-1/FL/Fl_Widget.H **** // Copyright 1998-2015 by Bill Spitzak and others.
+  24:fltk-1.3.4-1/src/forms_timer.cxx ****    7:fltk-1.3.4-1/FL/Fl_Widget.H **** //
+  25:fltk-1.3.4-1/src/forms_timer.cxx ****    8:fltk-1.3.4-1/FL/Fl_Widget.H **** // This library is free software. Distribution and use rights
+  26:fltk-1.3.4-1/src/forms_timer.cxx ****    9:fltk-1.3.4-1/FL/Fl_Widget.H **** // the file "COPYING" which should have been included with th
+  27:fltk-1.3.4-1/src/forms_timer.cxx ****   10:fltk-1.3.4-1/FL/Fl_Widget.H **** // file is missing or damaged, see the license at:
+  28:fltk-1.3.4-1/src/forms_timer.cxx ****   11:fltk-1.3.4-1/FL/Fl_Widget.H **** //
+  29:fltk-1.3.4-1/src/forms_timer.cxx ****   12:fltk-1.3.4-1/FL/Fl_Widget.H **** //     http://www.fltk.org/COPYING.php
+  30:fltk-1.3.4-1/src/forms_timer.cxx ****   13:fltk-1.3.4-1/FL/Fl_Widget.H **** //
+  31:fltk-1.3.4-1/src/forms_timer.cxx ****   14:fltk-1.3.4-1/FL/Fl_Widget.H **** // Please report all bugs and problems on the following page:
+  32:fltk-1.3.4-1/src/forms_timer.cxx ****   15:fltk-1.3.4-1/FL/Fl_Widget.H **** //
+  33:fltk-1.3.4-1/src/forms_timer.cxx ****   16:fltk-1.3.4-1/FL/Fl_Widget.H **** //     http://www.fltk.org/str.php
+  34:fltk-1.3.4-1/src/forms_timer.cxx ****   17:fltk-1.3.4-1/FL/Fl_Widget.H **** //
+  35:fltk-1.3.4-1/src/forms_timer.cxx ****   18:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+  36:fltk-1.3.4-1/src/forms_timer.cxx ****   19:fltk-1.3.4-1/FL/Fl_Widget.H **** /** \file
+  37:fltk-1.3.4-1/src/forms_timer.cxx ****   20:fltk-1.3.4-1/FL/Fl_Widget.H ****    Fl_Widget, Fl_Label classes . */
+  38:fltk-1.3.4-1/src/forms_timer.cxx ****   21:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+  39:fltk-1.3.4-1/src/forms_timer.cxx ****   22:fltk-1.3.4-1/FL/Fl_Widget.H **** #ifndef Fl_Widget_H
+  40:fltk-1.3.4-1/src/forms_timer.cxx ****   23:fltk-1.3.4-1/FL/Fl_Widget.H **** #define Fl_Widget_H
+  41:fltk-1.3.4-1/src/forms_timer.cxx ****   24:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+  42:fltk-1.3.4-1/src/forms_timer.cxx ****   25:fltk-1.3.4-1/FL/Fl_Widget.H **** #include "Enumerations.H"
+  43:fltk-1.3.4-1/src/forms_timer.cxx ****   26:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+  44:fltk-1.3.4-1/src/forms_timer.cxx ****   27:fltk-1.3.4-1/FL/Fl_Widget.H **** /**
+  45:fltk-1.3.4-1/src/forms_timer.cxx ****   28:fltk-1.3.4-1/FL/Fl_Widget.H ****   \todo	typedef's fl_intptr_t and fl_uintptr_t should be docu
+  46:fltk-1.3.4-1/src/forms_timer.cxx ****   29:fltk-1.3.4-1/FL/Fl_Widget.H **** */
+  47:fltk-1.3.4-1/src/forms_timer.cxx ****   30:fltk-1.3.4-1/FL/Fl_Widget.H **** #ifdef _WIN64
+  48:fltk-1.3.4-1/src/forms_timer.cxx ****   31:fltk-1.3.4-1/FL/Fl_Widget.H **** #if defined(__GNUC__) || defined(__clang__)
+  49:fltk-1.3.4-1/src/forms_timer.cxx ****   32:fltk-1.3.4-1/FL/Fl_Widget.H **** #include <stdint.h>
+  50:fltk-1.3.4-1/src/forms_timer.cxx ****   33:fltk-1.3.4-1/FL/Fl_Widget.H **** #else
+  51:fltk-1.3.4-1/src/forms_timer.cxx ****   34:fltk-1.3.4-1/FL/Fl_Widget.H **** #include <stddef.h>  // M$VC
+  52:fltk-1.3.4-1/src/forms_timer.cxx ****   35:fltk-1.3.4-1/FL/Fl_Widget.H **** #endif
+  53:fltk-1.3.4-1/src/forms_timer.cxx ****   36:fltk-1.3.4-1/FL/Fl_Widget.H **** typedef intptr_t fl_intptr_t;
+  54:fltk-1.3.4-1/src/forms_timer.cxx ****   37:fltk-1.3.4-1/FL/Fl_Widget.H **** typedef uintptr_t fl_uintptr_t;
+  55:fltk-1.3.4-1/src/forms_timer.cxx ****   38:fltk-1.3.4-1/FL/Fl_Widget.H **** #else
+  56:fltk-1.3.4-1/src/forms_timer.cxx ****   39:fltk-1.3.4-1/FL/Fl_Widget.H **** typedef long fl_intptr_t;
+  57:fltk-1.3.4-1/src/forms_timer.cxx ****   40:fltk-1.3.4-1/FL/Fl_Widget.H **** typedef unsigned long fl_uintptr_t;
+  58:fltk-1.3.4-1/src/forms_timer.cxx ****   41:fltk-1.3.4-1/FL/Fl_Widget.H **** #endif
+  59:fltk-1.3.4-1/src/forms_timer.cxx ****   42:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+  60:fltk-1.3.4-1/src/forms_timer.cxx ****   43:fltk-1.3.4-1/FL/Fl_Widget.H **** class Fl_Widget;
+  61:fltk-1.3.4-1/src/forms_timer.cxx ****   44:fltk-1.3.4-1/FL/Fl_Widget.H **** class Fl_Window;
+  62:fltk-1.3.4-1/src/forms_timer.cxx ****   45:fltk-1.3.4-1/FL/Fl_Widget.H **** class Fl_Group;
+  63:fltk-1.3.4-1/src/forms_timer.cxx ****   46:fltk-1.3.4-1/FL/Fl_Widget.H **** class Fl_Image;
+  64:fltk-1.3.4-1/src/forms_timer.cxx ****   47:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+  97              		.loc 2 64 0
+  98              		.cfi_startproc
+  99              	.LVL3:
+ 100 0000 55       		pushq	%rbp
+ 101              		.cfi_def_cfa_offset 16
+ 102              		.cfi_offset 6, -16
+ 103 0001 53       		pushq	%rbx
+ 104              		.cfi_def_cfa_offset 24
+ 105              		.cfi_offset 3, -24
+ 106 0002 4889FB   		movq	%rdi, %rbx
+ 107 0005 4883EC38 		subq	$56, %rsp
+ 108              		.cfi_def_cfa_offset 80
+ 109              		.loc 2 64 0
+ 110 0009 64488B04 		movq	%fs:40, %rax
+ 110      25280000 
+ 110      00
+ 111 0012 48894424 		movq	%rax, 40(%rsp)
+ 111      28
+ 112 0017 31C0     		xorl	%eax, %eax
+  65:fltk-1.3.4-1/src/forms_timer.cxx ****   48:fltk-1.3.4-1/FL/Fl_Widget.H **** /** Default callback type definition for all fltk widgets (by
+  66:fltk-1.3.4-1/src/forms_timer.cxx ****   49:fltk-1.3.4-1/FL/Fl_Widget.H **** typedef void (Fl_Callback )(Fl_Widget*, void*);
+  67:fltk-1.3.4-1/src/forms_timer.cxx ****   50:fltk-1.3.4-1/FL/Fl_Widget.H **** /** Default callback type pointer definition for all fltk wid
+  68:fltk-1.3.4-1/src/forms_timer.cxx ****   51:fltk-1.3.4-1/FL/Fl_Widget.H **** typedef Fl_Callback* Fl_Callback_p; // needed for BORLAND
+ 113              		.loc 2 68 0
+ 114 0019 807F7800 		cmpb	$0, 120(%rdi)
+ 115 001d 7416     		je	.L5
+ 116              		.loc 2 68 0 is_stmt 0 discriminator 1
+ 117 001f F20F1087 		movsd	128(%rdi), %xmm0
+ 117      80000000 
+ 118 0027 660F2E05 		ucomisd	.LC3(%rip), %xmm0
+ 118      00000000 
+ 119 002f 0F863301 		jbe	.L19
+ 119      0000
+ 120              	.L5:
+ 121 0035 8B5364   		movl	100(%rbx), %edx
+ 122              	.LVL4:
+ 123              	.L8:
+  69:fltk-1.3.4-1/src/forms_timer.cxx ****   52:fltk-1.3.4-1/FL/Fl_Widget.H **** /** One parameter callback type definition passing only the w
+  70:fltk-1.3.4-1/src/forms_timer.cxx ****   53:fltk-1.3.4-1/FL/Fl_Widget.H **** typedef void (Fl_Callback0)(Fl_Widget*);
+  71:fltk-1.3.4-1/src/forms_timer.cxx ****   54:fltk-1.3.4-1/FL/Fl_Widget.H **** /** Callback type definition passing the widget and a long da
+  72:fltk-1.3.4-1/src/forms_timer.cxx ****   55:fltk-1.3.4-1/FL/Fl_Widget.H **** typedef void (Fl_Callback1)(Fl_Widget*, long);
+  73:fltk-1.3.4-1/src/forms_timer.cxx ****   56:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+  74:fltk-1.3.4-1/src/forms_timer.cxx ****   57:fltk-1.3.4-1/FL/Fl_Widget.H **** /** This struct stores all information for a text or mixed gr
+ 124              		.loc 2 74 0 is_stmt 1
+ 125 0038 0FB6736E 		movzbl	110(%rbx), %esi
+ 126 003c 4889DF   		movq	%rbx, %rdi
+ 127 003f E8000000 		call	_ZNK9Fl_Widget8draw_boxE10Fl_Boxtypej
+ 127      00
+ 128              	.LVL5:
+ 129              	.LBB100:
+  75:fltk-1.3.4-1/src/forms_timer.cxx ****   58:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 130              		.loc 2 75 0
+ 131 0044 807B6C01 		cmpb	$1, 108(%rbx)
+ 132 0048 7426     		je	.L23
+ 133              	.L9:
+  76:fltk-1.3.4-1/src/forms_timer.cxx ****   59:fltk-1.3.4-1/FL/Fl_Widget.H ****     \todo There is an aspiration that the Fl_Label type will 
+  77:fltk-1.3.4-1/src/forms_timer.cxx ****   60:fltk-1.3.4-1/FL/Fl_Widget.H ****           That way we will be avoiding a lot of code duplicat
+  78:fltk-1.3.4-1/src/forms_timer.cxx ****   61:fltk-1.3.4-1/FL/Fl_Widget.H ****           a similar fashion to widgets containing text. We al
+  79:fltk-1.3.4-1/src/forms_timer.cxx ****   62:fltk-1.3.4-1/FL/Fl_Widget.H ****           interface for very complex labels, containing html 
+  80:fltk-1.3.4-1/src/forms_timer.cxx ****   63:fltk-1.3.4-1/FL/Fl_Widget.H ****           However, this re-factoring is not in place in this 
+  81:fltk-1.3.4-1/src/forms_timer.cxx ****   64:fltk-1.3.4-1/FL/Fl_Widget.H ****  */
+  82:fltk-1.3.4-1/src/forms_timer.cxx ****   65:fltk-1.3.4-1/FL/Fl_Widget.H **** struct FL_EXPORT Fl_Label {
+  83:fltk-1.3.4-1/src/forms_timer.cxx ****   66:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** label text */
+  84:fltk-1.3.4-1/src/forms_timer.cxx ****   67:fltk-1.3.4-1/FL/Fl_Widget.H ****   const char* value;
+  85:fltk-1.3.4-1/src/forms_timer.cxx ****   68:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** optional image for an active label */
+  86:fltk-1.3.4-1/src/forms_timer.cxx ****   69:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Image* image;
+  87:fltk-1.3.4-1/src/forms_timer.cxx ****   70:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** optional image for a deactivated label */
+ 134              		.loc 2 87 0
+ 135 004a 4889DF   		movq	%rbx, %rdi
+ 136 004d E8000000 		call	_ZNK9Fl_Widget10draw_labelEv
+ 136      00
+ 137              	.LVL6:
+ 138              	.L4:
+ 139              	.LBE100:
+  88:fltk-1.3.4-1/src/forms_timer.cxx ****   71:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Image* deimage;
+ 140              		.loc 2 88 0
+ 141 0052 488B4424 		movq	40(%rsp), %rax
+ 141      28
+ 142 0057 64483304 		xorq	%fs:40, %rax
+ 142      25280000 
+ 142      00
+ 143 0060 0F851E01 		jne	.L24
+ 143      0000
+ 144 0066 4883C438 		addq	$56, %rsp
+ 145              		.cfi_remember_state
+ 146              		.cfi_def_cfa_offset 24
+ 147 006a 5B       		popq	%rbx
+ 148              		.cfi_def_cfa_offset 16
+ 149              	.LVL7:
+ 150 006b 5D       		popq	%rbp
+ 151              		.cfi_def_cfa_offset 8
+ 152 006c C3       		ret
+ 153              	.LVL8:
+ 154 006d 0F1F00   		.p2align 4,,10
+ 155              		.p2align 3
+ 156              	.L23:
+ 157              		.cfi_restore_state
+ 158              	.LBB115:
+  75:fltk-1.3.4-1/src/forms_timer.cxx ****   58:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 159              		.loc 2 75 0 discriminator 1
+ 160 0070 F20F1083 		movsd	128(%rbx), %xmm0
+ 160      80000000 
+ 161 0078 660F2E05 		ucomisd	.LC3(%rip), %xmm0
+ 161      00000000 
+ 162 0080 76C8     		jbe	.L9
+ 163              	.LBB101:
+  76:fltk-1.3.4-1/src/forms_timer.cxx ****   59:fltk-1.3.4-1/FL/Fl_Widget.H ****     \todo There is an aspiration that the Fl_Label type will 
+ 164              		.loc 2 76 0
+ 165 0082 807B7900 		cmpb	$0, 121(%rbx)
+ 166 0086 7410     		je	.L16
+  76:fltk-1.3.4-1/src/forms_timer.cxx ****   59:fltk-1.3.4-1/FL/Fl_Widget.H ****     \todo There is an aspiration that the Fl_Label type will 
+ 167              		.loc 2 76 0 is_stmt 0 discriminator 1
+ 168 0088 F20F108B 		movsd	136(%rbx), %xmm1
+ 168      88000000 
+ 169 0090 F20F5CC8 		subsd	%xmm0, %xmm1
+ 170 0094 660F28C1 		movapd	%xmm1, %xmm0
+ 171              	.L16:
+ 172              	.LVL9:
+  77:fltk-1.3.4-1/src/forms_timer.cxx ****   61:fltk-1.3.4-1/FL/Fl_Widget.H ****           a similar fashion to widgets containing text. We al
+ 173              		.loc 2 77 0 is_stmt 1 discriminator 4
+ 174 0098 F20F100D 		movsd	.LC5(%rip), %xmm1
+ 174      00000000 
+ 175 00a0 660F2EC8 		ucomisd	%xmm0, %xmm1
+ 176 00a4 7672     		jbe	.L20
+ 177              	.LVL10:
+ 178              	.LBB102:
+ 179              	.LBB103:
+ 180              		.file 3 "/usr/include/x86_64-linux-gnu/bits/stdio2.h"
+   1:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** /* Checking macros for stdio functions.
+   2:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    Copyright (C) 2004-2016 Free Software Foundation, Inc.
+   3:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    This file is part of the GNU C Library.
+   4:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+   5:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    The GNU C Library is free software; you can redistribute it and/or
+   6:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    modify it under the terms of the GNU Lesser General Public
+   7:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    License as published by the Free Software Foundation; either
+   8:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    version 2.1 of the License, or (at your option) any later version.
+   9:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  10:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    The GNU C Library is distributed in the hope that it will be useful,
+  11:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    but WITHOUT ANY WARRANTY; without even the implied warranty of
+  12:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  13:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    Lesser General Public License for more details.
+  14:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  15:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    You should have received a copy of the GNU Lesser General Public
+  16:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    License along with the GNU C Library; if not, see
+  17:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    <http://www.gnu.org/licenses/>.  */
+  18:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  19:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #ifndef _STDIO_H
+  20:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # error "Never include <bits/stdio2.h> directly; use <stdio.h> instead."
+  21:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
+  22:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  23:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __sprintf_chk (char *__restrict __s, int __flag, size_t __slen,
+  24:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  const char *__restrict __format, ...) __THROW;
+  25:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vsprintf_chk (char *__restrict __s, int __flag, size_t __slen,
+  26:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   const char *__restrict __format,
+  27:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   _G_va_list __ap) __THROW;
+  28:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  29:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #ifdef __va_arg_pack
+  30:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+  31:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (sprintf (char *__restrict __s, const char *__restrict __fmt, ...))
+  32:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+  33:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __builtin___sprintf_chk (__s, __USE_FORTIFY_LEVEL - 1,
+  34:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				  __bos (__s), __fmt, __va_arg_pack ());
+ 181              		.loc 3 34 0
+ 182 00a6 B9000000 		movl	$.LC6, %ecx
+ 182      00
+ 183 00ab BA200000 		movl	$32, %edx
+ 183      00
+ 184 00b0 BE010000 		movl	$1, %esi
+ 184      00
+ 185 00b5 4889E7   		movq	%rsp, %rdi
+ 186 00b8 B8010000 		movl	$1, %eax
+ 186      00
+ 187 00bd 4889E5   		movq	%rsp, %rbp
+ 188 00c0 E8000000 		call	__sprintf_chk
+ 188      00
+ 189              	.LVL11:
+ 190              	.L13:
+ 191              	.LBE103:
+ 192              	.LBE102:
+ 193              	.LBB104:
+ 194              	.LBB105:
+ 195              		.file 4 "fltk-1.3.4-1/FL/fl_draw.H"
+   1:fltk-1.3.4-1/FL/fl_draw.H **** //
+   2:fltk-1.3.4-1/FL/fl_draw.H **** // "$Id: fl_draw.H 11977 2016-09-25 11:07:06Z AlbrechtS $"
+   3:fltk-1.3.4-1/FL/fl_draw.H **** //
+   4:fltk-1.3.4-1/FL/fl_draw.H **** // Portable drawing function header file for the Fast Light Tool Kit (FLTK).
+   5:fltk-1.3.4-1/FL/fl_draw.H **** //
+   6:fltk-1.3.4-1/FL/fl_draw.H **** // Copyright 1998-2016 by Bill Spitzak and others.
+   7:fltk-1.3.4-1/FL/fl_draw.H **** //
+   8:fltk-1.3.4-1/FL/fl_draw.H **** // This library is free software. Distribution and use rights are outlined in
+   9:fltk-1.3.4-1/FL/fl_draw.H **** // the file "COPYING" which should have been included with this file.  If this
+  10:fltk-1.3.4-1/FL/fl_draw.H **** // file is missing or damaged, see the license at:
+  11:fltk-1.3.4-1/FL/fl_draw.H **** //
+  12:fltk-1.3.4-1/FL/fl_draw.H **** //     http://www.fltk.org/COPYING.php
+  13:fltk-1.3.4-1/FL/fl_draw.H **** //
+  14:fltk-1.3.4-1/FL/fl_draw.H **** // Please report all bugs and problems on the following page:
+  15:fltk-1.3.4-1/FL/fl_draw.H **** //
+  16:fltk-1.3.4-1/FL/fl_draw.H **** //     http://www.fltk.org/str.php
+  17:fltk-1.3.4-1/FL/fl_draw.H **** //
+  18:fltk-1.3.4-1/FL/fl_draw.H **** 
+  19:fltk-1.3.4-1/FL/fl_draw.H **** /**
+  20:fltk-1.3.4-1/FL/fl_draw.H ****   \file fl_draw.H
+  21:fltk-1.3.4-1/FL/fl_draw.H ****   \brief utility header to pull drawing functions together
+  22:fltk-1.3.4-1/FL/fl_draw.H **** */
+  23:fltk-1.3.4-1/FL/fl_draw.H **** 
+  24:fltk-1.3.4-1/FL/fl_draw.H **** #ifndef fl_draw_H
+  25:fltk-1.3.4-1/FL/fl_draw.H **** #define fl_draw_H
+  26:fltk-1.3.4-1/FL/fl_draw.H **** 
+  27:fltk-1.3.4-1/FL/fl_draw.H **** #include <FL/x.H>	      // for Fl_Region
+  28:fltk-1.3.4-1/FL/fl_draw.H **** #include <FL/Enumerations.H>  // for the color names
+  29:fltk-1.3.4-1/FL/fl_draw.H **** #include <FL/Fl_Window.H>     // for fl_set_spot()
+  30:fltk-1.3.4-1/FL/fl_draw.H **** #include <FL/Fl_Device.H>     // for fl_graphics_driver
+  31:fltk-1.3.4-1/FL/fl_draw.H **** 
+  32:fltk-1.3.4-1/FL/fl_draw.H **** // Image class...
+  33:fltk-1.3.4-1/FL/fl_draw.H **** class Fl_Image;
+  34:fltk-1.3.4-1/FL/fl_draw.H **** 
+  35:fltk-1.3.4-1/FL/fl_draw.H **** // Label flags...
+  36:fltk-1.3.4-1/FL/fl_draw.H **** FL_EXPORT extern char fl_draw_shortcut;
+  37:fltk-1.3.4-1/FL/fl_draw.H **** 
+  38:fltk-1.3.4-1/FL/fl_draw.H **** /** \addtogroup fl_attributes
+  39:fltk-1.3.4-1/FL/fl_draw.H ****     @{
+  40:fltk-1.3.4-1/FL/fl_draw.H **** */
+  41:fltk-1.3.4-1/FL/fl_draw.H **** 
+  42:fltk-1.3.4-1/FL/fl_draw.H **** // Colors:
+  43:fltk-1.3.4-1/FL/fl_draw.H **** /**
+  44:fltk-1.3.4-1/FL/fl_draw.H ****  Sets the color for all subsequent drawing operations.
+  45:fltk-1.3.4-1/FL/fl_draw.H ****  For colormapped displays, a color cell will be allocated out of
+  46:fltk-1.3.4-1/FL/fl_draw.H ****  \p fl_colormap the first time you use a color. If the colormap fills up
+  47:fltk-1.3.4-1/FL/fl_draw.H ****  then a least-squares algorithm is used to find the closest color.
+  48:fltk-1.3.4-1/FL/fl_draw.H ****  If no valid graphical context (fl_gc) is available,
+  49:fltk-1.3.4-1/FL/fl_draw.H ****  the foreground is not set for the current window.
+  50:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] c color 
+  51:fltk-1.3.4-1/FL/fl_draw.H ****  */
+  52:fltk-1.3.4-1/FL/fl_draw.H **** inline void	fl_color(Fl_Color c) {fl_graphics_driver->color(c); } // select indexed color
+  53:fltk-1.3.4-1/FL/fl_draw.H **** /** for back compatibility - use fl_color(Fl_Color c) instead */
+  54:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_color(int c) {fl_color((Fl_Color)c);}
+  55:fltk-1.3.4-1/FL/fl_draw.H **** /**
+  56:fltk-1.3.4-1/FL/fl_draw.H ****  Sets the color for all subsequent drawing operations.
+  57:fltk-1.3.4-1/FL/fl_draw.H ****  The closest possible match to the RGB color is used.
+  58:fltk-1.3.4-1/FL/fl_draw.H ****  The RGB color is used directly on TrueColor displays.
+  59:fltk-1.3.4-1/FL/fl_draw.H ****  For colormap visuals the nearest index in the gray
+  60:fltk-1.3.4-1/FL/fl_draw.H ****  ramp or color cube is used.
+  61:fltk-1.3.4-1/FL/fl_draw.H ****  If no valid graphical context (fl_gc) is available,
+  62:fltk-1.3.4-1/FL/fl_draw.H ****  the foreground is not set for the current window.
+  63:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] r,g,b color components
+  64:fltk-1.3.4-1/FL/fl_draw.H ****  */
+  65:fltk-1.3.4-1/FL/fl_draw.H **** inline void	fl_color(uchar r, uchar g, uchar b) {fl_graphics_driver->color(r,g,b); } // select actu
+  66:fltk-1.3.4-1/FL/fl_draw.H **** /**
+  67:fltk-1.3.4-1/FL/fl_draw.H ****   Returns the last fl_color() that was set.
+  68:fltk-1.3.4-1/FL/fl_draw.H ****   This can be used for state save/restore.
+  69:fltk-1.3.4-1/FL/fl_draw.H **** */
+  70:fltk-1.3.4-1/FL/fl_draw.H **** inline Fl_Color fl_color() {return fl_graphics_driver->color();}
+  71:fltk-1.3.4-1/FL/fl_draw.H **** /** @} */
+  72:fltk-1.3.4-1/FL/fl_draw.H **** 
+  73:fltk-1.3.4-1/FL/fl_draw.H **** /** \addtogroup fl_drawings
+  74:fltk-1.3.4-1/FL/fl_draw.H ****     @{
+  75:fltk-1.3.4-1/FL/fl_draw.H **** */
+  76:fltk-1.3.4-1/FL/fl_draw.H **** // clip:
+  77:fltk-1.3.4-1/FL/fl_draw.H **** /**
+  78:fltk-1.3.4-1/FL/fl_draw.H ****  Intersects the current clip region with a rectangle and pushes this
+  79:fltk-1.3.4-1/FL/fl_draw.H ****  new region onto the stack.
+  80:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] x,y,w,h position and size
+  81:fltk-1.3.4-1/FL/fl_draw.H ****  */
+  82:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_push_clip(int x, int y, int w, int h) {fl_graphics_driver->push_clip(x,y,w,h); }
+  83:fltk-1.3.4-1/FL/fl_draw.H **** /**
+  84:fltk-1.3.4-1/FL/fl_draw.H ****  Intersects the current clip region with a rectangle and pushes this
+  85:fltk-1.3.4-1/FL/fl_draw.H ****  new region onto the stack (deprecated).
+  86:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] x,y,w,h position and size
+  87:fltk-1.3.4-1/FL/fl_draw.H ****  \deprecated
+  88:fltk-1.3.4-1/FL/fl_draw.H ****    fl_clip(int, int, int, int) is deprecated and will be removed from future releases.
+  89:fltk-1.3.4-1/FL/fl_draw.H ****    Please use fl_push_clip(int x, int y, int w, int h) instead.
+  90:fltk-1.3.4-1/FL/fl_draw.H ****  */
+  91:fltk-1.3.4-1/FL/fl_draw.H **** #define fl_clip fl_push_clip
+  92:fltk-1.3.4-1/FL/fl_draw.H **** /**
+  93:fltk-1.3.4-1/FL/fl_draw.H ****  Pushes an empty clip region onto the stack so nothing will be clipped.
+  94:fltk-1.3.4-1/FL/fl_draw.H ****  */
+  95:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_push_no_clip() {fl_graphics_driver->push_no_clip(); }
+  96:fltk-1.3.4-1/FL/fl_draw.H **** /**
+  97:fltk-1.3.4-1/FL/fl_draw.H ****  Restores the previous clip region.
+  98:fltk-1.3.4-1/FL/fl_draw.H ****  
+  99:fltk-1.3.4-1/FL/fl_draw.H ****  You must call fl_pop_clip() once for every time you call fl_push_clip().
+ 100:fltk-1.3.4-1/FL/fl_draw.H ****  Unpredictable results may occur if the clip stack is not empty when
+ 101:fltk-1.3.4-1/FL/fl_draw.H ****  you return to FLTK.
+ 102:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 103:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_pop_clip() {fl_graphics_driver->pop_clip(); }
+ 104:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 105:fltk-1.3.4-1/FL/fl_draw.H ****  Does the rectangle intersect the current clip region?
+ 106:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] x,y,w,h position and size of rectangle
+ 107:fltk-1.3.4-1/FL/fl_draw.H ****  \returns non-zero if any of the rectangle intersects the current clip
+ 108:fltk-1.3.4-1/FL/fl_draw.H ****  region. If this returns 0 you don't have to draw the object.
+ 109:fltk-1.3.4-1/FL/fl_draw.H ****  
+ 110:fltk-1.3.4-1/FL/fl_draw.H ****  \note
+ 111:fltk-1.3.4-1/FL/fl_draw.H ****  Under X this returns 2 if the rectangle is partially clipped, 
+ 112:fltk-1.3.4-1/FL/fl_draw.H ****  and 1 if it is entirely inside the clip region.
+ 113:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 114:fltk-1.3.4-1/FL/fl_draw.H **** inline int fl_not_clipped(int x, int y, int w, int h) {return fl_graphics_driver->not_clipped(x,y,w
+ 115:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 116:fltk-1.3.4-1/FL/fl_draw.H ****  Intersects the rectangle with the current clip region and returns the
+ 117:fltk-1.3.4-1/FL/fl_draw.H ****  bounding box of the result.
+ 118:fltk-1.3.4-1/FL/fl_draw.H ****  
+ 119:fltk-1.3.4-1/FL/fl_draw.H ****  Returns non-zero if the resulting rectangle is different to the original.
+ 120:fltk-1.3.4-1/FL/fl_draw.H ****  This can be used to limit the necessary drawing to a rectangle.
+ 121:fltk-1.3.4-1/FL/fl_draw.H ****  \p W and \p H are set to zero if the rectangle is completely outside the region.
+ 122:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] x,y,w,h position and size of rectangle
+ 123:fltk-1.3.4-1/FL/fl_draw.H ****  \param[out] X,Y,W,H position and size of resulting bounding box.
+ 124:fltk-1.3.4-1/FL/fl_draw.H ****  \returns Non-zero if the resulting rectangle is different to the original.
+ 125:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 126:fltk-1.3.4-1/FL/fl_draw.H **** inline int fl_clip_box(int x , int y, int w, int h, int& X, int& Y, int& W, int& H) 
+ 127:fltk-1.3.4-1/FL/fl_draw.H ****   {return fl_graphics_driver->clip_box(x,y,w,h,X,Y,W,H); }
+ 128:fltk-1.3.4-1/FL/fl_draw.H **** /** Undoes any clobbering of clip done by your program */
+ 129:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_restore_clip() { fl_graphics_driver->restore_clip(); }
+ 130:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 131:fltk-1.3.4-1/FL/fl_draw.H ****  Replaces the top of the clipping stack with a clipping region of any shape.
+ 132:fltk-1.3.4-1/FL/fl_draw.H ****  
+ 133:fltk-1.3.4-1/FL/fl_draw.H ****  Fl_Region is an operating system specific type.
+ 134:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] r clipping region
+ 135:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 136:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_clip_region(Fl_Region r) { fl_graphics_driver->clip_region(r); }
+ 137:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 138:fltk-1.3.4-1/FL/fl_draw.H ****  Returns the current clipping region.
+ 139:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 140:fltk-1.3.4-1/FL/fl_draw.H **** inline Fl_Region fl_clip_region() { return fl_graphics_driver->clip_region(); }
+ 141:fltk-1.3.4-1/FL/fl_draw.H **** 
+ 142:fltk-1.3.4-1/FL/fl_draw.H **** 
+ 143:fltk-1.3.4-1/FL/fl_draw.H **** // points:
+ 144:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 145:fltk-1.3.4-1/FL/fl_draw.H ****  Draws a single pixel at the given coordinates
+ 146:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 147:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_point(int x, int y) { fl_graphics_driver->point(x,y); }
+ 148:fltk-1.3.4-1/FL/fl_draw.H **** 
+ 149:fltk-1.3.4-1/FL/fl_draw.H **** // line type:
+ 150:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 151:fltk-1.3.4-1/FL/fl_draw.H ****  Sets how to draw lines (the "pen").
+ 152:fltk-1.3.4-1/FL/fl_draw.H ****  If you change this it is your responsibility to set it back to the default
+ 153:fltk-1.3.4-1/FL/fl_draw.H ****  using \c fl_line_style(0).
+ 154:fltk-1.3.4-1/FL/fl_draw.H ****  
+ 155:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] style A bitmask which is a bitwise-OR of a line style, a cap
+ 156:fltk-1.3.4-1/FL/fl_draw.H ****  style, and a join style. If you don't specify a dash type you
+ 157:fltk-1.3.4-1/FL/fl_draw.H ****  will get a solid line. If you don't specify a cap or join type
+ 158:fltk-1.3.4-1/FL/fl_draw.H ****  you will get a system-defined default of whatever value is
+ 159:fltk-1.3.4-1/FL/fl_draw.H ****  fastest.
+ 160:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] width The thickness of the lines in pixels. Zero results in the
+ 161:fltk-1.3.4-1/FL/fl_draw.H ****  system defined default, which on both X and Windows is somewhat
+ 162:fltk-1.3.4-1/FL/fl_draw.H ****  different and nicer than 1.
+ 163:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] dashes A pointer to an array of dash lengths, measured in pixels.
+ 164:fltk-1.3.4-1/FL/fl_draw.H ****  The first location is how long to draw a solid portion, the next
+ 165:fltk-1.3.4-1/FL/fl_draw.H ****  is how long to draw the gap, then the solid, etc. It is terminated
+ 166:fltk-1.3.4-1/FL/fl_draw.H ****  with a zero-length entry. A \c NULL pointer or a zero-length
+ 167:fltk-1.3.4-1/FL/fl_draw.H ****  array results in a solid line. Odd array sizes are not supported
+ 168:fltk-1.3.4-1/FL/fl_draw.H ****  and result in undefined behavior.
+ 169:fltk-1.3.4-1/FL/fl_draw.H ****  
+ 170:fltk-1.3.4-1/FL/fl_draw.H ****  \note      Because of how line styles are implemented on Win32 systems,
+ 171:fltk-1.3.4-1/FL/fl_draw.H ****  you \e must set the line style \e after setting the drawing
+ 172:fltk-1.3.4-1/FL/fl_draw.H ****  color. If you set the color after the line style you will lose
+ 173:fltk-1.3.4-1/FL/fl_draw.H ****  the line style settings.
+ 174:fltk-1.3.4-1/FL/fl_draw.H ****  \note      The \p dashes array does not work under Windows 95, 98 or Me,
+ 175:fltk-1.3.4-1/FL/fl_draw.H ****  since those operating systems do not support complex line styles.
+ 176:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 177:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_line_style(int style, int width=0, char* dashes=0) {fl_graphics_driver->line_style(s
+ 178:fltk-1.3.4-1/FL/fl_draw.H **** enum {
+ 179:fltk-1.3.4-1/FL/fl_draw.H ****   FL_SOLID	= 0,		///< line style: <tt>___________</tt>
+ 180:fltk-1.3.4-1/FL/fl_draw.H ****   FL_DASH	= 1,		///< line style: <tt>_ _ _ _ _ _</tt>
+ 181:fltk-1.3.4-1/FL/fl_draw.H ****   FL_DOT	= 2,		///< line style: <tt>. . . . . .</tt>
+ 182:fltk-1.3.4-1/FL/fl_draw.H ****   FL_DASHDOT	= 3,		///< line style: <tt>_ . _ . _ .</tt>
+ 183:fltk-1.3.4-1/FL/fl_draw.H ****   FL_DASHDOTDOT	= 4,		///< line style: <tt>_ . . _ . .</tt>
+ 184:fltk-1.3.4-1/FL/fl_draw.H **** 
+ 185:fltk-1.3.4-1/FL/fl_draw.H ****   FL_CAP_FLAT	= 0x100,	///< cap style: end is flat
+ 186:fltk-1.3.4-1/FL/fl_draw.H ****   FL_CAP_ROUND	= 0x200,	///< cap style: end is round
+ 187:fltk-1.3.4-1/FL/fl_draw.H ****   FL_CAP_SQUARE	= 0x300,	///< cap style: end wraps end point
+ 188:fltk-1.3.4-1/FL/fl_draw.H **** 
+ 189:fltk-1.3.4-1/FL/fl_draw.H ****   FL_JOIN_MITER	= 0x1000,	///< join style: line join extends to a point
+ 190:fltk-1.3.4-1/FL/fl_draw.H ****   FL_JOIN_ROUND	= 0x2000,	///< join style: line join is rounded
+ 191:fltk-1.3.4-1/FL/fl_draw.H ****   FL_JOIN_BEVEL	= 0x3000	///< join style: line join is tidied
+ 192:fltk-1.3.4-1/FL/fl_draw.H **** };
+ 193:fltk-1.3.4-1/FL/fl_draw.H **** 
+ 194:fltk-1.3.4-1/FL/fl_draw.H **** // rectangles tweaked to exactly fill the pixel rectangle:
+ 195:fltk-1.3.4-1/FL/fl_draw.H **** 
+ 196:fltk-1.3.4-1/FL/fl_draw.H **** /** 
+ 197:fltk-1.3.4-1/FL/fl_draw.H ****  Draws a 1-pixel border \e inside the given bounding box.
+ 198:fltk-1.3.4-1/FL/fl_draw.H ****  This function is meant for quick drawing of simple boxes. The behavior is 
+ 199:fltk-1.3.4-1/FL/fl_draw.H ****  undefined for line widths that are not 1.
+ 200:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 201:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_rect(int x, int y, int w, int h) { fl_graphics_driver->rect(x,y,w,h); }
+ 202:fltk-1.3.4-1/FL/fl_draw.H **** 
+ 203:fltk-1.3.4-1/FL/fl_draw.H **** /** Draws with passed color a 1-pixel border \e inside the given bounding box */
+ 204:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_rect(int x, int y, int w, int h, Fl_Color c) {fl_color(c); fl_rect(x,y,w,h);}
+ 205:fltk-1.3.4-1/FL/fl_draw.H **** /** Colors with current color a rectangle that exactly fills the given bounding box */
+ 206:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_rectf(int x, int y, int w, int h) { fl_graphics_driver->rectf(x,y,w,h); }
+ 207:fltk-1.3.4-1/FL/fl_draw.H **** /** Colors with passed color a rectangle that exactly fills the given bounding box */
+ 208:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_rectf(int x, int y, int w, int h, Fl_Color c) {fl_color(c); fl_rectf(x,y,w,h);}
+ 209:fltk-1.3.4-1/FL/fl_draw.H **** 
+ 210:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 211:fltk-1.3.4-1/FL/fl_draw.H ****   Colors a rectangle with "exactly" the passed <tt>r,g,b</tt> color.
+ 212:fltk-1.3.4-1/FL/fl_draw.H ****   On screens with less than 24 bits of color this is done by drawing a
+ 213:fltk-1.3.4-1/FL/fl_draw.H ****   solid-colored block using fl_draw_image() so that the correct color
+ 214:fltk-1.3.4-1/FL/fl_draw.H ****   shade is produced.
+ 215:fltk-1.3.4-1/FL/fl_draw.H ****   */
+ 216:fltk-1.3.4-1/FL/fl_draw.H **** /* note: doxygen comment here to avoid triplication in os-speciic files */
+ 217:fltk-1.3.4-1/FL/fl_draw.H **** FL_EXPORT void fl_rectf(int x, int y, int w, int h, uchar r, uchar g, uchar b);
+ 218:fltk-1.3.4-1/FL/fl_draw.H **** 
+ 219:fltk-1.3.4-1/FL/fl_draw.H **** // line segments:
+ 220:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 221:fltk-1.3.4-1/FL/fl_draw.H ****  Draws a line from (x,y) to (x1,y1)
+ 222:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 223:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_line(int x, int y, int x1, int y1) {fl_graphics_driver->line(x,y,x1,y1); }
+ 224:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 225:fltk-1.3.4-1/FL/fl_draw.H ****  Draws a line from (x,y) to (x1,y1) and another from (x1,y1) to (x2,y2)
+ 226:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 227:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_line(int x, int y, int x1, int y1, int x2, int y2) {fl_graphics_driver->line(x,y,x1,
+ 228:fltk-1.3.4-1/FL/fl_draw.H **** 
+ 229:fltk-1.3.4-1/FL/fl_draw.H **** // closed line segments:
+ 230:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 231:fltk-1.3.4-1/FL/fl_draw.H ****  Outlines a 3-sided polygon with lines
+ 232:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 233:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_loop(int x, int y, int x1, int y1, int x2, int y2) {fl_graphics_driver->loop(x,y,x1,
+ 234:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 235:fltk-1.3.4-1/FL/fl_draw.H ****  Outlines a 4-sided polygon with lines
+ 236:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 237:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_loop(int x, int y, int x1, int y1, int x2, int y2, int x3, int y3) 
+ 238:fltk-1.3.4-1/FL/fl_draw.H ****   {fl_graphics_driver->loop(x,y,x1,y1,x2,y2,x3,y3); }
+ 239:fltk-1.3.4-1/FL/fl_draw.H **** 
+ 240:fltk-1.3.4-1/FL/fl_draw.H **** // filled polygons
+ 241:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 242:fltk-1.3.4-1/FL/fl_draw.H ****  Fills a 3-sided polygon. The polygon must be convex.
+ 243:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 244:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_polygon(int x, int y, int x1, int y1, int x2, int y2) {fl_graphics_driver->polygon(x
+ 245:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 246:fltk-1.3.4-1/FL/fl_draw.H ****  Fills a 4-sided polygon. The polygon must be convex.
+ 247:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 248:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_polygon(int x, int y, int x1, int y1, int x2, int y2, int x3, int y3) 
+ 249:fltk-1.3.4-1/FL/fl_draw.H ****   { fl_graphics_driver->polygon(x,y,x1,y1,x2,y2,x3,y3); }
+ 250:fltk-1.3.4-1/FL/fl_draw.H **** 
+ 251:fltk-1.3.4-1/FL/fl_draw.H **** // draw rectilinear lines, horizontal segment first:
+ 252:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 253:fltk-1.3.4-1/FL/fl_draw.H ****  Draws a horizontal line from (x,y) to (x1,y)
+ 254:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 255:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_xyline(int x, int y, int x1) {fl_graphics_driver->xyline(x,y,x1);}
+ 256:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 257:fltk-1.3.4-1/FL/fl_draw.H ****  Draws a horizontal line from (x,y) to (x1,y), then vertical from (x1,y) to (x1,y2)
+ 258:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 259:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_xyline(int x, int y, int x1, int y2) {fl_graphics_driver->xyline(x,y,x1,y2);}
+ 260:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 261:fltk-1.3.4-1/FL/fl_draw.H ****  Draws a horizontal line from (x,y) to (x1,y), then a vertical from (x1,y) to (x1,y2)
+ 262:fltk-1.3.4-1/FL/fl_draw.H ****  and then another horizontal from (x1,y2) to (x3,y2)
+ 263:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 264:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_xyline(int x, int y, int x1, int y2, int x3) {fl_graphics_driver->xyline(x,y,x1,y2,x
+ 265:fltk-1.3.4-1/FL/fl_draw.H **** 
+ 266:fltk-1.3.4-1/FL/fl_draw.H **** // draw rectilinear lines, vertical segment first:
+ 267:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 268:fltk-1.3.4-1/FL/fl_draw.H ****  Draws a vertical line from (x,y) to (x,y1)
+ 269:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 270:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_yxline(int x, int y, int y1) {fl_graphics_driver->yxline(x,y,y1);}
+ 271:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 272:fltk-1.3.4-1/FL/fl_draw.H ****  Draws a vertical line from (x,y) to (x,y1), then a horizontal from (x,y1) to (x2,y1)
+ 273:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 274:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_yxline(int x, int y, int y1, int x2) {fl_graphics_driver->yxline(x,y,y1,x2);}
+ 275:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 276:fltk-1.3.4-1/FL/fl_draw.H ****  Draws a vertical line from (x,y) to (x,y1) then a horizontal from (x,y1)
+ 277:fltk-1.3.4-1/FL/fl_draw.H ****  to (x2,y1), then another vertical from (x2,y1) to (x2,y3)
+ 278:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 279:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_yxline(int x, int y, int y1, int x2, int y3) {fl_graphics_driver->yxline(x,y,y1,x2,y
+ 280:fltk-1.3.4-1/FL/fl_draw.H **** 
+ 281:fltk-1.3.4-1/FL/fl_draw.H **** // circular lines and pie slices (code in fl_arci.C):
+ 282:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 283:fltk-1.3.4-1/FL/fl_draw.H ****  Draw ellipse sections using integer coordinates.
+ 284:fltk-1.3.4-1/FL/fl_draw.H ****  
+ 285:fltk-1.3.4-1/FL/fl_draw.H ****  These functions match the rather limited circle drawing code provided by X
+ 286:fltk-1.3.4-1/FL/fl_draw.H ****  and WIN32. The advantage over using fl_arc with floating point coordinates
+ 287:fltk-1.3.4-1/FL/fl_draw.H ****  is that they are faster because they often use the hardware, and they draw
+ 288:fltk-1.3.4-1/FL/fl_draw.H ****  much nicer small circles, since the small sizes are often hard-coded bitmaps.
+ 289:fltk-1.3.4-1/FL/fl_draw.H ****  
+ 290:fltk-1.3.4-1/FL/fl_draw.H ****  If a complete circle is drawn it will fit inside the passed bounding box.
+ 291:fltk-1.3.4-1/FL/fl_draw.H ****  The two angles are measured in degrees counter-clockwise from 3 o'clock and
+ 292:fltk-1.3.4-1/FL/fl_draw.H ****  are the starting and ending angle of the arc, \p a2 must be greater or equal
+ 293:fltk-1.3.4-1/FL/fl_draw.H ****  to \p a1.
+ 294:fltk-1.3.4-1/FL/fl_draw.H ****  
+ 295:fltk-1.3.4-1/FL/fl_draw.H ****  fl_arc() draws a series of lines to approximate the arc. Notice that the
+ 296:fltk-1.3.4-1/FL/fl_draw.H ****  integer version of fl_arc() has a different number of arguments than the
+ 297:fltk-1.3.4-1/FL/fl_draw.H ****  double version fl_arc(double x, double y, double r, double start, double end)
+ 298:fltk-1.3.4-1/FL/fl_draw.H ****  
+ 299:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] x,y,w,h bounding box of complete circle
+ 300:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] a1,a2 start and end angles of arc measured in degrees
+ 301:fltk-1.3.4-1/FL/fl_draw.H ****  counter-clockwise from 3 o'clock. \p a2 must be greater
+ 302:fltk-1.3.4-1/FL/fl_draw.H ****  than or equal to \p a1.
+ 303:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 304:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_arc(int x, int y, int w, int h, double a1, double a2) {fl_graphics_driver->arc(x,y,w
+ 305:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 306:fltk-1.3.4-1/FL/fl_draw.H ****  Draw filled ellipse sections using integer coordinates.
+ 307:fltk-1.3.4-1/FL/fl_draw.H ****  
+ 308:fltk-1.3.4-1/FL/fl_draw.H ****  Like fl_arc(), but fl_pie() draws a filled-in pie slice.
+ 309:fltk-1.3.4-1/FL/fl_draw.H ****  This slice may extend outside the line drawn by fl_arc();
+ 310:fltk-1.3.4-1/FL/fl_draw.H ****  to avoid this use w - 1 and h - 1.
+ 311:fltk-1.3.4-1/FL/fl_draw.H ****  
+ 312:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] x,y,w,h bounding box of complete circle
+ 313:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] a1,a2 start and end angles of arc measured in degrees
+ 314:fltk-1.3.4-1/FL/fl_draw.H ****  counter-clockwise from 3 o'clock. \p a2 must be greater
+ 315:fltk-1.3.4-1/FL/fl_draw.H ****  than or equal to \p a1.
+ 316:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 317:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_pie(int x, int y, int w, int h, double a1, double a2) {fl_graphics_driver->pie(x,y,w
+ 318:fltk-1.3.4-1/FL/fl_draw.H **** /** fl_chord declaration is a place holder - the function does not yet exist */
+ 319:fltk-1.3.4-1/FL/fl_draw.H **** FL_EXPORT void fl_chord(int x, int y, int w, int h, double a1, double a2); // nyi
+ 320:fltk-1.3.4-1/FL/fl_draw.H **** 
+ 321:fltk-1.3.4-1/FL/fl_draw.H **** // scalable drawing code (code in fl_vertex.C and fl_arc.C):
+ 322:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 323:fltk-1.3.4-1/FL/fl_draw.H ****  Saves the current transformation matrix on the stack. 
+ 324:fltk-1.3.4-1/FL/fl_draw.H ****  The maximum depth of the stack is 32.
+ 325:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 326:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_push_matrix() { fl_graphics_driver->push_matrix(); }
+ 327:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 328:fltk-1.3.4-1/FL/fl_draw.H ****  Restores the current transformation matrix from the stack.
+ 329:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 330:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_pop_matrix() { fl_graphics_driver->pop_matrix(); }
+ 331:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 332:fltk-1.3.4-1/FL/fl_draw.H ****  Concatenates scaling transformation onto the current one.
+ 333:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] x,y scale factors in x-direction and y-direction
+ 334:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 335:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_scale(double x, double y) { fl_graphics_driver->scale(x, y); }
+ 336:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 337:fltk-1.3.4-1/FL/fl_draw.H ****  Concatenates scaling transformation onto the current one.
+ 338:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] x scale factor in both x-direction and y-direction
+ 339:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 340:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_scale(double x) { fl_graphics_driver->scale(x, x); }
+ 341:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 342:fltk-1.3.4-1/FL/fl_draw.H ****  Concatenates translation transformation onto the current one.
+ 343:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] x,y translation factor in x-direction and y-direction
+ 344:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 345:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_translate(double x, double y) { fl_graphics_driver->translate(x, y); }
+ 346:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 347:fltk-1.3.4-1/FL/fl_draw.H ****  Concatenates rotation transformation onto the current one.
+ 348:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] d - rotation angle, counter-clockwise in degrees (not radians)
+ 349:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 350:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_rotate(double d) { fl_graphics_driver->rotate(d); }
+ 351:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 352:fltk-1.3.4-1/FL/fl_draw.H ****  Concatenates another transformation onto the current one.
+ 353:fltk-1.3.4-1/FL/fl_draw.H ****  
+ 354:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] a,b,c,d,x,y transformation matrix elements such that
+ 355:fltk-1.3.4-1/FL/fl_draw.H ****  <tt> X' = aX + cY + x </tt> and <tt> Y' = bX +dY + y </tt>
+ 356:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 357:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_mult_matrix(double a, double b, double c, double d, double x,double y) 
+ 358:fltk-1.3.4-1/FL/fl_draw.H **** 	{ fl_graphics_driver->mult_matrix(a, b, c, d, x, y); }
+ 359:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 360:fltk-1.3.4-1/FL/fl_draw.H ****  Starts drawing a list of points. Points are added to the list with fl_vertex()
+ 361:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 362:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_begin_points() {fl_graphics_driver->begin_points(); }
+ 363:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 364:fltk-1.3.4-1/FL/fl_draw.H ****  Starts drawing a list of lines.
+ 365:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 366:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_begin_line() {fl_graphics_driver->begin_line(); }
+ 367:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 368:fltk-1.3.4-1/FL/fl_draw.H ****  Starts drawing a closed sequence of lines.
+ 369:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 370:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_begin_loop() {fl_graphics_driver->begin_loop(); }
+ 371:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 372:fltk-1.3.4-1/FL/fl_draw.H ****  Starts drawing a convex filled polygon.
+ 373:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 374:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_begin_polygon() {fl_graphics_driver->begin_polygon(); }
+ 375:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 376:fltk-1.3.4-1/FL/fl_draw.H ****  Adds a single vertex to the current path.
+ 377:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] x,y coordinate
+ 378:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 379:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_vertex(double x, double y) {fl_graphics_driver->vertex(x,y); }
+ 380:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 381:fltk-1.3.4-1/FL/fl_draw.H ****  Adds a series of points on a Bezier curve to the path.
+ 382:fltk-1.3.4-1/FL/fl_draw.H ****  The curve ends (and two of the points) are at X0,Y0 and X3,Y3.
+ 383:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] X0,Y0 curve start point
+ 384:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] X1,Y1 curve control point
+ 385:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] X2,Y2 curve control point
+ 386:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] X3,Y3 curve end point
+ 387:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 388:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_curve(double X0, double Y0, double X1, double Y1, double X2, double Y2, double X3, d
+ 389:fltk-1.3.4-1/FL/fl_draw.H ****   {fl_graphics_driver->curve(X0,Y0,X1,Y1,X2,Y2,X3,Y3); }
+ 390:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 391:fltk-1.3.4-1/FL/fl_draw.H ****  Adds a series of points to the current path on the arc of a circle.
+ 392:fltk-1.3.4-1/FL/fl_draw.H ****  You can get elliptical paths by using scale and rotate before calling fl_arc().
+ 393:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] x,y,r center and radius of circular arc
+ 394:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] start,end angles of start and end of arc measured in degrees
+ 395:fltk-1.3.4-1/FL/fl_draw.H ****  counter-clockwise from 3 o'clock. If \p end is less than \p start
+ 396:fltk-1.3.4-1/FL/fl_draw.H ****  then it draws the arc in a clockwise direction.
+ 397:fltk-1.3.4-1/FL/fl_draw.H **** 
+ 398:fltk-1.3.4-1/FL/fl_draw.H ****  Examples:
+ 399:fltk-1.3.4-1/FL/fl_draw.H ****  \code
+ 400:fltk-1.3.4-1/FL/fl_draw.H ****     // Draw an arc of points
+ 401:fltk-1.3.4-1/FL/fl_draw.H ****     fl_begin_points();
+ 402:fltk-1.3.4-1/FL/fl_draw.H ****     fl_arc(100.0, 100.0, 50.0, 0.0, 180.0);
+ 403:fltk-1.3.4-1/FL/fl_draw.H ****     fl_end_points();
+ 404:fltk-1.3.4-1/FL/fl_draw.H **** 
+ 405:fltk-1.3.4-1/FL/fl_draw.H ****     // Draw arc with a line
+ 406:fltk-1.3.4-1/FL/fl_draw.H ****     fl_begin_line();
+ 407:fltk-1.3.4-1/FL/fl_draw.H ****     fl_arc(200.0, 100.0, 50.0, 0.0, 180.0);
+ 408:fltk-1.3.4-1/FL/fl_draw.H ****     fl_end_line();
+ 409:fltk-1.3.4-1/FL/fl_draw.H **** 
+ 410:fltk-1.3.4-1/FL/fl_draw.H ****     // Draw filled arc
+ 411:fltk-1.3.4-1/FL/fl_draw.H ****     fl_begin_polygon();
+ 412:fltk-1.3.4-1/FL/fl_draw.H ****     fl_arc(300.0, 100.0, 50.0, 0.0, 180.0);
+ 413:fltk-1.3.4-1/FL/fl_draw.H ****     fl_end_polygon();
+ 414:fltk-1.3.4-1/FL/fl_draw.H ****  \endcode
+ 415:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 416:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_arc(double x, double y, double r, double start, double end) {fl_graphics_driver->arc
+ 417:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 418:fltk-1.3.4-1/FL/fl_draw.H ****  fl_circle() is equivalent to fl_arc(x,y,r,0,360), but may be faster.
+ 419:fltk-1.3.4-1/FL/fl_draw.H ****  
+ 420:fltk-1.3.4-1/FL/fl_draw.H ****  It must be the \e only thing in the path: if you want a circle as part of
+ 421:fltk-1.3.4-1/FL/fl_draw.H ****  a complex polygon you must use fl_arc()
+ 422:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] x,y,r center and radius of circle
+ 423:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 424:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_circle(double x, double y, double r) {fl_graphics_driver->circle(x,y,r); }
+ 425:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 426:fltk-1.3.4-1/FL/fl_draw.H ****  Ends list of points, and draws.
+ 427:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 428:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_end_points() {fl_graphics_driver->end_points(); }
+ 429:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 430:fltk-1.3.4-1/FL/fl_draw.H ****  Ends list of lines, and draws.
+ 431:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 432:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_end_line() {fl_graphics_driver->end_line(); }
+ 433:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 434:fltk-1.3.4-1/FL/fl_draw.H ****  Ends closed sequence of lines, and draws.
+ 435:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 436:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_end_loop() {fl_graphics_driver->end_loop(); }
+ 437:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 438:fltk-1.3.4-1/FL/fl_draw.H ****  Ends convex filled polygon, and draws.
+ 439:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 440:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_end_polygon() {fl_graphics_driver->end_polygon(); }
+ 441:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 442:fltk-1.3.4-1/FL/fl_draw.H ****  Starts drawing a complex filled polygon.
+ 443:fltk-1.3.4-1/FL/fl_draw.H ****  
+ 444:fltk-1.3.4-1/FL/fl_draw.H ****  The polygon may be concave, may have holes in it, or may be several
+ 445:fltk-1.3.4-1/FL/fl_draw.H ****  disconnected pieces. Call fl_gap() to separate loops of the path.
+ 446:fltk-1.3.4-1/FL/fl_draw.H ****  
+ 447:fltk-1.3.4-1/FL/fl_draw.H ****  To outline the polygon, use fl_begin_loop() and replace each fl_gap()
+ 448:fltk-1.3.4-1/FL/fl_draw.H ****  with fl_end_loop();fl_begin_loop() pairs.
+ 449:fltk-1.3.4-1/FL/fl_draw.H ****  
+ 450:fltk-1.3.4-1/FL/fl_draw.H ****  \note
+ 451:fltk-1.3.4-1/FL/fl_draw.H ****  For portability, you should only draw polygons that appear the same
+ 452:fltk-1.3.4-1/FL/fl_draw.H ****  whether "even/odd" or "non-zero" winding rules are used to fill them.
+ 453:fltk-1.3.4-1/FL/fl_draw.H ****  Holes should be drawn in the opposite direction to the outside loop.
+ 454:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 455:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_begin_complex_polygon() {fl_graphics_driver->begin_complex_polygon(); }
+ 456:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 457:fltk-1.3.4-1/FL/fl_draw.H ****  Call fl_gap() to separate loops of the path.
+ 458:fltk-1.3.4-1/FL/fl_draw.H ****  
+ 459:fltk-1.3.4-1/FL/fl_draw.H ****  It is unnecessary but harmless to call fl_gap() before the first vertex,
+ 460:fltk-1.3.4-1/FL/fl_draw.H ****  after the last vertex, or several times in a row.
+ 461:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 462:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_gap() {fl_graphics_driver->gap(); }
+ 463:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 464:fltk-1.3.4-1/FL/fl_draw.H ****  Ends complex filled polygon, and draws.
+ 465:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 466:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_end_complex_polygon() {fl_graphics_driver->end_complex_polygon(); }
+ 467:fltk-1.3.4-1/FL/fl_draw.H **** // get and use transformed positions:
+ 468:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 469:fltk-1.3.4-1/FL/fl_draw.H ****  Transforms coordinate using the current transformation matrix.
+ 470:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] x,y coordinate
+ 471:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 472:fltk-1.3.4-1/FL/fl_draw.H **** inline double fl_transform_x(double x, double y) {return fl_graphics_driver->transform_x(x, y); }
+ 473:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 474:fltk-1.3.4-1/FL/fl_draw.H ****  Transforms coordinate using the current transformation matrix.
+ 475:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] x,y coordinate
+ 476:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 477:fltk-1.3.4-1/FL/fl_draw.H **** inline double fl_transform_y(double x, double y) {return fl_graphics_driver->transform_y(x, y); }
+ 478:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 479:fltk-1.3.4-1/FL/fl_draw.H ****  Transforms distance using current transformation matrix.
+ 480:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] x,y coordinate
+ 481:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 482:fltk-1.3.4-1/FL/fl_draw.H **** inline double fl_transform_dx(double x, double y) {return fl_graphics_driver->transform_dx(x, y); }
+ 483:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 484:fltk-1.3.4-1/FL/fl_draw.H ****  Transforms distance using current transformation matrix.
+ 485:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] x,y coordinate
+ 486:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 487:fltk-1.3.4-1/FL/fl_draw.H **** inline double fl_transform_dy(double x, double y) {return fl_graphics_driver->transform_dy(x, y); }
+ 488:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 489:fltk-1.3.4-1/FL/fl_draw.H ****  Adds coordinate pair to the vertex list without further transformations.
+ 490:fltk-1.3.4-1/FL/fl_draw.H ****  \param[in] xf,yf transformed coordinate
+ 491:fltk-1.3.4-1/FL/fl_draw.H ****  */
+ 492:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_transformed_vertex(double xf, double yf) {fl_graphics_driver->transformed_vertex(xf,
+ 493:fltk-1.3.4-1/FL/fl_draw.H **** /** @} */
+ 494:fltk-1.3.4-1/FL/fl_draw.H **** 
+ 495:fltk-1.3.4-1/FL/fl_draw.H **** /** \addtogroup  fl_attributes
+ 496:fltk-1.3.4-1/FL/fl_draw.H ****     @{ */
+ 497:fltk-1.3.4-1/FL/fl_draw.H **** /* NOTE: doxygen comments here to avoid triplication in os-specific sources */
+ 498:fltk-1.3.4-1/FL/fl_draw.H **** 
+ 499:fltk-1.3.4-1/FL/fl_draw.H **** // Fonts:
+ 500:fltk-1.3.4-1/FL/fl_draw.H **** /**
+ 501:fltk-1.3.4-1/FL/fl_draw.H ****   Sets the current font, which is then used in various drawing routines.
+ 502:fltk-1.3.4-1/FL/fl_draw.H ****   You may call this outside a draw context if necessary to call fl_width(),
+ 503:fltk-1.3.4-1/FL/fl_draw.H ****   but on X this will open the display.
+ 504:fltk-1.3.4-1/FL/fl_draw.H **** 
+ 505:fltk-1.3.4-1/FL/fl_draw.H ****   The font is identified by a \p face and a \p size.
+ 506:fltk-1.3.4-1/FL/fl_draw.H ****   The size of the font is measured in pixels and not "points".
+ 507:fltk-1.3.4-1/FL/fl_draw.H ****   Lines should be spaced \p size pixels apart or more.
+ 508:fltk-1.3.4-1/FL/fl_draw.H **** */
+ 509:fltk-1.3.4-1/FL/fl_draw.H **** inline void fl_font(Fl_Font face, Fl_Fontsize fsize) { fl_graphics_driver->font(face,fsize); }
+ 196              		.loc 4 509 0
+ 197 00c5 488B3D00 		movq	fl_graphics_driver(%rip), %rdi
+ 197      000000
+ 198 00cc 8B534C   		movl	76(%rbx), %edx
+ 199 00cf 8B7348   		movl	72(%rbx), %esi
+ 200 00d2 488B07   		movq	(%rdi), %rax
+ 201 00d5 FF90B001 		call	*432(%rax)
+ 201      0000
+ 202              	.LVL12:
+ 203              	.LBE105:
+ 204              	.LBE104:
+ 205              	.LBB106:
+ 206              	.LBB107:
+  52:fltk-1.3.4-1/FL/fl_draw.H **** /** for back compatibility - use fl_color(Fl_Color c) instead */
+ 207              		.loc 4 52 0
+ 208 00db 488B3D00 		movq	fl_graphics_driver(%rip), %rdi
+ 208      000000
+ 209 00e2 8B7350   		movl	80(%rbx), %esi
+ 210 00e5 488B07   		movq	(%rdi), %rax
+ 211 00e8 FF908800 		call	*136(%rax)
+ 211      0000
+ 212              	.LVL13:
+ 213              	.LBE107:
+ 214              	.LBE106:
+  85:fltk-1.3.4-1/src/forms_timer.cxx ****   69:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Image* image;
+ 215              		.loc 2 85 0
+ 216 00ee 8B5324   		movl	36(%rbx), %edx
+ 217 00f1 8B4B28   		movl	40(%rbx), %ecx
+ 218 00f4 4531C9   		xorl	%r9d, %r9d
+ 219 00f7 8B7320   		movl	32(%rbx), %esi
+ 220 00fa 448B432C 		movl	44(%rbx), %r8d
+ 221 00fe 4889EF   		movq	%rbp, %rdi
+ 222 0101 6A01     		pushq	$1
+ 223              		.cfi_def_cfa_offset 88
+ 224 0103 6A00     		pushq	$0
+ 225              		.cfi_def_cfa_offset 96
+ 226 0105 E8000000 		call	_Z7fl_drawPKciiiijP8Fl_Imagei
+ 226      00
+ 227              	.LVL14:
+ 228              	.LBE101:
+ 229 010a 58       		popq	%rax
+ 230              		.cfi_def_cfa_offset 88
+ 231 010b 5A       		popq	%rdx
+ 232              		.cfi_def_cfa_offset 80
+ 233              	.LBE115:
+ 234              		.loc 2 88 0
+ 235 010c E941FFFF 		jmp	.L4
+ 235      FF
+ 236              	.LVL15:
+ 237              		.p2align 4,,10
+ 238 0111 0F1F8000 		.p2align 3
+ 238      000000
+ 239              	.L20:
+ 240              	.LBB116:
+ 241              	.LBB114:
+  80:fltk-1.3.4-1/src/forms_timer.cxx ****   64:fltk-1.3.4-1/FL/Fl_Widget.H ****  */
+ 242              		.loc 2 80 0
+ 243 0118 F20F1015 		movsd	.LC7(%rip), %xmm2
+ 243      00000000 
+ 244              	.LBB108:
+ 245              	.LBB109:
+ 246              		.loc 3 34 0
+ 247 0120 B9000000 		movl	$.LC8, %ecx
+ 247      00
+ 248 0125 BA200000 		movl	$32, %edx
+ 248      00
+ 249 012a BE010000 		movl	$1, %esi
+ 249      00
+ 250 012f 4889E7   		movq	%rsp, %rdi
+ 251              	.LBE109:
+ 252              	.LBE108:
+  80:fltk-1.3.4-1/src/forms_timer.cxx ****   64:fltk-1.3.4-1/FL/Fl_Widget.H ****  */
+ 253              		.loc 2 80 0
+ 254 0132 F20F58D0 		addsd	%xmm0, %xmm2
+ 255              	.LBB112:
+ 256              	.LBB110:
+ 257              		.loc 3 34 0
+ 258 0136 B8010000 		movl	$1, %eax
+ 258      00
+ 259 013b 4889E5   		movq	%rsp, %rbp
+ 260              	.LBE110:
+ 261              	.LBE112:
+  80:fltk-1.3.4-1/src/forms_timer.cxx ****   64:fltk-1.3.4-1/FL/Fl_Widget.H ****  */
+ 262              		.loc 2 80 0
+ 263 013e F20F5ED1 		divsd	%xmm1, %xmm2
+ 264 0142 F2440F2C 		cvttsd2si	%xmm2, %r8d
+ 264      C2
+ 265              	.LVL16:
+ 266              	.LBB113:
+ 267              	.LBB111:
+ 268              		.loc 3 34 0
+ 269 0147 660FEFD2 		pxor	%xmm2, %xmm2
+ 270 014b F2410F2A 		cvtsi2sd	%r8d, %xmm2
+ 270      D0
+ 271 0150 F20F59CA 		mulsd	%xmm2, %xmm1
+ 272 0154 F20F5CC1 		subsd	%xmm1, %xmm0
+ 273              	.LVL17:
+ 274 0158 E8000000 		call	__sprintf_chk
+ 274      00
+ 275              	.LVL18:
+ 276 015d E963FFFF 		jmp	.L13
+ 276      FF
+ 277              	.LVL19:
+ 278              		.p2align 4,,10
+ 279 0162 660F1F44 		.p2align 3
+ 279      0000
+ 280              	.L19:
+ 281              	.LBE111:
+ 282              	.LBE113:
+ 283              	.LBE114:
+ 284              	.LBE116:
+  70:fltk-1.3.4-1/src/forms_timer.cxx ****   54:fltk-1.3.4-1/FL/Fl_Widget.H **** /** Callback type definition passing the widget and a long da
+ 285              		.loc 2 70 0
+ 286 0168 F20F5E05 		divsd	.LC4(%rip), %xmm0
+ 286      00000000 
+ 287 0170 F20F2CC0 		cvttsd2si	%xmm0, %eax
+ 288 0174 A801     		testb	$1, %al
+ 289 0176 0F85B9FE 		jne	.L5
+ 289      FFFF
+ 290 017c 8B5768   		movl	104(%rdi), %edx
+ 291              	.LVL20:
+ 292 017f E9B4FEFF 		jmp	.L8
+ 292      FF
+ 293              	.LVL21:
+ 294              	.L24:
+ 295              		.loc 2 88 0
+ 296 0184 E8000000 		call	__stack_chk_fail
+ 296      00
+ 297              	.LVL22:
+ 298              		.cfi_endproc
+ 299              	.LFE970:
+ 301              		.section	.text.unlikely._ZN8Fl_Timer4drawEv
+ 302              	.LCOLDE9:
+ 303              		.section	.text._ZN8Fl_Timer4drawEv
+ 304              	.LHOTE9:
+ 305              		.section	.text.unlikely._ZN8Fl_TimerD2Ev,"ax",@progbits
+ 306              		.align 2
+ 307              	.LCOLDB10:
+ 308              		.section	.text._ZN8Fl_TimerD2Ev,"ax",@progbits
+ 309              	.LHOTB10:
+ 310              		.align 2
+ 311              		.p2align 4,,15
+ 312              		.globl	_ZN8Fl_TimerD2Ev
+ 314              	_ZN8Fl_TimerD2Ev:
+ 315              	.LFB975:
+  89:fltk-1.3.4-1/src/forms_timer.cxx ****   72:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** label font used in text */
+  90:fltk-1.3.4-1/src/forms_timer.cxx ****   73:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Font font;
+  91:fltk-1.3.4-1/src/forms_timer.cxx ****   74:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** size of label font */
+  92:fltk-1.3.4-1/src/forms_timer.cxx ****   75:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Fontsize size;
+  93:fltk-1.3.4-1/src/forms_timer.cxx ****   76:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** text color */
+  94:fltk-1.3.4-1/src/forms_timer.cxx ****   77:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Color color;
+  95:fltk-1.3.4-1/src/forms_timer.cxx ****   78:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** alignment of label */
+  96:fltk-1.3.4-1/src/forms_timer.cxx ****   79:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Align align_;
+  97:fltk-1.3.4-1/src/forms_timer.cxx ****   80:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** type of label. \see Fl_Labeltype */
+  98:fltk-1.3.4-1/src/forms_timer.cxx ****   81:fltk-1.3.4-1/FL/Fl_Widget.H ****   uchar type;
+  99:fltk-1.3.4-1/src/forms_timer.cxx ****   82:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 100:fltk-1.3.4-1/src/forms_timer.cxx ****   83:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Draws the label aligned to the given box */
+ 101:fltk-1.3.4-1/src/forms_timer.cxx ****   84:fltk-1.3.4-1/FL/Fl_Widget.H ****   void draw(int,int,int,int, Fl_Align) const ;
+ 102:fltk-1.3.4-1/src/forms_timer.cxx ****   85:fltk-1.3.4-1/FL/Fl_Widget.H ****   void measure(int &w, int &h) const ;
+ 103:fltk-1.3.4-1/src/forms_timer.cxx ****   86:fltk-1.3.4-1/FL/Fl_Widget.H **** };
+ 104:fltk-1.3.4-1/src/forms_timer.cxx ****   87:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 105:fltk-1.3.4-1/src/forms_timer.cxx ****   88:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 106:fltk-1.3.4-1/src/forms_timer.cxx ****   89:fltk-1.3.4-1/FL/Fl_Widget.H **** /** Fl_Widget is the base class for all widgets in FLTK.  
+ 107:fltk-1.3.4-1/src/forms_timer.cxx ****   90:fltk-1.3.4-1/FL/Fl_Widget.H ****   
+ 108:fltk-1.3.4-1/src/forms_timer.cxx ****   91:fltk-1.3.4-1/FL/Fl_Widget.H ****     You can't create one of these because the constructor is 
+ 109:fltk-1.3.4-1/src/forms_timer.cxx ****   92:fltk-1.3.4-1/FL/Fl_Widget.H ****     However you can subclass it.  
+ 110:fltk-1.3.4-1/src/forms_timer.cxx ****   93:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 111:fltk-1.3.4-1/src/forms_timer.cxx ****   94:fltk-1.3.4-1/FL/Fl_Widget.H ****     All "property" accessing methods, such as color(), parent
+ 112:fltk-1.3.4-1/src/forms_timer.cxx ****   95:fltk-1.3.4-1/FL/Fl_Widget.H ****     are implemented as trivial inline functions and thus are 
+ 113:fltk-1.3.4-1/src/forms_timer.cxx ****   96:fltk-1.3.4-1/FL/Fl_Widget.H ****     as accessing fields in a structure. Unless otherwise note
+ 114:fltk-1.3.4-1/src/forms_timer.cxx ****   97:fltk-1.3.4-1/FL/Fl_Widget.H ****     setting methods such as color(n) or label(s) are also tri
+ 115:fltk-1.3.4-1/src/forms_timer.cxx ****   98:fltk-1.3.4-1/FL/Fl_Widget.H ****     functions, even if they change the widget's appearance. I
+ 116:fltk-1.3.4-1/src/forms_timer.cxx ****   99:fltk-1.3.4-1/FL/Fl_Widget.H ****     user code to call redraw() after these.
+ 117:fltk-1.3.4-1/src/forms_timer.cxx ****  100:fltk-1.3.4-1/FL/Fl_Widget.H ****  */
+ 118:fltk-1.3.4-1/src/forms_timer.cxx ****  101:fltk-1.3.4-1/FL/Fl_Widget.H **** class FL_EXPORT Fl_Widget {
+ 119:fltk-1.3.4-1/src/forms_timer.cxx ****  102:fltk-1.3.4-1/FL/Fl_Widget.H ****   friend class Fl_Group;
+ 120:fltk-1.3.4-1/src/forms_timer.cxx ****  103:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 121:fltk-1.3.4-1/src/forms_timer.cxx ****  104:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Group* parent_;
+ 122:fltk-1.3.4-1/src/forms_timer.cxx ****  105:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Callback* callback_;
+ 123:fltk-1.3.4-1/src/forms_timer.cxx ****  106:fltk-1.3.4-1/FL/Fl_Widget.H ****   void* user_data_;
+ 124:fltk-1.3.4-1/src/forms_timer.cxx ****  107:fltk-1.3.4-1/FL/Fl_Widget.H ****   int x_,y_,w_,h_;
+ 316              		.loc 2 124 0
+ 317              		.cfi_startproc
+ 318              	.LVL23:
+ 319 0000 53       		pushq	%rbx
+ 320              		.cfi_def_cfa_offset 16
+ 321              		.cfi_offset 3, -16
+ 322              	.LBB117:
+ 125:fltk-1.3.4-1/src/forms_timer.cxx ****  108:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Label label_;
+ 323              		.loc 2 125 0
+ 324 0001 4889FE   		movq	%rdi, %rsi
+ 325              	.LBE117:
+ 124:fltk-1.3.4-1/src/forms_timer.cxx ****  108:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Label label_;
+ 326              		.loc 2 124 0
+ 327 0004 4889FB   		movq	%rdi, %rbx
+ 328              	.LBB118:
+ 329 0007 48C70700 		movq	$_ZTV8Fl_Timer+16, (%rdi)
+ 329      000000
+ 330              		.loc 2 125 0
+ 331 000e BF000000 		movl	$_ZN8Fl_Timer6stepcbEPv, %edi
+ 331      00
+ 332              	.LVL24:
+ 333 0013 E8000000 		call	_ZN2Fl14remove_timeoutEPFvPvES0_
+ 333      00
+ 334              	.LVL25:
+ 124:fltk-1.3.4-1/src/forms_timer.cxx ****  108:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Label label_;
+ 335              		.loc 2 124 0
+ 336 0018 4889DF   		movq	%rbx, %rdi
+ 337              	.LBE118:
+ 126:fltk-1.3.4-1/src/forms_timer.cxx ****  109:fltk-1.3.4-1/FL/Fl_Widget.H ****   unsigned int flags_;
+ 338              		.loc 2 126 0
+ 339 001b 5B       		popq	%rbx
+ 340              		.cfi_def_cfa_offset 8
+ 341              	.LVL26:
+ 342              	.LBB119:
+ 124:fltk-1.3.4-1/src/forms_timer.cxx ****  108:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Label label_;
+ 343              		.loc 2 124 0
+ 344 001c E9000000 		jmp	_ZN9Fl_WidgetD2Ev
+ 344      00
+ 345              	.LVL27:
+ 346              	.LBE119:
+ 347              		.cfi_endproc
+ 348              	.LFE975:
+ 350              		.section	.text.unlikely._ZN8Fl_TimerD2Ev
+ 351              	.LCOLDE10:
+ 352              		.section	.text._ZN8Fl_TimerD2Ev
+ 353              	.LHOTE10:
+ 354              		.globl	_ZN8Fl_TimerD1Ev
+ 355              		.set	_ZN8Fl_TimerD1Ev,_ZN8Fl_TimerD2Ev
+ 356              		.section	.text.unlikely._ZN8Fl_TimerD0Ev,"ax",@progbits
+ 357              		.align 2
+ 358              	.LCOLDB11:
+ 359              		.section	.text._ZN8Fl_TimerD0Ev,"ax",@progbits
+ 360              	.LHOTB11:
+ 361              		.align 2
+ 362              		.p2align 4,,15
+ 363              		.globl	_ZN8Fl_TimerD0Ev
+ 365              	_ZN8Fl_TimerD0Ev:
+ 366              	.LFB977:
+ 124:fltk-1.3.4-1/src/forms_timer.cxx ****  108:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Label label_;
+ 367              		.loc 2 124 0
+ 368              		.cfi_startproc
+ 369              	.LVL28:
+ 370 0000 53       		pushq	%rbx
+ 371              		.cfi_def_cfa_offset 16
+ 372              		.cfi_offset 3, -16
+ 373              	.LBB120:
+ 374              	.LBB121:
+ 125:fltk-1.3.4-1/src/forms_timer.cxx ****  108:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Label label_;
+ 375              		.loc 2 125 0
+ 376 0001 4889FE   		movq	%rdi, %rsi
+ 377              	.LBE121:
+ 378              	.LBE120:
+ 124:fltk-1.3.4-1/src/forms_timer.cxx ****  108:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Label label_;
+ 379              		.loc 2 124 0
+ 380 0004 4889FB   		movq	%rdi, %rbx
+ 381              	.LBB123:
+ 382              	.LBB122:
+ 383 0007 48C70700 		movq	$_ZTV8Fl_Timer+16, (%rdi)
+ 383      000000
+ 125:fltk-1.3.4-1/src/forms_timer.cxx ****  108:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Label label_;
+ 384              		.loc 2 125 0
+ 385 000e BF000000 		movl	$_ZN8Fl_Timer6stepcbEPv, %edi
+ 385      00
+ 386              	.LVL29:
+ 387 0013 E8000000 		call	_ZN2Fl14remove_timeoutEPFvPvES0_
+ 387      00
+ 388              	.LVL30:
+ 124:fltk-1.3.4-1/src/forms_timer.cxx ****  108:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Label label_;
+ 389              		.loc 2 124 0
+ 390 0018 4889DF   		movq	%rbx, %rdi
+ 391 001b E8000000 		call	_ZN9Fl_WidgetD2Ev
+ 391      00
+ 392              	.LVL31:
+ 393              	.LBE122:
+ 394              	.LBE123:
+ 395              		.loc 2 126 0
+ 396 0020 4889DF   		movq	%rbx, %rdi
+ 397 0023 5B       		popq	%rbx
+ 398              		.cfi_def_cfa_offset 8
+ 399              	.LVL32:
+ 400 0024 E9000000 		jmp	_ZdlPv
+ 400      00
+ 401              	.LVL33:
+ 402              		.cfi_endproc
+ 403              	.LFE977:
+ 405              		.section	.text.unlikely._ZN8Fl_TimerD0Ev
+ 406              	.LCOLDE11:
+ 407              		.section	.text._ZN8Fl_TimerD0Ev
+ 408              	.LHOTE11:
+ 409              		.section	.text.unlikely._Z10fl_gettimePlS_,"ax",@progbits
+ 410              	.LCOLDB12:
+ 411              		.section	.text._Z10fl_gettimePlS_,"ax",@progbits
+ 412              	.LHOTB12:
+ 413              		.p2align 4,,15
+ 414              		.globl	_Z10fl_gettimePlS_
+ 416              	_Z10fl_gettimePlS_:
+ 417              	.LFB969:
+  42:fltk-1.3.4-1/src/forms_timer.cxx ****   26:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 418              		.loc 2 42 0
+ 419              		.cfi_startproc
+ 420              	.LVL34:
+ 421 0000 55       		pushq	%rbp
+ 422              		.cfi_def_cfa_offset 16
+ 423              		.cfi_offset 6, -16
+ 424 0001 53       		pushq	%rbx
+ 425              		.cfi_def_cfa_offset 24
+ 426              		.cfi_offset 3, -24
+ 427 0002 4889FD   		movq	%rdi, %rbp
+ 428 0005 4889F3   		movq	%rsi, %rbx
+ 429 0008 4883EC38 		subq	$56, %rsp
+ 430              		.cfi_def_cfa_offset 80
+  58:fltk-1.3.4-1/src/forms_timer.cxx ****   42:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 431              		.loc 2 58 0
+ 432 000c 488D7C24 		leaq	16(%rsp), %rdi
+ 432      10
+ 433              	.LVL35:
+ 434 0011 4889E6   		movq	%rsp, %rsi
+ 435              	.LVL36:
+  42:fltk-1.3.4-1/src/forms_timer.cxx ****   26:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 436              		.loc 2 42 0
+ 437 0014 64488B04 		movq	%fs:40, %rax
+ 437      25280000 
+ 437      00
+ 438 001d 48894424 		movq	%rax, 40(%rsp)
+ 438      28
+ 439 0022 31C0     		xorl	%eax, %eax
+  58:fltk-1.3.4-1/src/forms_timer.cxx ****   42:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 440              		.loc 2 58 0
+ 441 0024 E8000000 		call	gettimeofday
+ 441      00
+ 442              	.LVL37:
+  59:fltk-1.3.4-1/src/forms_timer.cxx ****   43:fltk-1.3.4-1/FL/Fl_Widget.H **** class Fl_Widget;
+ 443              		.loc 2 59 0
+ 444 0029 488B4424 		movq	16(%rsp), %rax
+ 444      10
+ 445 002e 48894500 		movq	%rax, 0(%rbp)
+  60:fltk-1.3.4-1/src/forms_timer.cxx ****   44:fltk-1.3.4-1/FL/Fl_Widget.H **** class Fl_Window;
+ 446              		.loc 2 60 0
+ 447 0032 488B4424 		movq	24(%rsp), %rax
+ 447      18
+ 448 0037 488903   		movq	%rax, (%rbx)
+  62:fltk-1.3.4-1/src/forms_timer.cxx ****   46:fltk-1.3.4-1/FL/Fl_Widget.H **** class Fl_Image;
+ 449              		.loc 2 62 0
+ 450 003a 488B4424 		movq	40(%rsp), %rax
+ 450      28
+ 451 003f 64483304 		xorq	%fs:40, %rax
+ 451      25280000 
+ 451      00
+ 452 0048 7507     		jne	.L32
+ 453 004a 4883C438 		addq	$56, %rsp
+ 454              		.cfi_remember_state
+ 455              		.cfi_def_cfa_offset 24
+ 456 004e 5B       		popq	%rbx
+ 457              		.cfi_def_cfa_offset 16
+ 458              	.LVL38:
+ 459 004f 5D       		popq	%rbp
+ 460              		.cfi_def_cfa_offset 8
+ 461              	.LVL39:
+ 462 0050 C3       		ret
+ 463              	.LVL40:
+ 464              	.L32:
+ 465              		.cfi_restore_state
+ 466 0051 E8000000 		call	__stack_chk_fail
+ 466      00
+ 467              	.LVL41:
+ 468              		.cfi_endproc
+ 469              	.LFE969:
+ 471              		.section	.text.unlikely._Z10fl_gettimePlS_
+ 472              	.LCOLDE12:
+ 473              		.section	.text._Z10fl_gettimePlS_
+ 474              	.LHOTE12:
+ 475              		.section	.text.unlikely._ZN8Fl_Timer4stepEv,"ax",@progbits
+ 476              		.align 2
+ 477              	.LCOLDB14:
+ 478              		.section	.text._ZN8Fl_Timer4stepEv,"ax",@progbits
+ 479              	.LHOTB14:
+ 480              		.align 2
+ 481              		.p2align 4,,15
+ 482              		.globl	_ZN8Fl_Timer4stepEv
+ 484              	_ZN8Fl_Timer4stepEv:
+ 485              	.LFB972:
+  94:fltk-1.3.4-1/src/forms_timer.cxx ****   78:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** alignment of label */
+ 486              		.loc 2 94 0
+ 487              		.cfi_startproc
+ 488              	.LVL42:
+ 489 0000 53       		pushq	%rbx
+ 490              		.cfi_def_cfa_offset 16
+ 491              		.cfi_offset 3, -16
+ 492 0001 4883EC40 		subq	$64, %rsp
+ 493              		.cfi_def_cfa_offset 80
+  94:fltk-1.3.4-1/src/forms_timer.cxx ****   78:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** alignment of label */
+ 494              		.loc 2 94 0
+ 495 0005 64488B04 		movq	%fs:40, %rax
+ 495      25280000 
+ 495      00
+ 496 000e 48894424 		movq	%rax, 56(%rsp)
+ 496      38
+ 497 0013 31C0     		xorl	%eax, %eax
+  95:fltk-1.3.4-1/src/forms_timer.cxx ****   79:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Align align_;
+ 498              		.loc 2 95 0
+ 499 0015 807F7800 		cmpb	$0, 120(%rdi)
+ 500 0019 751D     		jne	.L45
+ 501              	.LVL43:
+ 502              	.L33:
+ 114:fltk-1.3.4-1/src/forms_timer.cxx ****   98:fltk-1.3.4-1/FL/Fl_Widget.H ****     functions, even if they change the widget's appearance. I
+ 503              		.loc 2 114 0
+ 504 001b 488B4424 		movq	56(%rsp), %rax
+ 504      38
+ 505 0020 64483304 		xorq	%fs:40, %rax
+ 505      25280000 
+ 505      00
+ 506 0029 0F851B01 		jne	.L46
+ 506      0000
+ 507 002f 4883C440 		addq	$64, %rsp
+ 508              		.cfi_remember_state
+ 509              		.cfi_def_cfa_offset 16
+ 510 0033 5B       		popq	%rbx
+ 511              		.cfi_def_cfa_offset 8
+ 512 0034 C3       		ret
+ 513              	.LVL44:
+ 514              		.p2align 4,,10
+ 515 0035 0F1F00   		.p2align 3
+ 516              	.L45:
+ 517              		.cfi_restore_state
+ 518 0038 4889FB   		movq	%rdi, %rbx
+  96:fltk-1.3.4-1/src/forms_timer.cxx ****   80:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** type of label. \see Fl_Labeltype */
+ 519              		.loc 2 96 0
+ 520 003b F20F1097 		movsd	128(%rdi), %xmm2
+ 520      80000000 
+ 521              	.LBB138:
+ 522              	.LBB139:
+  58:fltk-1.3.4-1/src/forms_timer.cxx ****   42:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 523              		.loc 2 58 0
+ 524 0043 488D7424 		leaq	16(%rsp), %rsi
+ 524      10
+ 525 0048 488D7C24 		leaq	32(%rsp), %rdi
+ 525      20
+ 526              	.LVL45:
+ 527              	.LBE139:
+ 528              	.LBE138:
+  96:fltk-1.3.4-1/src/forms_timer.cxx ****   80:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** type of label. \see Fl_Labeltype */
+ 529              		.loc 2 96 0
+ 530 004d F20F1154 		movsd	%xmm2, 8(%rsp)
+ 530      2408
+ 531              	.LVL46:
+ 532              	.LBB142:
+ 533              	.LBB140:
+  58:fltk-1.3.4-1/src/forms_timer.cxx ****   42:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 534              		.loc 2 58 0
+ 535 0053 E8000000 		call	gettimeofday
+ 535      00
+ 536              	.LVL47:
+  60:fltk-1.3.4-1/src/forms_timer.cxx ****   44:fltk-1.3.4-1/FL/Fl_Widget.H **** class Fl_Window;
+ 537              		.loc 2 60 0
+ 538 0058 488B5424 		movq	40(%rsp), %rdx
+ 538      28
+ 539              	.LBE140:
+ 540              	.LBE142:
+  98:fltk-1.3.4-1/src/forms_timer.cxx ****   82:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 541              		.loc 2 98 0
+ 542 005d 660FEFC0 		pxor	%xmm0, %xmm0
+ 543              	.LBB143:
+ 544              	.LBB141:
+  59:fltk-1.3.4-1/src/forms_timer.cxx ****   43:fltk-1.3.4-1/FL/Fl_Widget.H **** class Fl_Widget;
+ 545              		.loc 2 59 0
+ 546 0061 488B4C24 		movq	32(%rsp), %rcx
+ 546      20
+ 547              	.LVL48:
+ 548              	.LBE141:
+ 549              	.LBE143:
+  98:fltk-1.3.4-1/src/forms_timer.cxx ****   82:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 550              		.loc 2 98 0
+ 551 0066 660FEFC9 		pxor	%xmm1, %xmm1
+ 100:fltk-1.3.4-1/src/forms_timer.cxx ****   84:fltk-1.3.4-1/FL/Fl_Widget.H ****   void draw(int,int,int,int, Fl_Align) const ;
+ 552              		.loc 2 100 0
+ 553 006a F20F1054 		movsd	8(%rsp), %xmm2
+ 553      2408
+  98:fltk-1.3.4-1/src/forms_timer.cxx ****   82:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 554              		.loc 2 98 0
+ 555 0070 4889D0   		movq	%rdx, %rax
+ 556 0073 482B8398 		subq	152(%rbx), %rax
+ 556      000000
+  99:fltk-1.3.4-1/src/forms_timer.cxx ****   83:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Draws the label aligned to the given box */
+ 557              		.loc 2 99 0
+ 558 007a 48899398 		movq	%rdx, 152(%rbx)
+ 558      000000
+  98:fltk-1.3.4-1/src/forms_timer.cxx ****   82:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 559              		.loc 2 98 0
+ 560 0081 F2480F2A 		cvtsi2sdq	%rax, %xmm0
+ 560      C0
+ 561 0086 4889C8   		movq	%rcx, %rax
+ 562 0089 482B8390 		subq	144(%rbx), %rax
+ 562      000000
+  99:fltk-1.3.4-1/src/forms_timer.cxx ****   83:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Draws the label aligned to the given box */
+ 563              		.loc 2 99 0
+ 564 0090 48898B90 		movq	%rcx, 144(%rbx)
+ 564      000000
+  98:fltk-1.3.4-1/src/forms_timer.cxx ****   82:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 565              		.loc 2 98 0
+ 566 0097 F2480F2A 		cvtsi2sdq	%rax, %xmm1
+ 566      C8
+ 567 009c F20F5E05 		divsd	.LC13(%rip), %xmm0
+ 567      00000000 
+ 568 00a4 F20F58C1 		addsd	%xmm1, %xmm0
+ 569 00a8 F20F108B 		movsd	128(%rbx), %xmm1
+ 569      80000000 
+ 570 00b0 F20F5CC8 		subsd	%xmm0, %xmm1
+ 571 00b4 660F28C1 		movapd	%xmm1, %xmm0
+ 572 00b8 F20F118B 		movsd	%xmm1, 128(%rbx)
+ 572      80000000 
+ 100:fltk-1.3.4-1/src/forms_timer.cxx ****   84:fltk-1.3.4-1/FL/Fl_Widget.H ****   void draw(int,int,int,int, Fl_Align) const ;
+ 573              		.loc 2 100 0
+ 574 00c0 660FEFC9 		pxor	%xmm1, %xmm1
+ 575 00c4 660F2ED1 		ucomisd	%xmm1, %xmm2
+ 576 00c8 7606     		jbe	.L35
+ 100:fltk-1.3.4-1/src/forms_timer.cxx ****   84:fltk-1.3.4-1/FL/Fl_Widget.H ****   void draw(int,int,int,int, Fl_Align) const ;
+ 577              		.loc 2 100 0 is_stmt 0 discriminator 1
+ 578 00ca 660F2EC8 		ucomisd	%xmm0, %xmm1
+ 579 00ce 7320     		jnb	.L47
+ 580              	.L35:
+ 581              	.LVL49:
+ 111:fltk-1.3.4-1/src/forms_timer.cxx ****   95:fltk-1.3.4-1/FL/Fl_Widget.H ****     are implemented as trivial inline functions and thus are 
+ 582              		.loc 2 111 0 is_stmt 1
+ 583 00d0 807B6C01 		cmpb	$1, 108(%rbx)
+ 584 00d4 746A     		je	.L48
+ 585              	.LVL50:
+ 586              	.L40:
+ 112:fltk-1.3.4-1/src/forms_timer.cxx ****   96:fltk-1.3.4-1/FL/Fl_Widget.H ****     as accessing fields in a structure. Unless otherwise note
+ 587              		.loc 2 112 0
+ 588 00d6 F20F1005 		movsd	.LC4(%rip), %xmm0
+ 588      00000000 
+ 589 00de 4889DE   		movq	%rbx, %rsi
+ 590 00e1 BF000000 		movl	$_ZN8Fl_Timer6stepcbEPv, %edi
+ 590      00
+ 591 00e6 E8000000 		call	_ZN2Fl11add_timeoutEdPFvPvES0_
+ 591      00
+ 592              	.LVL51:
+ 593 00eb E92BFFFF 		jmp	.L33
+ 593      FF
+ 594              	.LVL52:
+ 595              		.p2align 4,,10
+ 596              		.p2align 3
+ 597              	.L47:
+ 598              	.LBB144:
+ 599              	.LBB145:
+ 101:fltk-1.3.4-1/src/forms_timer.cxx ****   85:fltk-1.3.4-1/FL/Fl_Widget.H ****   void measure(int &w, int &h) const ;
+ 600              		.loc 2 101 0
+ 601 00f0 807B6C02 		cmpb	$2, 108(%rbx)
+ 602 00f4 743A     		je	.L49
+ 105:fltk-1.3.4-1/src/forms_timer.cxx ****   89:fltk-1.3.4-1/FL/Fl_Widget.H **** /** Fl_Widget is the base class for all widgets in FLTK.  
+ 603              		.loc 2 105 0
+ 604 00f6 4889DF   		movq	%rbx, %rdi
+ 605 00f9 E8000000 		call	_ZN9Fl_Widget6redrawEv
+ 605      00
+ 606              	.LVL53:
+ 106:fltk-1.3.4-1/src/forms_timer.cxx ****   90:fltk-1.3.4-1/FL/Fl_Widget.H ****   
+ 607              		.loc 2 106 0
+ 608 00fe F20F1005 		movsd	.LC4(%rip), %xmm0
+ 608      00000000 
+ 609 0106 4889DE   		movq	%rbx, %rsi
+ 610 0109 BF000000 		movl	$_ZN8Fl_Timer6stepcbEPv, %edi
+ 610      00
+ 611 010e E8000000 		call	_ZN2Fl11add_timeoutEdPFvPvES0_
+ 611      00
+ 612              	.LVL54:
+ 613              	.L39:
+ 614              	.LBB146:
+ 615              	.LBB147:
+ 786:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 616              		.loc 1 786 0
+ 617 0113 814B6080 		orl	$128, 96(%rbx)
+ 617      000000
+ 618              	.LVL55:
+ 619              	.LBE147:
+ 620              	.LBE146:
+ 621              	.LBB148:
+ 622              	.LBB149:
+ 861:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 623              		.loc 1 861 0
+ 624 011a 488B5318 		movq	24(%rbx), %rdx
+ 625 011e 4889DE   		movq	%rbx, %rsi
+ 626 0121 4889DF   		movq	%rbx, %rdi
+ 627 0124 E8000000 		call	_ZN9Fl_Widget11do_callbackEPS_Pv
+ 627      00
+ 628              	.LVL56:
+ 629 0129 E9EDFEFF 		jmp	.L33
+ 629      FF
+ 630              	.LVL57:
+ 631 012e 6690     		.p2align 4,,10
+ 632              		.p2align 3
+ 633              	.L49:
+ 634              	.LBE149:
+ 635              	.LBE148:
+ 102:fltk-1.3.4-1/src/forms_timer.cxx ****   86:fltk-1.3.4-1/FL/Fl_Widget.H **** };
+ 636              		.loc 2 102 0
+ 637 0130 C6437800 		movb	$0, 120(%rbx)
+ 103:fltk-1.3.4-1/src/forms_timer.cxx ****   87:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 638              		.loc 2 103 0
+ 639 0134 F20F118B 		movsd	%xmm1, 128(%rbx)
+ 639      80000000 
+ 640 013c EBD5     		jmp	.L39
+ 641              	.LVL58:
+ 642 013e 6690     		.p2align 4,,10
+ 643              		.p2align 3
+ 644              	.L48:
+ 645              	.LBE145:
+ 646              	.LBE144:
+ 111:fltk-1.3.4-1/src/forms_timer.cxx ****   95:fltk-1.3.4-1/FL/Fl_Widget.H ****     are implemented as trivial inline functions and thus are 
+ 647              		.loc 2 111 0 discriminator 1
+ 648 0140 4889DF   		movq	%rbx, %rdi
+ 649 0143 E8000000 		call	_ZN9Fl_Widget6redrawEv
+ 649      00
+ 650              	.LVL59:
+ 651 0148 EB8C     		jmp	.L40
+ 652              	.LVL60:
+ 653              	.L46:
+ 114:fltk-1.3.4-1/src/forms_timer.cxx ****   98:fltk-1.3.4-1/FL/Fl_Widget.H ****     functions, even if they change the widget's appearance. I
+ 654              		.loc 2 114 0
+ 655 014a E8000000 		call	__stack_chk_fail
+ 655      00
+ 656              	.LVL61:
+ 657              		.cfi_endproc
+ 658              	.LFE972:
+ 660              		.section	.text.unlikely._ZN8Fl_Timer4stepEv
+ 661              	.LCOLDE14:
+ 662              		.section	.text._ZN8Fl_Timer4stepEv
+ 663              	.LHOTE14:
+ 664              		.section	.text.unlikely._ZN8Fl_Timer6stepcbEPv,"ax",@progbits
+ 665              		.align 2
+ 666              	.LCOLDB15:
+ 667              		.section	.text._ZN8Fl_Timer6stepcbEPv,"ax",@progbits
+ 668              	.LHOTB15:
+ 669              		.align 2
+ 670              		.p2align 4,,15
+ 671              		.globl	_ZN8Fl_Timer6stepcbEPv
+ 673              	_ZN8Fl_Timer6stepcbEPv:
+ 674              	.LFB971:
+  90:fltk-1.3.4-1/src/forms_timer.cxx ****   74:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** size of label font */
+ 675              		.loc 2 90 0
+ 676              		.cfi_startproc
+ 677              	.LVL62:
+  91:fltk-1.3.4-1/src/forms_timer.cxx ****   75:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Fontsize size;
+ 678              		.loc 2 91 0
+ 679 0000 E9000000 		jmp	_ZN8Fl_Timer4stepEv
+ 679      00
+ 680              	.LVL63:
+ 681              		.cfi_endproc
+ 682              	.LFE971:
+ 684              		.section	.text.unlikely._ZN8Fl_Timer6stepcbEPv
+ 685              	.LCOLDE15:
+ 686              		.section	.text._ZN8Fl_Timer6stepcbEPv
+ 687              	.LHOTE15:
+ 688              		.section	.text.unlikely._ZN8Fl_TimerC2EhiiiiPKc,"ax",@progbits
+ 689              		.align 2
+ 690              	.LCOLDB16:
+ 691              		.section	.text._ZN8Fl_TimerC2EhiiiiPKc,"ax",@progbits
+ 692              	.LHOTB16:
+ 693              		.align 2
+ 694              		.p2align 4,,15
+ 695              		.globl	_ZN8Fl_TimerC2EhiiiiPKc
+ 697              	_ZN8Fl_TimerC2EhiiiiPKc:
+ 698              	.LFB979:
+ 127:fltk-1.3.4-1/src/forms_timer.cxx ****  110:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Color color_;
+ 128:fltk-1.3.4-1/src/forms_timer.cxx ****  111:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Color color2_;
+ 129:fltk-1.3.4-1/src/forms_timer.cxx ****  112:fltk-1.3.4-1/FL/Fl_Widget.H ****   uchar type_;
+ 130:fltk-1.3.4-1/src/forms_timer.cxx ****  113:fltk-1.3.4-1/FL/Fl_Widget.H ****   uchar damage_;
+ 131:fltk-1.3.4-1/src/forms_timer.cxx ****  114:fltk-1.3.4-1/FL/Fl_Widget.H ****   uchar box_;
+ 132:fltk-1.3.4-1/src/forms_timer.cxx ****  115:fltk-1.3.4-1/FL/Fl_Widget.H ****   uchar when_;
+ 133:fltk-1.3.4-1/src/forms_timer.cxx ****  116:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 134:fltk-1.3.4-1/src/forms_timer.cxx ****  117:fltk-1.3.4-1/FL/Fl_Widget.H ****   const char *tooltip_;
+ 135:fltk-1.3.4-1/src/forms_timer.cxx ****  118:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 136:fltk-1.3.4-1/src/forms_timer.cxx ****  119:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** unimplemented copy ctor */
+ 137:fltk-1.3.4-1/src/forms_timer.cxx ****  120:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Widget(const Fl_Widget &);
+ 138:fltk-1.3.4-1/src/forms_timer.cxx ****  121:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** unimplemented assignment operator */
+ 139:fltk-1.3.4-1/src/forms_timer.cxx ****  122:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Widget& operator=(const Fl_Widget &);
+ 140:fltk-1.3.4-1/src/forms_timer.cxx ****  123:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 699              		.loc 2 140 0
+ 700              		.cfi_startproc
+ 701              	.LVL64:
+ 702 0000 55       		pushq	%rbp
+ 703              		.cfi_def_cfa_offset 16
+ 704              		.cfi_offset 6, -16
+ 705 0001 53       		pushq	%rbx
+ 706              		.cfi_def_cfa_offset 24
+ 707              		.cfi_offset 3, -24
+ 708 0002 89F5     		movl	%esi, %ebp
+ 709 0004 89D6     		movl	%edx, %esi
+ 710              	.LVL65:
+ 711 0006 89CA     		movl	%ecx, %edx
+ 712              	.LVL66:
+ 713 0008 4489C1   		movl	%r8d, %ecx
+ 714              	.LVL67:
+ 715 000b 4883EC08 		subq	$8, %rsp
+ 716              		.cfi_def_cfa_offset 32
+ 717              		.loc 2 140 0
+ 718 000f 4589C8   		movl	%r9d, %r8d
+ 719              	.LVL68:
+ 720 0012 4889FB   		movq	%rdi, %rbx
+ 721              	.LBB150:
+ 141:fltk-1.3.4-1/src/forms_timer.cxx ****  124:fltk-1.3.4-1/FL/Fl_Widget.H **** protected:
+ 142:fltk-1.3.4-1/src/forms_timer.cxx ****  125:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 722              		.loc 2 142 0
+ 723 0015 4C8B4C24 		movq	32(%rsp), %r9
+ 723      20
+ 724              	.LVL69:
+ 725 001a E8000000 		call	_ZN9Fl_WidgetC2EiiiiPKc
+ 725      00
+ 726              	.LVL70:
+ 143:fltk-1.3.4-1/src/forms_timer.cxx ****  126:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Creates a widget at the given position and size.
+ 144:fltk-1.3.4-1/src/forms_timer.cxx ****  127:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 145:fltk-1.3.4-1/src/forms_timer.cxx ****  128:fltk-1.3.4-1/FL/Fl_Widget.H ****       The Fl_Widget is a protected constructor, but all deriv
+ 146:fltk-1.3.4-1/src/forms_timer.cxx ****  129:fltk-1.3.4-1/FL/Fl_Widget.H ****       matching public constructor. It takes a value for x(), 
+ 147:fltk-1.3.4-1/src/forms_timer.cxx ****  130:fltk-1.3.4-1/FL/Fl_Widget.H ****       an optional value for label().
+ 148:fltk-1.3.4-1/src/forms_timer.cxx ****  131:fltk-1.3.4-1/FL/Fl_Widget.H ****     
+ 149:fltk-1.3.4-1/src/forms_timer.cxx ****  132:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] x, y the position of the widget relative to 
+ 727              		.loc 2 149 0
+ 728 001f 4080FD02 		cmpb	$2, %bpl
+ 142:fltk-1.3.4-1/src/forms_timer.cxx ****  126:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Creates a widget at the given position and size.
+ 729              		.loc 2 142 0
+ 730 0023 48C70300 		movq	$_ZTV8Fl_Timer+16, (%rbx)
+ 730      000000
+ 731              	.LVL71:
+ 732              	.LBB151:
+ 733              	.LBB152:
+ 372:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 734              		.loc 1 372 0
+ 735 002a C6436E03 		movb	$3, 110(%rbx)
+ 736              	.LVL72:
+ 737              	.LBE152:
+ 738              	.LBE151:
+ 739              	.LBB153:
+ 740              	.LBB154:
+ 406:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 741              		.loc 1 406 0
+ 742 002e C7436858 		movl	$88, 104(%rbx)
+ 742      000000
+ 743              	.LVL73:
+ 744              	.LBE154:
+ 745              	.LBE153:
+ 145:fltk-1.3.4-1/src/forms_timer.cxx ****  129:fltk-1.3.4-1/FL/Fl_Widget.H ****       matching public constructor. It takes a value for x(), 
+ 746              		.loc 2 145 0
+ 747 0035 48C78380 		movq	$0, 128(%rbx)
+ 747      00000000 
+ 747      000000
+ 146:fltk-1.3.4-1/src/forms_timer.cxx ****  130:fltk-1.3.4-1/FL/Fl_Widget.H ****       an optional value for label().
+ 748              		.loc 2 146 0
+ 749 0040 C6437800 		movb	$0, 120(%rbx)
+ 147:fltk-1.3.4-1/src/forms_timer.cxx ****  131:fltk-1.3.4-1/FL/Fl_Widget.H ****     
+ 750              		.loc 2 147 0
+ 751 0044 C6437900 		movb	$0, 121(%rbx)
+ 752              	.LVL74:
+ 753              	.LBB155:
+ 754              	.LBB156:
+ 279:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 755              		.loc 1 279 0
+ 756 0048 40886B6C 		movb	%bpl, 108(%rbx)
+ 757              	.LVL75:
+ 758              	.LBE156:
+ 759              	.LBE155:
+ 760              		.loc 2 149 0
+ 761 004c 741A     		je	.L55
+ 150:fltk-1.3.4-1/src/forms_timer.cxx ****  133:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] w, h size of the widget in pixels
+ 762              		.loc 2 150 0
+ 763 004e 4080FD01 		cmpb	$1, %bpl
+ 764 0052 7507     		jne	.L51
+ 765              	.LVL76:
+ 766              	.LBB157:
+ 767              	.LBB158:
+ 357:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 768              		.loc 1 357 0 discriminator 1
+ 769 0054 C7435404 		movl	$4, 84(%rbx)
+ 769      000000
+ 770              	.LVL77:
+ 771              	.L51:
+ 772              	.LBE158:
+ 773              	.LBE157:
+ 774              	.LBE150:
+ 151:fltk-1.3.4-1/src/forms_timer.cxx ****  134:fltk-1.3.4-1/FL/Fl_Widget.H ****       \param[in] label optional text for the widget label
+ 775              		.loc 2 151 0
+ 776 005b 4883C408 		addq	$8, %rsp
+ 777              		.cfi_remember_state
+ 778              		.cfi_def_cfa_offset 24
+ 779 005f 5B       		popq	%rbx
+ 780              		.cfi_def_cfa_offset 16
+ 781              	.LVL78:
+ 782 0060 5D       		popq	%rbp
+ 783              		.cfi_def_cfa_offset 8
+ 784 0061 C3       		ret
+ 785              	.LVL79:
+ 786              		.p2align 4,,10
+ 787 0062 660F1F44 		.p2align 3
+ 787      0000
+ 788              	.L55:
+ 789              		.cfi_restore_state
+ 790              	.LBB161:
+ 791              	.LBB159:
+ 792              	.LBB160:
+ 702:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 793              		.loc 1 702 0 discriminator 1
+ 794 0068 834B6002 		orl	$2, 96(%rbx)
+ 795              	.LBE160:
+ 796              	.LBE159:
+ 797              	.LBE161:
+ 798              		.loc 2 151 0 discriminator 1
+ 799 006c 4883C408 		addq	$8, %rsp
+ 800              		.cfi_def_cfa_offset 24
+ 801 0070 5B       		popq	%rbx
+ 802              		.cfi_def_cfa_offset 16
+ 803              	.LVL80:
+ 804 0071 5D       		popq	%rbp
+ 805              		.cfi_def_cfa_offset 8
+ 806 0072 C3       		ret
+ 807              		.cfi_endproc
+ 808              	.LFE979:
+ 810              		.section	.text.unlikely._ZN8Fl_TimerC2EhiiiiPKc
+ 811              	.LCOLDE16:
+ 812              		.section	.text._ZN8Fl_TimerC2EhiiiiPKc
+ 813              	.LHOTE16:
+ 814              		.globl	_ZN8Fl_TimerC1EhiiiiPKc
+ 815              		.set	_ZN8Fl_TimerC1EhiiiiPKc,_ZN8Fl_TimerC2EhiiiiPKc
+ 816              		.section	.text.unlikely._ZN8Fl_Timer5valueEd,"ax",@progbits
+ 817              		.align 2
+ 818              	.LCOLDB17:
+ 819              		.section	.text._ZN8Fl_Timer5valueEd,"ax",@progbits
+ 820              	.LHOTB17:
+ 821              		.align 2
+ 822              		.p2align 4,,15
+ 823              		.globl	_ZN8Fl_Timer5valueEd
+ 825              	_ZN8Fl_Timer5valueEd:
+ 826              	.LFB981:
+ 152:fltk-1.3.4-1/src/forms_timer.cxx ****  135:fltk-1.3.4-1/FL/Fl_Widget.H ****    */
+ 153:fltk-1.3.4-1/src/forms_timer.cxx ****  136:fltk-1.3.4-1/FL/Fl_Widget.H ****   Fl_Widget(int x, int y, int w, int h, const char *label=0L)
+ 827              		.loc 2 153 0
+ 828              		.cfi_startproc
+ 829              	.LVL81:
+ 830 0000 53       		pushq	%rbx
+ 831              		.cfi_def_cfa_offset 16
+ 832              		.cfi_offset 3, -16
+ 833 0001 4889FB   		movq	%rdi, %rbx
+ 834 0004 4883EC30 		subq	$48, %rsp
+ 835              		.cfi_def_cfa_offset 64
+ 154:fltk-1.3.4-1/src/forms_timer.cxx ****  137:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 836              		.loc 2 154 0
+ 837 0008 F20F1187 		movsd	%xmm0, 136(%rdi)
+ 837      88000000 
+ 153:fltk-1.3.4-1/src/forms_timer.cxx ****  137:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 838              		.loc 2 153 0
+ 839 0010 64488B04 		movq	%fs:40, %rax
+ 839      25280000 
+ 839      00
+ 840 0019 48894424 		movq	%rax, 40(%rsp)
+ 840      28
+ 841 001e 31C0     		xorl	%eax, %eax
+ 155:fltk-1.3.4-1/src/forms_timer.cxx ****  138:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Internal use only. Use position(int,int), size(int,int)
+ 842              		.loc 2 155 0
+ 843 0020 660F2E05 		ucomisd	.LC3(%rip), %xmm0
+ 843      00000000 
+ 154:fltk-1.3.4-1/src/forms_timer.cxx ****  137:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 844              		.loc 2 154 0
+ 845 0028 F20F1187 		movsd	%xmm0, 128(%rdi)
+ 845      80000000 
+ 846              	.LBB170:
+ 847              	.LBB171:
+  58:fltk-1.3.4-1/src/forms_timer.cxx ****   42:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 848              		.loc 2 58 0
+ 849 0030 4889E6   		movq	%rsp, %rsi
+ 850              	.LBE171:
+ 851              	.LBE170:
+ 852              		.loc 2 155 0
+ 853 0033 0F974778 		seta	120(%rdi)
+ 854              	.LVL82:
+ 855              	.LBB174:
+ 856              	.LBB172:
+  58:fltk-1.3.4-1/src/forms_timer.cxx ****   42:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 857              		.loc 2 58 0
+ 858 0037 488D7C24 		leaq	16(%rsp), %rdi
+ 858      10
+ 859              	.LVL83:
+ 860 003c E8000000 		call	gettimeofday
+ 860      00
+ 861              	.LVL84:
+  59:fltk-1.3.4-1/src/forms_timer.cxx ****   43:fltk-1.3.4-1/FL/Fl_Widget.H **** class Fl_Widget;
+ 862              		.loc 2 59 0
+ 863 0041 488B4424 		movq	16(%rsp), %rax
+ 863      10
+ 864              	.LBE172:
+ 865              	.LBE174:
+ 156:fltk-1.3.4-1/src/forms_timer.cxx ****  139:fltk-1.3.4-1/FL/Fl_Widget.H ****   void x(int v) {x_ = v;}
+ 157:fltk-1.3.4-1/src/forms_timer.cxx ****  140:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Internal use only. Use position(int,int), size(int,int)
+ 866              		.loc 2 157 0
+ 867 0046 807B6C02 		cmpb	$2, 108(%rbx)
+ 868              	.LBB175:
+ 869              	.LBB173:
+  59:fltk-1.3.4-1/src/forms_timer.cxx ****   43:fltk-1.3.4-1/FL/Fl_Widget.H **** class Fl_Widget;
+ 870              		.loc 2 59 0
+ 871 004a 48898390 		movq	%rax, 144(%rbx)
+ 871      000000
+  60:fltk-1.3.4-1/src/forms_timer.cxx ****   44:fltk-1.3.4-1/FL/Fl_Widget.H **** class Fl_Window;
+ 872              		.loc 2 60 0
+ 873 0051 488B4424 		movq	24(%rsp), %rax
+ 873      18
+ 874 0056 48898398 		movq	%rax, 152(%rbx)
+ 874      000000
+ 875              	.LVL85:
+ 876              	.LBE173:
+ 877              	.LBE175:
+ 878              		.loc 2 157 0
+ 879 005d 7408     		je	.L57
+ 880              		.loc 2 157 0 is_stmt 0 discriminator 1
+ 881 005f 4889DF   		movq	%rbx, %rdi
+ 882 0062 E8000000 		call	_ZN9Fl_Widget6redrawEv
+ 882      00
+ 883              	.LVL86:
+ 884              	.L57:
+ 158:fltk-1.3.4-1/src/forms_timer.cxx ****  141:fltk-1.3.4-1/FL/Fl_Widget.H ****   void y(int v) {y_ = v;}
+ 885              		.loc 2 158 0 is_stmt 1
+ 886 0067 4889DE   		movq	%rbx, %rsi
+ 887 006a BF000000 		movl	$_ZN8Fl_Timer6stepcbEPv, %edi
+ 887      00
+ 888 006f E8000000 		call	_ZN2Fl14remove_timeoutEPFvPvES0_
+ 888      00
+ 889              	.LVL87:
+ 159:fltk-1.3.4-1/src/forms_timer.cxx ****  142:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Internal use only. Use position(int,int), size(int,int)
+ 890              		.loc 2 159 0
+ 891 0074 807B7800 		cmpb	$0, 120(%rbx)
+ 892 0078 7415     		je	.L56
+ 893              	.LVL88:
+ 894              	.LBB176:
+ 895              	.LBB177:
+ 896 007a F20F1005 		movsd	.LC4(%rip), %xmm0
+ 896      00000000 
+ 897 0082 4889DE   		movq	%rbx, %rsi
+ 898 0085 BF000000 		movl	$_ZN8Fl_Timer6stepcbEPv, %edi
+ 898      00
+ 899 008a E8000000 		call	_ZN2Fl11add_timeoutEdPFvPvES0_
+ 899      00
+ 900              	.LVL89:
+ 901              	.L56:
+ 902              	.LBE177:
+ 903              	.LBE176:
+ 160:fltk-1.3.4-1/src/forms_timer.cxx ****  143:fltk-1.3.4-1/FL/Fl_Widget.H ****   void w(int v) {w_ = v;}
+ 904              		.loc 2 160 0
+ 905 008f 488B4424 		movq	40(%rsp), %rax
+ 905      28
+ 906 0094 64483304 		xorq	%fs:40, %rax
+ 906      25280000 
+ 906      00
+ 907 009d 7506     		jne	.L61
+ 908 009f 4883C430 		addq	$48, %rsp
+ 909              		.cfi_remember_state
+ 910              		.cfi_def_cfa_offset 16
+ 911 00a3 5B       		popq	%rbx
+ 912              		.cfi_def_cfa_offset 8
+ 913              	.LVL90:
+ 914 00a4 C3       		ret
+ 915              	.LVL91:
+ 916              	.L61:
+ 917              		.cfi_restore_state
+ 918 00a5 E8000000 		call	__stack_chk_fail
+ 918      00
+ 919              	.LVL92:
+ 920              		.cfi_endproc
+ 921              	.LFE981:
+ 923              		.section	.text.unlikely._ZN8Fl_Timer5valueEd
+ 924              	.LCOLDE17:
+ 925              		.section	.text._ZN8Fl_Timer5valueEd
+ 926              	.LHOTE17:
+ 927              		.section	.text.unlikely._ZN8Fl_Timer6handleEi,"ax",@progbits
+ 928              		.align 2
+ 929              	.LCOLDB18:
+ 930              		.section	.text._ZN8Fl_Timer6handleEi,"ax",@progbits
+ 931              	.LHOTB18:
+ 932              		.align 2
+ 933              		.p2align 4,,15
+ 934              		.globl	_ZN8Fl_Timer6handleEi
+ 936              	_ZN8Fl_Timer6handleEi:
+ 937              	.LFB973:
+ 116:fltk-1.3.4-1/src/forms_timer.cxx ****  100:fltk-1.3.4-1/FL/Fl_Widget.H ****  */
+ 938              		.loc 2 116 0
+ 939              		.cfi_startproc
+ 940              	.LVL93:
+ 117:fltk-1.3.4-1/src/forms_timer.cxx ****  101:fltk-1.3.4-1/FL/Fl_Widget.H **** class FL_EXPORT Fl_Widget {
+ 941              		.loc 2 117 0
+ 942 0000 83FE02   		cmpl	$2, %esi
+ 943 0003 740B     		je	.L68
+ 944              	.L67:
+ 119:fltk-1.3.4-1/src/forms_timer.cxx ****  103:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 945              		.loc 2 119 0
+ 946 0005 31C0     		xorl	%eax, %eax
+ 947 0007 C3       		ret
+ 948 0008 0F1F8400 		.p2align 4,,10
+ 948      00000000 
+ 949              		.p2align 3
+ 950              	.L68:
+ 951              	.LVL94:
+ 952              	.LBB180:
+ 953              	.LBB181:
+ 117:fltk-1.3.4-1/src/forms_timer.cxx ****  101:fltk-1.3.4-1/FL/Fl_Widget.H **** class FL_EXPORT Fl_Widget {
+ 954              		.loc 2 117 0
+ 955 0010 660FEFC0 		pxor	%xmm0, %xmm0
+ 956 0014 660F2E87 		ucomisd	128(%rdi), %xmm0
+ 956      80000000 
+ 957 001c 72E7     		jb	.L67
+ 958              	.LBE181:
+ 959              	.LBE180:
+ 116:fltk-1.3.4-1/src/forms_timer.cxx ****  100:fltk-1.3.4-1/FL/Fl_Widget.H ****  */
+ 960              		.loc 2 116 0
+ 961 001e 4883EC08 		subq	$8, %rsp
+ 962              		.cfi_def_cfa_offset 16
+ 963              	.LBB183:
+ 964              	.LBB182:
+ 117:fltk-1.3.4-1/src/forms_timer.cxx ****  101:fltk-1.3.4-1/FL/Fl_Widget.H **** class FL_EXPORT Fl_Widget {
+ 965              		.loc 2 117 0
+ 966 0022 E8000000 		call	_ZN8Fl_Timer5valueEd
+ 966      00
+ 967              	.LVL95:
+ 968              	.LBE182:
+ 969              	.LBE183:
+ 119:fltk-1.3.4-1/src/forms_timer.cxx ****  103:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 970              		.loc 2 119 0
+ 971 0027 31C0     		xorl	%eax, %eax
+ 972 0029 4883C408 		addq	$8, %rsp
+ 973              		.cfi_def_cfa_offset 8
+ 974 002d C3       		ret
+ 975              		.cfi_endproc
+ 976              	.LFE973:
+ 978              		.section	.text.unlikely._ZN8Fl_Timer6handleEi
+ 979              	.LCOLDE18:
+ 980              		.section	.text._ZN8Fl_Timer6handleEi
+ 981              	.LHOTE18:
+ 982              		.section	.text.unlikely._ZN8Fl_Timer9suspendedEc,"ax",@progbits
+ 983              		.align 2
+ 984              	.LCOLDB19:
+ 985              		.section	.text._ZN8Fl_Timer9suspendedEc,"ax",@progbits
+ 986              	.LHOTB19:
+ 987              		.align 2
+ 988              		.p2align 4,,15
+ 989              		.globl	_ZN8Fl_Timer9suspendedEc
+ 991              	_ZN8Fl_Timer9suspendedEc:
+ 992              	.LFB982:
+ 161:fltk-1.3.4-1/src/forms_timer.cxx ****  144:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Internal use only. Use position(int,int), size(int,int)
+ 162:fltk-1.3.4-1/src/forms_timer.cxx ****  145:fltk-1.3.4-1/FL/Fl_Widget.H ****   void h(int v) {h_ = v;}
+ 163:fltk-1.3.4-1/src/forms_timer.cxx ****  146:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Gets the widget flags mask */
+ 993              		.loc 2 163 0
+ 994              		.cfi_startproc
+ 995              	.LVL96:
+ 996 0000 53       		pushq	%rbx
+ 997              		.cfi_def_cfa_offset 16
+ 998              		.cfi_offset 3, -16
+ 999 0001 4889FB   		movq	%rdi, %rbx
+ 1000 0004 4883EC30 		subq	$48, %rsp
+ 1001              		.cfi_def_cfa_offset 64
+ 1002              		.loc 2 163 0
+ 1003 0008 64488B04 		movq	%fs:40, %rax
+ 1003      25280000 
+ 1003      00
+ 1004 0011 48894424 		movq	%rax, 40(%rsp)
+ 1004      28
+ 1005 0016 31C0     		xorl	%eax, %eax
+ 164:fltk-1.3.4-1/src/forms_timer.cxx ****  147:fltk-1.3.4-1/FL/Fl_Widget.H ****   unsigned int flags() const {return flags_;}
+ 1006              		.loc 2 164 0
+ 1007 0018 4084F6   		testb	%sil, %sil
+ 1008 001b 7523     		jne	.L70
+ 165:fltk-1.3.4-1/src/forms_timer.cxx ****  148:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Sets a flag in the flags mask */
+ 1009              		.loc 2 165 0
+ 1010 001d 807F7800 		cmpb	$0, 120(%rdi)
+ 1011 0021 743D     		je	.L76
+ 1012              	.LVL97:
+ 1013              	.L69:
+ 166:fltk-1.3.4-1/src/forms_timer.cxx ****  149:fltk-1.3.4-1/FL/Fl_Widget.H ****   void set_flag(unsigned int c) {flags_ |= c;}
+ 167:fltk-1.3.4-1/src/forms_timer.cxx ****  150:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Clears a flag in the flags mask */
+ 168:fltk-1.3.4-1/src/forms_timer.cxx ****  151:fltk-1.3.4-1/FL/Fl_Widget.H ****   void clear_flag(unsigned int c) {flags_ &= ~c;}
+ 169:fltk-1.3.4-1/src/forms_timer.cxx ****  152:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** flags possible values enumeration.
+ 170:fltk-1.3.4-1/src/forms_timer.cxx ****  153:fltk-1.3.4-1/FL/Fl_Widget.H ****       See activate(), output(), visible(), changed(), set_vis
+ 171:fltk-1.3.4-1/src/forms_timer.cxx ****  154:fltk-1.3.4-1/FL/Fl_Widget.H ****   */
+ 172:fltk-1.3.4-1/src/forms_timer.cxx ****  155:fltk-1.3.4-1/FL/Fl_Widget.H ****   enum {
+ 173:fltk-1.3.4-1/src/forms_timer.cxx ****  156:fltk-1.3.4-1/FL/Fl_Widget.H ****         INACTIVE        = 1<<0,   ///< the widget can't recei
+ 174:fltk-1.3.4-1/src/forms_timer.cxx ****  157:fltk-1.3.4-1/FL/Fl_Widget.H ****         INVISIBLE       = 1<<1,   ///< the widget is not draw
+ 1014              		.loc 2 174 0
+ 1015 0023 488B4424 		movq	40(%rsp), %rax
+ 1015      28
+ 1016 0028 64483304 		xorq	%fs:40, %rax
+ 1016      25280000 
+ 1016      00
+ 1017 0031 0F858200 		jne	.L77
+ 1017      0000
+ 1018 0037 4883C430 		addq	$48, %rsp
+ 1019              		.cfi_remember_state
+ 1020              		.cfi_def_cfa_offset 16
+ 1021 003b 5B       		popq	%rbx
+ 1022              		.cfi_def_cfa_offset 8
+ 1023              	.LVL98:
+ 1024 003c C3       		ret
+ 1025              	.LVL99:
+ 1026 003d 0F1F00   		.p2align 4,,10
+ 1027              		.p2align 3
+ 1028              	.L70:
+ 1029              		.cfi_restore_state
+ 170:fltk-1.3.4-1/src/forms_timer.cxx ****  154:fltk-1.3.4-1/FL/Fl_Widget.H ****   */
+ 1030              		.loc 2 170 0
+ 1031 0040 807F7800 		cmpb	$0, 120(%rdi)
+ 1032 0044 74DD     		je	.L69
+ 172:fltk-1.3.4-1/src/forms_timer.cxx ****  156:fltk-1.3.4-1/FL/Fl_Widget.H ****         INACTIVE        = 1<<0,   ///< the widget can't recei
+ 1033              		.loc 2 172 0
+ 1034 0046 4889FE   		movq	%rdi, %rsi
+ 1035              	.LVL100:
+ 171:fltk-1.3.4-1/src/forms_timer.cxx ****  155:fltk-1.3.4-1/FL/Fl_Widget.H ****   enum {
+ 1036              		.loc 2 171 0
+ 1037 0049 C6477800 		movb	$0, 120(%rdi)
+ 172:fltk-1.3.4-1/src/forms_timer.cxx ****  156:fltk-1.3.4-1/FL/Fl_Widget.H ****         INACTIVE        = 1<<0,   ///< the widget can't recei
+ 1038              		.loc 2 172 0
+ 1039 004d BF000000 		movl	$_ZN8Fl_Timer6stepcbEPv, %edi
+ 1039      00
+ 1040 0052 E8000000 		call	_ZN2Fl14remove_timeoutEPFvPvES0_
+ 1040      00
+ 1041              	.LVL101:
+ 1042 0057 EBCA     		jmp	.L69
+ 1043              	.LVL102:
+ 1044 0059 0F1F8000 		.p2align 4,,10
+ 1044      000000
+ 1045              		.p2align 3
+ 1046              	.L76:
+ 166:fltk-1.3.4-1/src/forms_timer.cxx ****  150:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Clears a flag in the flags mask */
+ 1047              		.loc 2 166 0
+ 1048 0060 F20F1087 		movsd	128(%rdi), %xmm0
+ 1048      80000000 
+ 1049              	.LBB184:
+ 1050              	.LBB185:
+  58:fltk-1.3.4-1/src/forms_timer.cxx ****   42:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 1051              		.loc 2 58 0
+ 1052 0068 4889E6   		movq	%rsp, %rsi
+ 1053              	.LVL103:
+ 1054              	.LBE185:
+ 1055              	.LBE184:
+ 166:fltk-1.3.4-1/src/forms_timer.cxx ****  150:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** Clears a flag in the flags mask */
+ 1056              		.loc 2 166 0
+ 1057 006b 660F2E05 		ucomisd	.LC3(%rip), %xmm0
+ 1057      00000000 
+ 1058 0073 0F974778 		seta	120(%rdi)
+ 1059              	.LVL104:
+ 1060              	.LBB188:
+ 1061              	.LBB186:
+  58:fltk-1.3.4-1/src/forms_timer.cxx ****   42:fltk-1.3.4-1/FL/Fl_Widget.H **** 
+ 1062              		.loc 2 58 0
+ 1063 0077 488D7C24 		leaq	16(%rsp), %rdi
+ 1063      10
+ 1064 007c E8000000 		call	gettimeofday
+ 1064      00
+ 1065              	.LVL105:
+  59:fltk-1.3.4-1/src/forms_timer.cxx ****   43:fltk-1.3.4-1/FL/Fl_Widget.H **** class Fl_Widget;
+ 1066              		.loc 2 59 0
+ 1067 0081 488B4424 		movq	16(%rsp), %rax
+ 1067      10
+ 1068              	.LBE186:
+ 1069              	.LBE188:
+ 168:fltk-1.3.4-1/src/forms_timer.cxx ****  152:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** flags possible values enumeration.
+ 1070              		.loc 2 168 0
+ 1071 0086 807B7800 		cmpb	$0, 120(%rbx)
+ 1072              	.LBB189:
+ 1073              	.LBB187:
+  59:fltk-1.3.4-1/src/forms_timer.cxx ****   43:fltk-1.3.4-1/FL/Fl_Widget.H **** class Fl_Widget;
+ 1074              		.loc 2 59 0
+ 1075 008a 48898390 		movq	%rax, 144(%rbx)
+ 1075      000000
+  60:fltk-1.3.4-1/src/forms_timer.cxx ****   44:fltk-1.3.4-1/FL/Fl_Widget.H **** class Fl_Window;
+ 1076              		.loc 2 60 0
+ 1077 0091 488B4424 		movq	24(%rsp), %rax
+ 1077      18
+ 1078 0096 48898398 		movq	%rax, 152(%rbx)
+ 1078      000000
+ 1079              	.LVL106:
+ 1080              	.LBE187:
+ 1081              	.LBE189:
+ 168:fltk-1.3.4-1/src/forms_timer.cxx ****  152:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** flags possible values enumeration.
+ 1082              		.loc 2 168 0
+ 1083 009d 7484     		je	.L69
+ 168:fltk-1.3.4-1/src/forms_timer.cxx ****  152:fltk-1.3.4-1/FL/Fl_Widget.H ****   /** flags possible values enumeration.
+ 1084              		.loc 2 168 0 is_stmt 0 discriminator 1
+ 1085 009f F20F1005 		movsd	.LC4(%rip), %xmm0
+ 1085      00000000 
+ 1086 00a7 4889DE   		movq	%rbx, %rsi
+ 1087 00aa BF000000 		movl	$_ZN8Fl_Timer6stepcbEPv, %edi
+ 1087      00
+ 1088 00af E8000000 		call	_ZN2Fl11add_timeoutEdPFvPvES0_
+ 1088      00
+ 1089              	.LVL107:
+ 1090 00b4 E96AFFFF 		jmp	.L69
+ 1090      FF
+ 1091              	.L77:
+ 1092              		.loc 2 174 0 is_stmt 1
+ 1093 00b9 E8000000 		call	__stack_chk_fail
+ 1093      00
+ 1094              	.LVL108:
+ 1095              		.cfi_endproc
+ 1096              	.LFE982:
+ 1098              		.section	.text.unlikely._ZN8Fl_Timer9suspendedEc
+ 1099              	.LCOLDE19:
+ 1100              		.section	.text._ZN8Fl_Timer9suspendedEc
+ 1101              	.LHOTE19:
+ 1102              		.weak	_ZTS8Fl_Timer
+ 1103              		.section	.rodata._ZTS8Fl_Timer,"aG",@progbits,_ZTS8Fl_Timer,comdat
+ 1104              		.align 8
+ 1107              	_ZTS8Fl_Timer:
+ 1108 0000 38466C5F 		.string	"8Fl_Timer"
+ 1108      54696D65 
+ 1108      7200
+ 1109              		.weak	_ZTI8Fl_Timer
+ 1110              		.section	.rodata._ZTI8Fl_Timer,"aG",@progbits,_ZTI8Fl_Timer,comdat
+ 1111              		.align 8
+ 1114              	_ZTI8Fl_Timer:
+ 1115 0000 00000000 		.quad	_ZTVN10__cxxabiv120__si_class_type_infoE+16
+ 1115      00000000 
+ 1116 0008 00000000 		.quad	_ZTS8Fl_Timer
+ 1116      00000000 
+ 1117 0010 00000000 		.quad	_ZTI9Fl_Widget
+ 1117      00000000 
+ 1118              		.weak	_ZTV8Fl_Timer
+ 1119              		.section	.rodata._ZTV8Fl_Timer,"aG",@progbits,_ZTV8Fl_Timer,comdat
+ 1120              		.align 8
+ 1123              	_ZTV8Fl_Timer:
+ 1124 0000 00000000 		.quad	0
+ 1124      00000000 
+ 1125 0008 00000000 		.quad	_ZTI8Fl_Timer
+ 1125      00000000 
+ 1126 0010 00000000 		.quad	_ZN8Fl_TimerD1Ev
+ 1126      00000000 
+ 1127 0018 00000000 		.quad	_ZN8Fl_TimerD0Ev
+ 1127      00000000 
+ 1128 0020 00000000 		.quad	_ZN8Fl_Timer4drawEv
+ 1128      00000000 
+ 1129 0028 00000000 		.quad	_ZN8Fl_Timer6handleEi
+ 1129      00000000 
+ 1130 0030 00000000 		.quad	_ZN9Fl_Widget6resizeEiiii
+ 1130      00000000 
+ 1131 0038 00000000 		.quad	_ZN9Fl_Widget4showEv
+ 1131      00000000 
+ 1132 0040 00000000 		.quad	_ZN9Fl_Widget4hideEv
+ 1132      00000000 
+ 1133 0048 00000000 		.quad	_ZN9Fl_Widget8as_groupEv
+ 1133      00000000 
+ 1134 0050 00000000 		.quad	_ZN9Fl_Widget9as_windowEv
+ 1134      00000000 
+ 1135 0058 00000000 		.quad	_ZN9Fl_Widget12as_gl_windowEv
+ 1135      00000000 
+ 1136              		.section	.rodata.cst8,"aM",@progbits,8
+ 1137              		.align 8
+ 1138              	.LC3:
+ 1139 0000 00000000 		.long	0
+ 1140 0004 00000000 		.long	0
+ 1141              		.align 8
+ 1142              	.LC4:
+ 1143 0008 9A999999 		.long	2576980378
+ 1144 000c 9999C93F 		.long	1070176665
+ 1145              		.align 8
+ 1146              	.LC5:
+ 1147 0010 00000000 		.long	0
+ 1148 0014 00004E40 		.long	1078853632
+ 1149              		.align 8
+ 1150              	.LC7:
+ 1151 0018 9A999999 		.long	2576980378
+ 1152 001c 9999A93F 		.long	1068079513
+ 1153              		.align 8
+ 1154              	.LC13:
+ 1155 0020 00000000 		.long	0
+ 1156 0024 80842E41 		.long	1093567616
+ 1157              		.text
+ 1158              	.Letext0:
+ 1159              		.section	.text.unlikely._ZN9Fl_Widget8as_groupEv,"axG",@progbits,_ZN9Fl_Widget8as_groupEv,comdat
+ 1160              	.Letext_cold0:
+ 1161              		.file 5 "fltk-1.3.4-1/FL/fl_types.h"
+ 1162              		.file 6 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
+ 1163              		.file 7 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 1164              		.file 8 "/usr/include/libio.h"
+ 1165              		.file 9 "/usr/include/x86_64-linux-gnu/bits/time.h"
+ 1166              		.file 10 "fltk-1.3.4-1/FL/Enumerations.H"
+ 1167              		.file 11 "fltk-1.3.4-1/FL/Fl.H"
+ 1168              		.file 12 "fltk-1.3.4-1/FL/Fl_Image.H"
+ 1169              		.file 13 "fltk-1.3.4-1/FL/Fl_Device.H"
+ 1170              		.file 14 "/usr/include/x86_64-linux-gnu/sys/time.h"
+ 1171              		.file 15 "fltk-1.3.4-1/FL/Fl_Timer.H"
+ 1172              		.file 16 "/usr/include/stdio.h"
+ 1173              		.file 17 "fltk-1.3.4-1/FL/forms.H"
+ 1174              		.file 18 "fltk-1.3.4-1/FL/fl_ask.H"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 forms_timer.cxx
+     /tmp/cc4p0Woa.s:16     .text._ZN9Fl_Widget8as_groupEv:0000000000000000 _ZN9Fl_Widget8as_groupEv
+     /tmp/cc4p0Woa.s:41     .text._ZN9Fl_Widget9as_windowEv:0000000000000000 _ZN9Fl_Widget9as_windowEv
+     /tmp/cc4p0Woa.s:65     .text._ZN9Fl_Widget12as_gl_windowEv:0000000000000000 _ZN9Fl_Widget12as_gl_windowEv
+     /tmp/cc4p0Woa.s:94     .text._ZN8Fl_Timer4drawEv:0000000000000000 _ZN8Fl_Timer4drawEv
+     /tmp/cc4p0Woa.s:314    .text._ZN8Fl_TimerD2Ev:0000000000000000 _ZN8Fl_TimerD2Ev
+     /tmp/cc4p0Woa.s:1123   .rodata._ZTV8Fl_Timer:0000000000000000 _ZTV8Fl_Timer
+     /tmp/cc4p0Woa.s:673    .text._ZN8Fl_Timer6stepcbEPv:0000000000000000 _ZN8Fl_Timer6stepcbEPv
+     /tmp/cc4p0Woa.s:314    .text._ZN8Fl_TimerD2Ev:0000000000000000 _ZN8Fl_TimerD1Ev
+     /tmp/cc4p0Woa.s:365    .text._ZN8Fl_TimerD0Ev:0000000000000000 _ZN8Fl_TimerD0Ev
+     /tmp/cc4p0Woa.s:416    .text._Z10fl_gettimePlS_:0000000000000000 _Z10fl_gettimePlS_
+     /tmp/cc4p0Woa.s:484    .text._ZN8Fl_Timer4stepEv:0000000000000000 _ZN8Fl_Timer4stepEv
+     /tmp/cc4p0Woa.s:697    .text._ZN8Fl_TimerC2EhiiiiPKc:0000000000000000 _ZN8Fl_TimerC2EhiiiiPKc
+     /tmp/cc4p0Woa.s:697    .text._ZN8Fl_TimerC2EhiiiiPKc:0000000000000000 _ZN8Fl_TimerC1EhiiiiPKc
+     /tmp/cc4p0Woa.s:825    .text._ZN8Fl_Timer5valueEd:0000000000000000 _ZN8Fl_Timer5valueEd
+     /tmp/cc4p0Woa.s:936    .text._ZN8Fl_Timer6handleEi:0000000000000000 _ZN8Fl_Timer6handleEi
+     /tmp/cc4p0Woa.s:991    .text._ZN8Fl_Timer9suspendedEc:0000000000000000 _ZN8Fl_Timer9suspendedEc
+     /tmp/cc4p0Woa.s:1107   .rodata._ZTS8Fl_Timer:0000000000000000 _ZTS8Fl_Timer
+     /tmp/cc4p0Woa.s:1114   .rodata._ZTI8Fl_Timer:0000000000000000 _ZTI8Fl_Timer
+     /tmp/cc4p0Woa.s:1138   .rodata.cst8:0000000000000000 .LC3
+     /tmp/cc4p0Woa.s:1146   .rodata.cst8:0000000000000010 .LC5
+     /tmp/cc4p0Woa.s:1150   .rodata.cst8:0000000000000018 .LC7
+     /tmp/cc4p0Woa.s:1142   .rodata.cst8:0000000000000008 .LC4
+     /tmp/cc4p0Woa.s:1154   .rodata.cst8:0000000000000020 .LC13
+                           .group:0000000000000000 wm4.0.734a972fbaf0de4774bf9193973ed39e
+                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+                           .group:0000000000000000 wm4.Fl_Export.H.20.3dbf3d2c7d9097f306037857cddd06b1
+                           .group:0000000000000000 wm4.features.h.19.ad7942cac365cc9b820965257723f4cc
+                           .group:0000000000000000 wm4.cdefs.h.19.871bad770587d04922449df94ac50bdb
+                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
+                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
+                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
+                           .group:0000000000000000 wm4.stdio.h.31.e39a94e203ad4e1d978c0fc68ce016ee
+                           .group:0000000000000000 wm4.stddef.h.187.422da5f95ac1285e95faf42258f23242
+                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
+                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
+                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
+                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
+                           .group:0000000000000000 wm4.stddef.h.238.05c1f32ae5cf7bdacd6b0a8ed417a07f
+                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
+                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
+                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
+                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
+                           .group:0000000000000000 wm4.stdio.h.80.0219e72fbbeb18f41175513875002822
+                           .group:0000000000000000 wm4.stdio_lim.h.23.f8541119d1bcf759d7de9531671fd758
+                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
+                           .group:0000000000000000 wm4.stdio.h.26.e50fc3808d57d965ceefc6f6dd102eb7
+                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
+                           .group:0000000000000000 wm4.string.h.185.629aca749f254f2bc1fdc00bb73e17c4
+                           .group:0000000000000000 wm4.string.h.643.46703e2bd0e6364475ff92bd861c1c9e
+                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
+                           .group:0000000000000000 wm4.stddef.h.238.95ea4ce844d9fee903b0cacc7c1e4931
+                           .group:0000000000000000 wm4.waitflags.h.25.e401b8bcfee800b540b27abd7cc78de9
+                           .group:0000000000000000 wm4.waitstatus.h.28.93f167f49d64e2b9b99f98d1162a93bf
+                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
+                           .group:0000000000000000 wm4.endian.h.41.24cced64aef71195a51d4daa8e4f4a95
+                           .group:0000000000000000 wm4.byteswap.h.38.11ee5fdc0f6cc53a16c505b9233cecef
+                           .group:0000000000000000 wm4.endian.h.63.97272d7c64d5db8020003b32e9289502
+                           .group:0000000000000000 wm4.waitstatus.h.99.408b6270fa6eb71377201a241ef15f79
+                           .group:0000000000000000 wm4.stdlib.h.54.0af3535195ddeb87f5c2e8ca307f12bc
+                           .group:0000000000000000 wm4.types.h.23.6b551a14160ee6e670a07567790a4689
+                           .group:0000000000000000 wm4.time.h.53.beb46e650cd406cb917b6b96b45e640a
+                           .group:0000000000000000 wm4.types.h.137.b47ba4422427ad6e74c43b7db72dcd74
+                           .group:0000000000000000 wm4.stddef.h.238.847b6907dabda77be90a9ab7ad789e2e
+                           .group:0000000000000000 wm4.types.h.187.bd5a05039b505b3620e6973f1b2ffeb1
+                           .group:0000000000000000 wm4.select.h.28.eb2f3debdbcffd1442ebddaebc4fb6ff
+                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
+                           .group:0000000000000000 wm4.select.h.36.f76c3b9e55c871743863013cc4cc14c9
+                           .group:0000000000000000 wm4.time.h.66.e70ce69790c975f0efb369340c432e0b
+                           .group:0000000000000000 wm4.time.h.25.ae5284cdff565e87a9198d819340325d
+                           .group:0000000000000000 wm4.select.h.57.37281136b86c815f48528dd956d4eedc
+                           .group:0000000000000000 wm4.select2.h.27.f95f2ab0ffee66dc1b6575014894b21a
+                           .group:0000000000000000 wm4.sysmacros.h.20.8a0c33ff175cd9b434a86c0aaa36f0a2
+                           .group:0000000000000000 wm4.types.h.229.67b3f66bd74b06b451caec392a72a945
+                           .group:0000000000000000 wm4.pthreadtypes.h.25.6892b1493314fcf446bbc76e7362acba
+                           .group:0000000000000000 wm4.alloca.h.19.edefa922a76c1cbaaf1e416903ba2d1c
+                           .group:0000000000000000 wm4.alloca.h.29.156e12058824cc23d961c4d3b13031f6
+                           .group:0000000000000000 wm4.stat.h.23.034923aa253537bdc4e59720e9e8ed3d
+                           .group:0000000000000000 wm4.time.h.66.fa652aa18ecf92239cee124d5533fe97
+                           .group:0000000000000000 wm4.stat.h.23.71443f0579dab3228134d84ad7d61c3e
+                           .group:0000000000000000 wm4.stat.h.107.43f8ebdec21eca5e13896fd19df564c8
+                           .group:0000000000000000 wm4.locale.h.23.9b5006b0bf779abe978bf85cb308a947
+                           .group:0000000000000000 wm4.stddef.h.401.7dfff676fcc31e4ba811117c262087d2
+                           .group:0000000000000000 wm4.locale.h.24.c0c42b9681163ce124f9e0123f9f1018
+                           .group:0000000000000000 wm4.locale.h.35.94a07dff536351e64a45c44b55b1ccfb
+                           .group:0000000000000000 wm4.Enumerations.H.64.046ff8195adb3a8c4fc6b407344ef3ae
+                           .group:0000000000000000 wm4.Fl.H.35.15bf5664bfbc00f06b8216ecfaaa9915
+                           .group:0000000000000000 wm4.Fl_Widget.H.23.c6088169683f892233bca1a5e34935ca
+                           .group:0000000000000000 wm4.Fl_Timer.H.30.64b690469f3d9bed34c2705b10de811a
+                           .group:0000000000000000 wm4.Xlib.h.34.459c895ca349721c12859796b456b2b6
+                           .group:0000000000000000 wm4.X.h.4.454d886ca229b34d1a45d073c5ef2641
+                           .group:0000000000000000 wm4.Xfuncproto.h.31.06e425817e87036b2d7b94d062f1f31b
+                           .group:0000000000000000 wm4.stddef.h.39.00137ad0275e3bca492dca30adbe2e71
+                           .group:0000000000000000 wm4.Xlib.h.70.3bd67b0be45264d3bcbde53e94c28626
+                           .group:0000000000000000 wm4.keysym.h.49.033c61cc3c7e362b1b6980e8e6a00bf4
+                           .group:0000000000000000 wm4.keysymdef.h.115.a18224703ed0ddcd32045b3e8c3a2fdd
+                           .group:0000000000000000 wm4.Xutil.h.68.41e78f06cd85385aec49c11e5083e37f
+                           .group:0000000000000000 wm4.Xatom.h.2.e1af34501660e315b7ae3c18792e5b8c
+                           .group:0000000000000000 wm4.Fl_Window.H.33.21f4160d70070399993c6c2db07f8ad1
+                           .group:0000000000000000 wm4.x.H.75.d845a5777fb772b9dead4d174732ff1d
+                           .group:0000000000000000 wm4.Fl_Device.H.62.0b803843b22f39545ac86f12f2aa989b
+                           .group:0000000000000000 wm4.forms.H.37.0a5619bad1e20004715f0c979570dbcd
+                           .group:0000000000000000 wm4.Fl_Valuator.H.23.23b07accce686671a831f611164842d3
+                           .group:0000000000000000 wm4.Fl_Slider.H.30.63744dea3b9f91e5e3b5b1297ae0bb9d
+                           .group:0000000000000000 wm4.Fl_Browser_.H.33.3c969d598ffa0d0ae61e0a4412aa05a2
+                           .group:0000000000000000 wm4.Fl_Button.H.23.dd2f7f39568a498db4235a51d94ff020
+                           .group:0000000000000000 wm4.forms.H.468.7a3dd830d9cb260ea061bc3ecec7e7da
+                           .group:0000000000000000 wm4.Fl_Chart.H.23.9948d0d826d8cb847bf9457a36afa706
+                           .group:0000000000000000 wm4.forms.H.531.b06f2fb641ccb4cd22ee7a225d76d6e9
+                           .group:0000000000000000 wm4.Fl_Clock.H.23.e3ae7949425565459dc3d3eb183e7ab0
+                           .group:0000000000000000 wm4.Fl_Counter.H.25.d4b70c719890b359e5ab06759378848b
+                           .group:0000000000000000 wm4.forms.H.590.9d97420594b13e6f9287bf768894adf1
+                           .group:0000000000000000 wm4.Fl_Dial.H.23.d297b2159ab1037c95f5df5cb75a8b9d
+                           .group:0000000000000000 wm4.forms.H.595.e84e14fd439187ef3af07d5b70a030cb
+                           .group:0000000000000000 wm4.Fl_Free.H.23.194542b225ee5c22170aa38665aa0e7d
+                           .group:0000000000000000 wm4.fl_ask.H.24.be48b4476a0524cdb7b19216c6f73157
+                           .group:0000000000000000 wm4.filename.H.30.99b1a2d49dfb41118316d590634dc617
+                           .group:0000000000000000 wm4.dirent.h.47.161c7c9f25cde890467e06f48d01a72b
+                           .group:0000000000000000 wm4.dirent.h.85.0c1ce7006e3db36b221c55829d522c5f
+                           .group:0000000000000000 wm4.posix1_lim.h.25.987ae6dec0c7e3b6b8ef0e87cdcaa773
+                           .group:0000000000000000 wm4.local_lim.h.25.97ee4129efb08ad296101237bcd3401b
+                           .group:0000000000000000 wm4.limits.h.2.9ff59823e8adcf4502d980ef41362326
+                           .group:0000000000000000 wm4.local_lim.h.42.9dc3935e0e3b94e23cda247e4e39bd8b
+                           .group:0000000000000000 wm4.dirent.h.236.46915e1a412771773f9eef5606c91031
+                           .group:0000000000000000 wm4.stddef.h.161.38688f2eb958a8ed58fdb61ffe554c94
+                           .group:0000000000000000 wm4.Fl_File_Icon.H.27.747e79318ac133fc614d668b272e17dc
+                           .group:0000000000000000 wm4.Fl_Input_.H.23.0358bf58b9391621e5f90e01bc1d1bea
+                           .group:0000000000000000 wm4.forms.H.708.3f68e9fcfd40bf4feb08de24771fcf67
+                           .group:0000000000000000 wm4.forms.H.742.39179266b19fd15149051ae8b3d5b94f
+                           .group:0000000000000000 wm4.time.h.26.6a3cabd4f228e226db6723a3b0c81ba6
+                           .group:0000000000000000 wm4.time.h.40.feab7216a531c47d425d6de002dd2384
+                           .group:0000000000000000 wm4.timex.h.19.f552c10b6e10e54ec2c0920b0cef94ab
+                           .group:0000000000000000 wm4.time.h.66.3030613ea56472141d4f6280f80765e8
+                           .group:0000000000000000 wm4.time.h.19.a0b53efe7c8e6bd8aa0b2fb0266c6caf
+                           .group:0000000000000000 wm4.time.h.41.5a35bb669dafc1d1b5aef98ad89e8a02
+
+UNDEFINED SYMBOLS
+_ZNK9Fl_Widget8draw_boxE10Fl_Boxtypej
+_ZNK9Fl_Widget10draw_labelEv
+__sprintf_chk
+fl_graphics_driver
+_Z7fl_drawPKciiiijP8Fl_Imagei
+__stack_chk_fail
+_ZN2Fl14remove_timeoutEPFvPvES0_
+_ZN9Fl_WidgetD2Ev
+_ZdlPv
+gettimeofday
+_ZN2Fl11add_timeoutEdPFvPvES0_
+_ZN9Fl_Widget6redrawEv
+_ZN9Fl_Widget11do_callbackEPS_Pv
+_ZN9Fl_WidgetC2EiiiiPKc
+_ZTVN10__cxxabiv120__si_class_type_infoE
+_ZTI9Fl_Widget
+_ZN9Fl_Widget6resizeEiiii
+_ZN9Fl_Widget4showEv
+_ZN9Fl_Widget4hideEv

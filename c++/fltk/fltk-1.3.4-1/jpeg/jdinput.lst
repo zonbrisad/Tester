@@ -1,0 +1,3300 @@
+   1              		.file	"jdinput.c"
+   2              		.text
+   3              	.Ltext0:
+   4              		.section	.text.unlikely.finish_input_pass,"ax",@progbits
+   5              	.LCOLDB0:
+   6              		.section	.text.finish_input_pass,"ax",@progbits
+   7              	.LHOTB0:
+   8              		.p2align 4,,15
+   9              		.section	.text.unlikely.finish_input_pass
+  10              	.Ltext_cold0:
+  11              		.section	.text.finish_input_pass
+  13              	finish_input_pass:
+  14              	.LFB66:
+  15              		.file 1 "fltk-1.3.4-1/jpeg/jdinput.c"
+   1:fltk-1.3.4-1/jpeg/jdinput.c **** /*
+   2:fltk-1.3.4-1/jpeg/jdinput.c ****  * jdinput.c
+   3:fltk-1.3.4-1/jpeg/jdinput.c ****  *
+   4:fltk-1.3.4-1/jpeg/jdinput.c ****  * Copyright (C) 1991-1997, Thomas G. Lane.
+   5:fltk-1.3.4-1/jpeg/jdinput.c ****  * Modified 2002-2013 by Guido Vollbeding.
+   6:fltk-1.3.4-1/jpeg/jdinput.c ****  * This file is part of the Independent JPEG Group's software.
+   7:fltk-1.3.4-1/jpeg/jdinput.c ****  * For conditions of distribution and use, see the accompanying README file.
+   8:fltk-1.3.4-1/jpeg/jdinput.c ****  *
+   9:fltk-1.3.4-1/jpeg/jdinput.c ****  * This file contains input control logic for the JPEG decompressor.
+  10:fltk-1.3.4-1/jpeg/jdinput.c ****  * These routines are concerned with controlling the decompressor's input
+  11:fltk-1.3.4-1/jpeg/jdinput.c ****  * processing (marker reading and coefficient decoding).  The actual input
+  12:fltk-1.3.4-1/jpeg/jdinput.c ****  * reading is done in jdmarker.c, jdhuff.c, and jdarith.c.
+  13:fltk-1.3.4-1/jpeg/jdinput.c ****  */
+  14:fltk-1.3.4-1/jpeg/jdinput.c **** 
+  15:fltk-1.3.4-1/jpeg/jdinput.c **** #define JPEG_INTERNALS
+  16:fltk-1.3.4-1/jpeg/jdinput.c **** #include "jinclude.h"
+  17:fltk-1.3.4-1/jpeg/jdinput.c **** #include "jpeglib.h"
+  18:fltk-1.3.4-1/jpeg/jdinput.c **** 
+  19:fltk-1.3.4-1/jpeg/jdinput.c **** 
+  20:fltk-1.3.4-1/jpeg/jdinput.c **** /* Private state */
+  21:fltk-1.3.4-1/jpeg/jdinput.c **** 
+  22:fltk-1.3.4-1/jpeg/jdinput.c **** typedef struct {
+  23:fltk-1.3.4-1/jpeg/jdinput.c ****   struct jpeg_input_controller pub; /* public fields */
+  24:fltk-1.3.4-1/jpeg/jdinput.c **** 
+  25:fltk-1.3.4-1/jpeg/jdinput.c ****   int inheaders;		/* Nonzero until first SOS is reached */
+  26:fltk-1.3.4-1/jpeg/jdinput.c **** } my_input_controller;
+  27:fltk-1.3.4-1/jpeg/jdinput.c **** 
+  28:fltk-1.3.4-1/jpeg/jdinput.c **** typedef my_input_controller * my_inputctl_ptr;
+  29:fltk-1.3.4-1/jpeg/jdinput.c **** 
+  30:fltk-1.3.4-1/jpeg/jdinput.c **** 
+  31:fltk-1.3.4-1/jpeg/jdinput.c **** /* Forward declarations */
+  32:fltk-1.3.4-1/jpeg/jdinput.c **** METHODDEF(int) consume_markers JPP((j_decompress_ptr cinfo));
+  33:fltk-1.3.4-1/jpeg/jdinput.c **** 
+  34:fltk-1.3.4-1/jpeg/jdinput.c **** 
+  35:fltk-1.3.4-1/jpeg/jdinput.c **** /*
+  36:fltk-1.3.4-1/jpeg/jdinput.c ****  * Routines to calculate various quantities related to the size of the image.
+  37:fltk-1.3.4-1/jpeg/jdinput.c ****  */
+  38:fltk-1.3.4-1/jpeg/jdinput.c **** 
+  39:fltk-1.3.4-1/jpeg/jdinput.c **** 
+  40:fltk-1.3.4-1/jpeg/jdinput.c **** /*
+  41:fltk-1.3.4-1/jpeg/jdinput.c ****  * Compute output image dimensions and related values.
+  42:fltk-1.3.4-1/jpeg/jdinput.c ****  * NOTE: this is exported for possible use by application.
+  43:fltk-1.3.4-1/jpeg/jdinput.c ****  * Hence it mustn't do anything that can't be done twice.
+  44:fltk-1.3.4-1/jpeg/jdinput.c ****  */
+  45:fltk-1.3.4-1/jpeg/jdinput.c **** 
+  46:fltk-1.3.4-1/jpeg/jdinput.c **** GLOBAL(void)
+  47:fltk-1.3.4-1/jpeg/jdinput.c **** jpeg_core_output_dimensions (j_decompress_ptr cinfo)
+  48:fltk-1.3.4-1/jpeg/jdinput.c **** /* Do computations that are needed before master selection phase.
+  49:fltk-1.3.4-1/jpeg/jdinput.c ****  * This function is used for transcoding and full decompression.
+  50:fltk-1.3.4-1/jpeg/jdinput.c ****  */
+  51:fltk-1.3.4-1/jpeg/jdinput.c **** {
+  52:fltk-1.3.4-1/jpeg/jdinput.c **** #ifdef IDCT_SCALING_SUPPORTED
+  53:fltk-1.3.4-1/jpeg/jdinput.c ****   int ci;
+  54:fltk-1.3.4-1/jpeg/jdinput.c ****   jpeg_component_info *compptr;
+  55:fltk-1.3.4-1/jpeg/jdinput.c **** 
+  56:fltk-1.3.4-1/jpeg/jdinput.c ****   /* Compute actual output image dimensions and DCT scaling choices. */
+  57:fltk-1.3.4-1/jpeg/jdinput.c ****   if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom) {
+  58:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 1/block_size scaling */
+  59:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_width = (JDIMENSION)
+  60:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width, (long) cinfo->block_size);
+  61:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+  62:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height, (long) cinfo->block_size);
+  63:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 1;
+  64:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 1;
+  65:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 2) {
+  66:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 2/block_size scaling */
+  67:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_width = (JDIMENSION)
+  68:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 2L, (long) cinfo->block_size);
+  69:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+  70:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 2L, (long) cinfo->block_size);
+  71:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 2;
+  72:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 2;
+  73:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 3) {
+  74:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 3/block_size scaling */
+  75:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_width = (JDIMENSION)
+  76:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 3L, (long) cinfo->block_size);
+  77:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+  78:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 3L, (long) cinfo->block_size);
+  79:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 3;
+  80:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 3;
+  81:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 4) {
+  82:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 4/block_size scaling */
+  83:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_width = (JDIMENSION)
+  84:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 4L, (long) cinfo->block_size);
+  85:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+  86:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 4L, (long) cinfo->block_size);
+  87:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 4;
+  88:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 4;
+  89:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 5) {
+  90:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 5/block_size scaling */
+  91:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_width = (JDIMENSION)
+  92:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 5L, (long) cinfo->block_size);
+  93:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+  94:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 5L, (long) cinfo->block_size);
+  95:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 5;
+  96:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 5;
+  97:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 6) {
+  98:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 6/block_size scaling */
+  99:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_width = (JDIMENSION)
+ 100:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 6L, (long) cinfo->block_size);
+ 101:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 102:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 6L, (long) cinfo->block_size);
+ 103:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 6;
+ 104:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 6;
+ 105:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 7) {
+ 106:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 7/block_size scaling */
+ 107:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_width = (JDIMENSION)
+ 108:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 7L, (long) cinfo->block_size);
+ 109:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 110:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 7L, (long) cinfo->block_size);
+ 111:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 7;
+ 112:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 7;
+ 113:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 8) {
+ 114:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 8/block_size scaling */
+ 115:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_width = (JDIMENSION)
+ 116:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 8L, (long) cinfo->block_size);
+ 117:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 118:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 8L, (long) cinfo->block_size);
+ 119:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 8;
+ 120:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 8;
+ 121:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 9) {
+ 122:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 9/block_size scaling */
+ 123:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_width = (JDIMENSION)
+ 124:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 9L, (long) cinfo->block_size);
+ 125:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 126:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 9L, (long) cinfo->block_size);
+ 127:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 9;
+ 128:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 9;
+ 129:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 10) {
+ 130:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 10/block_size scaling */
+ 131:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_width = (JDIMENSION)
+ 132:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 10L, (long) cinfo->block_size);
+ 133:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 134:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 10L, (long) cinfo->block_size);
+ 135:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 10;
+ 136:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 10;
+ 137:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 11) {
+ 138:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 11/block_size scaling */
+ 139:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_width = (JDIMENSION)
+ 140:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 11L, (long) cinfo->block_size);
+ 141:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 142:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 11L, (long) cinfo->block_size);
+ 143:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 11;
+ 144:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 11;
+ 145:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 12) {
+ 146:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 12/block_size scaling */
+ 147:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_width = (JDIMENSION)
+ 148:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 12L, (long) cinfo->block_size);
+ 149:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 150:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 12L, (long) cinfo->block_size);
+ 151:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 12;
+ 152:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 12;
+ 153:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 13) {
+ 154:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 13/block_size scaling */
+ 155:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_width = (JDIMENSION)
+ 156:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 13L, (long) cinfo->block_size);
+ 157:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 158:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 13L, (long) cinfo->block_size);
+ 159:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 13;
+ 160:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 13;
+ 161:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 14) {
+ 162:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 14/block_size scaling */
+ 163:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_width = (JDIMENSION)
+ 164:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 14L, (long) cinfo->block_size);
+ 165:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 166:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 14L, (long) cinfo->block_size);
+ 167:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 14;
+ 168:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 14;
+ 169:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 15) {
+ 170:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 15/block_size scaling */
+ 171:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_width = (JDIMENSION)
+ 172:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 15L, (long) cinfo->block_size);
+ 173:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 174:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 15L, (long) cinfo->block_size);
+ 175:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 15;
+ 176:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 15;
+ 177:fltk-1.3.4-1/jpeg/jdinput.c ****   } else {
+ 178:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 16/block_size scaling */
+ 179:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_width = (JDIMENSION)
+ 180:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 16L, (long) cinfo->block_size);
+ 181:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 182:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 16L, (long) cinfo->block_size);
+ 183:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 16;
+ 184:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 16;
+ 185:fltk-1.3.4-1/jpeg/jdinput.c ****   }
+ 186:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 187:fltk-1.3.4-1/jpeg/jdinput.c ****   /* Recompute dimensions of components */
+ 188:fltk-1.3.4-1/jpeg/jdinput.c ****   for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
+ 189:fltk-1.3.4-1/jpeg/jdinput.c ****        ci++, compptr++) {
+ 190:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->DCT_h_scaled_size = cinfo->min_DCT_h_scaled_size;
+ 191:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->DCT_v_scaled_size = cinfo->min_DCT_v_scaled_size;
+ 192:fltk-1.3.4-1/jpeg/jdinput.c ****   }
+ 193:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 194:fltk-1.3.4-1/jpeg/jdinput.c **** #else /* !IDCT_SCALING_SUPPORTED */
+ 195:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 196:fltk-1.3.4-1/jpeg/jdinput.c ****   /* Hardwire it to "no scaling" */
+ 197:fltk-1.3.4-1/jpeg/jdinput.c ****   cinfo->output_width = cinfo->image_width;
+ 198:fltk-1.3.4-1/jpeg/jdinput.c ****   cinfo->output_height = cinfo->image_height;
+ 199:fltk-1.3.4-1/jpeg/jdinput.c ****   /* initial_setup has already initialized DCT_scaled_size,
+ 200:fltk-1.3.4-1/jpeg/jdinput.c ****    * and has computed unscaled downsampled_width and downsampled_height.
+ 201:fltk-1.3.4-1/jpeg/jdinput.c ****    */
+ 202:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 203:fltk-1.3.4-1/jpeg/jdinput.c **** #endif /* IDCT_SCALING_SUPPORTED */
+ 204:fltk-1.3.4-1/jpeg/jdinput.c **** }
+ 205:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 206:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 207:fltk-1.3.4-1/jpeg/jdinput.c **** LOCAL(void)
+ 208:fltk-1.3.4-1/jpeg/jdinput.c **** initial_setup (j_decompress_ptr cinfo)
+ 209:fltk-1.3.4-1/jpeg/jdinput.c **** /* Called once, when first SOS marker is reached */
+ 210:fltk-1.3.4-1/jpeg/jdinput.c **** {
+ 211:fltk-1.3.4-1/jpeg/jdinput.c ****   int ci;
+ 212:fltk-1.3.4-1/jpeg/jdinput.c ****   jpeg_component_info *compptr;
+ 213:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 214:fltk-1.3.4-1/jpeg/jdinput.c ****   /* Make sure image isn't bigger than I can handle */
+ 215:fltk-1.3.4-1/jpeg/jdinput.c ****   if ((long) cinfo->image_height > (long) JPEG_MAX_DIMENSION ||
+ 216:fltk-1.3.4-1/jpeg/jdinput.c ****       (long) cinfo->image_width > (long) JPEG_MAX_DIMENSION)
+ 217:fltk-1.3.4-1/jpeg/jdinput.c ****     ERREXIT1(cinfo, JERR_IMAGE_TOO_BIG, (unsigned int) JPEG_MAX_DIMENSION);
+ 218:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 219:fltk-1.3.4-1/jpeg/jdinput.c ****   /* Only 8 to 12 bits data precision are supported for DCT based JPEG */
+ 220:fltk-1.3.4-1/jpeg/jdinput.c ****   if (cinfo->data_precision < 8 || cinfo->data_precision > 12)
+ 221:fltk-1.3.4-1/jpeg/jdinput.c ****     ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
+ 222:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 223:fltk-1.3.4-1/jpeg/jdinput.c ****   /* Check that number of components won't exceed internal array sizes */
+ 224:fltk-1.3.4-1/jpeg/jdinput.c ****   if (cinfo->num_components > MAX_COMPONENTS)
+ 225:fltk-1.3.4-1/jpeg/jdinput.c ****     ERREXIT2(cinfo, JERR_COMPONENT_COUNT, cinfo->num_components,
+ 226:fltk-1.3.4-1/jpeg/jdinput.c **** 	     MAX_COMPONENTS);
+ 227:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 228:fltk-1.3.4-1/jpeg/jdinput.c ****   /* Compute maximum sampling factors; check factor validity */
+ 229:fltk-1.3.4-1/jpeg/jdinput.c ****   cinfo->max_h_samp_factor = 1;
+ 230:fltk-1.3.4-1/jpeg/jdinput.c ****   cinfo->max_v_samp_factor = 1;
+ 231:fltk-1.3.4-1/jpeg/jdinput.c ****   for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
+ 232:fltk-1.3.4-1/jpeg/jdinput.c ****        ci++, compptr++) {
+ 233:fltk-1.3.4-1/jpeg/jdinput.c ****     if (compptr->h_samp_factor<=0 || compptr->h_samp_factor>MAX_SAMP_FACTOR ||
+ 234:fltk-1.3.4-1/jpeg/jdinput.c **** 	compptr->v_samp_factor<=0 || compptr->v_samp_factor>MAX_SAMP_FACTOR)
+ 235:fltk-1.3.4-1/jpeg/jdinput.c ****       ERREXIT(cinfo, JERR_BAD_SAMPLING);
+ 236:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->max_h_samp_factor = MAX(cinfo->max_h_samp_factor,
+ 237:fltk-1.3.4-1/jpeg/jdinput.c **** 				   compptr->h_samp_factor);
+ 238:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->max_v_samp_factor = MAX(cinfo->max_v_samp_factor,
+ 239:fltk-1.3.4-1/jpeg/jdinput.c **** 				   compptr->v_samp_factor);
+ 240:fltk-1.3.4-1/jpeg/jdinput.c ****   }
+ 241:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 242:fltk-1.3.4-1/jpeg/jdinput.c ****   /* Derive block_size, natural_order, and lim_Se */
+ 243:fltk-1.3.4-1/jpeg/jdinput.c ****   if (cinfo->is_baseline || (cinfo->progressive_mode &&
+ 244:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->comps_in_scan)) { /* no pseudo SOS marker */
+ 245:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->block_size = DCTSIZE;
+ 246:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->natural_order = jpeg_natural_order;
+ 247:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->lim_Se = DCTSIZE2-1;
+ 248:fltk-1.3.4-1/jpeg/jdinput.c ****   } else
+ 249:fltk-1.3.4-1/jpeg/jdinput.c ****     switch (cinfo->Se) {
+ 250:fltk-1.3.4-1/jpeg/jdinput.c ****     case (1*1-1):
+ 251:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->block_size = 1;
+ 252:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order; /* not needed */
+ 253:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = cinfo->Se;
+ 254:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 255:fltk-1.3.4-1/jpeg/jdinput.c ****     case (2*2-1):
+ 256:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->block_size = 2;
+ 257:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order2;
+ 258:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = cinfo->Se;
+ 259:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 260:fltk-1.3.4-1/jpeg/jdinput.c ****     case (3*3-1):
+ 261:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->block_size = 3;
+ 262:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order3;
+ 263:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = cinfo->Se;
+ 264:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 265:fltk-1.3.4-1/jpeg/jdinput.c ****     case (4*4-1):
+ 266:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->block_size = 4;
+ 267:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order4;
+ 268:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = cinfo->Se;
+ 269:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 270:fltk-1.3.4-1/jpeg/jdinput.c ****     case (5*5-1):
+ 271:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->block_size = 5;
+ 272:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order5;
+ 273:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = cinfo->Se;
+ 274:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 275:fltk-1.3.4-1/jpeg/jdinput.c ****     case (6*6-1):
+ 276:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->block_size = 6;
+ 277:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order6;
+ 278:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = cinfo->Se;
+ 279:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 280:fltk-1.3.4-1/jpeg/jdinput.c ****     case (7*7-1):
+ 281:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->block_size = 7;
+ 282:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order7;
+ 283:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = cinfo->Se;
+ 284:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 285:fltk-1.3.4-1/jpeg/jdinput.c ****     case (8*8-1):
+ 286:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->block_size = 8;
+ 287:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order;
+ 288:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = DCTSIZE2-1;
+ 289:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 290:fltk-1.3.4-1/jpeg/jdinput.c ****     case (9*9-1):
+ 291:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->block_size = 9;
+ 292:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order;
+ 293:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = DCTSIZE2-1;
+ 294:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 295:fltk-1.3.4-1/jpeg/jdinput.c ****     case (10*10-1):
+ 296:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->block_size = 10;
+ 297:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order;
+ 298:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = DCTSIZE2-1;
+ 299:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 300:fltk-1.3.4-1/jpeg/jdinput.c ****     case (11*11-1):
+ 301:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->block_size = 11;
+ 302:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order;
+ 303:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = DCTSIZE2-1;
+ 304:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 305:fltk-1.3.4-1/jpeg/jdinput.c ****     case (12*12-1):
+ 306:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->block_size = 12;
+ 307:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order;
+ 308:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = DCTSIZE2-1;
+ 309:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 310:fltk-1.3.4-1/jpeg/jdinput.c ****     case (13*13-1):
+ 311:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->block_size = 13;
+ 312:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order;
+ 313:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = DCTSIZE2-1;
+ 314:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 315:fltk-1.3.4-1/jpeg/jdinput.c ****     case (14*14-1):
+ 316:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->block_size = 14;
+ 317:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order;
+ 318:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = DCTSIZE2-1;
+ 319:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 320:fltk-1.3.4-1/jpeg/jdinput.c ****     case (15*15-1):
+ 321:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->block_size = 15;
+ 322:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order;
+ 323:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = DCTSIZE2-1;
+ 324:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 325:fltk-1.3.4-1/jpeg/jdinput.c ****     case (16*16-1):
+ 326:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->block_size = 16;
+ 327:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order;
+ 328:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = DCTSIZE2-1;
+ 329:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 330:fltk-1.3.4-1/jpeg/jdinput.c ****     default:
+ 331:fltk-1.3.4-1/jpeg/jdinput.c ****       ERREXIT4(cinfo, JERR_BAD_PROGRESSION,
+ 332:fltk-1.3.4-1/jpeg/jdinput.c **** 	       cinfo->Ss, cinfo->Se, cinfo->Ah, cinfo->Al);
+ 333:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 334:fltk-1.3.4-1/jpeg/jdinput.c ****     }
+ 335:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 336:fltk-1.3.4-1/jpeg/jdinput.c ****   /* We initialize DCT_scaled_size and min_DCT_scaled_size to block_size.
+ 337:fltk-1.3.4-1/jpeg/jdinput.c ****    * In the full decompressor,
+ 338:fltk-1.3.4-1/jpeg/jdinput.c ****    * this will be overridden by jpeg_calc_output_dimensions in jdmaster.c;
+ 339:fltk-1.3.4-1/jpeg/jdinput.c ****    * but in the transcoder,
+ 340:fltk-1.3.4-1/jpeg/jdinput.c ****    * jpeg_calc_output_dimensions is not used, so we must do it here.
+ 341:fltk-1.3.4-1/jpeg/jdinput.c ****    */
+ 342:fltk-1.3.4-1/jpeg/jdinput.c ****   cinfo->min_DCT_h_scaled_size = cinfo->block_size;
+ 343:fltk-1.3.4-1/jpeg/jdinput.c ****   cinfo->min_DCT_v_scaled_size = cinfo->block_size;
+ 344:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 345:fltk-1.3.4-1/jpeg/jdinput.c ****   /* Compute dimensions of components */
+ 346:fltk-1.3.4-1/jpeg/jdinput.c ****   for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
+ 347:fltk-1.3.4-1/jpeg/jdinput.c ****        ci++, compptr++) {
+ 348:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->DCT_h_scaled_size = cinfo->block_size;
+ 349:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->DCT_v_scaled_size = cinfo->block_size;
+ 350:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Size in DCT blocks */
+ 351:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->width_in_blocks = (JDIMENSION)
+ 352:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * (long) compptr->h_samp_factor,
+ 353:fltk-1.3.4-1/jpeg/jdinput.c **** 		    (long) (cinfo->max_h_samp_factor * cinfo->block_size));
+ 354:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->height_in_blocks = (JDIMENSION)
+ 355:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * (long) compptr->v_samp_factor,
+ 356:fltk-1.3.4-1/jpeg/jdinput.c **** 		    (long) (cinfo->max_v_samp_factor * cinfo->block_size));
+ 357:fltk-1.3.4-1/jpeg/jdinput.c ****     /* downsampled_width and downsampled_height will also be overridden by
+ 358:fltk-1.3.4-1/jpeg/jdinput.c ****      * jdmaster.c if we are doing full decompression.  The transcoder library
+ 359:fltk-1.3.4-1/jpeg/jdinput.c ****      * doesn't use these values, but the calling application might.
+ 360:fltk-1.3.4-1/jpeg/jdinput.c ****      */
+ 361:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Size in samples */
+ 362:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->downsampled_width = (JDIMENSION)
+ 363:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * (long) compptr->h_samp_factor,
+ 364:fltk-1.3.4-1/jpeg/jdinput.c **** 		    (long) cinfo->max_h_samp_factor);
+ 365:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->downsampled_height = (JDIMENSION)
+ 366:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * (long) compptr->v_samp_factor,
+ 367:fltk-1.3.4-1/jpeg/jdinput.c **** 		    (long) cinfo->max_v_samp_factor);
+ 368:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Mark component needed, until color conversion says otherwise */
+ 369:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->component_needed = TRUE;
+ 370:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Mark no quantization table yet saved for component */
+ 371:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->quant_table = NULL;
+ 372:fltk-1.3.4-1/jpeg/jdinput.c ****   }
+ 373:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 374:fltk-1.3.4-1/jpeg/jdinput.c ****   /* Compute number of fully interleaved MCU rows. */
+ 375:fltk-1.3.4-1/jpeg/jdinput.c ****   cinfo->total_iMCU_rows = (JDIMENSION)
+ 376:fltk-1.3.4-1/jpeg/jdinput.c ****     jdiv_round_up((long) cinfo->image_height,
+ 377:fltk-1.3.4-1/jpeg/jdinput.c **** 	          (long) (cinfo->max_v_samp_factor * cinfo->block_size));
+ 378:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 379:fltk-1.3.4-1/jpeg/jdinput.c ****   /* Decide whether file contains multiple scans */
+ 380:fltk-1.3.4-1/jpeg/jdinput.c ****   if (cinfo->comps_in_scan < cinfo->num_components || cinfo->progressive_mode)
+ 381:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->inputctl->has_multiple_scans = TRUE;
+ 382:fltk-1.3.4-1/jpeg/jdinput.c ****   else
+ 383:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->inputctl->has_multiple_scans = FALSE;
+ 384:fltk-1.3.4-1/jpeg/jdinput.c **** }
+ 385:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 386:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 387:fltk-1.3.4-1/jpeg/jdinput.c **** LOCAL(void)
+ 388:fltk-1.3.4-1/jpeg/jdinput.c **** per_scan_setup (j_decompress_ptr cinfo)
+ 389:fltk-1.3.4-1/jpeg/jdinput.c **** /* Do computations that are needed before processing a JPEG scan */
+ 390:fltk-1.3.4-1/jpeg/jdinput.c **** /* cinfo->comps_in_scan and cinfo->cur_comp_info[] were set from SOS marker */
+ 391:fltk-1.3.4-1/jpeg/jdinput.c **** {
+ 392:fltk-1.3.4-1/jpeg/jdinput.c ****   int ci, mcublks, tmp;
+ 393:fltk-1.3.4-1/jpeg/jdinput.c ****   jpeg_component_info *compptr;
+ 394:fltk-1.3.4-1/jpeg/jdinput.c ****   
+ 395:fltk-1.3.4-1/jpeg/jdinput.c ****   if (cinfo->comps_in_scan == 1) {
+ 396:fltk-1.3.4-1/jpeg/jdinput.c ****     
+ 397:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Noninterleaved (single-component) scan */
+ 398:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr = cinfo->cur_comp_info[0];
+ 399:fltk-1.3.4-1/jpeg/jdinput.c ****     
+ 400:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Overall image size in MCUs */
+ 401:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->MCUs_per_row = compptr->width_in_blocks;
+ 402:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->MCU_rows_in_scan = compptr->height_in_blocks;
+ 403:fltk-1.3.4-1/jpeg/jdinput.c ****     
+ 404:fltk-1.3.4-1/jpeg/jdinput.c ****     /* For noninterleaved scan, always one block per MCU */
+ 405:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->MCU_width = 1;
+ 406:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->MCU_height = 1;
+ 407:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->MCU_blocks = 1;
+ 408:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->MCU_sample_width = compptr->DCT_h_scaled_size;
+ 409:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->last_col_width = 1;
+ 410:fltk-1.3.4-1/jpeg/jdinput.c ****     /* For noninterleaved scans, it is convenient to define last_row_height
+ 411:fltk-1.3.4-1/jpeg/jdinput.c ****      * as the number of block rows present in the last iMCU row.
+ 412:fltk-1.3.4-1/jpeg/jdinput.c ****      */
+ 413:fltk-1.3.4-1/jpeg/jdinput.c ****     tmp = (int) (compptr->height_in_blocks % compptr->v_samp_factor);
+ 414:fltk-1.3.4-1/jpeg/jdinput.c ****     if (tmp == 0) tmp = compptr->v_samp_factor;
+ 415:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->last_row_height = tmp;
+ 416:fltk-1.3.4-1/jpeg/jdinput.c ****     
+ 417:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Prepare array describing MCU composition */
+ 418:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->blocks_in_MCU = 1;
+ 419:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->MCU_membership[0] = 0;
+ 420:fltk-1.3.4-1/jpeg/jdinput.c ****     
+ 421:fltk-1.3.4-1/jpeg/jdinput.c ****   } else {
+ 422:fltk-1.3.4-1/jpeg/jdinput.c ****     
+ 423:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Interleaved (multi-component) scan */
+ 424:fltk-1.3.4-1/jpeg/jdinput.c ****     if (cinfo->comps_in_scan <= 0 || cinfo->comps_in_scan > MAX_COMPS_IN_SCAN)
+ 425:fltk-1.3.4-1/jpeg/jdinput.c ****       ERREXIT2(cinfo, JERR_COMPONENT_COUNT, cinfo->comps_in_scan,
+ 426:fltk-1.3.4-1/jpeg/jdinput.c **** 	       MAX_COMPS_IN_SCAN);
+ 427:fltk-1.3.4-1/jpeg/jdinput.c ****     
+ 428:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Overall image size in MCUs */
+ 429:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->MCUs_per_row = (JDIMENSION)
+ 430:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width,
+ 431:fltk-1.3.4-1/jpeg/jdinput.c **** 		    (long) (cinfo->max_h_samp_factor * cinfo->block_size));
+ 432:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->MCU_rows_in_scan = (JDIMENSION)
+ 433:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height,
+ 434:fltk-1.3.4-1/jpeg/jdinput.c **** 		    (long) (cinfo->max_v_samp_factor * cinfo->block_size));
+ 435:fltk-1.3.4-1/jpeg/jdinput.c ****     
+ 436:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->blocks_in_MCU = 0;
+ 437:fltk-1.3.4-1/jpeg/jdinput.c ****     
+ 438:fltk-1.3.4-1/jpeg/jdinput.c ****     for (ci = 0; ci < cinfo->comps_in_scan; ci++) {
+ 439:fltk-1.3.4-1/jpeg/jdinput.c ****       compptr = cinfo->cur_comp_info[ci];
+ 440:fltk-1.3.4-1/jpeg/jdinput.c ****       /* Sampling factors give # of blocks of component in each MCU */
+ 441:fltk-1.3.4-1/jpeg/jdinput.c ****       compptr->MCU_width = compptr->h_samp_factor;
+ 442:fltk-1.3.4-1/jpeg/jdinput.c ****       compptr->MCU_height = compptr->v_samp_factor;
+ 443:fltk-1.3.4-1/jpeg/jdinput.c ****       compptr->MCU_blocks = compptr->MCU_width * compptr->MCU_height;
+ 444:fltk-1.3.4-1/jpeg/jdinput.c ****       compptr->MCU_sample_width = compptr->MCU_width * compptr->DCT_h_scaled_size;
+ 445:fltk-1.3.4-1/jpeg/jdinput.c ****       /* Figure number of non-dummy blocks in last MCU column & row */
+ 446:fltk-1.3.4-1/jpeg/jdinput.c ****       tmp = (int) (compptr->width_in_blocks % compptr->MCU_width);
+ 447:fltk-1.3.4-1/jpeg/jdinput.c ****       if (tmp == 0) tmp = compptr->MCU_width;
+ 448:fltk-1.3.4-1/jpeg/jdinput.c ****       compptr->last_col_width = tmp;
+ 449:fltk-1.3.4-1/jpeg/jdinput.c ****       tmp = (int) (compptr->height_in_blocks % compptr->MCU_height);
+ 450:fltk-1.3.4-1/jpeg/jdinput.c ****       if (tmp == 0) tmp = compptr->MCU_height;
+ 451:fltk-1.3.4-1/jpeg/jdinput.c ****       compptr->last_row_height = tmp;
+ 452:fltk-1.3.4-1/jpeg/jdinput.c ****       /* Prepare array describing MCU composition */
+ 453:fltk-1.3.4-1/jpeg/jdinput.c ****       mcublks = compptr->MCU_blocks;
+ 454:fltk-1.3.4-1/jpeg/jdinput.c ****       if (cinfo->blocks_in_MCU + mcublks > D_MAX_BLOCKS_IN_MCU)
+ 455:fltk-1.3.4-1/jpeg/jdinput.c **** 	ERREXIT(cinfo, JERR_BAD_MCU_SIZE);
+ 456:fltk-1.3.4-1/jpeg/jdinput.c ****       while (mcublks-- > 0) {
+ 457:fltk-1.3.4-1/jpeg/jdinput.c **** 	cinfo->MCU_membership[cinfo->blocks_in_MCU++] = ci;
+ 458:fltk-1.3.4-1/jpeg/jdinput.c ****       }
+ 459:fltk-1.3.4-1/jpeg/jdinput.c ****     }
+ 460:fltk-1.3.4-1/jpeg/jdinput.c ****     
+ 461:fltk-1.3.4-1/jpeg/jdinput.c ****   }
+ 462:fltk-1.3.4-1/jpeg/jdinput.c **** }
+ 463:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 464:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 465:fltk-1.3.4-1/jpeg/jdinput.c **** /*
+ 466:fltk-1.3.4-1/jpeg/jdinput.c ****  * Save away a copy of the Q-table referenced by each component present
+ 467:fltk-1.3.4-1/jpeg/jdinput.c ****  * in the current scan, unless already saved during a prior scan.
+ 468:fltk-1.3.4-1/jpeg/jdinput.c ****  *
+ 469:fltk-1.3.4-1/jpeg/jdinput.c ****  * In a multiple-scan JPEG file, the encoder could assign different components
+ 470:fltk-1.3.4-1/jpeg/jdinput.c ****  * the same Q-table slot number, but change table definitions between scans
+ 471:fltk-1.3.4-1/jpeg/jdinput.c ****  * so that each component uses a different Q-table.  (The IJG encoder is not
+ 472:fltk-1.3.4-1/jpeg/jdinput.c ****  * currently capable of doing this, but other encoders might.)  Since we want
+ 473:fltk-1.3.4-1/jpeg/jdinput.c ****  * to be able to dequantize all the components at the end of the file, this
+ 474:fltk-1.3.4-1/jpeg/jdinput.c ****  * means that we have to save away the table actually used for each component.
+ 475:fltk-1.3.4-1/jpeg/jdinput.c ****  * We do this by copying the table at the start of the first scan containing
+ 476:fltk-1.3.4-1/jpeg/jdinput.c ****  * the component.
+ 477:fltk-1.3.4-1/jpeg/jdinput.c ****  * The JPEG spec prohibits the encoder from changing the contents of a Q-table
+ 478:fltk-1.3.4-1/jpeg/jdinput.c ****  * slot between scans of a component using that slot.  If the encoder does so
+ 479:fltk-1.3.4-1/jpeg/jdinput.c ****  * anyway, this decoder will simply use the Q-table values that were current
+ 480:fltk-1.3.4-1/jpeg/jdinput.c ****  * at the start of the first scan for the component.
+ 481:fltk-1.3.4-1/jpeg/jdinput.c ****  *
+ 482:fltk-1.3.4-1/jpeg/jdinput.c ****  * The decompressor output side looks only at the saved quant tables,
+ 483:fltk-1.3.4-1/jpeg/jdinput.c ****  * not at the current Q-table slots.
+ 484:fltk-1.3.4-1/jpeg/jdinput.c ****  */
+ 485:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 486:fltk-1.3.4-1/jpeg/jdinput.c **** LOCAL(void)
+ 487:fltk-1.3.4-1/jpeg/jdinput.c **** latch_quant_tables (j_decompress_ptr cinfo)
+ 488:fltk-1.3.4-1/jpeg/jdinput.c **** {
+ 489:fltk-1.3.4-1/jpeg/jdinput.c ****   int ci, qtblno;
+ 490:fltk-1.3.4-1/jpeg/jdinput.c ****   jpeg_component_info *compptr;
+ 491:fltk-1.3.4-1/jpeg/jdinput.c ****   JQUANT_TBL * qtbl;
+ 492:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 493:fltk-1.3.4-1/jpeg/jdinput.c ****   for (ci = 0; ci < cinfo->comps_in_scan; ci++) {
+ 494:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr = cinfo->cur_comp_info[ci];
+ 495:fltk-1.3.4-1/jpeg/jdinput.c ****     /* No work if we already saved Q-table for this component */
+ 496:fltk-1.3.4-1/jpeg/jdinput.c ****     if (compptr->quant_table != NULL)
+ 497:fltk-1.3.4-1/jpeg/jdinput.c ****       continue;
+ 498:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Make sure specified quantization table is present */
+ 499:fltk-1.3.4-1/jpeg/jdinput.c ****     qtblno = compptr->quant_tbl_no;
+ 500:fltk-1.3.4-1/jpeg/jdinput.c ****     if (qtblno < 0 || qtblno >= NUM_QUANT_TBLS ||
+ 501:fltk-1.3.4-1/jpeg/jdinput.c **** 	cinfo->quant_tbl_ptrs[qtblno] == NULL)
+ 502:fltk-1.3.4-1/jpeg/jdinput.c ****       ERREXIT1(cinfo, JERR_NO_QUANT_TABLE, qtblno);
+ 503:fltk-1.3.4-1/jpeg/jdinput.c ****     /* OK, save away the quantization table */
+ 504:fltk-1.3.4-1/jpeg/jdinput.c ****     qtbl = (JQUANT_TBL *)
+ 505:fltk-1.3.4-1/jpeg/jdinput.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 506:fltk-1.3.4-1/jpeg/jdinput.c **** 				  SIZEOF(JQUANT_TBL));
+ 507:fltk-1.3.4-1/jpeg/jdinput.c ****     MEMCOPY(qtbl, cinfo->quant_tbl_ptrs[qtblno], SIZEOF(JQUANT_TBL));
+ 508:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->quant_table = qtbl;
+ 509:fltk-1.3.4-1/jpeg/jdinput.c ****   }
+ 510:fltk-1.3.4-1/jpeg/jdinput.c **** }
+ 511:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 512:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 513:fltk-1.3.4-1/jpeg/jdinput.c **** /*
+ 514:fltk-1.3.4-1/jpeg/jdinput.c ****  * Initialize the input modules to read a scan of compressed data.
+ 515:fltk-1.3.4-1/jpeg/jdinput.c ****  * The first call to this is done by jdmaster.c after initializing
+ 516:fltk-1.3.4-1/jpeg/jdinput.c ****  * the entire decompressor (during jpeg_start_decompress).
+ 517:fltk-1.3.4-1/jpeg/jdinput.c ****  * Subsequent calls come from consume_markers, below.
+ 518:fltk-1.3.4-1/jpeg/jdinput.c ****  */
+ 519:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 520:fltk-1.3.4-1/jpeg/jdinput.c **** METHODDEF(void)
+ 521:fltk-1.3.4-1/jpeg/jdinput.c **** start_input_pass (j_decompress_ptr cinfo)
+ 522:fltk-1.3.4-1/jpeg/jdinput.c **** {
+ 523:fltk-1.3.4-1/jpeg/jdinput.c ****   per_scan_setup(cinfo);
+ 524:fltk-1.3.4-1/jpeg/jdinput.c ****   latch_quant_tables(cinfo);
+ 525:fltk-1.3.4-1/jpeg/jdinput.c ****   (*cinfo->entropy->start_pass) (cinfo);
+ 526:fltk-1.3.4-1/jpeg/jdinput.c ****   (*cinfo->coef->start_input_pass) (cinfo);
+ 527:fltk-1.3.4-1/jpeg/jdinput.c ****   cinfo->inputctl->consume_input = cinfo->coef->consume_data;
+ 528:fltk-1.3.4-1/jpeg/jdinput.c **** }
+ 529:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 530:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 531:fltk-1.3.4-1/jpeg/jdinput.c **** /*
+ 532:fltk-1.3.4-1/jpeg/jdinput.c ****  * Finish up after inputting a compressed-data scan.
+ 533:fltk-1.3.4-1/jpeg/jdinput.c ****  * This is called by the coefficient controller after it's read all
+ 534:fltk-1.3.4-1/jpeg/jdinput.c ****  * the expected data of the scan.
+ 535:fltk-1.3.4-1/jpeg/jdinput.c ****  */
+ 536:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 537:fltk-1.3.4-1/jpeg/jdinput.c **** METHODDEF(void)
+ 538:fltk-1.3.4-1/jpeg/jdinput.c **** finish_input_pass (j_decompress_ptr cinfo)
+ 539:fltk-1.3.4-1/jpeg/jdinput.c **** {
+  16              		.loc 1 539 0
+  17              		.cfi_startproc
+  18              	.LVL0:
+ 540:fltk-1.3.4-1/jpeg/jdinput.c ****   (*cinfo->entropy->finish_pass) (cinfo);
+  19              		.loc 1 540 0
+  20 0000 488B8770 		movq	624(%rdi), %rax
+  20      020000
+ 539:fltk-1.3.4-1/jpeg/jdinput.c ****   (*cinfo->entropy->finish_pass) (cinfo);
+  21              		.loc 1 539 0
+  22 0007 53       		pushq	%rbx
+  23              		.cfi_def_cfa_offset 16
+  24              		.cfi_offset 3, -16
+ 539:fltk-1.3.4-1/jpeg/jdinput.c ****   (*cinfo->entropy->finish_pass) (cinfo);
+  25              		.loc 1 539 0
+  26 0008 4889FB   		movq	%rdi, %rbx
+  27              		.loc 1 540 0
+  28 000b FF5010   		call	*16(%rax)
+  29              	.LVL1:
+ 541:fltk-1.3.4-1/jpeg/jdinput.c ****   cinfo->inputctl->consume_input = consume_markers;
+  30              		.loc 1 541 0
+  31 000e 488B8360 		movq	608(%rbx), %rax
+  31      020000
+  32 0015 48C70000 		movq	$consume_markers, (%rax)
+  32      000000
+ 542:fltk-1.3.4-1/jpeg/jdinput.c **** }
+  33              		.loc 1 542 0
+  34 001c 5B       		popq	%rbx
+  35              		.cfi_def_cfa_offset 8
+  36              	.LVL2:
+  37 001d C3       		ret
+  38              		.cfi_endproc
+  39              	.LFE66:
+  41              		.section	.text.unlikely.finish_input_pass
+  42              	.LCOLDE0:
+  43              		.section	.text.finish_input_pass
+  44              	.LHOTE0:
+  45              		.section	.text.unlikely.reset_input_controller,"ax",@progbits
+  46              	.LCOLDB1:
+  47              		.section	.text.reset_input_controller,"ax",@progbits
+  48              	.LHOTB1:
+  49              		.p2align 4,,15
+  51              	reset_input_controller:
+  52              	.LFB68:
+ 543:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 544:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 545:fltk-1.3.4-1/jpeg/jdinput.c **** /*
+ 546:fltk-1.3.4-1/jpeg/jdinput.c ****  * Read JPEG markers before, between, or after compressed-data scans.
+ 547:fltk-1.3.4-1/jpeg/jdinput.c ****  * Change state as necessary when a new scan is reached.
+ 548:fltk-1.3.4-1/jpeg/jdinput.c ****  * Return value is JPEG_SUSPENDED, JPEG_REACHED_SOS, or JPEG_REACHED_EOI.
+ 549:fltk-1.3.4-1/jpeg/jdinput.c ****  *
+ 550:fltk-1.3.4-1/jpeg/jdinput.c ****  * The consume_input method pointer points either here or to the
+ 551:fltk-1.3.4-1/jpeg/jdinput.c ****  * coefficient controller's consume_data routine, depending on whether
+ 552:fltk-1.3.4-1/jpeg/jdinput.c ****  * we are reading a compressed data segment or inter-segment markers.
+ 553:fltk-1.3.4-1/jpeg/jdinput.c ****  *
+ 554:fltk-1.3.4-1/jpeg/jdinput.c ****  * Note: This function should NOT return a pseudo SOS marker (with zero
+ 555:fltk-1.3.4-1/jpeg/jdinput.c ****  * component number) to the caller.  A pseudo marker received by
+ 556:fltk-1.3.4-1/jpeg/jdinput.c ****  * read_markers is processed and then skipped for other markers.
+ 557:fltk-1.3.4-1/jpeg/jdinput.c ****  */
+ 558:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 559:fltk-1.3.4-1/jpeg/jdinput.c **** METHODDEF(int)
+ 560:fltk-1.3.4-1/jpeg/jdinput.c **** consume_markers (j_decompress_ptr cinfo)
+ 561:fltk-1.3.4-1/jpeg/jdinput.c **** {
+ 562:fltk-1.3.4-1/jpeg/jdinput.c ****   my_inputctl_ptr inputctl = (my_inputctl_ptr) cinfo->inputctl;
+ 563:fltk-1.3.4-1/jpeg/jdinput.c ****   int val;
+ 564:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 565:fltk-1.3.4-1/jpeg/jdinput.c ****   if (inputctl->pub.eoi_reached) /* After hitting EOI, read no further */
+ 566:fltk-1.3.4-1/jpeg/jdinput.c ****     return JPEG_REACHED_EOI;
+ 567:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 568:fltk-1.3.4-1/jpeg/jdinput.c ****   for (;;) {			/* Loop to pass pseudo SOS marker */
+ 569:fltk-1.3.4-1/jpeg/jdinput.c ****     val = (*cinfo->marker->read_markers) (cinfo);
+ 570:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 571:fltk-1.3.4-1/jpeg/jdinput.c ****     switch (val) {
+ 572:fltk-1.3.4-1/jpeg/jdinput.c ****     case JPEG_REACHED_SOS:	/* Found SOS */
+ 573:fltk-1.3.4-1/jpeg/jdinput.c ****       if (inputctl->inheaders) { /* 1st SOS */
+ 574:fltk-1.3.4-1/jpeg/jdinput.c **** 	if (inputctl->inheaders == 1)
+ 575:fltk-1.3.4-1/jpeg/jdinput.c **** 	  initial_setup(cinfo);
+ 576:fltk-1.3.4-1/jpeg/jdinput.c **** 	if (cinfo->comps_in_scan == 0) { /* pseudo SOS marker */
+ 577:fltk-1.3.4-1/jpeg/jdinput.c **** 	  inputctl->inheaders = 2;
+ 578:fltk-1.3.4-1/jpeg/jdinput.c **** 	  break;
+ 579:fltk-1.3.4-1/jpeg/jdinput.c **** 	}
+ 580:fltk-1.3.4-1/jpeg/jdinput.c **** 	inputctl->inheaders = 0;
+ 581:fltk-1.3.4-1/jpeg/jdinput.c **** 	/* Note: start_input_pass must be called by jdmaster.c
+ 582:fltk-1.3.4-1/jpeg/jdinput.c **** 	 * before any more input can be consumed.  jdapimin.c is
+ 583:fltk-1.3.4-1/jpeg/jdinput.c **** 	 * responsible for enforcing this sequencing.
+ 584:fltk-1.3.4-1/jpeg/jdinput.c **** 	 */
+ 585:fltk-1.3.4-1/jpeg/jdinput.c ****       } else {			/* 2nd or later SOS marker */
+ 586:fltk-1.3.4-1/jpeg/jdinput.c **** 	if (! inputctl->pub.has_multiple_scans)
+ 587:fltk-1.3.4-1/jpeg/jdinput.c **** 	  ERREXIT(cinfo, JERR_EOI_EXPECTED); /* Oops, I wasn't expecting this! */
+ 588:fltk-1.3.4-1/jpeg/jdinput.c **** 	if (cinfo->comps_in_scan == 0) /* unexpected pseudo SOS marker */
+ 589:fltk-1.3.4-1/jpeg/jdinput.c **** 	  break;
+ 590:fltk-1.3.4-1/jpeg/jdinput.c **** 	start_input_pass(cinfo);
+ 591:fltk-1.3.4-1/jpeg/jdinput.c ****       }
+ 592:fltk-1.3.4-1/jpeg/jdinput.c ****       return val;
+ 593:fltk-1.3.4-1/jpeg/jdinput.c ****     case JPEG_REACHED_EOI:	/* Found EOI */
+ 594:fltk-1.3.4-1/jpeg/jdinput.c ****       inputctl->pub.eoi_reached = TRUE;
+ 595:fltk-1.3.4-1/jpeg/jdinput.c ****       if (inputctl->inheaders) { /* Tables-only datastream, apparently */
+ 596:fltk-1.3.4-1/jpeg/jdinput.c **** 	if (cinfo->marker->saw_SOF)
+ 597:fltk-1.3.4-1/jpeg/jdinput.c **** 	  ERREXIT(cinfo, JERR_SOF_NO_SOS);
+ 598:fltk-1.3.4-1/jpeg/jdinput.c ****       } else {
+ 599:fltk-1.3.4-1/jpeg/jdinput.c **** 	/* Prevent infinite loop in coef ctlr's decompress_data routine
+ 600:fltk-1.3.4-1/jpeg/jdinput.c **** 	 * if user set output_scan_number larger than number of scans.
+ 601:fltk-1.3.4-1/jpeg/jdinput.c **** 	 */
+ 602:fltk-1.3.4-1/jpeg/jdinput.c **** 	if (cinfo->output_scan_number > cinfo->input_scan_number)
+ 603:fltk-1.3.4-1/jpeg/jdinput.c **** 	  cinfo->output_scan_number = cinfo->input_scan_number;
+ 604:fltk-1.3.4-1/jpeg/jdinput.c ****       }
+ 605:fltk-1.3.4-1/jpeg/jdinput.c ****       return val;
+ 606:fltk-1.3.4-1/jpeg/jdinput.c ****     case JPEG_SUSPENDED:
+ 607:fltk-1.3.4-1/jpeg/jdinput.c ****       return val;
+ 608:fltk-1.3.4-1/jpeg/jdinput.c ****     default:
+ 609:fltk-1.3.4-1/jpeg/jdinput.c ****       return val;
+ 610:fltk-1.3.4-1/jpeg/jdinput.c ****     }
+ 611:fltk-1.3.4-1/jpeg/jdinput.c ****   }
+ 612:fltk-1.3.4-1/jpeg/jdinput.c **** }
+ 613:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 614:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 615:fltk-1.3.4-1/jpeg/jdinput.c **** /*
+ 616:fltk-1.3.4-1/jpeg/jdinput.c ****  * Reset state to begin a fresh datastream.
+ 617:fltk-1.3.4-1/jpeg/jdinput.c ****  */
+ 618:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 619:fltk-1.3.4-1/jpeg/jdinput.c **** METHODDEF(void)
+ 620:fltk-1.3.4-1/jpeg/jdinput.c **** reset_input_controller (j_decompress_ptr cinfo)
+ 621:fltk-1.3.4-1/jpeg/jdinput.c **** {
+  53              		.loc 1 621 0
+  54              		.cfi_startproc
+  55              	.LVL3:
+  56 0000 53       		pushq	%rbx
+  57              		.cfi_def_cfa_offset 16
+  58              		.cfi_offset 3, -16
+ 622:fltk-1.3.4-1/jpeg/jdinput.c ****   my_inputctl_ptr inputctl = (my_inputctl_ptr) cinfo->inputctl;
+  59              		.loc 1 622 0
+  60 0001 488B8760 		movq	608(%rdi), %rax
+  60      020000
+  61              	.LVL4:
+ 621:fltk-1.3.4-1/jpeg/jdinput.c ****   my_inputctl_ptr inputctl = (my_inputctl_ptr) cinfo->inputctl;
+  62              		.loc 1 621 0
+  63 0008 4889FB   		movq	%rdi, %rbx
+ 623:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 624:fltk-1.3.4-1/jpeg/jdinput.c ****   inputctl->pub.consume_input = consume_markers;
+  64              		.loc 1 624 0
+  65 000b 48C70000 		movq	$consume_markers, (%rax)
+  65      000000
+ 625:fltk-1.3.4-1/jpeg/jdinput.c ****   inputctl->pub.has_multiple_scans = FALSE; /* "unknown" would be better */
+  66              		.loc 1 625 0
+  67 0012 C7402000 		movl	$0, 32(%rax)
+  67      000000
+ 626:fltk-1.3.4-1/jpeg/jdinput.c ****   inputctl->pub.eoi_reached = FALSE;
+  68              		.loc 1 626 0
+  69 0019 C7402400 		movl	$0, 36(%rax)
+  69      000000
+ 627:fltk-1.3.4-1/jpeg/jdinput.c ****   inputctl->inheaders = 1;
+  70              		.loc 1 627 0
+  71 0020 C7402801 		movl	$1, 40(%rax)
+  71      000000
+ 628:fltk-1.3.4-1/jpeg/jdinput.c ****   /* Reset other modules */
+ 629:fltk-1.3.4-1/jpeg/jdinput.c ****   (*cinfo->err->reset_error_mgr) ((j_common_ptr) cinfo);
+  72              		.loc 1 629 0
+  73 0027 488B07   		movq	(%rdi), %rax
+  74              	.LVL5:
+  75 002a FF5020   		call	*32(%rax)
+  76              	.LVL6:
+ 630:fltk-1.3.4-1/jpeg/jdinput.c ****   (*cinfo->marker->reset_marker_reader) (cinfo);
+  77              		.loc 1 630 0
+  78 002d 488B8368 		movq	616(%rbx), %rax
+  78      020000
+  79 0034 4889DF   		movq	%rbx, %rdi
+  80 0037 FF10     		call	*(%rax)
+  81              	.LVL7:
+ 631:fltk-1.3.4-1/jpeg/jdinput.c ****   /* Reset progression state -- would be cleaner if entropy decoder did this */
+ 632:fltk-1.3.4-1/jpeg/jdinput.c ****   cinfo->coef_bits = NULL;
+  82              		.loc 1 632 0
+  83 0039 48C783C0 		movq	$0, 192(%rbx)
+  83      00000000 
+  83      000000
+ 633:fltk-1.3.4-1/jpeg/jdinput.c **** }
+  84              		.loc 1 633 0
+  85 0044 5B       		popq	%rbx
+  86              		.cfi_def_cfa_offset 8
+  87              	.LVL8:
+  88 0045 C3       		ret
+  89              		.cfi_endproc
+  90              	.LFE68:
+  92              		.section	.text.unlikely.reset_input_controller
+  93              	.LCOLDE1:
+  94              		.section	.text.reset_input_controller
+  95              	.LHOTE1:
+  96              		.section	.text.unlikely.start_input_pass,"ax",@progbits
+  97              	.LCOLDB2:
+  98              		.section	.text.start_input_pass,"ax",@progbits
+  99              	.LHOTB2:
+ 100              		.p2align 4,,15
+ 102              	start_input_pass:
+ 103              	.LFB65:
+ 522:fltk-1.3.4-1/jpeg/jdinput.c ****   per_scan_setup(cinfo);
+ 104              		.loc 1 522 0
+ 105              		.cfi_startproc
+ 106              	.LVL9:
+ 107 0000 4156     		pushq	%r14
+ 108              		.cfi_def_cfa_offset 16
+ 109              		.cfi_offset 14, -16
+ 110 0002 4155     		pushq	%r13
+ 111              		.cfi_def_cfa_offset 24
+ 112              		.cfi_offset 13, -24
+ 113 0004 4154     		pushq	%r12
+ 114              		.cfi_def_cfa_offset 32
+ 115              		.cfi_offset 12, -32
+ 116 0006 55       		pushq	%rbp
+ 117              		.cfi_def_cfa_offset 40
+ 118              		.cfi_offset 6, -40
+ 119 0007 53       		pushq	%rbx
+ 120              		.cfi_def_cfa_offset 48
+ 121              		.cfi_offset 3, -48
+ 122              	.LBB10:
+ 123              	.LBB11:
+ 395:fltk-1.3.4-1/jpeg/jdinput.c ****     
+ 124              		.loc 1 395 0
+ 125 0008 8B87C001 		movl	448(%rdi), %eax
+ 125      0000
+ 126              	.LBE11:
+ 127              	.LBE10:
+ 522:fltk-1.3.4-1/jpeg/jdinput.c ****   per_scan_setup(cinfo);
+ 128              		.loc 1 522 0
+ 129 000e 4889FB   		movq	%rdi, %rbx
+ 130              	.LBB15:
+ 131              	.LBB12:
+ 395:fltk-1.3.4-1/jpeg/jdinput.c ****     
+ 132              		.loc 1 395 0
+ 133 0011 83F801   		cmpl	$1, %eax
+ 134 0014 0F840802 		je	.L38
+ 134      0000
+ 424:fltk-1.3.4-1/jpeg/jdinput.c ****       ERREXIT2(cinfo, JERR_COMPONENT_COUNT, cinfo->comps_in_scan,
+ 135              		.loc 1 424 0
+ 136 001a 83E801   		subl	$1, %eax
+ 137 001d 83F803   		cmpl	$3, %eax
+ 138 0020 0F876802 		ja	.L39
+ 138      0000
+ 139              	.LVL10:
+ 140              	.L9:
+ 430:fltk-1.3.4-1/jpeg/jdinput.c **** 		    (long) (cinfo->max_h_samp_factor * cinfo->block_size));
+ 141              		.loc 1 430 0
+ 142 0026 8BB3A001 		movl	416(%rbx), %esi
+ 142      0000
+ 143 002c 8B7B30   		movl	48(%rbx), %edi
+ 144 002f 0FAFB32C 		imull	556(%rbx), %esi
+ 144      020000
+ 145 0036 4863F6   		movslq	%esi, %rsi
+ 146 0039 E8000000 		call	jdiv_round_up
+ 146      00
+ 147              	.LVL11:
+ 433:fltk-1.3.4-1/jpeg/jdinput.c **** 		    (long) (cinfo->max_v_samp_factor * cinfo->block_size));
+ 148              		.loc 1 433 0
+ 149 003e 8BB3A401 		movl	420(%rbx), %esi
+ 149      0000
+ 150 0044 8B7B34   		movl	52(%rbx), %edi
+ 151 0047 0FAFB32C 		imull	556(%rbx), %esi
+ 151      020000
+ 429:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width,
+ 152              		.loc 1 429 0
+ 153 004e 8983E801 		movl	%eax, 488(%rbx)
+ 153      0000
+ 433:fltk-1.3.4-1/jpeg/jdinput.c **** 		    (long) (cinfo->max_v_samp_factor * cinfo->block_size));
+ 154              		.loc 1 433 0
+ 155 0054 4863F6   		movslq	%esi, %rsi
+ 156 0057 E8000000 		call	jdiv_round_up
+ 156      00
+ 157              	.LVL12:
+ 432:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height,
+ 158              		.loc 1 432 0
+ 159 005c 8983EC01 		movl	%eax, 492(%rbx)
+ 159      0000
+ 438:fltk-1.3.4-1/jpeg/jdinput.c ****       compptr = cinfo->cur_comp_info[ci];
+ 160              		.loc 1 438 0
+ 161 0062 8B83C001 		movl	448(%rbx), %eax
+ 161      0000
+ 436:fltk-1.3.4-1/jpeg/jdinput.c ****     
+ 162              		.loc 1 436 0
+ 163 0068 C783F001 		movl	$0, 496(%rbx)
+ 163      00000000 
+ 163      0000
+ 164              	.LVL13:
+ 438:fltk-1.3.4-1/jpeg/jdinput.c ****       compptr = cinfo->cur_comp_info[ci];
+ 165              		.loc 1 438 0
+ 166 0072 85C0     		testl	%eax, %eax
+ 167 0074 0F8ED000 		jle	.L10
+ 167      0000
+ 168 007a 4C8DABC8 		leaq	456(%rbx), %r13
+ 168      010000
+ 169 0081 4531E4   		xorl	%r12d, %r12d
+ 170              	.LVL14:
+ 171              	.L15:
+ 439:fltk-1.3.4-1/jpeg/jdinput.c ****       /* Sampling factors give # of blocks of component in each MCU */
+ 172              		.loc 1 439 0
+ 173 0084 498B4D00 		movq	0(%r13), %rcx
+ 174              	.LVL15:
+ 446:fltk-1.3.4-1/jpeg/jdinput.c ****       if (tmp == 0) tmp = compptr->MCU_width;
+ 175              		.loc 1 446 0
+ 176 0088 31D2     		xorl	%edx, %edx
+ 441:fltk-1.3.4-1/jpeg/jdinput.c ****       compptr->MCU_height = compptr->v_samp_factor;
+ 177              		.loc 1 441 0
+ 178 008a 8B7108   		movl	8(%rcx), %esi
+ 444:fltk-1.3.4-1/jpeg/jdinput.c ****       /* Figure number of non-dummy blocks in last MCU column & row */
+ 179              		.loc 1 444 0
+ 180 008d 8B4124   		movl	36(%rcx), %eax
+ 442:fltk-1.3.4-1/jpeg/jdinput.c ****       compptr->MCU_blocks = compptr->MCU_width * compptr->MCU_height;
+ 181              		.loc 1 442 0
+ 182 0090 8B790C   		movl	12(%rcx), %edi
+ 444:fltk-1.3.4-1/jpeg/jdinput.c ****       /* Figure number of non-dummy blocks in last MCU column & row */
+ 183              		.loc 1 444 0
+ 184 0093 0FAFC6   		imull	%esi, %eax
+ 443:fltk-1.3.4-1/jpeg/jdinput.c ****       compptr->MCU_sample_width = compptr->MCU_width * compptr->DCT_h_scaled_size;
+ 185              		.loc 1 443 0
+ 186 0096 89F5     		movl	%esi, %ebp
+ 441:fltk-1.3.4-1/jpeg/jdinput.c ****       compptr->MCU_height = compptr->v_samp_factor;
+ 187              		.loc 1 441 0
+ 188 0098 897138   		movl	%esi, 56(%rcx)
+ 443:fltk-1.3.4-1/jpeg/jdinput.c ****       compptr->MCU_sample_width = compptr->MCU_width * compptr->DCT_h_scaled_size;
+ 189              		.loc 1 443 0
+ 190 009b 0FAFEF   		imull	%edi, %ebp
+ 442:fltk-1.3.4-1/jpeg/jdinput.c ****       compptr->MCU_blocks = compptr->MCU_width * compptr->MCU_height;
+ 191              		.loc 1 442 0
+ 192 009e 89793C   		movl	%edi, 60(%rcx)
+ 444:fltk-1.3.4-1/jpeg/jdinput.c ****       /* Figure number of non-dummy blocks in last MCU column & row */
+ 193              		.loc 1 444 0
+ 194 00a1 894144   		movl	%eax, 68(%rcx)
+ 446:fltk-1.3.4-1/jpeg/jdinput.c ****       if (tmp == 0) tmp = compptr->MCU_width;
+ 195              		.loc 1 446 0
+ 196 00a4 8B411C   		movl	28(%rcx), %eax
+ 443:fltk-1.3.4-1/jpeg/jdinput.c ****       compptr->MCU_sample_width = compptr->MCU_width * compptr->DCT_h_scaled_size;
+ 197              		.loc 1 443 0
+ 198 00a7 896940   		movl	%ebp, 64(%rcx)
+ 446:fltk-1.3.4-1/jpeg/jdinput.c ****       if (tmp == 0) tmp = compptr->MCU_width;
+ 199              		.loc 1 446 0
+ 200 00aa F7F6     		divl	%esi
+ 201              	.LVL16:
+ 449:fltk-1.3.4-1/jpeg/jdinput.c ****       if (tmp == 0) tmp = compptr->MCU_height;
+ 202              		.loc 1 449 0
+ 203 00ac 8B4120   		movl	32(%rcx), %eax
+ 447:fltk-1.3.4-1/jpeg/jdinput.c ****       compptr->last_col_width = tmp;
+ 204              		.loc 1 447 0
+ 205 00af 85D2     		testl	%edx, %edx
+ 206 00b1 0F45F2   		cmovne	%edx, %esi
+ 207              	.LVL17:
+ 449:fltk-1.3.4-1/jpeg/jdinput.c ****       if (tmp == 0) tmp = compptr->MCU_height;
+ 208              		.loc 1 449 0
+ 209 00b4 31D2     		xorl	%edx, %edx
+ 210 00b6 F7F7     		divl	%edi
+ 211              	.LVL18:
+ 448:fltk-1.3.4-1/jpeg/jdinput.c ****       tmp = (int) (compptr->height_in_blocks % compptr->MCU_height);
+ 212              		.loc 1 448 0
+ 213 00b8 897148   		movl	%esi, 72(%rcx)
+ 450:fltk-1.3.4-1/jpeg/jdinput.c ****       compptr->last_row_height = tmp;
+ 214              		.loc 1 450 0
+ 215 00bb 85D2     		testl	%edx, %edx
+ 216 00bd 0F45FA   		cmovne	%edx, %edi
+ 217              	.LVL19:
+ 451:fltk-1.3.4-1/jpeg/jdinput.c ****       /* Prepare array describing MCU composition */
+ 218              		.loc 1 451 0
+ 219 00c0 89794C   		movl	%edi, 76(%rcx)
+ 220              	.LVL20:
+ 454:fltk-1.3.4-1/jpeg/jdinput.c **** 	ERREXIT(cinfo, JERR_BAD_MCU_SIZE);
+ 221              		.loc 1 454 0
+ 222 00c3 8B83F001 		movl	496(%rbx), %eax
+ 222      0000
+ 223 00c9 01E8     		addl	%ebp, %eax
+ 224 00cb 83F80A   		cmpl	$10, %eax
+ 225 00ce 0F8FAC00 		jg	.L40
+ 225      0000
+ 226              	.LVL21:
+ 227              	.L13:
+ 456:fltk-1.3.4-1/jpeg/jdinput.c **** 	cinfo->MCU_membership[cinfo->blocks_in_MCU++] = ci;
+ 228              		.loc 1 456 0
+ 229 00d4 85ED     		testl	%ebp, %ebp
+ 230 00d6 8D7DFF   		leal	-1(%rbp), %edi
+ 231              	.LVL22:
+ 232 00d9 7E31     		jle	.L18
+ 233 00db 8BB3F001 		movl	496(%rbx), %esi
+ 233      0000
+ 234 00e1 8D4C3500 		leal	0(%rbp,%rsi), %ecx
+ 235 00e5 89F0     		movl	%esi, %eax
+ 236              	.LVL23:
+ 237 00e7 660F1F84 		.p2align 4,,10
+ 237      00000000 
+ 237      00
+ 238              		.p2align 3
+ 239              	.L17:
+ 457:fltk-1.3.4-1/jpeg/jdinput.c ****       }
+ 240              		.loc 1 457 0
+ 241 00f0 4863D0   		movslq	%eax, %rdx
+ 242 00f3 83C001   		addl	$1, %eax
+ 243              	.LVL24:
+ 456:fltk-1.3.4-1/jpeg/jdinput.c **** 	cinfo->MCU_membership[cinfo->blocks_in_MCU++] = ci;
+ 244              		.loc 1 456 0
+ 245 00f6 39C1     		cmpl	%eax, %ecx
+ 457:fltk-1.3.4-1/jpeg/jdinput.c ****       }
+ 246              		.loc 1 457 0
+ 247 00f8 4489A493 		movl	%r12d, 500(%rbx,%rdx,4)
+ 247      F4010000 
+ 248              	.LVL25:
+ 456:fltk-1.3.4-1/jpeg/jdinput.c **** 	cinfo->MCU_membership[cinfo->blocks_in_MCU++] = ci;
+ 249              		.loc 1 456 0
+ 250 0100 75EE     		jne	.L17
+ 251 0102 8D443701 		leal	1(%rdi,%rsi), %eax
+ 252 0106 8983F001 		movl	%eax, 496(%rbx)
+ 252      0000
+ 253              	.L18:
+ 438:fltk-1.3.4-1/jpeg/jdinput.c ****       compptr = cinfo->cur_comp_info[ci];
+ 254              		.loc 1 438 0
+ 255 010c 8B83C001 		movl	448(%rbx), %eax
+ 255      0000
+ 256 0112 4183C401 		addl	$1, %r12d
+ 257              	.LVL26:
+ 258 0116 4983C508 		addq	$8, %r13
+ 259 011a 4139C4   		cmpl	%eax, %r12d
+ 260 011d 0F8C61FF 		jl	.L15
+ 260      FFFF
+ 261              	.LVL27:
+ 262              	.L16:
+ 263              	.LBE12:
+ 264              	.LBE15:
+ 265              	.LBB16:
+ 266              	.LBB17:
+ 493:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr = cinfo->cur_comp_info[ci];
+ 267              		.loc 1 493 0
+ 268 0123 31ED     		xorl	%ebp, %ebp
+ 269 0125 85C0     		testl	%eax, %eax
+ 270 0127 4C8DA3C8 		leaq	456(%rbx), %r12
+ 270      010000
+ 271 012e 7E1A     		jle	.L10
+ 272              	.LVL28:
+ 273              	.L30:
+ 494:fltk-1.3.4-1/jpeg/jdinput.c ****     /* No work if we already saved Q-table for this component */
+ 274              		.loc 1 494 0
+ 275 0130 4D8B2C24 		movq	(%r12), %r13
+ 276              	.LVL29:
+ 496:fltk-1.3.4-1/jpeg/jdinput.c ****       continue;
+ 277              		.loc 1 496 0
+ 278 0134 49837D50 		cmpq	$0, 80(%r13)
+ 278      00
+ 279 0139 7465     		je	.L41
+ 280              	.L19:
+ 493:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr = cinfo->cur_comp_info[ci];
+ 281              		.loc 1 493 0
+ 282 013b 83C501   		addl	$1, %ebp
+ 283              	.LVL30:
+ 284 013e 4983C408 		addq	$8, %r12
+ 285 0142 3BABC001 		cmpl	448(%rbx), %ebp
+ 285      0000
+ 286 0148 7CE6     		jl	.L30
+ 287              	.LVL31:
+ 288              	.L10:
+ 289              	.LBE17:
+ 290              	.LBE16:
+ 525:fltk-1.3.4-1/jpeg/jdinput.c ****   (*cinfo->coef->start_input_pass) (cinfo);
+ 291              		.loc 1 525 0
+ 292 014a 488B8370 		movq	624(%rbx), %rax
+ 292      020000
+ 293 0151 4889DF   		movq	%rbx, %rdi
+ 294 0154 FF10     		call	*(%rax)
+ 295              	.LVL32:
+ 526:fltk-1.3.4-1/jpeg/jdinput.c ****   cinfo->inputctl->consume_input = cinfo->coef->consume_data;
+ 296              		.loc 1 526 0
+ 297 0156 488B8350 		movq	592(%rbx), %rax
+ 297      020000
+ 298 015d 4889DF   		movq	%rbx, %rdi
+ 299 0160 FF10     		call	*(%rax)
+ 300              	.LVL33:
+ 527:fltk-1.3.4-1/jpeg/jdinput.c **** }
+ 301              		.loc 1 527 0
+ 302 0162 488B9350 		movq	592(%rbx), %rdx
+ 302      020000
+ 303 0169 488B8360 		movq	608(%rbx), %rax
+ 303      020000
+ 304 0170 488B5208 		movq	8(%rdx), %rdx
+ 305 0174 488910   		movq	%rdx, (%rax)
+ 528:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 306              		.loc 1 528 0
+ 307 0177 5B       		popq	%rbx
+ 308              		.cfi_remember_state
+ 309              		.cfi_def_cfa_offset 40
+ 310              	.LVL34:
+ 311 0178 5D       		popq	%rbp
+ 312              		.cfi_def_cfa_offset 32
+ 313 0179 415C     		popq	%r12
+ 314              		.cfi_def_cfa_offset 24
+ 315 017b 415D     		popq	%r13
+ 316              		.cfi_def_cfa_offset 16
+ 317 017d 415E     		popq	%r14
+ 318              		.cfi_def_cfa_offset 8
+ 319 017f C3       		ret
+ 320              	.LVL35:
+ 321              		.p2align 4,,10
+ 322              		.p2align 3
+ 323              	.L40:
+ 324              		.cfi_restore_state
+ 325              	.LBB21:
+ 326              	.LBB13:
+ 455:fltk-1.3.4-1/jpeg/jdinput.c ****       while (mcublks-- > 0) {
+ 327              		.loc 1 455 0
+ 328 0180 488B03   		movq	(%rbx), %rax
+ 329 0183 4889DF   		movq	%rbx, %rdi
+ 330              	.LVL36:
+ 331 0186 C740280E 		movl	$14, 40(%rax)
+ 331      000000
+ 332              	.LVL37:
+ 333 018d 488B03   		movq	(%rbx), %rax
+ 334 0190 FF10     		call	*(%rax)
+ 335              	.LVL38:
+ 336 0192 E93DFFFF 		jmp	.L13
+ 336      FF
+ 337              	.LVL39:
+ 338 0197 660F1F84 		.p2align 4,,10
+ 338      00000000 
+ 338      00
+ 339              		.p2align 3
+ 340              	.L41:
+ 341              	.LBE13:
+ 342              	.LBE21:
+ 343              	.LBB22:
+ 344              	.LBB20:
+ 499:fltk-1.3.4-1/jpeg/jdinput.c ****     if (qtblno < 0 || qtblno >= NUM_QUANT_TBLS ||
+ 345              		.loc 1 499 0
+ 346 01a0 418B4510 		movl	16(%r13), %eax
+ 347              	.LVL40:
+ 500:fltk-1.3.4-1/jpeg/jdinput.c **** 	cinfo->quant_tbl_ptrs[qtblno] == NULL)
+ 348              		.loc 1 500 0
+ 349 01a4 83F803   		cmpl	$3, %eax
+ 350 01a7 4C63F0   		movslq	%eax, %r14
+ 351 01aa 775C     		ja	.L20
+ 352 01ac 4A83BCF3 		cmpq	$0, 200(%rbx,%r14,8)
+ 352      C8000000 
+ 352      00
+ 353 01b5 7451     		je	.L20
+ 354              	.LVL41:
+ 355              	.L21:
+ 505:fltk-1.3.4-1/jpeg/jdinput.c **** 				  SIZEOF(JQUANT_TBL));
+ 356              		.loc 1 505 0
+ 357 01b7 488B4308 		movq	8(%rbx), %rax
+ 504:fltk-1.3.4-1/jpeg/jdinput.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 358              		.loc 1 504 0
+ 359 01bb BA840000 		movl	$132, %edx
+ 359      00
+ 360 01c0 BE010000 		movl	$1, %esi
+ 360      00
+ 361 01c5 4889DF   		movq	%rbx, %rdi
+ 362 01c8 FF10     		call	*(%rax)
+ 363              	.LVL42:
+ 364              	.LBB18:
+ 365              	.LBB19:
+ 366              		.file 2 "/usr/include/x86_64-linux-gnu/bits/string3.h"
+   1:/usr/include/x86_64-linux-gnu/bits/string3.h **** /* Copyright (C) 2004-2016 Free Software Foundation, Inc.
+   2:/usr/include/x86_64-linux-gnu/bits/string3.h ****    This file is part of the GNU C Library.
+   3:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+   4:/usr/include/x86_64-linux-gnu/bits/string3.h ****    The GNU C Library is free software; you can redistribute it and/or
+   5:/usr/include/x86_64-linux-gnu/bits/string3.h ****    modify it under the terms of the GNU Lesser General Public
+   6:/usr/include/x86_64-linux-gnu/bits/string3.h ****    License as published by the Free Software Foundation; either
+   7:/usr/include/x86_64-linux-gnu/bits/string3.h ****    version 2.1 of the License, or (at your option) any later version.
+   8:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+   9:/usr/include/x86_64-linux-gnu/bits/string3.h ****    The GNU C Library is distributed in the hope that it will be useful,
+  10:/usr/include/x86_64-linux-gnu/bits/string3.h ****    but WITHOUT ANY WARRANTY; without even the implied warranty of
+  11:/usr/include/x86_64-linux-gnu/bits/string3.h ****    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  12:/usr/include/x86_64-linux-gnu/bits/string3.h ****    Lesser General Public License for more details.
+  13:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  14:/usr/include/x86_64-linux-gnu/bits/string3.h ****    You should have received a copy of the GNU Lesser General Public
+  15:/usr/include/x86_64-linux-gnu/bits/string3.h ****    License along with the GNU C Library; if not, see
+  16:/usr/include/x86_64-linux-gnu/bits/string3.h ****    <http://www.gnu.org/licenses/>.  */
+  17:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  18:/usr/include/x86_64-linux-gnu/bits/string3.h **** #ifndef _STRING_H
+  19:/usr/include/x86_64-linux-gnu/bits/string3.h **** # error "Never use <bits/string3.h> directly; include <string.h> instead."
+  20:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  21:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  22:/usr/include/x86_64-linux-gnu/bits/string3.h **** #if !__GNUC_PREREQ (5,0)
+  23:/usr/include/x86_64-linux-gnu/bits/string3.h **** __warndecl (__warn_memset_zero_len,
+  24:/usr/include/x86_64-linux-gnu/bits/string3.h **** 	    "memset used with constant zero length parameter; this could be due to transposed parameters")
+  25:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  26:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  27:/usr/include/x86_64-linux-gnu/bits/string3.h **** #ifndef __cplusplus
+  28:/usr/include/x86_64-linux-gnu/bits/string3.h **** /* XXX This is temporarily.  We should not redefine any of the symbols
+  29:/usr/include/x86_64-linux-gnu/bits/string3.h ****    and instead integrate the error checking into the original
+  30:/usr/include/x86_64-linux-gnu/bits/string3.h ****    definitions.  */
+  31:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memcpy
+  32:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memmove
+  33:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memset
+  34:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strcat
+  35:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strcpy
+  36:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strncat
+  37:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strncpy
+  38:/usr/include/x86_64-linux-gnu/bits/string3.h **** # ifdef __USE_GNU
+  39:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef mempcpy
+  40:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef stpcpy
+  41:/usr/include/x86_64-linux-gnu/bits/string3.h **** # endif
+  42:/usr/include/x86_64-linux-gnu/bits/string3.h **** # ifdef __USE_MISC
+  43:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef bcopy
+  44:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef bzero
+  45:/usr/include/x86_64-linux-gnu/bits/string3.h **** # endif
+  46:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  47:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  48:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  49:/usr/include/x86_64-linux-gnu/bits/string3.h **** __fortify_function void *
+  50:/usr/include/x86_64-linux-gnu/bits/string3.h **** __NTH (memcpy (void *__restrict __dest, const void *__restrict __src,
+  51:/usr/include/x86_64-linux-gnu/bits/string3.h **** 	       size_t __len))
+  52:/usr/include/x86_64-linux-gnu/bits/string3.h **** {
+  53:/usr/include/x86_64-linux-gnu/bits/string3.h ****   return __builtin___memcpy_chk (__dest, __src, __len, __bos0 (__dest));
+ 367              		.loc 2 53 0
+ 368 01ca 4A8BB4F3 		movq	200(%rbx,%r14,8), %rsi
+ 368      C8000000 
+ 369 01d2 488D7808 		leaq	8(%rax), %rdi
+ 370 01d6 4883E7F8 		andq	$-8, %rdi
+ 371 01da 488B16   		movq	(%rsi), %rdx
+ 372 01dd 488910   		movq	%rdx, (%rax)
+ 373              	.LVL43:
+ 374 01e0 488B567C 		movq	124(%rsi), %rdx
+ 375 01e4 4889507C 		movq	%rdx, 124(%rax)
+ 376 01e8 4889C2   		movq	%rax, %rdx
+ 377 01eb 4829FA   		subq	%rdi, %rdx
+ 378 01ee 8D8A8400 		leal	132(%rdx), %ecx
+ 378      0000
+ 379 01f4 4829D6   		subq	%rdx, %rsi
+ 380 01f7 C1E903   		shrl	$3, %ecx
+ 381 01fa 89C9     		movl	%ecx, %ecx
+ 382 01fc F348A5   		rep movsq
+ 383              	.LVL44:
+ 384              	.LBE19:
+ 385              	.LBE18:
+ 508:fltk-1.3.4-1/jpeg/jdinput.c ****   }
+ 386              		.loc 1 508 0
+ 387 01ff 49894550 		movq	%rax, 80(%r13)
+ 388 0203 E933FFFF 		jmp	.L19
+ 388      FF
+ 389              	.LVL45:
+ 390              	.L20:
+ 502:fltk-1.3.4-1/jpeg/jdinput.c ****     /* OK, save away the quantization table */
+ 391              		.loc 1 502 0
+ 392 0208 488B13   		movq	(%rbx), %rdx
+ 393 020b 4889DF   		movq	%rbx, %rdi
+ 394 020e C7422836 		movl	$54, 40(%rdx)
+ 394      000000
+ 395 0215 488B13   		movq	(%rbx), %rdx
+ 396 0218 89422C   		movl	%eax, 44(%rdx)
+ 397 021b 488B03   		movq	(%rbx), %rax
+ 398              	.LVL46:
+ 399 021e FF10     		call	*(%rax)
+ 400              	.LVL47:
+ 401 0220 EB95     		jmp	.L21
+ 402              	.LVL48:
+ 403              	.L38:
+ 404              	.LBE20:
+ 405              	.LBE22:
+ 406              	.LBB23:
+ 407              	.LBB14:
+ 398:fltk-1.3.4-1/jpeg/jdinput.c ****     
+ 408              		.loc 1 398 0
+ 409 0222 488B8FC8 		movq	456(%rdi), %rcx
+ 409      010000
+ 410              	.LVL49:
+ 413:fltk-1.3.4-1/jpeg/jdinput.c ****     if (tmp == 0) tmp = compptr->v_samp_factor;
+ 411              		.loc 1 413 0
+ 412 0229 31D2     		xorl	%edx, %edx
+ 401:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->MCU_rows_in_scan = compptr->height_in_blocks;
+ 413              		.loc 1 401 0
+ 414 022b 8B411C   		movl	28(%rcx), %eax
+ 415 022e 8987E801 		movl	%eax, 488(%rdi)
+ 415      0000
+ 402:fltk-1.3.4-1/jpeg/jdinput.c ****     
+ 416              		.loc 1 402 0
+ 417 0234 8B4120   		movl	32(%rcx), %eax
+ 418 0237 8987EC01 		movl	%eax, 492(%rdi)
+ 418      0000
+ 408:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->last_col_width = 1;
+ 419              		.loc 1 408 0
+ 420 023d 8B4124   		movl	36(%rcx), %eax
+ 413:fltk-1.3.4-1/jpeg/jdinput.c ****     if (tmp == 0) tmp = compptr->v_samp_factor;
+ 421              		.loc 1 413 0
+ 422 0240 8B710C   		movl	12(%rcx), %esi
+ 405:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->MCU_height = 1;
+ 423              		.loc 1 405 0
+ 424 0243 C7413801 		movl	$1, 56(%rcx)
+ 424      000000
+ 406:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->MCU_blocks = 1;
+ 425              		.loc 1 406 0
+ 426 024a C7413C01 		movl	$1, 60(%rcx)
+ 426      000000
+ 407:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->MCU_sample_width = compptr->DCT_h_scaled_size;
+ 427              		.loc 1 407 0
+ 428 0251 C7414001 		movl	$1, 64(%rcx)
+ 428      000000
+ 408:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->last_col_width = 1;
+ 429              		.loc 1 408 0
+ 430 0258 894144   		movl	%eax, 68(%rcx)
+ 413:fltk-1.3.4-1/jpeg/jdinput.c ****     if (tmp == 0) tmp = compptr->v_samp_factor;
+ 431              		.loc 1 413 0
+ 432 025b 8B4120   		movl	32(%rcx), %eax
+ 409:fltk-1.3.4-1/jpeg/jdinput.c ****     /* For noninterleaved scans, it is convenient to define last_row_height
+ 433              		.loc 1 409 0
+ 434 025e C7414801 		movl	$1, 72(%rcx)
+ 434      000000
+ 413:fltk-1.3.4-1/jpeg/jdinput.c ****     if (tmp == 0) tmp = compptr->v_samp_factor;
+ 435              		.loc 1 413 0
+ 436 0265 F7F6     		divl	%esi
+ 437              	.LVL50:
+ 414:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->last_row_height = tmp;
+ 438              		.loc 1 414 0
+ 439 0267 85D2     		testl	%edx, %edx
+ 440 0269 0F45F2   		cmovne	%edx, %esi
+ 441              	.LVL51:
+ 415:fltk-1.3.4-1/jpeg/jdinput.c ****     
+ 442              		.loc 1 415 0
+ 443 026c 89714C   		movl	%esi, 76(%rcx)
+ 418:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->MCU_membership[0] = 0;
+ 444              		.loc 1 418 0
+ 445 026f C787F001 		movl	$1, 496(%rdi)
+ 445      00000100 
+ 445      0000
+ 419:fltk-1.3.4-1/jpeg/jdinput.c ****     
+ 446              		.loc 1 419 0
+ 447 0279 C787F401 		movl	$0, 500(%rdi)
+ 447      00000000 
+ 447      0000
+ 448 0283 8B87C001 		movl	448(%rdi), %eax
+ 448      0000
+ 449 0289 E995FEFF 		jmp	.L16
+ 449      FF
+ 450              	.LVL52:
+ 451              	.L39:
+ 425:fltk-1.3.4-1/jpeg/jdinput.c **** 	       MAX_COMPS_IN_SCAN);
+ 452              		.loc 1 425 0
+ 453 028e 488B07   		movq	(%rdi), %rax
+ 454 0291 C740281B 		movl	$27, 40(%rax)
+ 454      000000
+ 455 0298 488B07   		movq	(%rdi), %rax
+ 456 029b 8B97C001 		movl	448(%rdi), %edx
+ 456      0000
+ 457 02a1 89502C   		movl	%edx, 44(%rax)
+ 458 02a4 488B07   		movq	(%rdi), %rax
+ 459 02a7 C7403004 		movl	$4, 48(%rax)
+ 459      000000
+ 460 02ae 488B07   		movq	(%rdi), %rax
+ 461 02b1 FF10     		call	*(%rax)
+ 462              	.LVL53:
+ 463 02b3 E96EFDFF 		jmp	.L9
+ 463      FF
+ 464              	.LBE14:
+ 465              	.LBE23:
+ 466              		.cfi_endproc
+ 467              	.LFE65:
+ 469              		.section	.text.unlikely.start_input_pass
+ 470              	.LCOLDE2:
+ 471              		.section	.text.start_input_pass
+ 472              	.LHOTE2:
+ 473              		.section	.text.unlikely.consume_markers,"ax",@progbits
+ 474              	.LCOLDB3:
+ 475              		.section	.text.consume_markers,"ax",@progbits
+ 476              	.LHOTB3:
+ 477              		.p2align 4,,15
+ 479              	consume_markers:
+ 480              	.LFB67:
+ 561:fltk-1.3.4-1/jpeg/jdinput.c ****   my_inputctl_ptr inputctl = (my_inputctl_ptr) cinfo->inputctl;
+ 481              		.loc 1 561 0
+ 482              		.cfi_startproc
+ 483              	.LVL54:
+ 484 0000 4156     		pushq	%r14
+ 485              		.cfi_def_cfa_offset 16
+ 486              		.cfi_offset 14, -16
+ 487 0002 4155     		pushq	%r13
+ 488              		.cfi_def_cfa_offset 24
+ 489              		.cfi_offset 13, -24
+ 490 0004 4154     		pushq	%r12
+ 491              		.cfi_def_cfa_offset 32
+ 492              		.cfi_offset 12, -32
+ 493 0006 55       		pushq	%rbp
+ 494              		.cfi_def_cfa_offset 40
+ 495              		.cfi_offset 6, -40
+ 496 0007 53       		pushq	%rbx
+ 497              		.cfi_def_cfa_offset 48
+ 498              		.cfi_offset 3, -48
+ 562:fltk-1.3.4-1/jpeg/jdinput.c ****   int val;
+ 499              		.loc 1 562 0
+ 500 0008 488BAF60 		movq	608(%rdi), %rbp
+ 500      020000
+ 501              	.LVL55:
+ 561:fltk-1.3.4-1/jpeg/jdinput.c ****   my_inputctl_ptr inputctl = (my_inputctl_ptr) cinfo->inputctl;
+ 502              		.loc 1 561 0
+ 503 000f 4889FB   		movq	%rdi, %rbx
+ 565:fltk-1.3.4-1/jpeg/jdinput.c ****     return JPEG_REACHED_EOI;
+ 504              		.loc 1 565 0
+ 505 0012 448B6D24 		movl	36(%rbp), %r13d
+ 506 0016 4585ED   		testl	%r13d, %r13d
+ 507 0019 7445     		je	.L96
+ 508              	.LVL56:
+ 509              	.L100:
+ 569:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 510              		.loc 1 569 0
+ 511 001b B8020000 		movl	$2, %eax
+ 511      00
+ 512              	.L44:
+ 612:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 513              		.loc 1 612 0
+ 514 0020 5B       		popq	%rbx
+ 515              		.cfi_remember_state
+ 516              		.cfi_def_cfa_offset 40
+ 517              	.LVL57:
+ 518 0021 5D       		popq	%rbp
+ 519              		.cfi_def_cfa_offset 32
+ 520              	.LVL58:
+ 521 0022 415C     		popq	%r12
+ 522              		.cfi_def_cfa_offset 24
+ 523 0024 415D     		popq	%r13
+ 524              		.cfi_def_cfa_offset 16
+ 525 0026 415E     		popq	%r14
+ 526              		.cfi_def_cfa_offset 8
+ 527 0028 C3       		ret
+ 528              	.LVL59:
+ 529 0029 0F1F8000 		.p2align 4,,10
+ 529      000000
+ 530              		.p2align 3
+ 531              	.L45:
+ 532              		.cfi_restore_state
+ 573:fltk-1.3.4-1/jpeg/jdinput.c **** 	if (inputctl->inheaders == 1)
+ 533              		.loc 1 573 0
+ 534 0030 448B6D28 		movl	40(%rbp), %r13d
+ 535 0034 4585ED   		testl	%r13d, %r13d
+ 536 0037 0F849300 		je	.L47
+ 536      0000
+ 574:fltk-1.3.4-1/jpeg/jdinput.c **** 	  initial_setup(cinfo);
+ 537              		.loc 1 574 0
+ 538 003d 4183FD01 		cmpl	$1, %r13d
+ 539 0041 0F84D100 		je	.L105
+ 539      0000
+ 540              	.LVL60:
+ 541              	.L48:
+ 576:fltk-1.3.4-1/jpeg/jdinput.c **** 	  inputctl->inheaders = 2;
+ 542              		.loc 1 576 0
+ 543 0047 8BBBC001 		movl	448(%rbx), %edi
+ 543      0000
+ 544 004d 85FF     		testl	%edi, %edi
+ 545 004f 0F857704 		jne	.L88
+ 545      0000
+ 577:fltk-1.3.4-1/jpeg/jdinput.c **** 	  break;
+ 546              		.loc 1 577 0
+ 547 0055 C7452802 		movl	$2, 40(%rbp)
+ 547      000000
+ 548 005c 0F1F4000 		.p2align 4,,10
+ 549              		.p2align 3
+ 550              	.L96:
+ 569:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 551              		.loc 1 569 0
+ 552 0060 488B8368 		movq	616(%rbx), %rax
+ 552      020000
+ 553 0067 4889DF   		movq	%rbx, %rdi
+ 554 006a FF5008   		call	*8(%rax)
+ 555              	.LVL61:
+ 571:fltk-1.3.4-1/jpeg/jdinput.c ****     case JPEG_REACHED_SOS:	/* Found SOS */
+ 556              		.loc 1 571 0
+ 557 006d 83F801   		cmpl	$1, %eax
+ 558 0070 74BE     		je	.L45
+ 559 0072 83F802   		cmpl	$2, %eax
+ 560 0075 75A9     		jne	.L44
+ 595:fltk-1.3.4-1/jpeg/jdinput.c **** 	if (cinfo->marker->saw_SOF)
+ 561              		.loc 1 595 0
+ 562 0077 8B5528   		movl	40(%rbp), %edx
+ 594:fltk-1.3.4-1/jpeg/jdinput.c ****       if (inputctl->inheaders) { /* Tables-only datastream, apparently */
+ 563              		.loc 1 594 0
+ 564 007a C7452401 		movl	$1, 36(%rbp)
+ 564      000000
+ 595:fltk-1.3.4-1/jpeg/jdinput.c **** 	if (cinfo->marker->saw_SOF)
+ 565              		.loc 1 595 0
+ 566 0081 85D2     		testl	%edx, %edx
+ 567 0083 742B     		je	.L91
+ 596:fltk-1.3.4-1/jpeg/jdinput.c **** 	  ERREXIT(cinfo, JERR_SOF_NO_SOS);
+ 568              		.loc 1 596 0
+ 569 0085 488B8368 		movq	616(%rbx), %rax
+ 569      020000
+ 570              	.LVL62:
+ 571 008c 8B401C   		movl	28(%rax), %eax
+ 572 008f 85C0     		testl	%eax, %eax
+ 573 0091 7488     		je	.L100
+ 597:fltk-1.3.4-1/jpeg/jdinput.c ****       } else {
+ 574              		.loc 1 597 0
+ 575 0093 488B03   		movq	(%rbx), %rax
+ 576 0096 4889DF   		movq	%rbx, %rdi
+ 577 0099 C740283E 		movl	$62, 40(%rax)
+ 577      000000
+ 578 00a0 488B03   		movq	(%rbx), %rax
+ 579 00a3 FF10     		call	*(%rax)
+ 580              	.LVL63:
+ 569:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 581              		.loc 1 569 0
+ 582 00a5 B8020000 		movl	$2, %eax
+ 582      00
+ 583 00aa E971FFFF 		jmp	.L44
+ 583      FF
+ 584              	.LVL64:
+ 585 00af 90       		.p2align 4,,10
+ 586              		.p2align 3
+ 587              	.L91:
+ 602:fltk-1.3.4-1/jpeg/jdinput.c **** 	  cinfo->output_scan_number = cinfo->input_scan_number;
+ 588              		.loc 1 602 0
+ 589 00b0 8B83AC00 		movl	172(%rbx), %eax
+ 589      0000
+ 590              	.LVL65:
+ 591 00b6 3983B400 		cmpl	%eax, 180(%rbx)
+ 591      0000
+ 592 00bc 0F8E59FF 		jle	.L100
+ 592      FFFF
+ 603:fltk-1.3.4-1/jpeg/jdinput.c ****       }
+ 593              		.loc 1 603 0
+ 594 00c2 8983B400 		movl	%eax, 180(%rbx)
+ 594      0000
+ 595 00c8 E94EFFFF 		jmp	.L100
+ 595      FF
+ 596              	.LVL66:
+ 597 00cd 0F1F00   		.p2align 4,,10
+ 598              		.p2align 3
+ 599              	.L47:
+ 586:fltk-1.3.4-1/jpeg/jdinput.c **** 	  ERREXIT(cinfo, JERR_EOI_EXPECTED); /* Oops, I wasn't expecting this! */
+ 600              		.loc 1 586 0
+ 601 00d0 8B7520   		movl	32(%rbp), %esi
+ 602 00d3 85F6     		testl	%esi, %esi
+ 603 00d5 7429     		je	.L106
+ 604              	.LVL67:
+ 605              	.L90:
+ 588:fltk-1.3.4-1/jpeg/jdinput.c **** 	  break;
+ 606              		.loc 1 588 0
+ 607 00d7 8B8BC001 		movl	448(%rbx), %ecx
+ 607      0000
+ 608 00dd 85C9     		testl	%ecx, %ecx
+ 609 00df 0F847BFF 		je	.L96
+ 609      FFFF
+ 590:fltk-1.3.4-1/jpeg/jdinput.c ****       }
+ 610              		.loc 1 590 0
+ 611 00e5 4889DF   		movq	%rbx, %rdi
+ 612 00e8 E8000000 		call	start_input_pass
+ 612      00
+ 613              	.LVL68:
+ 569:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 614              		.loc 1 569 0
+ 615 00ed B8010000 		movl	$1, %eax
+ 615      00
+ 616 00f2 E929FFFF 		jmp	.L44
+ 616      FF
+ 617              	.LVL69:
+ 618 00f7 660F1F84 		.p2align 4,,10
+ 618      00000000 
+ 618      00
+ 619              		.p2align 3
+ 620              	.L106:
+ 587:fltk-1.3.4-1/jpeg/jdinput.c **** 	if (cinfo->comps_in_scan == 0) /* unexpected pseudo SOS marker */
+ 621              		.loc 1 587 0
+ 622 0100 488B03   		movq	(%rbx), %rax
+ 623              	.LVL70:
+ 624 0103 4889DF   		movq	%rbx, %rdi
+ 625 0106 C7402824 		movl	$36, 40(%rax)
+ 625      000000
+ 626 010d 488B03   		movq	(%rbx), %rax
+ 627 0110 FF10     		call	*(%rax)
+ 628              	.LVL71:
+ 629 0112 EBC3     		jmp	.L90
+ 630              	.LVL72:
+ 631              		.p2align 4,,10
+ 632 0114 0F1F4000 		.p2align 3
+ 633              	.L105:
+ 634              	.LBB26:
+ 635              	.LBB27:
+ 215:fltk-1.3.4-1/jpeg/jdinput.c ****       (long) cinfo->image_width > (long) JPEG_MAX_DIMENSION)
+ 636              		.loc 1 215 0
+ 637 0118 817B34DC 		cmpl	$65500, 52(%rbx)
+ 637      FF0000
+ 638 011f 7709     		ja	.L49
+ 639 0121 817B30DC 		cmpl	$65500, 48(%rbx)
+ 639      FF0000
+ 640 0128 761C     		jbe	.L50
+ 641              	.L49:
+ 217:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 642              		.loc 1 217 0
+ 643 012a 488B03   		movq	(%rbx), %rax
+ 644              	.LVL73:
+ 645 012d 4889DF   		movq	%rbx, %rdi
+ 646 0130 C740282A 		movl	$42, 40(%rax)
+ 646      000000
+ 647 0137 488B03   		movq	(%rbx), %rax
+ 648 013a C7402CDC 		movl	$65500, 44(%rax)
+ 648      FF0000
+ 649 0141 488B03   		movq	(%rbx), %rax
+ 650 0144 FF10     		call	*(%rax)
+ 651              	.LVL74:
+ 652              	.L50:
+ 220:fltk-1.3.4-1/jpeg/jdinput.c ****     ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
+ 653              		.loc 1 220 0
+ 654 0146 8B832801 		movl	296(%rbx), %eax
+ 654      0000
+ 655 014c 83E808   		subl	$8, %eax
+ 656 014f 83F804   		cmpl	$4, %eax
+ 657 0152 0F87DE02 		ja	.L107
+ 657      0000
+ 658              	.L51:
+ 224:fltk-1.3.4-1/jpeg/jdinput.c ****     ERREXIT2(cinfo, JERR_COMPONENT_COUNT, cinfo->num_components,
+ 659              		.loc 1 224 0
+ 660 0158 8B4338   		movl	56(%rbx), %eax
+ 661 015b 83F80A   		cmpl	$10, %eax
+ 662 015e 0F8FA502 		jg	.L108
+ 662      0000
+ 663              	.L52:
+ 231:fltk-1.3.4-1/jpeg/jdinput.c ****        ci++, compptr++) {
+ 664              		.loc 1 231 0
+ 665 0164 4531F6   		xorl	%r14d, %r14d
+ 666 0167 85C0     		testl	%eax, %eax
+ 229:fltk-1.3.4-1/jpeg/jdinput.c ****   cinfo->max_v_samp_factor = 1;
+ 667              		.loc 1 229 0
+ 668 0169 C783A001 		movl	$1, 416(%rbx)
+ 668      00000100 
+ 668      0000
+ 230:fltk-1.3.4-1/jpeg/jdinput.c ****   for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
+ 669              		.loc 1 230 0
+ 670 0173 C783A401 		movl	$1, 420(%rbx)
+ 670      00000100 
+ 670      0000
+ 671              	.LVL75:
+ 231:fltk-1.3.4-1/jpeg/jdinput.c ****        ci++, compptr++) {
+ 672              		.loc 1 231 0
+ 673 017d 4C8BA330 		movq	304(%rbx), %r12
+ 673      010000
+ 674              	.LVL76:
+ 675 0184 7E73     		jle	.L59
+ 676              	.LVL77:
+ 677 0186 662E0F1F 		.p2align 4,,10
+ 677      84000000 
+ 677      0000
+ 678              		.p2align 3
+ 679              	.L94:
+ 233:fltk-1.3.4-1/jpeg/jdinput.c **** 	compptr->v_samp_factor<=0 || compptr->v_samp_factor>MAX_SAMP_FACTOR)
+ 680              		.loc 1 233 0
+ 681 0190 418B4424 		movl	8(%r12), %eax
+ 681      08
+ 682 0195 8D50FF   		leal	-1(%rax), %edx
+ 683 0198 83FA03   		cmpl	$3, %edx
+ 684 019b 770D     		ja	.L56
+ 234:fltk-1.3.4-1/jpeg/jdinput.c ****       ERREXIT(cinfo, JERR_BAD_SAMPLING);
+ 685              		.loc 1 234 0
+ 686 019d 418B4C24 		movl	12(%r12), %ecx
+ 686      0C
+ 687 01a2 8D51FF   		leal	-1(%rcx), %edx
+ 688 01a5 83FA03   		cmpl	$3, %edx
+ 689 01a8 7617     		jbe	.L57
+ 690              	.L56:
+ 235:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->max_h_samp_factor = MAX(cinfo->max_h_samp_factor,
+ 691              		.loc 1 235 0
+ 692 01aa 488B03   		movq	(%rbx), %rax
+ 693 01ad 4889DF   		movq	%rbx, %rdi
+ 694 01b0 C7402813 		movl	$19, 40(%rax)
+ 694      000000
+ 695 01b7 488B03   		movq	(%rbx), %rax
+ 696 01ba FF10     		call	*(%rax)
+ 697              	.LVL78:
+ 698 01bc 418B4424 		movl	8(%r12), %eax
+ 698      08
+ 699              	.L57:
+ 236:fltk-1.3.4-1/jpeg/jdinput.c **** 				   compptr->h_samp_factor);
+ 700              		.loc 1 236 0
+ 701 01c1 3983A001 		cmpl	%eax, 416(%rbx)
+ 701      0000
+ 702 01c7 0F4D83A0 		cmovge	416(%rbx), %eax
+ 702      010000
+ 703 01ce 8983A001 		movl	%eax, 416(%rbx)
+ 703      0000
+ 238:fltk-1.3.4-1/jpeg/jdinput.c **** 				   compptr->v_samp_factor);
+ 704              		.loc 1 238 0
+ 705 01d4 8B83A401 		movl	420(%rbx), %eax
+ 705      0000
+ 706 01da 41394424 		cmpl	%eax, 12(%r12)
+ 706      0C
+ 707 01df 410F4D44 		cmovge	12(%r12), %eax
+ 707      240C
+ 232:fltk-1.3.4-1/jpeg/jdinput.c ****     if (compptr->h_samp_factor<=0 || compptr->h_samp_factor>MAX_SAMP_FACTOR ||
+ 708              		.loc 1 232 0
+ 709 01e5 4183C601 		addl	$1, %r14d
+ 710              	.LVL79:
+ 711 01e9 4983C460 		addq	$96, %r12
+ 712              	.LVL80:
+ 231:fltk-1.3.4-1/jpeg/jdinput.c ****        ci++, compptr++) {
+ 713              		.loc 1 231 0
+ 714 01ed 443B7338 		cmpl	56(%rbx), %r14d
+ 238:fltk-1.3.4-1/jpeg/jdinput.c **** 				   compptr->v_samp_factor);
+ 715              		.loc 1 238 0
+ 716 01f1 8983A401 		movl	%eax, 420(%rbx)
+ 716      0000
+ 231:fltk-1.3.4-1/jpeg/jdinput.c ****        ci++, compptr++) {
+ 717              		.loc 1 231 0
+ 718 01f7 7C97     		jl	.L94
+ 719              	.LVL81:
+ 720              	.L59:
+ 243:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->comps_in_scan)) { /* no pseudo SOS marker */
+ 721              		.loc 1 243 0
+ 722 01f9 448BA338 		movl	312(%rbx), %r12d
+ 722      010000
+ 723              	.LVL82:
+ 724 0200 4585E4   		testl	%r12d, %r12d
+ 725 0203 0F85C301 		jne	.L63
+ 725      0000
+ 726 0209 448B9B3C 		movl	316(%rbx), %r11d
+ 726      010000
+ 727 0210 4585DB   		testl	%r11d, %r11d
+ 728 0213 7410     		je	.L60
+ 729 0215 448B93C0 		movl	448(%rbx), %r10d
+ 729      010000
+ 730 021c 4585D2   		testl	%r10d, %r10d
+ 731 021f 0F85A701 		jne	.L63
+ 731      0000
+ 732              	.L60:
+ 249:fltk-1.3.4-1/jpeg/jdinput.c ****     case (1*1-1):
+ 733              		.loc 1 249 0
+ 734 0225 8B832002 		movl	544(%rbx), %eax
+ 734      0000
+ 735 022b 83F83F   		cmpl	$63, %eax
+ 736 022e 0F849801 		je	.L63
+ 736      0000
+ 737 0234 0F8E1F02 		jle	.L109
+ 737      0000
+ 738 023a 3D8F0000 		cmpl	$143, %eax
+ 738      00
+ 739 023f 0F844904 		je	.L73
+ 739      0000
+ 740 0245 0F8ED302 		jle	.L110
+ 740      0000
+ 741 024b 3DC30000 		cmpl	$195, %eax
+ 741      00
+ 742 0250 0F849603 		je	.L78
+ 742      0000
+ 743 0256 0F8E0703 		jle	.L111
+ 743      0000
+ 744 025c 3DE00000 		cmpl	$224, %eax
+ 744      00
+ 745 0261 0F843103 		je	.L81
+ 745      0000
+ 746 0267 3DFF0000 		cmpl	$255, %eax
+ 746      00
+ 747 026c 0F850C02 		jne	.L62
+ 747      0000
+ 326:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order;
+ 748              		.loc 1 326 0
+ 749 0272 C7832C02 		movl	$16, 556(%rbx)
+ 749      00001000 
+ 749      0000
+ 327:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = DCTSIZE2-1;
+ 750              		.loc 1 327 0
+ 751 027c 48C78330 		movq	$jpeg_natural_order, 560(%rbx)
+ 751      02000000 
+ 751      000000
+ 328:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 752              		.loc 1 328 0
+ 753 0287 41BD1000 		movl	$16, %r13d
+ 753      0000
+ 754 028d C7833802 		movl	$63, 568(%rbx)
+ 754      00003F00 
+ 754      0000
+ 755 0297 660F1F84 		.p2align 4,,10
+ 755      00000000 
+ 755      00
+ 756              		.p2align 3
+ 757              	.L61:
+ 346:fltk-1.3.4-1/jpeg/jdinput.c ****        ci++, compptr++) {
+ 758              		.loc 1 346 0
+ 759 02a0 448B4B38 		movl	56(%rbx), %r9d
+ 342:fltk-1.3.4-1/jpeg/jdinput.c ****   cinfo->min_DCT_v_scaled_size = cinfo->block_size;
+ 760              		.loc 1 342 0
+ 761 02a4 4489ABA8 		movl	%r13d, 424(%rbx)
+ 761      010000
+ 343:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 762              		.loc 1 343 0
+ 763 02ab 4489ABAC 		movl	%r13d, 428(%rbx)
+ 763      010000
+ 764              	.LVL83:
+ 346:fltk-1.3.4-1/jpeg/jdinput.c ****        ci++, compptr++) {
+ 765              		.loc 1 346 0
+ 766 02b2 4C8BA330 		movq	304(%rbx), %r12
+ 766      010000
+ 767              	.LVL84:
+ 768 02b9 4585C9   		testl	%r9d, %r9d
+ 769 02bc 0F8EC700 		jle	.L83
+ 769      0000
+ 770 02c2 4531F6   		xorl	%r14d, %r14d
+ 771              	.LVL85:
+ 772              		.p2align 4,,10
+ 773 02c5 0F1F00   		.p2align 3
+ 774              	.L85:
+ 348:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->DCT_v_scaled_size = cinfo->block_size;
+ 775              		.loc 1 348 0
+ 776 02c8 45896C24 		movl	%r13d, 36(%r12)
+ 776      24
+ 349:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Size in DCT blocks */
+ 777              		.loc 1 349 0
+ 778 02cd 8B832C02 		movl	556(%rbx), %eax
+ 778      0000
+ 347:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->DCT_h_scaled_size = cinfo->block_size;
+ 779              		.loc 1 347 0
+ 780 02d3 4183C601 		addl	$1, %r14d
+ 781              	.LVL86:
+ 782 02d7 4983C460 		addq	$96, %r12
+ 783              	.LVL87:
+ 349:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Size in DCT blocks */
+ 784              		.loc 1 349 0
+ 785 02db 41894424 		movl	%eax, -56(%r12)
+ 785      C8
+ 352:fltk-1.3.4-1/jpeg/jdinput.c **** 		    (long) (cinfo->max_h_samp_factor * cinfo->block_size));
+ 786              		.loc 1 352 0
+ 787 02e0 49634424 		movslq	-88(%r12), %rax
+ 787      A8
+ 788 02e5 8B7B30   		movl	48(%rbx), %edi
+ 789 02e8 8BB3A001 		movl	416(%rbx), %esi
+ 789      0000
+ 790 02ee 0FAFB32C 		imull	556(%rbx), %esi
+ 790      020000
+ 791 02f5 480FAFF8 		imulq	%rax, %rdi
+ 792 02f9 4863F6   		movslq	%esi, %rsi
+ 793 02fc E8000000 		call	jdiv_round_up
+ 793      00
+ 794              	.LVL88:
+ 351:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * (long) compptr->h_samp_factor,
+ 795              		.loc 1 351 0
+ 796 0301 41894424 		movl	%eax, -68(%r12)
+ 796      BC
+ 355:fltk-1.3.4-1/jpeg/jdinput.c **** 		    (long) (cinfo->max_v_samp_factor * cinfo->block_size));
+ 797              		.loc 1 355 0
+ 798 0306 49634424 		movslq	-84(%r12), %rax
+ 798      AC
+ 799 030b 8B7B34   		movl	52(%rbx), %edi
+ 800 030e 8BB3A401 		movl	420(%rbx), %esi
+ 800      0000
+ 801 0314 0FAFB32C 		imull	556(%rbx), %esi
+ 801      020000
+ 802 031b 480FAFF8 		imulq	%rax, %rdi
+ 803 031f 4863F6   		movslq	%esi, %rsi
+ 804 0322 E8000000 		call	jdiv_round_up
+ 804      00
+ 805              	.LVL89:
+ 354:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * (long) compptr->v_samp_factor,
+ 806              		.loc 1 354 0
+ 807 0327 41894424 		movl	%eax, -64(%r12)
+ 807      C0
+ 363:fltk-1.3.4-1/jpeg/jdinput.c **** 		    (long) cinfo->max_h_samp_factor);
+ 808              		.loc 1 363 0
+ 809 032c 49634424 		movslq	-88(%r12), %rax
+ 809      A8
+ 810 0331 8B7B30   		movl	48(%rbx), %edi
+ 811 0334 4863B3A0 		movslq	416(%rbx), %rsi
+ 811      010000
+ 812 033b 480FAFF8 		imulq	%rax, %rdi
+ 813 033f E8000000 		call	jdiv_round_up
+ 813      00
+ 814              	.LVL90:
+ 362:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * (long) compptr->h_samp_factor,
+ 815              		.loc 1 362 0
+ 816 0344 41894424 		movl	%eax, -52(%r12)
+ 816      CC
+ 366:fltk-1.3.4-1/jpeg/jdinput.c **** 		    (long) cinfo->max_v_samp_factor);
+ 817              		.loc 1 366 0
+ 818 0349 49634424 		movslq	-84(%r12), %rax
+ 818      AC
+ 819 034e 8B7B34   		movl	52(%rbx), %edi
+ 820 0351 4863B3A4 		movslq	420(%rbx), %rsi
+ 820      010000
+ 821 0358 480FAFF8 		imulq	%rax, %rdi
+ 822 035c E8000000 		call	jdiv_round_up
+ 822      00
+ 823              	.LVL91:
+ 369:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Mark no quantization table yet saved for component */
+ 824              		.loc 1 369 0
+ 825 0361 41C74424 		movl	$1, -44(%r12)
+ 825      D4010000 
+ 825      00
+ 365:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * (long) compptr->v_samp_factor,
+ 826              		.loc 1 365 0
+ 827 036a 41894424 		movl	%eax, -48(%r12)
+ 827      D0
+ 371:fltk-1.3.4-1/jpeg/jdinput.c ****   }
+ 828              		.loc 1 371 0
+ 829 036f 49C74424 		movq	$0, -16(%r12)
+ 829      F0000000 
+ 829      00
+ 830              	.LVL92:
+ 346:fltk-1.3.4-1/jpeg/jdinput.c ****        ci++, compptr++) {
+ 831              		.loc 1 346 0
+ 832 0378 443B7338 		cmpl	56(%rbx), %r14d
+ 833 037c 448BAB2C 		movl	556(%rbx), %r13d
+ 833      020000
+ 834 0383 0F8C3FFF 		jl	.L85
+ 834      FFFF
+ 835              	.LVL93:
+ 836              	.L83:
+ 376:fltk-1.3.4-1/jpeg/jdinput.c **** 	          (long) (cinfo->max_v_samp_factor * cinfo->block_size));
+ 837              		.loc 1 376 0
+ 838 0389 440FAFAB 		imull	420(%rbx), %r13d
+ 838      A4010000 
+ 839 0391 8B7B34   		movl	52(%rbx), %edi
+ 840 0394 4963F5   		movslq	%r13d, %rsi
+ 841 0397 E8000000 		call	jdiv_round_up
+ 841      00
+ 842              	.LVL94:
+ 375:fltk-1.3.4-1/jpeg/jdinput.c ****     jdiv_round_up((long) cinfo->image_height,
+ 843              		.loc 1 375 0
+ 844 039c 8983B001 		movl	%eax, 432(%rbx)
+ 844      0000
+ 380:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->inputctl->has_multiple_scans = TRUE;
+ 845              		.loc 1 380 0
+ 846 03a2 8B4338   		movl	56(%rbx), %eax
+ 847 03a5 3983C001 		cmpl	%eax, 448(%rbx)
+ 847      0000
+ 848 03ab 7C49     		jl	.L86
+ 849 03ad 448B833C 		movl	316(%rbx), %r8d
+ 849      010000
+ 850 03b4 4585C0   		testl	%r8d, %r8d
+ 851 03b7 753D     		jne	.L86
+ 383:fltk-1.3.4-1/jpeg/jdinput.c **** }
+ 852              		.loc 1 383 0
+ 853 03b9 488B8360 		movq	608(%rbx), %rax
+ 853      020000
+ 854 03c0 C7402000 		movl	$0, 32(%rax)
+ 854      000000
+ 855 03c7 E97BFCFF 		jmp	.L48
+ 855      FF
+ 856              	.LVL95:
+ 857              	.L63:
+ 286:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order;
+ 858              		.loc 1 286 0
+ 859 03cc C7832C02 		movl	$8, 556(%rbx)
+ 859      00000800 
+ 859      0000
+ 287:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = DCTSIZE2-1;
+ 860              		.loc 1 287 0
+ 861 03d6 48C78330 		movq	$jpeg_natural_order, 560(%rbx)
+ 861      02000000 
+ 861      000000
+ 288:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 862              		.loc 1 288 0
+ 863 03e1 41BD0800 		movl	$8, %r13d
+ 863      0000
+ 864 03e7 C7833802 		movl	$63, 568(%rbx)
+ 864      00003F00 
+ 864      0000
+ 865 03f1 E9AAFEFF 		jmp	.L61
+ 865      FF
+ 866              	.LVL96:
+ 867              	.L86:
+ 381:fltk-1.3.4-1/jpeg/jdinput.c ****   else
+ 868              		.loc 1 381 0
+ 869 03f6 488B8360 		movq	608(%rbx), %rax
+ 869      020000
+ 870 03fd C7402001 		movl	$1, 32(%rax)
+ 870      000000
+ 871 0404 E93EFCFF 		jmp	.L48
+ 871      FF
+ 872              	.LVL97:
+ 873              	.L108:
+ 225:fltk-1.3.4-1/jpeg/jdinput.c **** 	     MAX_COMPONENTS);
+ 874              		.loc 1 225 0
+ 875 0409 488B03   		movq	(%rbx), %rax
+ 876 040c 4889DF   		movq	%rbx, %rdi
+ 877 040f C740281B 		movl	$27, 40(%rax)
+ 877      000000
+ 878 0416 488B03   		movq	(%rbx), %rax
+ 879 0419 8B5338   		movl	56(%rbx), %edx
+ 880 041c 89502C   		movl	%edx, 44(%rax)
+ 881 041f 488B03   		movq	(%rbx), %rax
+ 882 0422 C740300A 		movl	$10, 48(%rax)
+ 882      000000
+ 883 0429 488B03   		movq	(%rbx), %rax
+ 884 042c FF10     		call	*(%rax)
+ 885              	.LVL98:
+ 886 042e 8B4338   		movl	56(%rbx), %eax
+ 887 0431 E92EFDFF 		jmp	.L52
+ 887      FF
+ 888              	.L107:
+ 221:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 889              		.loc 1 221 0
+ 890 0436 488B03   		movq	(%rbx), %rax
+ 891 0439 4889DF   		movq	%rbx, %rdi
+ 892 043c C7402810 		movl	$16, 40(%rax)
+ 892      000000
+ 893 0443 488B03   		movq	(%rbx), %rax
+ 894 0446 8B932801 		movl	296(%rbx), %edx
+ 894      0000
+ 895 044c 89502C   		movl	%edx, 44(%rax)
+ 896 044f 488B03   		movq	(%rbx), %rax
+ 897 0452 FF10     		call	*(%rax)
+ 898              	.LVL99:
+ 899 0454 E9FFFCFF 		jmp	.L51
+ 899      FF
+ 900              	.L109:
+ 249:fltk-1.3.4-1/jpeg/jdinput.c ****     case (1*1-1):
+ 901              		.loc 1 249 0
+ 902 0459 83F80F   		cmpl	$15, %eax
+ 903 045c 0F840202 		je	.L65
+ 903      0000
+ 904 0462 7F79     		jg	.L66
+ 905 0464 83F803   		cmpl	$3, %eax
+ 906 0467 0F845501 		je	.L67
+ 906      0000
+ 907 046d 83F808   		cmpl	$8, %eax
+ 908 0470 0F84C401 		je	.L68
+ 908      0000
+ 909 0476 85C0     		testl	%eax, %eax
+ 910 0478 0F849801 		je	.L112
+ 910      0000
+ 911              	.L62:
+ 331:fltk-1.3.4-1/jpeg/jdinput.c **** 	       cinfo->Ss, cinfo->Se, cinfo->Ah, cinfo->Al);
+ 912              		.loc 1 331 0
+ 913 047e 488B03   		movq	(%rbx), %rax
+ 914 0481 4889DF   		movq	%rbx, %rdi
+ 915 0484 C7402811 		movl	$17, 40(%rax)
+ 915      000000
+ 916 048b 488B03   		movq	(%rbx), %rax
+ 917 048e 8B931C02 		movl	540(%rbx), %edx
+ 917      0000
+ 918 0494 89502C   		movl	%edx, 44(%rax)
+ 919 0497 488B03   		movq	(%rbx), %rax
+ 920 049a 8B932002 		movl	544(%rbx), %edx
+ 920      0000
+ 921 04a0 895030   		movl	%edx, 48(%rax)
+ 922 04a3 488B03   		movq	(%rbx), %rax
+ 923 04a6 8B932402 		movl	548(%rbx), %edx
+ 923      0000
+ 924 04ac 895034   		movl	%edx, 52(%rax)
+ 925 04af 488B03   		movq	(%rbx), %rax
+ 926 04b2 8B932802 		movl	552(%rbx), %edx
+ 926      0000
+ 927 04b8 895038   		movl	%edx, 56(%rax)
+ 928 04bb 488B03   		movq	(%rbx), %rax
+ 929 04be FF10     		call	*(%rax)
+ 930              	.LVL100:
+ 931 04c0 448BAB2C 		movl	556(%rbx), %r13d
+ 931      020000
+ 932 04c7 E9D4FDFF 		jmp	.L61
+ 932      FF
+ 933              	.LVL101:
+ 934              	.L88:
+ 935              	.LBE27:
+ 936              	.LBE26:
+ 580:fltk-1.3.4-1/jpeg/jdinput.c **** 	/* Note: start_input_pass must be called by jdmaster.c
+ 937              		.loc 1 580 0
+ 938 04cc C7452800 		movl	$0, 40(%rbp)
+ 938      000000
+ 569:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 939              		.loc 1 569 0
+ 940 04d3 B8010000 		movl	$1, %eax
+ 940      00
+ 941 04d8 E943FBFF 		jmp	.L44
+ 941      FF
+ 942              	.LVL102:
+ 943              	.L66:
+ 944              	.LBB29:
+ 945              	.LBB28:
+ 249:fltk-1.3.4-1/jpeg/jdinput.c ****     case (1*1-1):
+ 946              		.loc 1 249 0
+ 947 04dd 83F823   		cmpl	$35, %eax
+ 948 04e0 0F84FC01 		je	.L70
+ 948      0000
+ 949 04e6 83F830   		cmpl	$48, %eax
+ 950 04e9 0F84C901 		je	.L71
+ 950      0000
+ 951 04ef 83F818   		cmpl	$24, %eax
+ 952 04f2 758A     		jne	.L62
+ 271:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order5;
+ 953              		.loc 1 271 0
+ 954 04f4 C7832C02 		movl	$5, 556(%rbx)
+ 954      00000500 
+ 954      0000
+ 272:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = cinfo->Se;
+ 955              		.loc 1 272 0
+ 956 04fe 48C78330 		movq	$jpeg_natural_order5, 560(%rbx)
+ 956      02000000 
+ 956      000000
+ 273:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 957              		.loc 1 273 0
+ 958 0509 41BD0500 		movl	$5, %r13d
+ 958      0000
+ 959 050f C7833802 		movl	$24, 568(%rbx)
+ 959      00001800 
+ 959      0000
+ 960 0519 E982FDFF 		jmp	.L61
+ 960      FF
+ 961              	.L110:
+ 249:fltk-1.3.4-1/jpeg/jdinput.c ****     case (1*1-1):
+ 962              		.loc 1 249 0
+ 963 051e 83F863   		cmpl	$99, %eax
+ 964 0521 0F840F02 		je	.L75
+ 964      0000
+ 965 0527 83F878   		cmpl	$120, %eax
+ 966 052a 0F84DC01 		je	.L76
+ 966      0000
+ 967 0530 83F850   		cmpl	$80, %eax
+ 968 0533 0F8545FF 		jne	.L62
+ 968      FFFF
+ 291:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order;
+ 969              		.loc 1 291 0
+ 970 0539 C7832C02 		movl	$9, 556(%rbx)
+ 970      00000900 
+ 970      0000
+ 292:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = DCTSIZE2-1;
+ 971              		.loc 1 292 0
+ 972 0543 48C78330 		movq	$jpeg_natural_order, 560(%rbx)
+ 972      02000000 
+ 972      000000
+ 293:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 973              		.loc 1 293 0
+ 974 054e 41BD0900 		movl	$9, %r13d
+ 974      0000
+ 975 0554 C7833802 		movl	$63, 568(%rbx)
+ 975      00003F00 
+ 975      0000
+ 976 055e E93DFDFF 		jmp	.L61
+ 976      FF
+ 977              	.L111:
+ 249:fltk-1.3.4-1/jpeg/jdinput.c ****     case (1*1-1):
+ 978              		.loc 1 249 0
+ 979 0563 3DA80000 		cmpl	$168, %eax
+ 979      00
+ 980 0568 0F8510FF 		jne	.L62
+ 980      FFFF
+ 311:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order;
+ 981              		.loc 1 311 0
+ 982 056e C7832C02 		movl	$13, 556(%rbx)
+ 982      00000D00 
+ 982      0000
+ 312:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = DCTSIZE2-1;
+ 983              		.loc 1 312 0
+ 984 0578 48C78330 		movq	$jpeg_natural_order, 560(%rbx)
+ 984      02000000 
+ 984      000000
+ 313:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 985              		.loc 1 313 0
+ 986 0583 41BD0D00 		movl	$13, %r13d
+ 986      0000
+ 987 0589 C7833802 		movl	$63, 568(%rbx)
+ 987      00003F00 
+ 987      0000
+ 988 0593 E908FDFF 		jmp	.L61
+ 988      FF
+ 989              	.L81:
+ 321:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order;
+ 990              		.loc 1 321 0
+ 991 0598 C7832C02 		movl	$15, 556(%rbx)
+ 991      00000F00 
+ 991      0000
+ 322:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = DCTSIZE2-1;
+ 992              		.loc 1 322 0
+ 993 05a2 48C78330 		movq	$jpeg_natural_order, 560(%rbx)
+ 993      02000000 
+ 993      000000
+ 323:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 994              		.loc 1 323 0
+ 995 05ad 41BD0F00 		movl	$15, %r13d
+ 995      0000
+ 996 05b3 C7833802 		movl	$63, 568(%rbx)
+ 996      00003F00 
+ 996      0000
+ 997 05bd E9DEFCFF 		jmp	.L61
+ 997      FF
+ 998              	.L67:
+ 256:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order2;
+ 999              		.loc 1 256 0
+ 1000 05c2 C7832C02 		movl	$2, 556(%rbx)
+ 1000      00000200 
+ 1000      0000
+ 257:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = cinfo->Se;
+ 1001              		.loc 1 257 0
+ 1002 05cc 48C78330 		movq	$jpeg_natural_order2, 560(%rbx)
+ 1002      02000000 
+ 1002      000000
+ 258:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 1003              		.loc 1 258 0
+ 1004 05d7 41BD0200 		movl	$2, %r13d
+ 1004      0000
+ 1005 05dd C7833802 		movl	$3, 568(%rbx)
+ 1005      00000300 
+ 1005      0000
+ 1006 05e7 E9B4FCFF 		jmp	.L61
+ 1006      FF
+ 1007              	.L78:
+ 316:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order;
+ 1008              		.loc 1 316 0
+ 1009 05ec C7832C02 		movl	$14, 556(%rbx)
+ 1009      00000E00 
+ 1009      0000
+ 317:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = DCTSIZE2-1;
+ 1010              		.loc 1 317 0
+ 1011 05f6 48C78330 		movq	$jpeg_natural_order, 560(%rbx)
+ 1011      02000000 
+ 1011      000000
+ 318:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 1012              		.loc 1 318 0
+ 1013 0601 41BD0E00 		movl	$14, %r13d
+ 1013      0000
+ 1014 0607 C7833802 		movl	$63, 568(%rbx)
+ 1014      00003F00 
+ 1014      0000
+ 1015 0611 E98AFCFF 		jmp	.L61
+ 1015      FF
+ 1016              	.L112:
+ 251:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order; /* not needed */
+ 1017              		.loc 1 251 0
+ 1018 0616 C7832C02 		movl	$1, 556(%rbx)
+ 1018      00000100 
+ 1018      0000
+ 252:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = cinfo->Se;
+ 1019              		.loc 1 252 0
+ 1020 0620 48C78330 		movq	$jpeg_natural_order, 560(%rbx)
+ 1020      02000000 
+ 1020      000000
+ 253:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 1021              		.loc 1 253 0
+ 1022 062b C7833802 		movl	$0, 568(%rbx)
+ 1022      00000000 
+ 1022      0000
+ 1023 0635 E966FCFF 		jmp	.L61
+ 1023      FF
+ 1024              	.L68:
+ 261:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order3;
+ 1025              		.loc 1 261 0
+ 1026 063a C7832C02 		movl	$3, 556(%rbx)
+ 1026      00000300 
+ 1026      0000
+ 262:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = cinfo->Se;
+ 1027              		.loc 1 262 0
+ 1028 0644 48C78330 		movq	$jpeg_natural_order3, 560(%rbx)
+ 1028      02000000 
+ 1028      000000
+ 263:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 1029              		.loc 1 263 0
+ 1030 064f 41BD0300 		movl	$3, %r13d
+ 1030      0000
+ 1031 0655 C7833802 		movl	$8, 568(%rbx)
+ 1031      00000800 
+ 1031      0000
+ 1032 065f E93CFCFF 		jmp	.L61
+ 1032      FF
+ 1033              	.L65:
+ 266:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order4;
+ 1034              		.loc 1 266 0
+ 1035 0664 C7832C02 		movl	$4, 556(%rbx)
+ 1035      00000400 
+ 1035      0000
+ 267:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = cinfo->Se;
+ 1036              		.loc 1 267 0
+ 1037 066e 48C78330 		movq	$jpeg_natural_order4, 560(%rbx)
+ 1037      02000000 
+ 1037      000000
+ 268:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 1038              		.loc 1 268 0
+ 1039 0679 41BD0400 		movl	$4, %r13d
+ 1039      0000
+ 1040 067f C7833802 		movl	$15, 568(%rbx)
+ 1040      00000F00 
+ 1040      0000
+ 1041 0689 E912FCFF 		jmp	.L61
+ 1041      FF
+ 1042              	.L73:
+ 306:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order;
+ 1043              		.loc 1 306 0
+ 1044 068e C7832C02 		movl	$12, 556(%rbx)
+ 1044      00000C00 
+ 1044      0000
+ 307:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = DCTSIZE2-1;
+ 1045              		.loc 1 307 0
+ 1046 0698 48C78330 		movq	$jpeg_natural_order, 560(%rbx)
+ 1046      02000000 
+ 1046      000000
+ 308:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 1047              		.loc 1 308 0
+ 1048 06a3 41BD0C00 		movl	$12, %r13d
+ 1048      0000
+ 1049 06a9 C7833802 		movl	$63, 568(%rbx)
+ 1049      00003F00 
+ 1049      0000
+ 1050 06b3 E9E8FBFF 		jmp	.L61
+ 1050      FF
+ 1051              	.L71:
+ 281:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order7;
+ 1052              		.loc 1 281 0
+ 1053 06b8 C7832C02 		movl	$7, 556(%rbx)
+ 1053      00000700 
+ 1053      0000
+ 282:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = cinfo->Se;
+ 1054              		.loc 1 282 0
+ 1055 06c2 48C78330 		movq	$jpeg_natural_order7, 560(%rbx)
+ 1055      02000000 
+ 1055      000000
+ 283:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 1056              		.loc 1 283 0
+ 1057 06cd 41BD0700 		movl	$7, %r13d
+ 1057      0000
+ 1058 06d3 C7833802 		movl	$48, 568(%rbx)
+ 1058      00003000 
+ 1058      0000
+ 1059 06dd E9BEFBFF 		jmp	.L61
+ 1059      FF
+ 1060              	.L70:
+ 276:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order6;
+ 1061              		.loc 1 276 0
+ 1062 06e2 C7832C02 		movl	$6, 556(%rbx)
+ 1062      00000600 
+ 1062      0000
+ 277:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = cinfo->Se;
+ 1063              		.loc 1 277 0
+ 1064 06ec 48C78330 		movq	$jpeg_natural_order6, 560(%rbx)
+ 1064      02000000 
+ 1064      000000
+ 278:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 1065              		.loc 1 278 0
+ 1066 06f7 41BD0600 		movl	$6, %r13d
+ 1066      0000
+ 1067 06fd C7833802 		movl	$35, 568(%rbx)
+ 1067      00002300 
+ 1067      0000
+ 1068 0707 E994FBFF 		jmp	.L61
+ 1068      FF
+ 1069              	.L76:
+ 301:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order;
+ 1070              		.loc 1 301 0
+ 1071 070c C7832C02 		movl	$11, 556(%rbx)
+ 1071      00000B00 
+ 1071      0000
+ 302:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = DCTSIZE2-1;
+ 1072              		.loc 1 302 0
+ 1073 0716 48C78330 		movq	$jpeg_natural_order, 560(%rbx)
+ 1073      02000000 
+ 1073      000000
+ 303:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 1074              		.loc 1 303 0
+ 1075 0721 41BD0B00 		movl	$11, %r13d
+ 1075      0000
+ 1076 0727 C7833802 		movl	$63, 568(%rbx)
+ 1076      00003F00 
+ 1076      0000
+ 1077 0731 E96AFBFF 		jmp	.L61
+ 1077      FF
+ 1078              	.L75:
+ 296:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->natural_order = jpeg_natural_order;
+ 1079              		.loc 1 296 0
+ 1080 0736 C7832C02 		movl	$10, 556(%rbx)
+ 1080      00000A00 
+ 1080      0000
+ 297:fltk-1.3.4-1/jpeg/jdinput.c ****       cinfo->lim_Se = DCTSIZE2-1;
+ 1081              		.loc 1 297 0
+ 1082 0740 48C78330 		movq	$jpeg_natural_order, 560(%rbx)
+ 1082      02000000 
+ 1082      000000
+ 298:fltk-1.3.4-1/jpeg/jdinput.c ****       break;
+ 1083              		.loc 1 298 0
+ 1084 074b 41BD0A00 		movl	$10, %r13d
+ 1084      0000
+ 1085 0751 C7833802 		movl	$63, 568(%rbx)
+ 1085      00003F00 
+ 1085      0000
+ 1086 075b E940FBFF 		jmp	.L61
+ 1086      FF
+ 1087              	.LBE28:
+ 1088              	.LBE29:
+ 1089              		.cfi_endproc
+ 1090              	.LFE67:
+ 1092              		.section	.text.unlikely.consume_markers
+ 1093              	.LCOLDE3:
+ 1094              		.section	.text.consume_markers
+ 1095              	.LHOTE3:
+ 1096              		.section	.text.unlikely.jpeg_core_output_dimensions,"ax",@progbits
+ 1097              	.LCOLDB4:
+ 1098              		.section	.text.jpeg_core_output_dimensions,"ax",@progbits
+ 1099              	.LHOTB4:
+ 1100              		.p2align 4,,15
+ 1101              		.globl	jpeg_core_output_dimensions
+ 1103              	jpeg_core_output_dimensions:
+ 1104              	.LFB61:
+  51:fltk-1.3.4-1/jpeg/jdinput.c **** #ifdef IDCT_SCALING_SUPPORTED
+ 1105              		.loc 1 51 0
+ 1106              		.cfi_startproc
+ 1107              	.LVL103:
+ 1108 0000 53       		pushq	%rbx
+ 1109              		.cfi_def_cfa_offset 16
+ 1110              		.cfi_offset 3, -16
+  57:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 1/block_size scaling */
+ 1111              		.loc 1 57 0
+ 1112 0001 4863B72C 		movslq	556(%rdi), %rsi
+ 1112      020000
+  51:fltk-1.3.4-1/jpeg/jdinput.c **** #ifdef IDCT_SCALING_SUPPORTED
+ 1113              		.loc 1 51 0
+ 1114 0008 4889FB   		movq	%rdi, %rbx
+  57:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 1/block_size scaling */
+ 1115              		.loc 1 57 0
+ 1116 000b 8B7F44   		movl	68(%rdi), %edi
+ 1117              	.LVL104:
+ 1118 000e 448B4348 		movl	72(%rbx), %r8d
+ 1119 0012 0FAFFE   		imull	%esi, %edi
+ 1120 0015 4439C7   		cmpl	%r8d, %edi
+ 1121 0018 0F860A01 		jbe	.L136
+ 1121      0000
+  65:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 2/block_size scaling */
+ 1122              		.loc 1 65 0
+ 1123 001e 438D0400 		leal	(%r8,%r8), %eax
+ 1124 0022 39C7     		cmpl	%eax, %edi
+ 1125 0024 0F866601 		jbe	.L137
+ 1125      0000
+  73:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 3/block_size scaling */
+ 1126              		.loc 1 73 0
+ 1127 002a 4401C0   		addl	%r8d, %eax
+ 1128 002d 39C7     		cmpl	%eax, %edi
+ 1129 002f 0F869B01 		jbe	.L138
+ 1129      0000
+  81:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 4/block_size scaling */
+ 1130              		.loc 1 81 0
+ 1131 0035 428D1485 		leal	0(,%r8,4), %edx
+ 1131      00000000 
+ 1132 003d 39D7     		cmpl	%edx, %edi
+ 1133 003f 0F861B02 		jbe	.L139
+ 1133      0000
+  89:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 5/block_size scaling */
+ 1134              		.loc 1 89 0
+ 1135 0045 4401C2   		addl	%r8d, %edx
+ 1136 0048 39D7     		cmpl	%edx, %edi
+ 1137 004a 0F86C401 		jbe	.L140
+ 1137      0000
+  97:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 6/block_size scaling */
+ 1138              		.loc 1 97 0
+ 1139 0050 01C0     		addl	%eax, %eax
+ 1140 0052 39C7     		cmpl	%eax, %edi
+ 1141 0054 0F864A02 		jbe	.L141
+ 1141      0000
+ 105:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 7/block_size scaling */
+ 1142              		.loc 1 105 0
+ 1143 005a 428D04C5 		leal	0(,%r8,8), %eax
+ 1143      00000000 
+ 1144 0062 89C1     		movl	%eax, %ecx
+ 1145 0064 4429C1   		subl	%r8d, %ecx
+ 1146 0067 39CF     		cmpl	%ecx, %edi
+ 1147 0069 0F86C302 		jbe	.L142
+ 1147      0000
+ 113:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 8/block_size scaling */
+ 1148              		.loc 1 113 0
+ 1149 006f 39C7     		cmpl	%eax, %edi
+ 1150 0071 0F860D03 		jbe	.L143
+ 1150      0000
+ 121:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 9/block_size scaling */
+ 1151              		.loc 1 121 0
+ 1152 0077 4401C0   		addl	%r8d, %eax
+ 1153 007a 39C7     		cmpl	%eax, %edi
+ 1154 007c 0F866C02 		jbe	.L144
+ 1154      0000
+ 129:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 10/block_size scaling */
+ 1155              		.loc 1 129 0
+ 1156 0082 01D2     		addl	%edx, %edx
+ 1157 0084 39D7     		cmpl	%edx, %edi
+ 1158 0086 0F863C03 		jbe	.L145
+ 1158      0000
+ 137:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 11/block_size scaling */
+ 1159              		.loc 1 137 0
+ 1160 008c 438D0480 		leal	(%r8,%r8,4), %eax
+ 1161 0090 418D0440 		leal	(%r8,%rax,2), %eax
+ 1162 0094 39C7     		cmpl	%eax, %edi
+ 1163 0096 0F867603 		jbe	.L146
+ 1163      0000
+ 145:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 12/block_size scaling */
+ 1164              		.loc 1 145 0
+ 1165 009c 438D1400 		leal	(%r8,%r8), %edx
+ 1166 00a0 428D0402 		leal	(%rdx,%r8), %eax
+ 1167 00a4 C1E002   		sall	$2, %eax
+ 1168 00a7 39C7     		cmpl	%eax, %edi
+ 1169 00a9 0F86AF03 		jbe	.L147
+ 1169      0000
+ 153:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 13/block_size scaling */
+ 1170              		.loc 1 153 0
+ 1171 00af 4401C0   		addl	%r8d, %eax
+ 1172 00b2 39C7     		cmpl	%eax, %edi
+ 1173 00b4 0F86F003 		jbe	.L148
+ 1173      0000
+ 161:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 14/block_size scaling */
+ 1174              		.loc 1 161 0
+ 1175 00ba 4489C0   		movl	%r8d, %eax
+ 1176 00bd C1E004   		sall	$4, %eax
+ 1177 00c0 89C1     		movl	%eax, %ecx
+ 1178 00c2 29D1     		subl	%edx, %ecx
+ 1179 00c4 39CF     		cmpl	%ecx, %edi
+ 1180 00c6 0F866E04 		jbe	.L149
+ 1180      0000
+ 169:fltk-1.3.4-1/jpeg/jdinput.c ****     /* Provide 15/block_size scaling */
+ 1181              		.loc 1 169 0
+ 1182 00cc 4429C0   		subl	%r8d, %eax
+ 1183 00cf 39C7     		cmpl	%eax, %edi
+ 1184 00d1 0F871F04 		ja	.L129
+ 1184      0000
+ 172:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 1185              		.loc 1 172 0
+ 1186 00d7 8B4330   		movl	48(%rbx), %eax
+ 1187 00da 4889C7   		movq	%rax, %rdi
+ 1188 00dd 48C1E704 		salq	$4, %rdi
+ 1189 00e1 4829C7   		subq	%rax, %rdi
+ 1190 00e4 E8000000 		call	jdiv_round_up
+ 1190      00
+ 1191              	.LVL105:
+ 171:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 15L, (long) cinfo->block_size);
+ 1192              		.loc 1 171 0
+ 1193 00e9 89838800 		movl	%eax, 136(%rbx)
+ 1193      0000
+ 174:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 15;
+ 1194              		.loc 1 174 0
+ 1195 00ef 8B4334   		movl	52(%rbx), %eax
+ 1196 00f2 4863B32C 		movslq	556(%rbx), %rsi
+ 1196      020000
+ 1197 00f9 4889C7   		movq	%rax, %rdi
+ 1198 00fc 48C1E704 		salq	$4, %rdi
+ 1199 0100 4829C7   		subq	%rax, %rdi
+ 1200 0103 E8000000 		call	jdiv_round_up
+ 1200      00
+ 1201              	.LVL106:
+ 175:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 15;
+ 1202              		.loc 1 175 0
+ 1203 0108 C783A801 		movl	$15, 424(%rbx)
+ 1203      00000F00 
+ 1203      0000
+ 173:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 15L, (long) cinfo->block_size);
+ 1204              		.loc 1 173 0
+ 1205 0112 89838C00 		movl	%eax, 140(%rbx)
+ 1205      0000
+ 176:fltk-1.3.4-1/jpeg/jdinput.c ****   } else {
+ 1206              		.loc 1 176 0
+ 1207 0118 C783AC01 		movl	$15, 428(%rbx)
+ 1207      00000F00 
+ 1207      0000
+ 1208 0122 EB3B     		jmp	.L115
+ 1209              		.p2align 4,,10
+ 1210 0124 0F1F4000 		.p2align 3
+ 1211              	.L136:
+  60:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 1212              		.loc 1 60 0
+ 1213 0128 8B7B30   		movl	48(%rbx), %edi
+ 1214 012b E8000000 		call	jdiv_round_up
+ 1214      00
+ 1215              	.LVL107:
+  62:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 1;
+ 1216              		.loc 1 62 0
+ 1217 0130 4863B32C 		movslq	556(%rbx), %rsi
+ 1217      020000
+ 1218 0137 8B7B34   		movl	52(%rbx), %edi
+  59:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width, (long) cinfo->block_size);
+ 1219              		.loc 1 59 0
+ 1220 013a 89838800 		movl	%eax, 136(%rbx)
+ 1220      0000
+  62:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 1;
+ 1221              		.loc 1 62 0
+ 1222 0140 E8000000 		call	jdiv_round_up
+ 1222      00
+ 1223              	.LVL108:
+  63:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 1;
+ 1224              		.loc 1 63 0
+ 1225 0145 C783A801 		movl	$1, 424(%rbx)
+ 1225      00000100 
+ 1225      0000
+  61:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height, (long) cinfo->block_size);
+ 1226              		.loc 1 61 0
+ 1227 014f 89838C00 		movl	%eax, 140(%rbx)
+ 1227      0000
+  64:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 2) {
+ 1228              		.loc 1 64 0
+ 1229 0155 C783AC01 		movl	$1, 428(%rbx)
+ 1229      00000100 
+ 1229      0000
+ 1230              	.L115:
+ 1231              	.LVL109:
+ 188:fltk-1.3.4-1/jpeg/jdinput.c ****        ci++, compptr++) {
+ 1232              		.loc 1 188 0
+ 1233 015f 8B4B38   		movl	56(%rbx), %ecx
+ 1234 0162 31D2     		xorl	%edx, %edx
+ 1235 0164 488B8330 		movq	304(%rbx), %rax
+ 1235      010000
+ 1236              	.LVL110:
+ 1237 016b 85C9     		testl	%ecx, %ecx
+ 1238 016d 7E1F     		jle	.L113
+ 1239              	.LVL111:
+ 1240 016f 90       		.p2align 4,,10
+ 1241              		.p2align 3
+ 1242              	.L133:
+ 190:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->DCT_v_scaled_size = cinfo->min_DCT_v_scaled_size;
+ 1243              		.loc 1 190 0
+ 1244 0170 8B8BA801 		movl	424(%rbx), %ecx
+ 1244      0000
+ 189:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->DCT_h_scaled_size = cinfo->min_DCT_h_scaled_size;
+ 1245              		.loc 1 189 0
+ 1246 0176 83C201   		addl	$1, %edx
+ 1247              	.LVL112:
+ 1248 0179 4883C060 		addq	$96, %rax
+ 1249              	.LVL113:
+ 190:fltk-1.3.4-1/jpeg/jdinput.c ****     compptr->DCT_v_scaled_size = cinfo->min_DCT_v_scaled_size;
+ 1250              		.loc 1 190 0
+ 1251 017d 8948C4   		movl	%ecx, -60(%rax)
+ 191:fltk-1.3.4-1/jpeg/jdinput.c ****   }
+ 1252              		.loc 1 191 0
+ 1253 0180 8B8BAC01 		movl	428(%rbx), %ecx
+ 1253      0000
+ 1254 0186 8948C8   		movl	%ecx, -56(%rax)
+ 1255              	.LVL114:
+ 188:fltk-1.3.4-1/jpeg/jdinput.c ****        ci++, compptr++) {
+ 1256              		.loc 1 188 0
+ 1257 0189 395338   		cmpl	%edx, 56(%rbx)
+ 1258 018c 7FE2     		jg	.L133
+ 1259              	.LVL115:
+ 1260              	.L113:
+ 204:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 1261              		.loc 1 204 0
+ 1262 018e 5B       		popq	%rbx
+ 1263              		.cfi_remember_state
+ 1264              		.cfi_def_cfa_offset 8
+ 1265              	.LVL116:
+ 1266 018f C3       		ret
+ 1267              	.LVL117:
+ 1268              		.p2align 4,,10
+ 1269              		.p2align 3
+ 1270              	.L137:
+ 1271              		.cfi_restore_state
+  68:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 1272              		.loc 1 68 0
+ 1273 0190 8B7B30   		movl	48(%rbx), %edi
+ 1274 0193 4801FF   		addq	%rdi, %rdi
+ 1275 0196 E8000000 		call	jdiv_round_up
+ 1275      00
+ 1276              	.LVL118:
+  70:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 2;
+ 1277              		.loc 1 70 0
+ 1278 019b 8B7B34   		movl	52(%rbx), %edi
+ 1279 019e 4863B32C 		movslq	556(%rbx), %rsi
+ 1279      020000
+  67:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 2L, (long) cinfo->block_size);
+ 1280              		.loc 1 67 0
+ 1281 01a5 89838800 		movl	%eax, 136(%rbx)
+ 1281      0000
+  70:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 2;
+ 1282              		.loc 1 70 0
+ 1283 01ab 4801FF   		addq	%rdi, %rdi
+ 1284 01ae E8000000 		call	jdiv_round_up
+ 1284      00
+ 1285              	.LVL119:
+  71:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 2;
+ 1286              		.loc 1 71 0
+ 1287 01b3 C783A801 		movl	$2, 424(%rbx)
+ 1287      00000200 
+ 1287      0000
+  69:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 2L, (long) cinfo->block_size);
+ 1288              		.loc 1 69 0
+ 1289 01bd 89838C00 		movl	%eax, 140(%rbx)
+ 1289      0000
+  72:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 3) {
+ 1290              		.loc 1 72 0
+ 1291 01c3 C783AC01 		movl	$2, 428(%rbx)
+ 1291      00000200 
+ 1291      0000
+ 1292 01cd EB90     		jmp	.L115
+ 1293 01cf 90       		.p2align 4,,10
+ 1294              		.p2align 3
+ 1295              	.L138:
+  76:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 1296              		.loc 1 76 0
+ 1297 01d0 8B4330   		movl	48(%rbx), %eax
+ 1298 01d3 488D3C40 		leaq	(%rax,%rax,2), %rdi
+ 1299 01d7 E8000000 		call	jdiv_round_up
+ 1299      00
+ 1300              	.LVL120:
+  75:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 3L, (long) cinfo->block_size);
+ 1301              		.loc 1 75 0
+ 1302 01dc 89838800 		movl	%eax, 136(%rbx)
+ 1302      0000
+  78:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 3;
+ 1303              		.loc 1 78 0
+ 1304 01e2 8B4334   		movl	52(%rbx), %eax
+ 1305 01e5 4863B32C 		movslq	556(%rbx), %rsi
+ 1305      020000
+ 1306 01ec 488D3C40 		leaq	(%rax,%rax,2), %rdi
+ 1307 01f0 E8000000 		call	jdiv_round_up
+ 1307      00
+ 1308              	.LVL121:
+  79:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 3;
+ 1309              		.loc 1 79 0
+ 1310 01f5 C783A801 		movl	$3, 424(%rbx)
+ 1310      00000300 
+ 1310      0000
+  77:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 3L, (long) cinfo->block_size);
+ 1311              		.loc 1 77 0
+ 1312 01ff 89838C00 		movl	%eax, 140(%rbx)
+ 1312      0000
+  80:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 4) {
+ 1313              		.loc 1 80 0
+ 1314 0205 C783AC01 		movl	$3, 428(%rbx)
+ 1314      00000300 
+ 1314      0000
+ 1315 020f E94BFFFF 		jmp	.L115
+ 1315      FF
+ 1316              	.L140:
+  92:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 1317              		.loc 1 92 0
+ 1318 0214 8B4330   		movl	48(%rbx), %eax
+ 1319 0217 488D3C80 		leaq	(%rax,%rax,4), %rdi
+ 1320 021b E8000000 		call	jdiv_round_up
+ 1320      00
+ 1321              	.LVL122:
+  91:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 5L, (long) cinfo->block_size);
+ 1322              		.loc 1 91 0
+ 1323 0220 89838800 		movl	%eax, 136(%rbx)
+ 1323      0000
+  94:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 5;
+ 1324              		.loc 1 94 0
+ 1325 0226 8B4334   		movl	52(%rbx), %eax
+ 1326 0229 4863B32C 		movslq	556(%rbx), %rsi
+ 1326      020000
+ 1327 0230 488D3C80 		leaq	(%rax,%rax,4), %rdi
+ 1328 0234 E8000000 		call	jdiv_round_up
+ 1328      00
+ 1329              	.LVL123:
+  95:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 5;
+ 1330              		.loc 1 95 0
+ 1331 0239 C783A801 		movl	$5, 424(%rbx)
+ 1331      00000500 
+ 1331      0000
+  93:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 5L, (long) cinfo->block_size);
+ 1332              		.loc 1 93 0
+ 1333 0243 89838C00 		movl	%eax, 140(%rbx)
+ 1333      0000
+  96:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 6) {
+ 1334              		.loc 1 96 0
+ 1335 0249 C783AC01 		movl	$5, 428(%rbx)
+ 1335      00000500 
+ 1335      0000
+ 1336 0253 E907FFFF 		jmp	.L115
+ 1336      FF
+ 1337 0258 0F1F8400 		.p2align 4,,10
+ 1337      00000000 
+ 1338              		.p2align 3
+ 1339              	.L139:
+  84:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 1340              		.loc 1 84 0
+ 1341 0260 8B7B30   		movl	48(%rbx), %edi
+ 1342 0263 48C1E702 		salq	$2, %rdi
+ 1343 0267 E8000000 		call	jdiv_round_up
+ 1343      00
+ 1344              	.LVL124:
+  86:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 4;
+ 1345              		.loc 1 86 0
+ 1346 026c 8B7B34   		movl	52(%rbx), %edi
+ 1347 026f 4863B32C 		movslq	556(%rbx), %rsi
+ 1347      020000
+  83:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 4L, (long) cinfo->block_size);
+ 1348              		.loc 1 83 0
+ 1349 0276 89838800 		movl	%eax, 136(%rbx)
+ 1349      0000
+  86:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 4;
+ 1350              		.loc 1 86 0
+ 1351 027c 48C1E702 		salq	$2, %rdi
+ 1352 0280 E8000000 		call	jdiv_round_up
+ 1352      00
+ 1353              	.LVL125:
+  87:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 4;
+ 1354              		.loc 1 87 0
+ 1355 0285 C783A801 		movl	$4, 424(%rbx)
+ 1355      00000400 
+ 1355      0000
+  85:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 4L, (long) cinfo->block_size);
+ 1356              		.loc 1 85 0
+ 1357 028f 89838C00 		movl	%eax, 140(%rbx)
+ 1357      0000
+  88:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 5) {
+ 1358              		.loc 1 88 0
+ 1359 0295 C783AC01 		movl	$4, 428(%rbx)
+ 1359      00000400 
+ 1359      0000
+ 1360 029f E9BBFEFF 		jmp	.L115
+ 1360      FF
+ 1361              	.L141:
+ 100:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 1362              		.loc 1 100 0
+ 1363 02a4 8B4330   		movl	48(%rbx), %eax
+ 1364 02a7 488D3C40 		leaq	(%rax,%rax,2), %rdi
+ 1365 02ab 4801FF   		addq	%rdi, %rdi
+ 1366 02ae E8000000 		call	jdiv_round_up
+ 1366      00
+ 1367              	.LVL126:
+  99:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 6L, (long) cinfo->block_size);
+ 1368              		.loc 1 99 0
+ 1369 02b3 89838800 		movl	%eax, 136(%rbx)
+ 1369      0000
+ 102:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 6;
+ 1370              		.loc 1 102 0
+ 1371 02b9 8B4334   		movl	52(%rbx), %eax
+ 1372 02bc 4863B32C 		movslq	556(%rbx), %rsi
+ 1372      020000
+ 1373 02c3 488D3C40 		leaq	(%rax,%rax,2), %rdi
+ 1374 02c7 4801FF   		addq	%rdi, %rdi
+ 1375 02ca E8000000 		call	jdiv_round_up
+ 1375      00
+ 1376              	.LVL127:
+ 103:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 6;
+ 1377              		.loc 1 103 0
+ 1378 02cf C783A801 		movl	$6, 424(%rbx)
+ 1378      00000600 
+ 1378      0000
+ 101:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 6L, (long) cinfo->block_size);
+ 1379              		.loc 1 101 0
+ 1380 02d9 89838C00 		movl	%eax, 140(%rbx)
+ 1380      0000
+ 104:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 7) {
+ 1381              		.loc 1 104 0
+ 1382 02df C783AC01 		movl	$6, 428(%rbx)
+ 1382      00000600 
+ 1382      0000
+ 1383 02e9 E971FEFF 		jmp	.L115
+ 1383      FF
+ 1384              	.L144:
+ 124:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 1385              		.loc 1 124 0
+ 1386 02ee 8B4330   		movl	48(%rbx), %eax
+ 1387 02f1 488D3CC0 		leaq	(%rax,%rax,8), %rdi
+ 1388 02f5 E8000000 		call	jdiv_round_up
+ 1388      00
+ 1389              	.LVL128:
+ 123:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 9L, (long) cinfo->block_size);
+ 1390              		.loc 1 123 0
+ 1391 02fa 89838800 		movl	%eax, 136(%rbx)
+ 1391      0000
+ 126:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 9;
+ 1392              		.loc 1 126 0
+ 1393 0300 8B4334   		movl	52(%rbx), %eax
+ 1394 0303 4863B32C 		movslq	556(%rbx), %rsi
+ 1394      020000
+ 1395 030a 488D3CC0 		leaq	(%rax,%rax,8), %rdi
+ 1396 030e E8000000 		call	jdiv_round_up
+ 1396      00
+ 1397              	.LVL129:
+ 127:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 9;
+ 1398              		.loc 1 127 0
+ 1399 0313 C783A801 		movl	$9, 424(%rbx)
+ 1399      00000900 
+ 1399      0000
+ 125:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 9L, (long) cinfo->block_size);
+ 1400              		.loc 1 125 0
+ 1401 031d 89838C00 		movl	%eax, 140(%rbx)
+ 1401      0000
+ 128:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 10) {
+ 1402              		.loc 1 128 0
+ 1403 0323 C783AC01 		movl	$9, 428(%rbx)
+ 1403      00000900 
+ 1403      0000
+ 1404 032d E92DFEFF 		jmp	.L115
+ 1404      FF
+ 1405              	.L142:
+ 108:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 1406              		.loc 1 108 0
+ 1407 0332 8B4330   		movl	48(%rbx), %eax
+ 1408 0335 488D3CC5 		leaq	0(,%rax,8), %rdi
+ 1408      00000000 
+ 1409 033d 4829C7   		subq	%rax, %rdi
+ 1410 0340 E8000000 		call	jdiv_round_up
+ 1410      00
+ 1411              	.LVL130:
+ 107:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 7L, (long) cinfo->block_size);
+ 1412              		.loc 1 107 0
+ 1413 0345 89838800 		movl	%eax, 136(%rbx)
+ 1413      0000
+ 110:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 7;
+ 1414              		.loc 1 110 0
+ 1415 034b 8B4334   		movl	52(%rbx), %eax
+ 1416 034e 4863B32C 		movslq	556(%rbx), %rsi
+ 1416      020000
+ 1417 0355 488D3CC5 		leaq	0(,%rax,8), %rdi
+ 1417      00000000 
+ 1418 035d 4829C7   		subq	%rax, %rdi
+ 1419 0360 E8000000 		call	jdiv_round_up
+ 1419      00
+ 1420              	.LVL131:
+ 111:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 7;
+ 1421              		.loc 1 111 0
+ 1422 0365 C783A801 		movl	$7, 424(%rbx)
+ 1422      00000700 
+ 1422      0000
+ 109:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 7L, (long) cinfo->block_size);
+ 1423              		.loc 1 109 0
+ 1424 036f 89838C00 		movl	%eax, 140(%rbx)
+ 1424      0000
+ 112:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 8) {
+ 1425              		.loc 1 112 0
+ 1426 0375 C783AC01 		movl	$7, 428(%rbx)
+ 1426      00000700 
+ 1426      0000
+ 1427 037f E9DBFDFF 		jmp	.L115
+ 1427      FF
+ 1428              	.L143:
+ 116:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 1429              		.loc 1 116 0
+ 1430 0384 8B7B30   		movl	48(%rbx), %edi
+ 1431 0387 48C1E703 		salq	$3, %rdi
+ 1432 038b E8000000 		call	jdiv_round_up
+ 1432      00
+ 1433              	.LVL132:
+ 118:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 8;
+ 1434              		.loc 1 118 0
+ 1435 0390 8B7B34   		movl	52(%rbx), %edi
+ 1436 0393 4863B32C 		movslq	556(%rbx), %rsi
+ 1436      020000
+ 115:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 8L, (long) cinfo->block_size);
+ 1437              		.loc 1 115 0
+ 1438 039a 89838800 		movl	%eax, 136(%rbx)
+ 1438      0000
+ 118:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 8;
+ 1439              		.loc 1 118 0
+ 1440 03a0 48C1E703 		salq	$3, %rdi
+ 1441 03a4 E8000000 		call	jdiv_round_up
+ 1441      00
+ 1442              	.LVL133:
+ 119:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 8;
+ 1443              		.loc 1 119 0
+ 1444 03a9 C783A801 		movl	$8, 424(%rbx)
+ 1444      00000800 
+ 1444      0000
+ 117:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 8L, (long) cinfo->block_size);
+ 1445              		.loc 1 117 0
+ 1446 03b3 89838C00 		movl	%eax, 140(%rbx)
+ 1446      0000
+ 120:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 9) {
+ 1447              		.loc 1 120 0
+ 1448 03b9 C783AC01 		movl	$8, 428(%rbx)
+ 1448      00000800 
+ 1448      0000
+ 1449 03c3 E997FDFF 		jmp	.L115
+ 1449      FF
+ 1450              	.L145:
+ 132:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 1451              		.loc 1 132 0
+ 1452 03c8 8B4330   		movl	48(%rbx), %eax
+ 1453 03cb 488D3C80 		leaq	(%rax,%rax,4), %rdi
+ 1454 03cf 4801FF   		addq	%rdi, %rdi
+ 1455 03d2 E8000000 		call	jdiv_round_up
+ 1455      00
+ 1456              	.LVL134:
+ 131:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 10L, (long) cinfo->block_size);
+ 1457              		.loc 1 131 0
+ 1458 03d7 89838800 		movl	%eax, 136(%rbx)
+ 1458      0000
+ 134:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 10;
+ 1459              		.loc 1 134 0
+ 1460 03dd 8B4334   		movl	52(%rbx), %eax
+ 1461 03e0 4863B32C 		movslq	556(%rbx), %rsi
+ 1461      020000
+ 1462 03e7 488D3C80 		leaq	(%rax,%rax,4), %rdi
+ 1463 03eb 4801FF   		addq	%rdi, %rdi
+ 1464 03ee E8000000 		call	jdiv_round_up
+ 1464      00
+ 1465              	.LVL135:
+ 135:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 10;
+ 1466              		.loc 1 135 0
+ 1467 03f3 C783A801 		movl	$10, 424(%rbx)
+ 1467      00000A00 
+ 1467      0000
+ 133:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 10L, (long) cinfo->block_size);
+ 1468              		.loc 1 133 0
+ 1469 03fd 89838C00 		movl	%eax, 140(%rbx)
+ 1469      0000
+ 136:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 11) {
+ 1470              		.loc 1 136 0
+ 1471 0403 C783AC01 		movl	$10, 428(%rbx)
+ 1471      00000A00 
+ 1471      0000
+ 1472 040d E94DFDFF 		jmp	.L115
+ 1472      FF
+ 1473              	.L146:
+ 140:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 1474              		.loc 1 140 0
+ 1475 0412 8B4330   		movl	48(%rbx), %eax
+ 1476 0415 488D1480 		leaq	(%rax,%rax,4), %rdx
+ 1477 0419 488D3C50 		leaq	(%rax,%rdx,2), %rdi
+ 1478 041d E8000000 		call	jdiv_round_up
+ 1478      00
+ 1479              	.LVL136:
+ 139:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 11L, (long) cinfo->block_size);
+ 1480              		.loc 1 139 0
+ 1481 0422 89838800 		movl	%eax, 136(%rbx)
+ 1481      0000
+ 142:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 11;
+ 1482              		.loc 1 142 0
+ 1483 0428 8B4334   		movl	52(%rbx), %eax
+ 1484 042b 4863B32C 		movslq	556(%rbx), %rsi
+ 1484      020000
+ 1485 0432 488D1480 		leaq	(%rax,%rax,4), %rdx
+ 1486 0436 488D3C50 		leaq	(%rax,%rdx,2), %rdi
+ 1487 043a E8000000 		call	jdiv_round_up
+ 1487      00
+ 1488              	.LVL137:
+ 143:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 11;
+ 1489              		.loc 1 143 0
+ 1490 043f C783A801 		movl	$11, 424(%rbx)
+ 1490      00000B00 
+ 1490      0000
+ 141:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 11L, (long) cinfo->block_size);
+ 1491              		.loc 1 141 0
+ 1492 0449 89838C00 		movl	%eax, 140(%rbx)
+ 1492      0000
+ 144:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 12) {
+ 1493              		.loc 1 144 0
+ 1494 044f C783AC01 		movl	$11, 428(%rbx)
+ 1494      00000B00 
+ 1494      0000
+ 1495 0459 E901FDFF 		jmp	.L115
+ 1495      FF
+ 1496              	.L147:
+ 148:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 1497              		.loc 1 148 0
+ 1498 045e 8B4330   		movl	48(%rbx), %eax
+ 1499 0461 488D3C40 		leaq	(%rax,%rax,2), %rdi
+ 1500 0465 48C1E702 		salq	$2, %rdi
+ 1501 0469 E8000000 		call	jdiv_round_up
+ 1501      00
+ 1502              	.LVL138:
+ 147:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 12L, (long) cinfo->block_size);
+ 1503              		.loc 1 147 0
+ 1504 046e 89838800 		movl	%eax, 136(%rbx)
+ 1504      0000
+ 150:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 12;
+ 1505              		.loc 1 150 0
+ 1506 0474 8B4334   		movl	52(%rbx), %eax
+ 1507 0477 4863B32C 		movslq	556(%rbx), %rsi
+ 1507      020000
+ 1508 047e 488D3C40 		leaq	(%rax,%rax,2), %rdi
+ 1509 0482 48C1E702 		salq	$2, %rdi
+ 1510 0486 E8000000 		call	jdiv_round_up
+ 1510      00
+ 1511              	.LVL139:
+ 151:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 12;
+ 1512              		.loc 1 151 0
+ 1513 048b C783A801 		movl	$12, 424(%rbx)
+ 1513      00000C00 
+ 1513      0000
+ 149:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 12L, (long) cinfo->block_size);
+ 1514              		.loc 1 149 0
+ 1515 0495 89838C00 		movl	%eax, 140(%rbx)
+ 1515      0000
+ 152:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 13) {
+ 1516              		.loc 1 152 0
+ 1517 049b C783AC01 		movl	$12, 428(%rbx)
+ 1517      00000C00 
+ 1517      0000
+ 1518 04a5 E9B5FCFF 		jmp	.L115
+ 1518      FF
+ 1519              	.L148:
+ 156:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 1520              		.loc 1 156 0
+ 1521 04aa 8B4330   		movl	48(%rbx), %eax
+ 1522 04ad 488D1440 		leaq	(%rax,%rax,2), %rdx
+ 1523 04b1 488D3C90 		leaq	(%rax,%rdx,4), %rdi
+ 1524 04b5 E8000000 		call	jdiv_round_up
+ 1524      00
+ 1525              	.LVL140:
+ 155:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 13L, (long) cinfo->block_size);
+ 1526              		.loc 1 155 0
+ 1527 04ba 89838800 		movl	%eax, 136(%rbx)
+ 1527      0000
+ 158:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 13;
+ 1528              		.loc 1 158 0
+ 1529 04c0 8B4334   		movl	52(%rbx), %eax
+ 1530 04c3 4863B32C 		movslq	556(%rbx), %rsi
+ 1530      020000
+ 1531 04ca 488D1440 		leaq	(%rax,%rax,2), %rdx
+ 1532 04ce 488D3C90 		leaq	(%rax,%rdx,4), %rdi
+ 1533 04d2 E8000000 		call	jdiv_round_up
+ 1533      00
+ 1534              	.LVL141:
+ 159:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 13;
+ 1535              		.loc 1 159 0
+ 1536 04d7 C783A801 		movl	$13, 424(%rbx)
+ 1536      00000D00 
+ 1536      0000
+ 157:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 13L, (long) cinfo->block_size);
+ 1537              		.loc 1 157 0
+ 1538 04e1 89838C00 		movl	%eax, 140(%rbx)
+ 1538      0000
+ 160:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 14) {
+ 1539              		.loc 1 160 0
+ 1540 04e7 C783AC01 		movl	$13, 428(%rbx)
+ 1540      00000D00 
+ 1540      0000
+ 1541 04f1 E969FCFF 		jmp	.L115
+ 1541      FF
+ 1542              	.L129:
+ 180:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 1543              		.loc 1 180 0
+ 1544 04f6 8B7B30   		movl	48(%rbx), %edi
+ 1545 04f9 48C1E704 		salq	$4, %rdi
+ 1546 04fd E8000000 		call	jdiv_round_up
+ 1546      00
+ 1547              	.LVL142:
+ 182:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 16;
+ 1548              		.loc 1 182 0
+ 1549 0502 8B7B34   		movl	52(%rbx), %edi
+ 1550 0505 4863B32C 		movslq	556(%rbx), %rsi
+ 1550      020000
+ 179:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 16L, (long) cinfo->block_size);
+ 1551              		.loc 1 179 0
+ 1552 050c 89838800 		movl	%eax, 136(%rbx)
+ 1552      0000
+ 182:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 16;
+ 1553              		.loc 1 182 0
+ 1554 0512 48C1E704 		salq	$4, %rdi
+ 1555 0516 E8000000 		call	jdiv_round_up
+ 1555      00
+ 1556              	.LVL143:
+ 183:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 16;
+ 1557              		.loc 1 183 0
+ 1558 051b C783A801 		movl	$16, 424(%rbx)
+ 1558      00001000 
+ 1558      0000
+ 181:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 16L, (long) cinfo->block_size);
+ 1559              		.loc 1 181 0
+ 1560 0525 89838C00 		movl	%eax, 140(%rbx)
+ 1560      0000
+ 184:fltk-1.3.4-1/jpeg/jdinput.c ****   }
+ 1561              		.loc 1 184 0
+ 1562 052b C783AC01 		movl	$16, 428(%rbx)
+ 1562      00001000 
+ 1562      0000
+ 1563 0535 E925FCFF 		jmp	.L115
+ 1563      FF
+ 1564              	.L149:
+ 164:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->output_height = (JDIMENSION)
+ 1565              		.loc 1 164 0
+ 1566 053a 8B4330   		movl	48(%rbx), %eax
+ 1567 053d 488D1400 		leaq	(%rax,%rax), %rdx
+ 1568 0541 48C1E004 		salq	$4, %rax
+ 1569 0545 4829D0   		subq	%rdx, %rax
+ 1570 0548 4889C7   		movq	%rax, %rdi
+ 1571 054b E8000000 		call	jdiv_round_up
+ 1571      00
+ 1572              	.LVL144:
+ 163:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_width * 14L, (long) cinfo->block_size);
+ 1573              		.loc 1 163 0
+ 1574 0550 89838800 		movl	%eax, 136(%rbx)
+ 1574      0000
+ 166:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_h_scaled_size = 14;
+ 1575              		.loc 1 166 0
+ 1576 0556 8B4334   		movl	52(%rbx), %eax
+ 1577 0559 4863B32C 		movslq	556(%rbx), %rsi
+ 1577      020000
+ 1578 0560 488D1400 		leaq	(%rax,%rax), %rdx
+ 1579 0564 48C1E004 		salq	$4, %rax
+ 1580 0568 4829D0   		subq	%rdx, %rax
+ 1581 056b 4889C7   		movq	%rax, %rdi
+ 1582 056e E8000000 		call	jdiv_round_up
+ 1582      00
+ 1583              	.LVL145:
+ 167:fltk-1.3.4-1/jpeg/jdinput.c ****     cinfo->min_DCT_v_scaled_size = 14;
+ 1584              		.loc 1 167 0
+ 1585 0573 C783A801 		movl	$14, 424(%rbx)
+ 1585      00000E00 
+ 1585      0000
+ 165:fltk-1.3.4-1/jpeg/jdinput.c ****       jdiv_round_up((long) cinfo->image_height * 14L, (long) cinfo->block_size);
+ 1586              		.loc 1 165 0
+ 1587 057d 89838C00 		movl	%eax, 140(%rbx)
+ 1587      0000
+ 168:fltk-1.3.4-1/jpeg/jdinput.c ****   } else if (cinfo->scale_num * cinfo->block_size <= cinfo->scale_denom * 15) {
+ 1588              		.loc 1 168 0
+ 1589 0583 C783AC01 		movl	$14, 428(%rbx)
+ 1589      00000E00 
+ 1589      0000
+ 1590 058d E9CDFBFF 		jmp	.L115
+ 1590      FF
+ 1591              		.cfi_endproc
+ 1592              	.LFE61:
+ 1594              		.section	.text.unlikely.jpeg_core_output_dimensions
+ 1595              	.LCOLDE4:
+ 1596              		.section	.text.jpeg_core_output_dimensions
+ 1597              	.LHOTE4:
+ 1598              		.section	.text.unlikely.jinit_input_controller,"ax",@progbits
+ 1599              	.LCOLDB5:
+ 1600              		.section	.text.jinit_input_controller,"ax",@progbits
+ 1601              	.LHOTB5:
+ 1602              		.p2align 4,,15
+ 1603              		.globl	jinit_input_controller
+ 1605              	jinit_input_controller:
+ 1606              	.LFB69:
+ 634:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 635:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 636:fltk-1.3.4-1/jpeg/jdinput.c **** /*
+ 637:fltk-1.3.4-1/jpeg/jdinput.c ****  * Initialize the input controller module.
+ 638:fltk-1.3.4-1/jpeg/jdinput.c ****  * This is called only once, when the decompression object is created.
+ 639:fltk-1.3.4-1/jpeg/jdinput.c ****  */
+ 640:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 641:fltk-1.3.4-1/jpeg/jdinput.c **** GLOBAL(void)
+ 642:fltk-1.3.4-1/jpeg/jdinput.c **** jinit_input_controller (j_decompress_ptr cinfo)
+ 643:fltk-1.3.4-1/jpeg/jdinput.c **** {
+ 1607              		.loc 1 643 0
+ 1608              		.cfi_startproc
+ 1609              	.LVL146:
+ 644:fltk-1.3.4-1/jpeg/jdinput.c ****   my_inputctl_ptr inputctl;
+ 645:fltk-1.3.4-1/jpeg/jdinput.c **** 
+ 646:fltk-1.3.4-1/jpeg/jdinput.c ****   /* Create subobject in permanent pool */
+ 647:fltk-1.3.4-1/jpeg/jdinput.c ****   inputctl = (my_inputctl_ptr)
+ 648:fltk-1.3.4-1/jpeg/jdinput.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
+ 1610              		.loc 1 648 0
+ 1611 0000 488B4708 		movq	8(%rdi), %rax
+ 643:fltk-1.3.4-1/jpeg/jdinput.c ****   my_inputctl_ptr inputctl;
+ 1612              		.loc 1 643 0
+ 1613 0004 53       		pushq	%rbx
+ 1614              		.cfi_def_cfa_offset 16
+ 1615              		.cfi_offset 3, -16
+ 643:fltk-1.3.4-1/jpeg/jdinput.c ****   my_inputctl_ptr inputctl;
+ 1616              		.loc 1 643 0
+ 1617 0005 4889FB   		movq	%rdi, %rbx
+ 647:fltk-1.3.4-1/jpeg/jdinput.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
+ 1618              		.loc 1 647 0
+ 1619 0008 BA300000 		movl	$48, %edx
+ 1619      00
+ 1620 000d 31F6     		xorl	%esi, %esi
+ 1621 000f FF10     		call	*(%rax)
+ 1622              	.LVL147:
+ 649:fltk-1.3.4-1/jpeg/jdinput.c **** 				SIZEOF(my_input_controller));
+ 650:fltk-1.3.4-1/jpeg/jdinput.c ****   cinfo->inputctl = &inputctl->pub;
+ 1623              		.loc 1 650 0
+ 1624 0011 48898360 		movq	%rax, 608(%rbx)
+ 1624      020000
+ 651:fltk-1.3.4-1/jpeg/jdinput.c ****   /* Initialize method pointers */
+ 652:fltk-1.3.4-1/jpeg/jdinput.c ****   inputctl->pub.consume_input = consume_markers;
+ 1625              		.loc 1 652 0
+ 1626 0018 48C70000 		movq	$consume_markers, (%rax)
+ 1626      000000
+ 653:fltk-1.3.4-1/jpeg/jdinput.c ****   inputctl->pub.reset_input_controller = reset_input_controller;
+ 1627              		.loc 1 653 0
+ 1628 001f 48C74008 		movq	$reset_input_controller, 8(%rax)
+ 1628      00000000 
+ 654:fltk-1.3.4-1/jpeg/jdinput.c ****   inputctl->pub.start_input_pass = start_input_pass;
+ 1629              		.loc 1 654 0
+ 1630 0027 48C74010 		movq	$start_input_pass, 16(%rax)
+ 1630      00000000 
+ 655:fltk-1.3.4-1/jpeg/jdinput.c ****   inputctl->pub.finish_input_pass = finish_input_pass;
+ 1631              		.loc 1 655 0
+ 1632 002f 48C74018 		movq	$finish_input_pass, 24(%rax)
+ 1632      00000000 
+ 656:fltk-1.3.4-1/jpeg/jdinput.c ****   /* Initialize state: can't use reset_input_controller since we don't
+ 657:fltk-1.3.4-1/jpeg/jdinput.c ****    * want to try to reset other modules yet.
+ 658:fltk-1.3.4-1/jpeg/jdinput.c ****    */
+ 659:fltk-1.3.4-1/jpeg/jdinput.c ****   inputctl->pub.has_multiple_scans = FALSE; /* "unknown" would be better */
+ 1633              		.loc 1 659 0
+ 1634 0037 C7402000 		movl	$0, 32(%rax)
+ 1634      000000
+ 660:fltk-1.3.4-1/jpeg/jdinput.c ****   inputctl->pub.eoi_reached = FALSE;
+ 1635              		.loc 1 660 0
+ 1636 003e C7402400 		movl	$0, 36(%rax)
+ 1636      000000
+ 661:fltk-1.3.4-1/jpeg/jdinput.c ****   inputctl->inheaders = 1;
+ 1637              		.loc 1 661 0
+ 1638 0045 C7402801 		movl	$1, 40(%rax)
+ 1638      000000
+ 662:fltk-1.3.4-1/jpeg/jdinput.c **** }
+ 1639              		.loc 1 662 0
+ 1640 004c 5B       		popq	%rbx
+ 1641              		.cfi_def_cfa_offset 8
+ 1642              	.LVL148:
+ 1643 004d C3       		ret
+ 1644              		.cfi_endproc
+ 1645              	.LFE69:
+ 1647              		.section	.text.unlikely.jinit_input_controller
+ 1648              	.LCOLDE5:
+ 1649              		.section	.text.jinit_input_controller
+ 1650              	.LHOTE5:
+ 1651              		.text
+ 1652              	.Letext0:
+ 1653              		.section	.text.unlikely.finish_input_pass
+ 1654              	.Letext_cold0:
+ 1655              		.file 3 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
+ 1656              		.file 4 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 1657              		.file 5 "/usr/include/libio.h"
+ 1658              		.file 6 "fltk-1.3.4-1/jpeg/jmorecfg.h"
+ 1659              		.file 7 "fltk-1.3.4-1/jpeg/jpeglib.h"
+ 1660              		.file 8 "fltk-1.3.4-1/jpeg/jpegint.h"
+ 1661              		.file 9 "fltk-1.3.4-1/jpeg/jerror.h"
+ 1662              		.file 10 "/usr/include/stdio.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 jdinput.c
+     /tmp/ccDn4D0h.s:13     .text.finish_input_pass:0000000000000000 finish_input_pass
+     /tmp/ccDn4D0h.s:479    .text.consume_markers:0000000000000000 consume_markers
+     /tmp/ccDn4D0h.s:51     .text.reset_input_controller:0000000000000000 reset_input_controller
+     /tmp/ccDn4D0h.s:102    .text.start_input_pass:0000000000000000 start_input_pass
+     /tmp/ccDn4D0h.s:1103   .text.jpeg_core_output_dimensions:0000000000000000 jpeg_core_output_dimensions
+     /tmp/ccDn4D0h.s:1605   .text.jinit_input_controller:0000000000000000 jinit_input_controller
+                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
+                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+                           .group:0000000000000000 wm4.jconfig.h.10.247fc3ff67998f3074970b1373c70333
+                           .group:0000000000000000 wm4.features.h.19.24da27e0a4d0d521fd057013d982b8b5
+                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
+                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
+                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
+                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
+                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
+                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
+                           .group:0000000000000000 wm4.waitflags.h.25.e401b8bcfee800b540b27abd7cc78de9
+                           .group:0000000000000000 wm4.waitstatus.h.28.93f167f49d64e2b9b99f98d1162a93bf
+                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
+                           .group:0000000000000000 wm4.endian.h.41.24cced64aef71195a51d4daa8e4f4a95
+                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
+                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
+                           .group:0000000000000000 wm4.byteswap.h.38.11ee5fdc0f6cc53a16c505b9233cecef
+                           .group:0000000000000000 wm4.endian.h.63.97272d7c64d5db8020003b32e9289502
+                           .group:0000000000000000 wm4.waitstatus.h.99.408b6270fa6eb71377201a241ef15f79
+                           .group:0000000000000000 wm4.stdlib.h.50.84aeca2ac6f37d40e1e9b3cef757ba2d
+                           .group:0000000000000000 wm4.types.h.23.f6dcbaa72f8f71361acef09804d45a5e
+                           .group:0000000000000000 wm4.time.h.53.beb46e650cd406cb917b6b96b45e640a
+                           .group:0000000000000000 wm4.stddef.h.238.847b6907dabda77be90a9ab7ad789e2e
+                           .group:0000000000000000 wm4.types.h.187.bd5a05039b505b3620e6973f1b2ffeb1
+                           .group:0000000000000000 wm4.select.h.28.eb2f3debdbcffd1442ebddaebc4fb6ff
+                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
+                           .group:0000000000000000 wm4.select.h.36.f76c3b9e55c871743863013cc4cc14c9
+                           .group:0000000000000000 wm4.time.h.66.e70ce69790c975f0efb369340c432e0b
+                           .group:0000000000000000 wm4.time.h.25.ae5284cdff565e87a9198d819340325d
+                           .group:0000000000000000 wm4.select.h.49.e9d2041e5035cc68ebd1a20f7dbc8514
+                           .group:0000000000000000 wm4.select2.h.27.f95f2ab0ffee66dc1b6575014894b21a
+                           .group:0000000000000000 wm4.sysmacros.h.20.8a0c33ff175cd9b434a86c0aaa36f0a2
+                           .group:0000000000000000 wm4.types.h.229.67b3f66bd74b06b451caec392a72a945
+                           .group:0000000000000000 wm4.pthreadtypes.h.25.6892b1493314fcf446bbc76e7362acba
+                           .group:0000000000000000 wm4.alloca.h.19.edefa922a76c1cbaaf1e416903ba2d1c
+                           .group:0000000000000000 wm4.alloca.h.29.156e12058824cc23d961c4d3b13031f6
+                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
+                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
+                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
+                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
+                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
+                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
+                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
+                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
+                           .group:0000000000000000 wm4.stdio.h.80.17b7dd1ca72d8a61987532cb1d80194a
+                           .group:0000000000000000 wm4.stdio_lim.h.23.557290a6cddeba0587f574f29e3a5fb9
+                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
+                           .group:0000000000000000 wm4.stdio.h.26.cae64f7ada9bb8327a89dba6a5e93655
+                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
+                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
+                           .group:0000000000000000 wm4.string2.h.45.00535b99420fc3014c2da41d6645330d
+                           .group:0000000000000000 wm4.string3.h.31.0c4b9301b754a2db05eaafef869657d2
+                           .group:0000000000000000 wm4.jinclude.h.67.b19f941ec97c4845fa4609292c7e2db4
+                           .group:0000000000000000 wm4.jmorecfg.h.33.3b4c5f9cc07b3737823b06caf24d5b05
+                           .group:0000000000000000 wm4.jpeglib.h.40.4f111c27252a38df39328d65454e82f4
+                           .group:0000000000000000 wm4.jpegint.h.26.5219ef5d4e4921371d38e77b6091fd20
+                           .group:0000000000000000 wm4.jerror.h.25.1dbd8674e70ab5215bc0037320e5c2a2
+
+UNDEFINED SYMBOLS
+jdiv_round_up
+jpeg_natural_order
+jpeg_natural_order5
+jpeg_natural_order2
+jpeg_natural_order3
+jpeg_natural_order4
+jpeg_natural_order7
+jpeg_natural_order6

@@ -1,0 +1,544 @@
+   1              		.file	"pngwio.c"
+   2              		.text
+   3              	.Ltext0:
+   4              		.section	.rodata.str1.1,"aMS",@progbits,1
+   5              	.LC0:
+   6 0000 57726974 		.string	"Write Error"
+   6      65204572 
+   6      726F7200 
+   7              		.section	.text.unlikely.png_default_write_data,"ax",@progbits
+   8              	.LCOLDB1:
+   9              		.section	.text.png_default_write_data,"ax",@progbits
+  10              	.LHOTB1:
+  11              		.p2align 4,,15
+  12              		.section	.text.unlikely.png_default_write_data
+  13              	.Ltext_cold0:
+  14              		.section	.text.png_default_write_data
+  15              		.globl	png_default_write_data
+  17              	png_default_write_data:
+  18              	.LFB57:
+  19              		.file 1 "fltk-1.3.4-1/png/pngwio.c"
+   1:fltk-1.3.4-1/png/pngwio.c **** 
+   2:fltk-1.3.4-1/png/pngwio.c **** /* pngwio.c - functions for data output
+   3:fltk-1.3.4-1/png/pngwio.c ****  *
+   4:fltk-1.3.4-1/png/pngwio.c ****  * Last changed in libpng 1.6.15 [November 20, 2014]
+   5:fltk-1.3.4-1/png/pngwio.c ****  * Copyright (c) 1998-2014 Glenn Randers-Pehrson
+   6:fltk-1.3.4-1/png/pngwio.c ****  * (Version 0.96 Copyright (c) 1996, 1997 Andreas Dilger)
+   7:fltk-1.3.4-1/png/pngwio.c ****  * (Version 0.88 Copyright (c) 1995, 1996 Guy Eric Schalnat, Group 42, Inc.)
+   8:fltk-1.3.4-1/png/pngwio.c ****  *
+   9:fltk-1.3.4-1/png/pngwio.c ****  * This code is released under the libpng license.
+  10:fltk-1.3.4-1/png/pngwio.c ****  * For conditions of distribution and use, see the disclaimer
+  11:fltk-1.3.4-1/png/pngwio.c ****  * and license in png.h
+  12:fltk-1.3.4-1/png/pngwio.c ****  *
+  13:fltk-1.3.4-1/png/pngwio.c ****  * This file provides a location for all output.  Users who need
+  14:fltk-1.3.4-1/png/pngwio.c ****  * special handling are expected to write functions that have the same
+  15:fltk-1.3.4-1/png/pngwio.c ****  * arguments as these and perform similar functions, but that possibly
+  16:fltk-1.3.4-1/png/pngwio.c ****  * use different output methods.  Note that you shouldn't change these
+  17:fltk-1.3.4-1/png/pngwio.c ****  * functions, but rather write replacement functions and then change
+  18:fltk-1.3.4-1/png/pngwio.c ****  * them at run time with png_set_write_fn(...).
+  19:fltk-1.3.4-1/png/pngwio.c ****  */
+  20:fltk-1.3.4-1/png/pngwio.c **** 
+  21:fltk-1.3.4-1/png/pngwio.c **** #include "pngpriv.h"
+  22:fltk-1.3.4-1/png/pngwio.c **** 
+  23:fltk-1.3.4-1/png/pngwio.c **** #ifdef PNG_WRITE_SUPPORTED
+  24:fltk-1.3.4-1/png/pngwio.c **** 
+  25:fltk-1.3.4-1/png/pngwio.c **** /* Write the data to whatever output you are using.  The default routine
+  26:fltk-1.3.4-1/png/pngwio.c ****  * writes to a file pointer.  Note that this routine sometimes gets called
+  27:fltk-1.3.4-1/png/pngwio.c ****  * with very small lengths, so you should implement some kind of simple
+  28:fltk-1.3.4-1/png/pngwio.c ****  * buffering if you are using unbuffered writes.  This should never be asked
+  29:fltk-1.3.4-1/png/pngwio.c ****  * to write more than 64K on a 16 bit machine.
+  30:fltk-1.3.4-1/png/pngwio.c ****  */
+  31:fltk-1.3.4-1/png/pngwio.c **** 
+  32:fltk-1.3.4-1/png/pngwio.c **** void /* PRIVATE */
+  33:fltk-1.3.4-1/png/pngwio.c **** png_write_data(png_structrp png_ptr, png_const_bytep data, png_size_t length)
+  34:fltk-1.3.4-1/png/pngwio.c **** {
+  35:fltk-1.3.4-1/png/pngwio.c ****    /* NOTE: write_data_fn must not change the buffer! */
+  36:fltk-1.3.4-1/png/pngwio.c ****    if (png_ptr->write_data_fn != NULL )
+  37:fltk-1.3.4-1/png/pngwio.c ****       (*(png_ptr->write_data_fn))(png_ptr, png_constcast(png_bytep,data),
+  38:fltk-1.3.4-1/png/pngwio.c ****          length);
+  39:fltk-1.3.4-1/png/pngwio.c **** 
+  40:fltk-1.3.4-1/png/pngwio.c ****    else
+  41:fltk-1.3.4-1/png/pngwio.c ****       png_error(png_ptr, "Call to NULL write function");
+  42:fltk-1.3.4-1/png/pngwio.c **** }
+  43:fltk-1.3.4-1/png/pngwio.c **** 
+  44:fltk-1.3.4-1/png/pngwio.c **** #ifdef PNG_STDIO_SUPPORTED
+  45:fltk-1.3.4-1/png/pngwio.c **** /* This is the function that does the actual writing of data.  If you are
+  46:fltk-1.3.4-1/png/pngwio.c ****  * not writing to a standard C stream, you should create a replacement
+  47:fltk-1.3.4-1/png/pngwio.c ****  * write_data function and use it at run time with png_set_write_fn(), rather
+  48:fltk-1.3.4-1/png/pngwio.c ****  * than changing the library.
+  49:fltk-1.3.4-1/png/pngwio.c ****  */
+  50:fltk-1.3.4-1/png/pngwio.c **** void PNGCBAPI
+  51:fltk-1.3.4-1/png/pngwio.c **** png_default_write_data(png_structp png_ptr, png_bytep data, png_size_t length)
+  52:fltk-1.3.4-1/png/pngwio.c **** {
+  20              		.loc 1 52 0
+  21              		.cfi_startproc
+  22              	.LVL0:
+  53:fltk-1.3.4-1/png/pngwio.c ****    png_size_t check;
+  54:fltk-1.3.4-1/png/pngwio.c **** 
+  55:fltk-1.3.4-1/png/pngwio.c ****    if (png_ptr == NULL)
+  23              		.loc 1 55 0
+  24 0000 4885FF   		testq	%rdi, %rdi
+  25 0003 742E     		je	.L8
+  52:fltk-1.3.4-1/png/pngwio.c ****    png_size_t check;
+  26              		.loc 1 52 0
+  27 0005 55       		pushq	%rbp
+  28              		.cfi_def_cfa_offset 16
+  29              		.cfi_offset 6, -16
+  30 0006 53       		pushq	%rbx
+  31              		.cfi_def_cfa_offset 24
+  32              		.cfi_offset 3, -24
+  33 0007 4889F8   		movq	%rdi, %rax
+  34 000a 4889D5   		movq	%rdx, %rbp
+  35 000d 4889F7   		movq	%rsi, %rdi
+  36              	.LVL1:
+  56:fltk-1.3.4-1/png/pngwio.c ****       return;
+  57:fltk-1.3.4-1/png/pngwio.c **** 
+  58:fltk-1.3.4-1/png/pngwio.c ****    check = fwrite(data, 1, length, (png_FILE_p)(png_ptr->io_ptr));
+  37              		.loc 1 58 0
+  38 0010 BE010000 		movl	$1, %esi
+  38      00
+  39              	.LVL2:
+  52:fltk-1.3.4-1/png/pngwio.c ****    png_size_t check;
+  40              		.loc 1 52 0
+  41 0015 4883EC08 		subq	$8, %rsp
+  42              		.cfi_def_cfa_offset 32
+  43              		.loc 1 58 0
+  44 0019 488B8808 		movq	264(%rax), %rcx
+  44      010000
+  45 0020 4889C3   		movq	%rax, %rbx
+  46 0023 E8000000 		call	fwrite
+  46      00
+  47              	.LVL3:
+  59:fltk-1.3.4-1/png/pngwio.c **** 
+  60:fltk-1.3.4-1/png/pngwio.c ****    if (check != length)
+  48              		.loc 1 60 0
+  49 0028 4839C5   		cmpq	%rax, %rbp
+  50 002b 7508     		jne	.L10
+  61:fltk-1.3.4-1/png/pngwio.c ****       png_error(png_ptr, "Write Error");
+  62:fltk-1.3.4-1/png/pngwio.c **** }
+  51              		.loc 1 62 0
+  52 002d 4883C408 		addq	$8, %rsp
+  53              		.cfi_def_cfa_offset 24
+  54 0031 5B       		popq	%rbx
+  55              		.cfi_restore 3
+  56              		.cfi_def_cfa_offset 16
+  57              	.LVL4:
+  58 0032 5D       		popq	%rbp
+  59              		.cfi_restore 6
+  60              		.cfi_def_cfa_offset 8
+  61              	.LVL5:
+  62              	.L8:
+  63 0033 F3C3     		rep ret
+  64              	.LVL6:
+  65              	.L10:
+  66              		.cfi_def_cfa_offset 32
+  67              		.cfi_offset 3, -24
+  68              		.cfi_offset 6, -16
+  61:fltk-1.3.4-1/png/pngwio.c ****       png_error(png_ptr, "Write Error");
+  69              		.loc 1 61 0
+  70 0035 BE000000 		movl	$.LC0, %esi
+  70      00
+  71 003a 4889DF   		movq	%rbx, %rdi
+  72 003d E8000000 		call	png_error
+  72      00
+  73              	.LVL7:
+  74              		.cfi_endproc
+  75              	.LFE57:
+  77              		.section	.text.unlikely.png_default_write_data
+  78              	.LCOLDE1:
+  79              		.section	.text.png_default_write_data
+  80              	.LHOTE1:
+  81              		.section	.text.unlikely.png_default_flush,"ax",@progbits
+  82              	.LCOLDB2:
+  83              		.section	.text.png_default_flush,"ax",@progbits
+  84              	.LHOTB2:
+  85              		.p2align 4,,15
+  86              		.globl	png_default_flush
+  88              	png_default_flush:
+  89              	.LFB59:
+  63:fltk-1.3.4-1/png/pngwio.c **** #endif
+  64:fltk-1.3.4-1/png/pngwio.c **** 
+  65:fltk-1.3.4-1/png/pngwio.c **** /* This function is called to output any data pending writing (normally
+  66:fltk-1.3.4-1/png/pngwio.c ****  * to disk).  After png_flush is called, there should be no data pending
+  67:fltk-1.3.4-1/png/pngwio.c ****  * writing in any buffers.
+  68:fltk-1.3.4-1/png/pngwio.c ****  */
+  69:fltk-1.3.4-1/png/pngwio.c **** #ifdef PNG_WRITE_FLUSH_SUPPORTED
+  70:fltk-1.3.4-1/png/pngwio.c **** void /* PRIVATE */
+  71:fltk-1.3.4-1/png/pngwio.c **** png_flush(png_structrp png_ptr)
+  72:fltk-1.3.4-1/png/pngwio.c **** {
+  73:fltk-1.3.4-1/png/pngwio.c ****    if (png_ptr->output_flush_fn != NULL)
+  74:fltk-1.3.4-1/png/pngwio.c ****       (*(png_ptr->output_flush_fn))(png_ptr);
+  75:fltk-1.3.4-1/png/pngwio.c **** }
+  76:fltk-1.3.4-1/png/pngwio.c **** 
+  77:fltk-1.3.4-1/png/pngwio.c **** #  ifdef PNG_STDIO_SUPPORTED
+  78:fltk-1.3.4-1/png/pngwio.c **** void PNGCBAPI
+  79:fltk-1.3.4-1/png/pngwio.c **** png_default_flush(png_structp png_ptr)
+  80:fltk-1.3.4-1/png/pngwio.c **** {
+  90              		.loc 1 80 0
+  91              		.cfi_startproc
+  92              	.LVL8:
+  81:fltk-1.3.4-1/png/pngwio.c ****    png_FILE_p io_ptr;
+  82:fltk-1.3.4-1/png/pngwio.c **** 
+  83:fltk-1.3.4-1/png/pngwio.c ****    if (png_ptr == NULL)
+  93              		.loc 1 83 0
+  94 0000 4885FF   		testq	%rdi, %rdi
+  95 0003 7413     		je	.L11
+  96              	.LVL9:
+  84:fltk-1.3.4-1/png/pngwio.c ****       return;
+  85:fltk-1.3.4-1/png/pngwio.c **** 
+  86:fltk-1.3.4-1/png/pngwio.c ****    io_ptr = png_voidcast(png_FILE_p, (png_ptr->io_ptr));
+  87:fltk-1.3.4-1/png/pngwio.c ****    fflush(io_ptr);
+  97              		.loc 1 87 0
+  98 0005 488BBF08 		movq	264(%rdi), %rdi
+  98      010000
+  99              	.LVL10:
+ 100 000c E9000000 		jmp	fflush
+ 100      00
+ 101              	.LVL11:
+ 102              		.p2align 4,,10
+ 103 0011 0F1F8000 		.p2align 3
+ 103      000000
+ 104              	.L11:
+ 105 0018 F3C3     		rep ret
+ 106              		.cfi_endproc
+ 107              	.LFE59:
+ 109              		.section	.text.unlikely.png_default_flush
+ 110              	.LCOLDE2:
+ 111              		.section	.text.png_default_flush
+ 112              	.LHOTE2:
+ 113              		.section	.rodata.str1.1
+ 114              	.LC3:
+ 115 000c 43616C6C 		.string	"Call to NULL write function"
+ 115      20746F20 
+ 115      4E554C4C 
+ 115      20777269 
+ 115      74652066 
+ 116              		.section	.text.unlikely.png_write_data,"ax",@progbits
+ 117              	.LCOLDB4:
+ 118              		.section	.text.png_write_data,"ax",@progbits
+ 119              	.LHOTB4:
+ 120              		.p2align 4,,15
+ 121              		.globl	png_write_data
+ 123              	png_write_data:
+ 124              	.LFB56:
+  34:fltk-1.3.4-1/png/pngwio.c ****    /* NOTE: write_data_fn must not change the buffer! */
+ 125              		.loc 1 34 0
+ 126              		.cfi_startproc
+ 127              	.LVL12:
+  36:fltk-1.3.4-1/png/pngwio.c ****       (*(png_ptr->write_data_fn))(png_ptr, png_constcast(png_bytep,data),
+ 128              		.loc 1 36 0
+ 129 0000 488B87F8 		movq	248(%rdi), %rax
+ 129      000000
+ 130 0007 4885C0   		testq	%rax, %rax
+ 131 000a 7402     		je	.L14
+  37:fltk-1.3.4-1/png/pngwio.c ****          length);
+ 132              		.loc 1 37 0
+ 133 000c FFE0     		jmp	*%rax
+ 134              	.LVL13:
+ 135              	.L14:
+  34:fltk-1.3.4-1/png/pngwio.c ****    /* NOTE: write_data_fn must not change the buffer! */
+ 136              		.loc 1 34 0
+ 137 000e 50       		pushq	%rax
+ 138              		.cfi_def_cfa_offset 16
+  41:fltk-1.3.4-1/png/pngwio.c **** }
+ 139              		.loc 1 41 0
+ 140 000f BE000000 		movl	$.LC3, %esi
+ 140      00
+ 141              	.LVL14:
+ 142 0014 E8000000 		call	png_error
+ 142      00
+ 143              	.LVL15:
+ 144              		.cfi_endproc
+ 145              	.LFE56:
+ 147              		.section	.text.unlikely.png_write_data
+ 148              	.LCOLDE4:
+ 149              		.section	.text.png_write_data
+ 150              	.LHOTE4:
+ 151              		.section	.text.unlikely.png_flush,"ax",@progbits
+ 152              	.LCOLDB5:
+ 153              		.section	.text.png_flush,"ax",@progbits
+ 154              	.LHOTB5:
+ 155              		.p2align 4,,15
+ 156              		.globl	png_flush
+ 158              	png_flush:
+ 159              	.LFB58:
+  72:fltk-1.3.4-1/png/pngwio.c ****    if (png_ptr->output_flush_fn != NULL)
+ 160              		.loc 1 72 0
+ 161              		.cfi_startproc
+ 162              	.LVL16:
+  73:fltk-1.3.4-1/png/pngwio.c ****       (*(png_ptr->output_flush_fn))(png_ptr);
+ 163              		.loc 1 73 0
+ 164 0000 488B87A0 		movq	672(%rdi), %rax
+ 164      020000
+ 165 0007 4885C0   		testq	%rax, %rax
+ 166 000a 7404     		je	.L16
+  74:fltk-1.3.4-1/png/pngwio.c **** }
+ 167              		.loc 1 74 0
+ 168 000c FFE0     		jmp	*%rax
+ 169              	.LVL17:
+ 170 000e 6690     		.p2align 4,,10
+ 171              		.p2align 3
+ 172              	.L16:
+ 173 0010 F3C3     		rep ret
+ 174              		.cfi_endproc
+ 175              	.LFE58:
+ 177              		.section	.text.unlikely.png_flush
+ 178              	.LCOLDE5:
+ 179              		.section	.text.png_flush
+ 180              	.LHOTE5:
+ 181              		.section	.rodata.str1.8,"aMS",@progbits,1
+ 182              		.align 8
+ 183              	.LC6:
+ 184 0000 43616E27 		.string	"Can't set both read_data_fn and write_data_fn in the same structure"
+ 184      74207365 
+ 184      7420626F 
+ 184      74682072 
+ 184      6561645F 
+ 185              		.section	.text.unlikely.png_set_write_fn,"ax",@progbits
+ 186              	.LCOLDB7:
+ 187              		.section	.text.png_set_write_fn,"ax",@progbits
+ 188              	.LHOTB7:
+ 189              		.p2align 4,,15
+ 190              		.globl	png_set_write_fn
+ 192              	png_set_write_fn:
+ 193              	.LFB60:
+  88:fltk-1.3.4-1/png/pngwio.c **** }
+  89:fltk-1.3.4-1/png/pngwio.c **** #  endif
+  90:fltk-1.3.4-1/png/pngwio.c **** #endif
+  91:fltk-1.3.4-1/png/pngwio.c **** 
+  92:fltk-1.3.4-1/png/pngwio.c **** /* This function allows the application to supply new output functions for
+  93:fltk-1.3.4-1/png/pngwio.c ****  * libpng if standard C streams aren't being used.
+  94:fltk-1.3.4-1/png/pngwio.c ****  *
+  95:fltk-1.3.4-1/png/pngwio.c ****  * This function takes as its arguments:
+  96:fltk-1.3.4-1/png/pngwio.c ****  * png_ptr       - pointer to a png output data structure
+  97:fltk-1.3.4-1/png/pngwio.c ****  * io_ptr        - pointer to user supplied structure containing info about
+  98:fltk-1.3.4-1/png/pngwio.c ****  *                 the output functions.  May be NULL.
+  99:fltk-1.3.4-1/png/pngwio.c ****  * write_data_fn - pointer to a new output function that takes as its
+ 100:fltk-1.3.4-1/png/pngwio.c ****  *                 arguments a pointer to a png_struct, a pointer to
+ 101:fltk-1.3.4-1/png/pngwio.c ****  *                 data to be written, and a 32-bit unsigned int that is
+ 102:fltk-1.3.4-1/png/pngwio.c ****  *                 the number of bytes to be written.  The new write
+ 103:fltk-1.3.4-1/png/pngwio.c ****  *                 function should call png_error(png_ptr, "Error msg")
+ 104:fltk-1.3.4-1/png/pngwio.c ****  *                 to exit and output any fatal error messages.  May be
+ 105:fltk-1.3.4-1/png/pngwio.c ****  *                 NULL, in which case libpng's default function will
+ 106:fltk-1.3.4-1/png/pngwio.c ****  *                 be used.
+ 107:fltk-1.3.4-1/png/pngwio.c ****  * flush_data_fn - pointer to a new flush function that takes as its
+ 108:fltk-1.3.4-1/png/pngwio.c ****  *                 arguments a pointer to a png_struct.  After a call to
+ 109:fltk-1.3.4-1/png/pngwio.c ****  *                 the flush function, there should be no data in any buffers
+ 110:fltk-1.3.4-1/png/pngwio.c ****  *                 or pending transmission.  If the output method doesn't do
+ 111:fltk-1.3.4-1/png/pngwio.c ****  *                 any buffering of output, a function prototype must still be
+ 112:fltk-1.3.4-1/png/pngwio.c ****  *                 supplied although it doesn't have to do anything.  If
+ 113:fltk-1.3.4-1/png/pngwio.c ****  *                 PNG_WRITE_FLUSH_SUPPORTED is not defined at libpng compile
+ 114:fltk-1.3.4-1/png/pngwio.c ****  *                 time, output_flush_fn will be ignored, although it must be
+ 115:fltk-1.3.4-1/png/pngwio.c ****  *                 supplied for compatibility.  May be NULL, in which case
+ 116:fltk-1.3.4-1/png/pngwio.c ****  *                 libpng's default function will be used, if
+ 117:fltk-1.3.4-1/png/pngwio.c ****  *                 PNG_WRITE_FLUSH_SUPPORTED is defined.  This is not
+ 118:fltk-1.3.4-1/png/pngwio.c ****  *                 a good idea if io_ptr does not point to a standard
+ 119:fltk-1.3.4-1/png/pngwio.c ****  *                 *FILE structure.
+ 120:fltk-1.3.4-1/png/pngwio.c ****  */
+ 121:fltk-1.3.4-1/png/pngwio.c **** void PNGAPI
+ 122:fltk-1.3.4-1/png/pngwio.c **** png_set_write_fn(png_structrp png_ptr, png_voidp io_ptr,
+ 123:fltk-1.3.4-1/png/pngwio.c ****     png_rw_ptr write_data_fn, png_flush_ptr output_flush_fn)
+ 124:fltk-1.3.4-1/png/pngwio.c **** {
+ 194              		.loc 1 124 0
+ 195              		.cfi_startproc
+ 196              	.LVL18:
+ 125:fltk-1.3.4-1/png/pngwio.c ****    if (png_ptr == NULL)
+ 197              		.loc 1 125 0
+ 198 0000 4885FF   		testq	%rdi, %rdi
+ 199 0003 7453     		je	.L18
+ 126:fltk-1.3.4-1/png/pngwio.c ****       return;
+ 127:fltk-1.3.4-1/png/pngwio.c **** 
+ 128:fltk-1.3.4-1/png/pngwio.c ****    png_ptr->io_ptr = io_ptr;
+ 129:fltk-1.3.4-1/png/pngwio.c **** 
+ 130:fltk-1.3.4-1/png/pngwio.c **** #ifdef PNG_STDIO_SUPPORTED
+ 131:fltk-1.3.4-1/png/pngwio.c ****    if (write_data_fn != NULL)
+ 132:fltk-1.3.4-1/png/pngwio.c ****       png_ptr->write_data_fn = write_data_fn;
+ 200              		.loc 1 132 0
+ 201 0005 4885D2   		testq	%rdx, %rdx
+ 202 0008 B8000000 		movl	$png_default_write_data, %eax
+ 202      00
+ 128:fltk-1.3.4-1/png/pngwio.c **** 
+ 203              		.loc 1 128 0
+ 204 000d 4889B708 		movq	%rsi, 264(%rdi)
+ 204      010000
+ 205              		.loc 1 132 0
+ 206 0014 480F44D0 		cmove	%rax, %rdx
+ 207              	.LVL19:
+ 133:fltk-1.3.4-1/png/pngwio.c **** 
+ 134:fltk-1.3.4-1/png/pngwio.c ****    else
+ 135:fltk-1.3.4-1/png/pngwio.c ****       png_ptr->write_data_fn = png_default_write_data;
+ 136:fltk-1.3.4-1/png/pngwio.c **** #else
+ 137:fltk-1.3.4-1/png/pngwio.c ****    png_ptr->write_data_fn = write_data_fn;
+ 138:fltk-1.3.4-1/png/pngwio.c **** #endif
+ 139:fltk-1.3.4-1/png/pngwio.c **** 
+ 140:fltk-1.3.4-1/png/pngwio.c **** #ifdef PNG_WRITE_FLUSH_SUPPORTED
+ 141:fltk-1.3.4-1/png/pngwio.c **** #  ifdef PNG_STDIO_SUPPORTED
+ 142:fltk-1.3.4-1/png/pngwio.c **** 
+ 143:fltk-1.3.4-1/png/pngwio.c ****    if (output_flush_fn != NULL)
+ 144:fltk-1.3.4-1/png/pngwio.c ****       png_ptr->output_flush_fn = output_flush_fn;
+ 208              		.loc 1 144 0
+ 209 0018 4885C9   		testq	%rcx, %rcx
+ 210 001b B8000000 		movl	$png_default_flush, %eax
+ 210      00
+ 211 0020 480F44C8 		cmove	%rax, %rcx
+ 212              	.LVL20:
+ 145:fltk-1.3.4-1/png/pngwio.c **** 
+ 146:fltk-1.3.4-1/png/pngwio.c ****    else
+ 147:fltk-1.3.4-1/png/pngwio.c ****       png_ptr->output_flush_fn = png_default_flush;
+ 148:fltk-1.3.4-1/png/pngwio.c **** 
+ 149:fltk-1.3.4-1/png/pngwio.c **** #  else
+ 150:fltk-1.3.4-1/png/pngwio.c ****    png_ptr->output_flush_fn = output_flush_fn;
+ 151:fltk-1.3.4-1/png/pngwio.c **** #  endif
+ 152:fltk-1.3.4-1/png/pngwio.c **** #else
+ 153:fltk-1.3.4-1/png/pngwio.c ****    PNG_UNUSED(output_flush_fn)
+ 154:fltk-1.3.4-1/png/pngwio.c **** #endif /* WRITE_FLUSH */
+ 155:fltk-1.3.4-1/png/pngwio.c **** 
+ 156:fltk-1.3.4-1/png/pngwio.c **** #ifdef PNG_READ_SUPPORTED
+ 157:fltk-1.3.4-1/png/pngwio.c ****    /* It is an error to read while writing a png file */
+ 158:fltk-1.3.4-1/png/pngwio.c ****    if (png_ptr->read_data_fn != NULL)
+ 213              		.loc 1 158 0
+ 214 0024 4883BF00 		cmpq	$0, 256(%rdi)
+ 214      01000000 
+ 132:fltk-1.3.4-1/png/pngwio.c **** 
+ 215              		.loc 1 132 0
+ 216 002c 488997F8 		movq	%rdx, 248(%rdi)
+ 216      000000
+ 144:fltk-1.3.4-1/png/pngwio.c **** 
+ 217              		.loc 1 144 0
+ 218 0033 48898FA0 		movq	%rcx, 672(%rdi)
+ 218      020000
+ 219              		.loc 1 158 0
+ 220 003a 741C     		je	.L18
+ 159:fltk-1.3.4-1/png/pngwio.c ****    {
+ 160:fltk-1.3.4-1/png/pngwio.c ****       png_ptr->read_data_fn = NULL;
+ 221              		.loc 1 160 0
+ 222 003c 48C78700 		movq	$0, 256(%rdi)
+ 222      01000000 
+ 222      000000
+ 161:fltk-1.3.4-1/png/pngwio.c **** 
+ 162:fltk-1.3.4-1/png/pngwio.c ****       png_warning(png_ptr,
+ 223              		.loc 1 162 0
+ 224 0047 BE000000 		movl	$.LC6, %esi
+ 224      00
+ 225              	.LVL21:
+ 226 004c E9000000 		jmp	png_warning
+ 226      00
+ 227              	.LVL22:
+ 228              		.p2align 4,,10
+ 229 0051 0F1F8000 		.p2align 3
+ 229      000000
+ 230              	.L18:
+ 231 0058 F3C3     		rep ret
+ 232              		.cfi_endproc
+ 233              	.LFE60:
+ 235              		.section	.text.unlikely.png_set_write_fn
+ 236              	.LCOLDE7:
+ 237              		.section	.text.png_set_write_fn
+ 238              	.LHOTE7:
+ 239              		.text
+ 240              	.Letext0:
+ 241              		.section	.text.unlikely.png_default_write_data
+ 242              	.Letext_cold0:
+ 243              		.file 2 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
+ 244              		.file 3 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 245              		.file 4 "/usr/include/stdio.h"
+ 246              		.file 5 "/usr/include/libio.h"
+ 247              		.file 6 "/usr/include/x86_64-linux-gnu/bits/setjmp.h"
+ 248              		.file 7 "/usr/include/x86_64-linux-gnu/bits/sigset.h"
+ 249              		.file 8 "/usr/include/setjmp.h"
+ 250              		.file 9 "fltk-1.3.4-1/png/pngconf.h"
+ 251              		.file 10 "fltk-1.3.4-1/png/png.h"
+ 252              		.file 11 "fltk-1.3.4-1/png/pngstruct.h"
+ 253              		.file 12 "fltk-1.3.4-1/png/pnginfo.h"
+ 254              		.file 13 "/usr/include/x86_64-linux-gnu/zconf.h"
+ 255              		.file 14 "/usr/include/zlib.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 pngwio.c
+     /tmp/ccX6OQKP.s:17     .text.png_default_write_data:0000000000000000 png_default_write_data
+     /tmp/ccX6OQKP.s:88     .text.png_default_flush:0000000000000000 png_default_flush
+     /tmp/ccX6OQKP.s:123    .text.png_write_data:0000000000000000 png_write_data
+     /tmp/ccX6OQKP.s:158    .text.png_flush:0000000000000000 png_flush
+     /tmp/ccX6OQKP.s:192    .text.png_set_write_fn:0000000000000000 png_set_write_fn
+                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
+                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+                           .group:0000000000000000 wm4.pngpriv.h.26.ca3d1719773cd86007410b516123e125
+                           .group:0000000000000000 wm4.features.h.19.22780be97c2f806ec599b8b99aa89f7d
+                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
+                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
+                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
+                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
+                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
+                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
+                           .group:0000000000000000 wm4.stdlib.h.37.e081b308f911db94d3185af615f2b2e2
+                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
+                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
+                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
+                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
+                           .group:0000000000000000 wm4.endian.h.41.27d650ce666b76881e2a2a218ea61984
+                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
+                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
+                           .group:0000000000000000 wm4.string2.h.55.e4a4cfd7781cc64a4341475e67436ab1
+                           .group:0000000000000000 wm4.string3.h.31.2b75bd65145c50aeedb61673ce0d3293
+                           .group:0000000000000000 wm4.pnglibconf.h.15.30e2eea90e566ac06da4f4de487193d7
+                           .group:0000000000000000 wm4.pngpriv.h.130.f65d93453b5b5837849611ffe82d627a
+                           .group:0000000000000000 wm4.png.h.412.12a95b2193a7d0bc2282b72c70a28ce1
+                           .group:0000000000000000 wm4.limits.h.23.f0fd92c175c1576df467c4d5fe2b091a
+                           .group:0000000000000000 wm4.posix1_lim.h.25.28c8eb2d22697e7711efefdec5344a02
+                           .group:0000000000000000 wm4.local_lim.h.25.97ee4129efb08ad296101237bcd3401b
+                           .group:0000000000000000 wm4.limits.h.2.9ff59823e8adcf4502d980ef41362326
+                           .group:0000000000000000 wm4.local_lim.h.42.9dc3935e0e3b94e23cda247e4e39bd8b
+                           .group:0000000000000000 wm4.limits.h.60.eb7066f861c8b8edc7a0a399744b0335
+                           .group:0000000000000000 wm4.stddef.h.39.d5a83c17f38162a5dd6f834eaf38f8ef
+                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
+                           .group:0000000000000000 wm4.stddef.h.161.19e15733342b50ead2919490b095303e
+                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
+                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
+                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
+                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
+                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
+                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
+                           .group:0000000000000000 wm4.stdio.h.120.80cbf0ec1718a5b27e6428218e29c72d
+                           .group:0000000000000000 wm4.stdio_lim.h.23.f8541119d1bcf759d7de9531671fd758
+                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
+                           .group:0000000000000000 wm4.stdio.h.26.e50fc3808d57d965ceefc6f6dd102eb7
+                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
+                           .group:0000000000000000 wm4.setjmp.h.67.51aa194c3c89a841663c00cb93fd90ff
+                           .group:0000000000000000 wm4.time.h.26.6a3cabd4f228e226db6723a3b0c81ba6
+                           .group:0000000000000000 wm4.time.h.40.99bfb90272c7e82357ef3c2f5c6fefc8
+                           .group:0000000000000000 wm4.time.h.53.f8af6908497bac0ca16faea86fb8cd87
+                           .group:0000000000000000 wm4.pngconf.h.86.6636b2584cb7be1618479e118d71e58c
+                           .group:0000000000000000 wm4.png.h.506.fa53b6434c0b20c8e63094b04d7940c5
+                           .group:0000000000000000 wm4.pngpriv.h.298.dc2c896ce0eddc5cfadee24e76e3c417
+                           .group:0000000000000000 wm4.float.h.29.1cf88a0527b6b1225d49fbee2b32acb7
+                           .group:0000000000000000 wm4.math.h.26.671af5ac9cd425a35e0730f7b6d7cde2
+                           .group:0000000000000000 wm4.libmsimddeclstubs.h.34.75644856b74ba3d815155fe5fe7ecc56
+                           .group:0000000000000000 wm4.mathdef.h.23.67c0aa4a204f1f427459dfc651aba565
+                           .group:0000000000000000 wm4.math.h.55.cf380f99c57d42476a5252f30065036a
+                           .group:0000000000000000 wm4.math.h.84.742292806c6be54f49dc607928a827f7
+                           .group:0000000000000000 wm4.math.h.105.59ff0f83ebf6a04e70e145cef2d1185e
+                           .group:0000000000000000 wm4.math.h.152.48a142bc1575e748473ff86330dee044
+                           .group:0000000000000000 wm4.math.h.30.7cada3efe024725df2da4c705b6566be
+                           .group:0000000000000000 wm4.pngpriv.h.481.f98e7c29eaaa759546a3f9808bc25c74
+                           .group:0000000000000000 wm4.pngstruct.h.22.7b9573417641055ab8f42438aa8afadf
+                           .group:0000000000000000 wm4.zconf.h.9.bbc7b5783b51507f7721a5620139b4ee
+                           .group:0000000000000000 wm4.zconf.h.397.69c03305677a9a6792fe2a94f7c9f69b
+                           .group:0000000000000000 wm4.types.h.23.92678977f3921b8dce508274ac68f78d
+                           .group:0000000000000000 wm4.types.h.187.12f6c32afb936b45a5f241219964ce93
+                           .group:0000000000000000 wm4.stdarg.h.31.48e922dd0aaedfb616aafd8a7b7a4949
+                           .group:0000000000000000 wm4.unistd.h.23.c85a58a698f53edadcf64287ab24fecb
+                           .group:0000000000000000 wm4.posix_opt.h.20.9a8aece77957db1725bd2b9521e5f9c5
+                           .group:0000000000000000 wm4.unistd.h.213.4c582e35260d661b081322974b7c1e74
+                           .group:0000000000000000 wm4.unistd.h.284.7e168706bc8bd978e02fd1da439d9bc3
+                           .group:0000000000000000 wm4.confname.h.27.6b00117a32f457cc72e5ac810a9adade
+                           .group:0000000000000000 wm4.zconf.h.457.505c3613686dd75e492569d7a56a6eb0
+                           .group:0000000000000000 wm4.zlib.h.40.5a15529ab8e285cee4b0ddab32502c27
+                           .group:0000000000000000 wm4.pngstruct.h.44.bc957704556ff8ddcb697678a008ffae
+                           .group:0000000000000000 wm4.pngpriv.h.853.4585af3e74cfb155d8486c5333b94adf
+                           .group:0000000000000000 wm4.pngdebug.h.36.e9c57d5f35e3128225fb629498ec6fc8
+
+UNDEFINED SYMBOLS
+fwrite
+png_error
+fflush
+png_warning
