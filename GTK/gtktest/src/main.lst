@@ -102,130 +102,298 @@
   84      6F20576F 
   84      726C6400 
   85              	.LC9:
-  86 0051 636C6963 		.string	"clicked"
-  86      6B656400 
-  87              		.section	.text.unlikely
-  88              	.LCOLDB10:
-  89              		.section	.text.startup,"ax",@progbits
-  90              	.LHOTB10:
-  91              		.p2align 4,,15
-  92              		.globl	main
-  94              	main:
-  95              	.LFB496:
-  96              		.cfi_startproc
-  97 0000 55       		pushq	%rbp
-  98              		.cfi_def_cfa_offset 16
-  99              		.cfi_offset 6, -16
- 100 0001 53       		pushq	%rbx
- 101              		.cfi_def_cfa_offset 24
- 102              		.cfi_offset 3, -24
- 103 0002 4883EC18 		subq	$24, %rsp
- 104              		.cfi_def_cfa_offset 48
- 105 0006 897C240C 		movl	%edi, 12(%rsp)
- 106 000a 48893424 		movq	%rsi, (%rsp)
- 107 000e BF020000 		movl	$2, %edi
- 107      00
- 108 0013 BE000000 		movl	$sigInt, %esi
- 108      00
- 109 0018 E8000000 		call	signal
- 109      00
- 110 001d BE000000 		movl	$sigHup, %esi
- 110      00
- 111 0022 BF010000 		movl	$1, %edi
- 111      00
- 112 0027 E8000000 		call	signal
- 112      00
- 113 002c BF000000 		movl	$.LC6, %edi
- 113      00
- 114 0031 E8000000 		call	puts
- 114      00
- 115 0036 488D7C24 		leaq	12(%rsp), %rdi
- 115      0C
- 116 003b 4889E6   		movq	%rsp, %rsi
- 117 003e E8000000 		call	gtk_init
- 117      00
- 118 0043 31FF     		xorl	%edi, %edi
- 119 0045 E8000000 		call	gtk_window_new
- 119      00
- 120 004a 4889C3   		movq	%rax, %rbx
- 121 004d E8000000 		call	gtk_window_get_type
- 121      00
- 122 0052 4889DF   		movq	%rbx, %rdi
- 123 0055 4889C6   		movq	%rax, %rsi
- 124 0058 4889C5   		movq	%rax, %rbp
- 125 005b E8000000 		call	g_type_check_instance_cast
- 125      00
- 126 0060 BE000000 		movl	$.LC7, %esi
- 126      00
- 127 0065 4889C7   		movq	%rax, %rdi
- 128 0068 E8000000 		call	gtk_window_set_title
- 128      00
- 129 006d 4889EE   		movq	%rbp, %rsi
- 130 0070 4889DF   		movq	%rbx, %rdi
- 131 0073 E8000000 		call	g_type_check_instance_cast
+  86 0051 48656C6C 		.string	"Hello World 2"
+  86      6F20576F 
+  86      726C6420 
+  86      3200
+  87              	.LC10:
+  88 005f 636C6963 		.string	"clicked"
+  88      6B656400 
+  89              	.LC11:
+  90 0067 46696C65 		.string	"File"
+  90      00
+  91              	.LC12:
+  92 006c 51756974 		.string	"Quit"
+  92      00
+  93              	.LC13:
+  94 0071 64657374 		.string	"destroy"
+  94      726F7900 
+  95              	.LC14:
+  96 0079 61637469 		.string	"activate"
+  96      76617465 
+  96      00
+  97              		.section	.text.unlikely
+  98              	.LCOLDB15:
+  99              		.section	.text.startup,"ax",@progbits
+ 100              	.LHOTB15:
+ 101              		.p2align 4,,15
+ 102              		.globl	main
+ 104              	main:
+ 105              	.LFB496:
+ 106              		.cfi_startproc
+ 107 0000 4157     		pushq	%r15
+ 108              		.cfi_def_cfa_offset 16
+ 109              		.cfi_offset 15, -16
+ 110 0002 4156     		pushq	%r14
+ 111              		.cfi_def_cfa_offset 24
+ 112              		.cfi_offset 14, -24
+ 113 0004 4155     		pushq	%r13
+ 114              		.cfi_def_cfa_offset 32
+ 115              		.cfi_offset 13, -32
+ 116 0006 4154     		pushq	%r12
+ 117              		.cfi_def_cfa_offset 40
+ 118              		.cfi_offset 12, -40
+ 119 0008 55       		pushq	%rbp
+ 120              		.cfi_def_cfa_offset 48
+ 121              		.cfi_offset 6, -48
+ 122 0009 53       		pushq	%rbx
+ 123              		.cfi_def_cfa_offset 56
+ 124              		.cfi_offset 3, -56
+ 125 000a 4883EC38 		subq	$56, %rsp
+ 126              		.cfi_def_cfa_offset 112
+ 127 000e 897C242C 		movl	%edi, 44(%rsp)
+ 128 0012 48897424 		movq	%rsi, 32(%rsp)
+ 128      20
+ 129 0017 BF020000 		movl	$2, %edi
+ 129      00
+ 130 001c BE000000 		movl	$sigInt, %esi
+ 130      00
+ 131 0021 E8000000 		call	signal
  131      00
- 132 0078 BAC80000 		movl	$200, %edx
+ 132 0026 BE000000 		movl	$sigHup, %esi
  132      00
- 133 007d BEC80000 		movl	$200, %esi
+ 133 002b BF010000 		movl	$1, %edi
  133      00
- 134 0082 4889C7   		movq	%rax, %rdi
- 135 0085 E8000000 		call	gtk_window_set_default_size
+ 134 0030 E8000000 		call	signal
+ 134      00
+ 135 0035 BF000000 		movl	$.LC6, %edi
  135      00
- 136 008a BF000000 		movl	$.LC8, %edi
+ 136 003a E8000000 		call	puts
  136      00
- 137 008f E8000000 		call	gtk_button_new_with_label
- 137      00
- 138 0094 4531C9   		xorl	%r9d, %r9d
- 139 0097 4531C0   		xorl	%r8d, %r8d
- 140 009a 31C9     		xorl	%ecx, %ecx
- 141 009c BA000000 		movl	$print_hello, %edx
+ 137 003f 488D7424 		leaq	32(%rsp), %rsi
+ 137      20
+ 138 0044 488D7C24 		leaq	44(%rsp), %rdi
+ 138      2C
+ 139 0049 E8000000 		call	gtk_init
+ 139      00
+ 140 004e 31FF     		xorl	%edi, %edi
+ 141 0050 E8000000 		call	gtk_window_new
  141      00
- 142 00a1 BE000000 		movl	$.LC9, %esi
- 142      00
- 143 00a6 4889C7   		movq	%rax, %rdi
- 144 00a9 4889C5   		movq	%rax, %rbp
- 145 00ac E8000000 		call	g_signal_connect_data
- 145      00
- 146 00b1 E8000000 		call	gtk_container_get_type
- 146      00
- 147 00b6 4889DF   		movq	%rbx, %rdi
- 148 00b9 4889C6   		movq	%rax, %rsi
- 149 00bc E8000000 		call	g_type_check_instance_cast
- 149      00
- 150 00c1 4889EE   		movq	%rbp, %rsi
- 151 00c4 4889C7   		movq	%rax, %rdi
- 152 00c7 E8000000 		call	gtk_container_add
- 152      00
- 153 00cc 4889EF   		movq	%rbp, %rdi
- 154 00cf E8000000 		call	gtk_widget_show
+ 142 0055 4889C3   		movq	%rax, %rbx
+ 143 0058 E8000000 		call	gtk_window_get_type
+ 143      00
+ 144 005d 4889DF   		movq	%rbx, %rdi
+ 145 0060 4889C6   		movq	%rax, %rsi
+ 146 0063 4889C5   		movq	%rax, %rbp
+ 147 0066 E8000000 		call	g_type_check_instance_cast
+ 147      00
+ 148 006b BE000000 		movl	$.LC7, %esi
+ 148      00
+ 149 0070 4889C7   		movq	%rax, %rdi
+ 150 0073 E8000000 		call	gtk_window_set_title
+ 150      00
+ 151 0078 4889EE   		movq	%rbp, %rsi
+ 152 007b 4889DF   		movq	%rbx, %rdi
+ 153 007e E8000000 		call	g_type_check_instance_cast
+ 153      00
+ 154 0083 BE010000 		movl	$1, %esi
  154      00
- 155 00d4 4889DF   		movq	%rbx, %rdi
- 156 00d7 E8000000 		call	gtk_widget_show
+ 155 0088 4889C7   		movq	%rax, %rdi
+ 156 008b E8000000 		call	gtk_window_set_position
  156      00
- 157 00dc E8000000 		call	gtk_main
- 157      00
- 158 00e1 4883C418 		addq	$24, %rsp
- 159              		.cfi_def_cfa_offset 24
- 160 00e5 31C0     		xorl	%eax, %eax
- 161 00e7 5B       		popq	%rbx
- 162              		.cfi_def_cfa_offset 16
- 163 00e8 5D       		popq	%rbp
- 164              		.cfi_def_cfa_offset 8
- 165 00e9 C3       		ret
- 166              		.cfi_endproc
- 167              	.LFE496:
- 169              		.section	.text.unlikely
- 170              	.LCOLDE10:
- 171              		.section	.text.startup
- 172              	.LHOTE10:
- 173              		.ident	"GCC: (Ubuntu 5.4.0-6ubuntu1~16.04.4) 5.4.0 20160609"
- 174              		.section	.note.GNU-stack,"",@progbits
+ 157 0090 4889EE   		movq	%rbp, %rsi
+ 158 0093 4889DF   		movq	%rbx, %rdi
+ 159 0096 E8000000 		call	g_type_check_instance_cast
+ 159      00
+ 160 009b BAC80000 		movl	$200, %edx
+ 160      00
+ 161 00a0 4889C7   		movq	%rax, %rdi
+ 162 00a3 BEC80000 		movl	$200, %esi
+ 162      00
+ 163 00a8 E8000000 		call	gtk_window_set_default_size
+ 163      00
+ 164 00ad BE030000 		movl	$3, %esi
+ 164      00
+ 165 00b2 BF010000 		movl	$1, %edi
+ 165      00
+ 166 00b7 E8000000 		call	gtk_box_new
+ 166      00
+ 167 00bc 4889C5   		movq	%rax, %rbp
+ 168 00bf E8000000 		call	gtk_container_get_type
+ 168      00
+ 169 00c4 4889DF   		movq	%rbx, %rdi
+ 170 00c7 4889C6   		movq	%rax, %rsi
+ 171 00ca 4989C4   		movq	%rax, %r12
+ 172 00cd E8000000 		call	g_type_check_instance_cast
+ 172      00
+ 173 00d2 4889EE   		movq	%rbp, %rsi
+ 174 00d5 4889C7   		movq	%rax, %rdi
+ 175 00d8 E8000000 		call	gtk_container_add
+ 175      00
+ 176 00dd BF000000 		movl	$.LC8, %edi
+ 176      00
+ 177 00e2 E8000000 		call	gtk_button_new_with_label
+ 177      00
+ 178 00e7 BF000000 		movl	$.LC9, %edi
+ 178      00
+ 179 00ec 4989C6   		movq	%rax, %r14
+ 180 00ef E8000000 		call	gtk_button_new_with_label
+ 180      00
+ 181 00f4 4531C9   		xorl	%r9d, %r9d
+ 182 00f7 4531C0   		xorl	%r8d, %r8d
+ 183 00fa 31C9     		xorl	%ecx, %ecx
+ 184 00fc BA000000 		movl	$print_hello, %edx
+ 184      00
+ 185 0101 BE000000 		movl	$.LC10, %esi
+ 185      00
+ 186 0106 4C89F7   		movq	%r14, %rdi
+ 187 0109 4C897424 		movq	%r14, 8(%rsp)
+ 187      08
+ 188 010e 48894424 		movq	%rax, 16(%rsp)
+ 188      10
+ 189 0113 E8000000 		call	g_signal_connect_data
+ 189      00
+ 190 0118 E8000000 		call	gtk_menu_bar_new
+ 190      00
+ 191 011d 4989C7   		movq	%rax, %r15
+ 192 0120 E8000000 		call	gtk_menu_new
+ 192      00
+ 193 0125 BF000000 		movl	$.LC11, %edi
+ 193      00
+ 194 012a 4989C5   		movq	%rax, %r13
+ 195 012d E8000000 		call	gtk_menu_item_new_with_label
+ 195      00
+ 196 0132 BF000000 		movl	$.LC12, %edi
+ 196      00
+ 197 0137 48894424 		movq	%rax, 24(%rsp)
+ 197      18
+ 198 013c E8000000 		call	gtk_menu_item_new_with_label
+ 198      00
+ 199 0141 4989C6   		movq	%rax, %r14
+ 200 0144 E8000000 		call	gtk_menu_item_get_type
+ 200      00
+ 201 0149 488B7C24 		movq	24(%rsp), %rdi
+ 201      18
+ 202 014e 4889C6   		movq	%rax, %rsi
+ 203 0151 E8000000 		call	g_type_check_instance_cast
+ 203      00
+ 204 0156 4C89EE   		movq	%r13, %rsi
+ 205 0159 4889C7   		movq	%rax, %rdi
+ 206 015c E8000000 		call	gtk_menu_item_set_submenu
+ 206      00
+ 207 0161 E8000000 		call	gtk_menu_shell_get_type
+ 207      00
+ 208 0166 4C89EF   		movq	%r13, %rdi
+ 209 0169 4889C6   		movq	%rax, %rsi
+ 210 016c 48894424 		movq	%rax, 24(%rsp)
+ 210      18
+ 211 0171 E8000000 		call	g_type_check_instance_cast
+ 211      00
+ 212 0176 4C89F6   		movq	%r14, %rsi
+ 213 0179 4889C7   		movq	%rax, %rdi
+ 214 017c E8000000 		call	gtk_menu_shell_append
+ 214      00
+ 215 0181 488B5424 		movq	24(%rsp), %rdx
+ 215      18
+ 216 0186 4C89FF   		movq	%r15, %rdi
+ 217 0189 4889D6   		movq	%rdx, %rsi
+ 218 018c E8000000 		call	g_type_check_instance_cast
+ 218      00
+ 219 0191 4C89EE   		movq	%r13, %rsi
+ 220 0194 4889C7   		movq	%rax, %rdi
+ 221 0197 E8000000 		call	gtk_menu_shell_append
+ 221      00
+ 222 019c E8000000 		call	gtk_box_get_type
+ 222      00
+ 223 01a1 4889EF   		movq	%rbp, %rdi
+ 224 01a4 4889C6   		movq	%rax, %rsi
+ 225 01a7 E8000000 		call	g_type_check_instance_cast
+ 225      00
+ 226 01ac 4C89FE   		movq	%r15, %rsi
+ 227 01af 4889C7   		movq	%rax, %rdi
+ 228 01b2 4531C0   		xorl	%r8d, %r8d
+ 229 01b5 31C9     		xorl	%ecx, %ecx
+ 230 01b7 31D2     		xorl	%edx, %edx
+ 231 01b9 E8000000 		call	gtk_box_pack_start
+ 231      00
+ 232 01be 4531C9   		xorl	%r9d, %r9d
+ 233 01c1 4531C0   		xorl	%r8d, %r8d
+ 234 01c4 31C9     		xorl	%ecx, %ecx
+ 235 01c6 BA000000 		movl	$gtk_main_quit, %edx
+ 235      00
+ 236 01cb 4889DF   		movq	%rbx, %rdi
+ 237 01ce BE000000 		movl	$.LC13, %esi
+ 237      00
+ 238 01d3 E8000000 		call	g_signal_connect_data
+ 238      00
+ 239 01d8 4C89F7   		movq	%r14, %rdi
+ 240 01db BE500000 		movl	$80, %esi
+ 240      00
+ 241 01e0 E8000000 		call	g_type_check_instance_cast
+ 241      00
+ 242 01e5 4531C9   		xorl	%r9d, %r9d
+ 243 01e8 4531C0   		xorl	%r8d, %r8d
+ 244 01eb 31C9     		xorl	%ecx, %ecx
+ 245 01ed BA000000 		movl	$gtk_main_quit, %edx
+ 245      00
+ 246 01f2 BE000000 		movl	$.LC14, %esi
+ 246      00
+ 247 01f7 4889C7   		movq	%rax, %rdi
+ 248 01fa E8000000 		call	g_signal_connect_data
+ 248      00
+ 249 01ff 4C89E6   		movq	%r12, %rsi
+ 250 0202 4889EF   		movq	%rbp, %rdi
+ 251 0205 E8000000 		call	g_type_check_instance_cast
+ 251      00
+ 252 020a 488B7424 		movq	8(%rsp), %rsi
+ 252      08
+ 253 020f 4889C7   		movq	%rax, %rdi
+ 254 0212 E8000000 		call	gtk_container_add
+ 254      00
+ 255 0217 4C89E6   		movq	%r12, %rsi
+ 256 021a 4889EF   		movq	%rbp, %rdi
+ 257 021d E8000000 		call	g_type_check_instance_cast
+ 257      00
+ 258 0222 488B7424 		movq	16(%rsp), %rsi
+ 258      10
+ 259 0227 4889C7   		movq	%rax, %rdi
+ 260 022a E8000000 		call	gtk_container_add
+ 260      00
+ 261 022f 4889DF   		movq	%rbx, %rdi
+ 262 0232 E8000000 		call	gtk_widget_show_all
+ 262      00
+ 263 0237 E8000000 		call	gtk_main
+ 263      00
+ 264 023c 4883C438 		addq	$56, %rsp
+ 265              		.cfi_def_cfa_offset 56
+ 266 0240 31C0     		xorl	%eax, %eax
+ 267 0242 5B       		popq	%rbx
+ 268              		.cfi_def_cfa_offset 48
+ 269 0243 5D       		popq	%rbp
+ 270              		.cfi_def_cfa_offset 40
+ 271 0244 415C     		popq	%r12
+ 272              		.cfi_def_cfa_offset 32
+ 273 0246 415D     		popq	%r13
+ 274              		.cfi_def_cfa_offset 24
+ 275 0248 415E     		popq	%r14
+ 276              		.cfi_def_cfa_offset 16
+ 277 024a 415F     		popq	%r15
+ 278              		.cfi_def_cfa_offset 8
+ 279 024c C3       		ret
+ 280              		.cfi_endproc
+ 281              	.LFE496:
+ 283              		.section	.text.unlikely
+ 284              	.LCOLDE15:
+ 285              		.section	.text.startup
+ 286              	.LHOTE15:
+ 287              		.ident	"GCC: (Ubuntu 5.4.0-6ubuntu1~16.04.4) 5.4.0 20160609"
+ 288              		.section	.note.GNU-stack,"",@progbits
 DEFINED SYMBOLS
                             *ABS*:0000000000000000 main.c
-     /tmp/ccmiwGS7.s:12     .text:0000000000000000 sigHup
-     /tmp/ccmiwGS7.s:34     .text:0000000000000010 sigInt
-     /tmp/ccmiwGS7.s:60     .text:0000000000000030 print_hello
-     /tmp/ccmiwGS7.s:94     .text.startup:0000000000000000 main
+     /tmp/ccS7B1qR.s:12     .text:0000000000000000 sigHup
+     /tmp/ccS7B1qR.s:34     .text:0000000000000010 sigInt
+     /tmp/ccS7B1qR.s:60     .text:0000000000000030 print_hello
+     /tmp/ccS7B1qR.s:104    .text.startup:0000000000000000 main
 
 UNDEFINED SYMBOLS
 puts
@@ -237,10 +405,22 @@ gtk_window_new
 gtk_window_get_type
 g_type_check_instance_cast
 gtk_window_set_title
+gtk_window_set_position
 gtk_window_set_default_size
-gtk_button_new_with_label
-g_signal_connect_data
+gtk_box_new
 gtk_container_get_type
 gtk_container_add
-gtk_widget_show
+gtk_button_new_with_label
+g_signal_connect_data
+gtk_menu_bar_new
+gtk_menu_new
+gtk_menu_item_new_with_label
+gtk_menu_item_get_type
+gtk_menu_item_set_submenu
+gtk_menu_shell_get_type
+gtk_menu_shell_append
+gtk_box_get_type
+gtk_box_pack_start
+gtk_main_quit
+gtk_widget_show_all
 gtk_main

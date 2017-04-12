@@ -61,23 +61,64 @@ int main(int argc, char *argv[]) {
 	printf("\nGTK+ example program\n\n\n");
 
 	GtkWidget *window;
+  GtkWidget *vbox;	
+	
 	GtkWidget *button;
-	    
+	GtkWidget *button2;
+	
+	GtkWidget *menubar;
+	GtkWidget *fileMenu;
+	GtkWidget *fileMi;
+	GtkWidget *quitMi;
+
+	// GTK window -------------------------------------------------------------------
 	gtk_init (&argc, &argv);
 	
 	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title (GTK_WINDOW (window), WINDOW_TITLE);
+	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
 	gtk_window_set_default_size (GTK_WINDOW (window), 200, 200);
 	
-	button = gtk_button_new_with_label ("Hello World");
+//	vbox = gtk_vbox_new(FALSE, 2);
+	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
+	gtk_container_add(GTK_CONTAINER(window), vbox);
+	
+	button  = gtk_button_new_with_label ("Hello World");
+	button2 = gtk_button_new_with_label ("Hello World 2");
   g_signal_connect (button, "clicked", G_CALLBACK (print_hello), NULL);
 	
-	 /* This packs the button into the window (a gtk container). */
-	    gtk_container_add (GTK_CONTAINER (window), button);
+	// GTK menu  --------------------------------------------------------------------
+	menubar  = gtk_menu_bar_new();
+	fileMenu = gtk_menu_new();
 	
+	fileMi = gtk_menu_item_new_with_label("File");
+	quitMi = gtk_menu_item_new_with_label("Quit");
+	
+	gtk_menu_item_set_submenu(GTK_MENU_ITEM(fileMi), fileMenu);
+	gtk_menu_shell_append(GTK_MENU_SHELL(fileMenu), quitMi);
+//	gtk_menu_shell_append(GTK_MENU_SHELL(menubar),  fileMi);
+	gtk_menu_shell_append(GTK_MENU_SHELL(menubar),  fileMi);
+	gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, FALSE, 0);
+	
+	// GTK Signals ------------------------------------------------------------------
+	
+	// Exit program when window is destroyed
+	g_signal_connect (window, "destroy", G_CALLBACK (gtk_main_quit), NULL);
+	g_signal_connect(G_OBJECT(quitMi), "activate", G_CALLBACK(gtk_main_quit), NULL);
+	
+	 /* This packs the button into the window (a gtk container). */
+//	gtk_container_add (GTK_CONTAINER (vbox), menubar);
+	gtk_container_add (GTK_CONTAINER (vbox), button);
+	gtk_container_add (GTK_CONTAINER (vbox), button2);
+	
+
 	 /* The final step is to display this newly created widget. */
-	    gtk_widget_show (button);	
-	gtk_widget_show  (window);
+//	gtk_widget_show(button);	
+//	gtk_widget_show(window);
+//  gtk_widget_show(vbox);
+//	gtk_widget_show(menubar);
+	
+	gtk_widget_show_all(window);
 	    
 	gtk_main ();
 	
