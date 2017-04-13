@@ -19,7 +19,7 @@ DEFINES +=
 #
 TEMPLATE = app
 
-TARGET = 
+TARGET = test1
 DEPENDPATH += .
 INCLUDEPATH += .
 DESTDIR += 

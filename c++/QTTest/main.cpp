@@ -30,8 +30,8 @@ Myapp::Myapp (int argc, char** argv) : QCoreApplication(argc, argv) {
 
   connect( this, SIGNAL( aboutToQuit() ), SLOT( cleanupAtEndOfProgram() ) );
 }
-*/
 
+*/
 int singleShot(int argc, char **argv) {
   QCoreApplication a(argc, argv);
   QTimer::singleShot(2000, &a, SLOT(quit()));
@@ -47,14 +47,14 @@ void simpleIO() {
   out << QString("Hello World") << endl;
   in >> name;
   out << QString("Hello, ").append(name) << endl;
-  exit(0);
+  //exit(0);
 }
 
 
 int main( int argc, char **argv ) {
 
   simpleIO();
-  //singleShot(argc, argv);
+  singleShot(argc, argv);
   
 
 
