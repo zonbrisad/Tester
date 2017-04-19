@@ -24,11 +24,20 @@
 #include "def.h"
 
 // Defines ----------------------------------------------------------------
-
 #define PROGNAME "gtktest"
 #define WINDOW_TITLE PROGNAME
 
 // Variables --------------------------------------------------------------
+GtkWidget *window;
+GtkWidget *vbox;	
+	
+GtkWidget *button;
+GtkWidget *button2;
+
+GtkWidget *menubar;
+GtkWidget *fileMenu;
+GtkWidget *fileMi;
+GtkWidget *quitMi;
 
 // Prototypes -------------------------------------------------------------
 void sigInt(int sig);
@@ -60,16 +69,6 @@ int main(int argc, char *argv[]) {
 	
 	printf("\nGTK+ example program\n\n\n");
 
-	GtkWidget *window;
-  GtkWidget *vbox;	
-	
-	GtkWidget *button;
-	GtkWidget *button2;
-	
-	GtkWidget *menubar;
-	GtkWidget *fileMenu;
-	GtkWidget *fileMi;
-	GtkWidget *quitMi;
 
 	// GTK window -------------------------------------------------------------------
 	gtk_init (&argc, &argv);
@@ -96,28 +95,20 @@ int main(int argc, char *argv[]) {
 	
 	gtk_menu_item_set_submenu(GTK_MENU_ITEM(fileMi), fileMenu);
 	gtk_menu_shell_append(GTK_MENU_SHELL(fileMenu), quitMi);
-//	gtk_menu_shell_append(GTK_MENU_SHELL(menubar),  fileMi);
 	gtk_menu_shell_append(GTK_MENU_SHELL(menubar),  fileMi);
 	gtk_box_pack_start(GTK_BOX(vbox), menubar, FALSE, FALSE, 0);
 	
 	// GTK Signals ------------------------------------------------------------------
 	
 	// Exit program when window is destroyed
-	g_signal_connect (window, "destroy", G_CALLBACK (gtk_main_quit), NULL);
-	g_signal_connect(G_OBJECT(quitMi), "activate", G_CALLBACK(gtk_main_quit), NULL);
+	g_signal_connect(window,           "destroy",  G_CALLBACK (gtk_main_quit), NULL);
+	g_signal_connect(G_OBJECT(quitMi), "activate", G_CALLBACK(gtk_main_quit),  NULL);
 	
 	 /* This packs the button into the window (a gtk container). */
-//	gtk_container_add (GTK_CONTAINER (vbox), menubar);
 	gtk_container_add (GTK_CONTAINER (vbox), button);
 	gtk_container_add (GTK_CONTAINER (vbox), button2);
 	
-
 	 /* The final step is to display this newly created widget. */
-//	gtk_widget_show(button);	
-//	gtk_widget_show(window);
-//  gtk_widget_show(vbox);
-//	gtk_widget_show(menubar);
-	
 	gtk_widget_show_all(window);
 	    
 	gtk_main ();
