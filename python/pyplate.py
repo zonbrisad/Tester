@@ -104,9 +104,7 @@ def main():
     parser = argparse.ArgumentParser(description="C/C++ template generator")
 
     parser.add_argument("--helpx",     help="Print help informationt")
-
     parser.add_argument("--newcpp",  action="store_true", help="Create a new C++ and H file set")
-
     parser.add_argument("--licence", type=str,            help="Licence of new file", default="")
     parser.add_argument("--author",  type=str,            help="Author of file",      default="")
     parser.add_argument("--dir",     type=str,            help="Directory where to store file",  default=".")
@@ -117,7 +115,6 @@ def main():
         newModule(args.dir, args.author, args.licence)
         exit
         
-
 if __name__ == "__main__":
     try:
         main()

@@ -3,258 +3,223 @@
    3              	.LC0:
    4 0000 53696768 		.string	"Sighup"
    4      757000
-   5              		.section	.text.unlikely,"ax",@progbits
-   6              	.LCOLDB1:
-   7              		.text
-   8              	.LHOTB1:
-   9              		.p2align 4,,15
-  10              		.globl	sigHup
-  12              	sigHup:
-  13              	.LFB76:
-  14              		.cfi_startproc
-  15 0000 BF000000 		movl	$.LC0, %edi
-  15      00
-  16 0005 E9000000 		jmp	puts
-  16      00
-  17              		.cfi_endproc
-  18              	.LFE76:
-  20              		.section	.text.unlikely
-  21              	.LCOLDE1:
-  22              		.text
-  23              	.LHOTE1:
-  24              		.section	.rodata.str1.1
-  25              	.LC2:
-  26 0007 0A457869 		.string	"\nExiting program"
-  26      74696E67 
-  26      2070726F 
-  26      6772616D 
-  26      00
-  27              		.section	.text.unlikely
-  28              	.LCOLDB3:
-  29              		.text
-  30              	.LHOTB3:
-  31 000a 660F1F44 		.p2align 4,,15
-  31      0000
-  32              		.globl	sigInt
-  34              	sigInt:
-  35              	.LFB75:
-  36              		.cfi_startproc
-  37 0010 BF000000 		movl	$.LC2, %edi
-  37      00
-  38 0015 4883EC08 		subq	$8, %rsp
-  39              		.cfi_def_cfa_offset 16
-  40 0019 E8000000 		call	puts
-  40      00
-  41 001e 31FF     		xorl	%edi, %edi
-  42 0020 E8000000 		call	exit
-  42      00
-  43              		.cfi_endproc
-  44              	.LFE75:
-  46              		.section	.text.unlikely
-  47              	.LCOLDE3:
-  48              		.text
-  49              	.LHOTE3:
-  50              		.section	.rodata.str1.1
-  51              	.LC4:
-  52 0018 0A4D616B 		.string	"\nMakeplate linux C example.\n\n"
-  52      65706C61 
-  52      7465206C 
-  52      696E7578 
-  52      20432065 
-  53              		.section	.rodata.str1.8,"aMS",@progbits,1
-  54              		.align 8
-  55              	.LC5:
-  56 0000 1B5B313B 		.string	"\033[1;34mINFO \033[1;37m%4d\033[1;36m %-25s\033[0m: Information printout\n"
-  56      33346D49 
-  56      4E464F20 
-  56      1B5B313B 
-  56      33376D25 
-  57 003f 00       		.align 8
-  58              	.LC6:
-  59 0040 1B5B313B 		.string	"\033[1;32mDBG  \033[1;37m%4d\033[1;36m %-25s\033[0m: Debug printout\n"
-  59      33326D44 
-  59      42472020 
-  59      1B5B313B 
-  59      33376D25 
-  60 0079 00000000 		.align 8
+   5              		.text
+   6              		.p2align 4,,15
+   7              	.globl sigHup
+   9              	sigHup:
+  10              	.LFB34:
+  11              		.cfi_startproc
+  12 0000 BF000000 		movl	$.LC0, %edi
+  12      00
+  13 0005 E9000000 		jmp	puts
+  13      00
+  14              		.cfi_endproc
+  15              	.LFE34:
+  17              		.section	.rodata.str1.1
+  18              	.LC1:
+  19 0007 0A457869 		.string	"\nExiting program"
+  19      74696E67 
+  19      2070726F 
+  19      6772616D 
+  19      00
+  20              		.text
+  21 000a 660F1F44 		.p2align 4,,15
+  21      0000
+  22              	.globl sigInt
+  24              	sigInt:
+  25              	.LFB33:
+  26              		.cfi_startproc
+  27 0010 BF000000 		movl	$.LC1, %edi
+  27      00
+  28 0015 4883EC08 		subq	$8, %rsp
+  29              		.cfi_def_cfa_offset 16
+  30 0019 E8000000 		call	puts
+  30      00
+  31 001e 31FF     		xorl	%edi, %edi
+  32 0020 E8000000 		call	exit
+  32      00
+  33              		.cfi_endproc
+  34              	.LFE33:
+  36              		.section	.rodata.str1.1
+  37              	.LC2:
+  38 0018 0A4D616B 		.string	"\nMakeplate linux C example.\n\n"
+  38      65706C61 
+  38      7465206C 
+  38      696E7578 
+  38      20432065 
+  39              		.section	.rodata.str1.8,"aMS",@progbits,1
+  40              		.align 8
+  41              	.LC3:
+  42 0000 1B5B313B 		.string	"\033[1;34mINFO \033[1;37m%4d\033[1;36m %-25s\033[0m: Information printout\n"
+  42      33346D49 
+  42      4E464F20 
+  42      1B5B313B 
+  42      33376D25 
+  43 003f 00       		.align 8
+  44              	.LC4:
+  45 0040 1B5B313B 		.string	"\033[1;32mDBG  \033[1;37m%4d\033[1;36m %-25s\033[0m: Debug printout\n"
+  45      33326D44 
+  45      42472020 
+  45      1B5B313B 
+  45      33376D25 
+  46 0079 00000000 		.align 8
+  46      000000
+  47              	.LC5:
+  48 0080 1B5B313B 		.string	"\033[1;33mWARN \033[1;37m%4d\033[1;36m %-25s\033[0m: Warning printout\n"
+  48      33336D57 
+  48      41524E20 
+  48      1B5B313B 
+  48      33376D25 
+  49 00bb 00000000 		.align 8
+  49      00
+  50              	.LC6:
+  51 00c0 1B5B313B 		.string	"\033[1;31mERR  \033[1;37m%4d\033[1;36m %-25s\033[0m: Error printout\n"
+  51      33316D45 
+  51      52522020 
+  51      1B5B313B 
+  51      33376D25 
+  52              		.section	.rodata.str1.1
+  53              	.LC7:
+  54 0036 44656275 		.string	"Debug do"
+  54      6720646F 
+  54      00
+  55              	.LC8:
+  56 003f 56617220 		.string	"Var i = %2x\n"
+  56      69203D20 
+  56      2532780A 
+  56      00
+  57              	.LC9:
+  58 004c 55736520 		.string	"Use CTRL-C to stop program"
+  58      4354524C 
+  58      2D432074 
+  58      6F207374 
+  58      6F702070 
+  59              		.text
+  60 0025 66662E0F 		.p2align 4,,15
+  60      1F840000 
   60      000000
-  61              	.LC7:
-  62 0080 1B5B313B 		.string	"\033[1;33mWARN \033[1;37m%4d\033[1;36m %-25s\033[0m: Warning printout\n"
-  62      33336D57 
-  62      41524E20 
-  62      1B5B313B 
-  62      33376D25 
-  63 00bb 00000000 		.align 8
-  63      00
-  64              	.LC8:
-  65 00c0 1B5B313B 		.string	"\033[1;31mERR  \033[1;37m%4d\033[1;36m %-25s\033[0m: Error printout\n"
-  65      33316D45 
-  65      52522020 
-  65      1B5B313B 
-  65      33376D25 
-  66              		.section	.rodata.str1.1
-  67              	.LC9:
-  68 0036 44656275 		.string	"Debug do"
-  68      6720646F 
+  61              	.globl main
+  63              	main:
+  64              	.LFB35:
+  65              		.cfi_startproc
+  66 0030 4883EC08 		subq	$8, %rsp
+  67              		.cfi_def_cfa_offset 16
+  68 0034 BE000000 		movl	$sigInt, %esi
   68      00
-  69              	.LC10:
-  70 003f 56617220 		.string	"Var i = %2x\n"
-  70      69203D20 
-  70      2532780A 
+  69 0039 BF020000 		movl	$2, %edi
+  69      00
+  70 003e E8000000 		call	signal
   70      00
-  71              	.LC11:
-  72 004c 55736520 		.string	"Use CTRL-C to stop program"
-  72      4354524C 
-  72      2D432074 
-  72      6F207374 
-  72      6F702070 
-  73              		.section	.text.unlikely
-  74              	.LCOLDB12:
-  75              		.section	.text.startup,"ax",@progbits
-  76              	.LHOTB12:
-  77              		.p2align 4,,15
-  78              		.globl	main
-  80              	main:
-  81              	.LFB77:
-  82              		.cfi_startproc
-  83 0000 4883EC08 		subq	$8, %rsp
-  84              		.cfi_def_cfa_offset 16
-  85 0004 BE000000 		movl	$sigInt, %esi
+  71 0043 BE000000 		movl	$sigHup, %esi
+  71      00
+  72 0048 BF010000 		movl	$1, %edi
+  72      00
+  73 004d E8000000 		call	signal
+  73      00
+  74 0052 BF000000 		movl	$.LC2, %edi
+  74      00
+  75 0057 E8000000 		call	puts
+  75      00
+  76 005c 488B3D00 		movq	stderr(%rip), %rdi
+  76      000000
+  77 0063 B9000000 		movl	$__FUNCTION__.3989, %ecx
+  77      00
+  78 0068 BA3E0000 		movl	$62, %edx
+  78      00
+  79 006d BE000000 		movl	$.LC3, %esi
+  79      00
+  80 0072 31C0     		xorl	%eax, %eax
+  81 0074 E8000000 		call	fprintf
+  81      00
+  82 0079 488B3D00 		movq	stderr(%rip), %rdi
+  82      000000
+  83 0080 B9000000 		movl	$__FUNCTION__.3989, %ecx
+  83      00
+  84 0085 BA400000 		movl	$64, %edx
+  84      00
+  85 008a BE000000 		movl	$.LC4, %esi
   85      00
-  86 0009 BF020000 		movl	$2, %edi
-  86      00
-  87 000e E8000000 		call	signal
+  86 008f 31C0     		xorl	%eax, %eax
+  87 0091 E8000000 		call	fprintf
   87      00
-  88 0013 BE000000 		movl	$sigHup, %esi
-  88      00
-  89 0018 BF010000 		movl	$1, %edi
+  88 0096 488B3D00 		movq	stderr(%rip), %rdi
+  88      000000
+  89 009d B9000000 		movl	$__FUNCTION__.3989, %ecx
   89      00
-  90 001d E8000000 		call	signal
+  90 00a2 BA420000 		movl	$66, %edx
   90      00
-  91 0022 BF000000 		movl	$.LC4, %edi
+  91 00a7 BE000000 		movl	$.LC5, %esi
   91      00
-  92 0027 E8000000 		call	puts
-  92      00
-  93 002c 488B3D00 		movq	stderr(%rip), %rdi
-  93      000000
-  94 0033 41B80000 		movl	$__FUNCTION__.4742, %r8d
-  94      0000
-  95 0039 B93E0000 		movl	$62, %ecx
+  92 00ac 31C0     		xorl	%eax, %eax
+  93 00ae E8000000 		call	fprintf
+  93      00
+  94 00b3 488B3D00 		movq	stderr(%rip), %rdi
+  94      000000
+  95 00ba B9000000 		movl	$__FUNCTION__.3989, %ecx
   95      00
-  96 003e BA000000 		movl	$.LC5, %edx
+  96 00bf BA440000 		movl	$68, %edx
   96      00
-  97 0043 BE010000 		movl	$1, %esi
+  97 00c4 BE000000 		movl	$.LC6, %esi
   97      00
-  98 0048 31C0     		xorl	%eax, %eax
-  99 004a E8000000 		call	__fprintf_chk
+  98 00c9 31C0     		xorl	%eax, %eax
+  99 00cb E8000000 		call	fprintf
   99      00
- 100 004f 488B3D00 		movq	stderr(%rip), %rdi
- 100      000000
- 101 0056 41B80000 		movl	$__FUNCTION__.4742, %r8d
- 101      0000
- 102 005c B9400000 		movl	$64, %ecx
- 102      00
- 103 0061 BA000000 		movl	$.LC6, %edx
+ 100 00d0 BF000000 		movl	$.LC7, %edi
+ 100      00
+ 101 00d5 E8000000 		call	puts
+ 101      00
+ 102 00da 31F6     		xorl	%esi, %esi
+ 103 00dc BF000000 		movl	$.LC8, %edi
  103      00
- 104 0066 BE010000 		movl	$1, %esi
- 104      00
- 105 006b 31C0     		xorl	%eax, %eax
- 106 006d E8000000 		call	__fprintf_chk
+ 104 00e1 31C0     		xorl	%eax, %eax
+ 105 00e3 E8000000 		call	printf
+ 105      00
+ 106 00e8 BE040000 		movl	$4, %esi
  106      00
- 107 0072 488B3D00 		movq	stderr(%rip), %rdi
- 107      000000
- 108 0079 41B80000 		movl	$__FUNCTION__.4742, %r8d
- 108      0000
- 109 007f B9420000 		movl	$66, %ecx
+ 107 00ed BF000000 		movl	$.LC8, %edi
+ 107      00
+ 108 00f2 31C0     		xorl	%eax, %eax
+ 109 00f4 E8000000 		call	printf
  109      00
- 110 0084 BA000000 		movl	$.LC7, %edx
+ 110 00f9 BE060000 		movl	$6, %esi
  110      00
- 111 0089 BE010000 		movl	$1, %esi
+ 111 00fe BF000000 		movl	$.LC8, %edi
  111      00
- 112 008e 31C0     		xorl	%eax, %eax
- 113 0090 E8000000 		call	__fprintf_chk
+ 112 0103 31C0     		xorl	%eax, %eax
+ 113 0105 E8000000 		call	printf
  113      00
- 114 0095 488B3D00 		movq	stderr(%rip), %rdi
- 114      000000
- 115 009c 41B80000 		movl	$__FUNCTION__.4742, %r8d
- 115      0000
- 116 00a2 B9440000 		movl	$68, %ecx
- 116      00
- 117 00a7 BA000000 		movl	$.LC8, %edx
+ 114 010a BF000000 		movl	$.LC8, %edi
+ 114      00
+ 115 010f BE020000 		movl	$2, %esi
+ 115      00
+ 116 0114 31C0     		xorl	%eax, %eax
+ 117 0116 E8000000 		call	printf
  117      00
- 118 00ac BE010000 		movl	$1, %esi
+ 118 011b BF000000 		movl	$.LC9, %edi
  118      00
- 119 00b1 31C0     		xorl	%eax, %eax
- 120 00b3 E8000000 		call	__fprintf_chk
- 120      00
- 121 00b8 BF000000 		movl	$.LC9, %edi
- 121      00
- 122 00bd E8000000 		call	puts
- 122      00
- 123 00c2 31D2     		xorl	%edx, %edx
- 124 00c4 BE000000 		movl	$.LC10, %esi
- 124      00
- 125 00c9 BF010000 		movl	$1, %edi
- 125      00
- 126 00ce 31C0     		xorl	%eax, %eax
- 127 00d0 E8000000 		call	__printf_chk
- 127      00
- 128 00d5 BA040000 		movl	$4, %edx
- 128      00
- 129 00da BE000000 		movl	$.LC10, %esi
+ 119 0120 E8000000 		call	puts
+ 119      00
+ 120              	.L4:
+ 121 0125 EBFE     		jmp	.L4
+ 122              		.cfi_endproc
+ 123              	.LFE35:
+ 125              		.section	.rodata
+ 128              	__FUNCTION__.3989:
+ 129 0000 6D61696E 		.string	"main"
  129      00
- 130 00df BF010000 		movl	$1, %edi
- 130      00
- 131 00e4 31C0     		xorl	%eax, %eax
- 132 00e6 E8000000 		call	__printf_chk
- 132      00
- 133 00eb BA060000 		movl	$6, %edx
- 133      00
- 134 00f0 BE000000 		movl	$.LC10, %esi
- 134      00
- 135 00f5 BF010000 		movl	$1, %edi
- 135      00
- 136 00fa 31C0     		xorl	%eax, %eax
- 137 00fc E8000000 		call	__printf_chk
- 137      00
- 138 0101 BF010000 		movl	$1, %edi
- 138      00
- 139 0106 BA020000 		movl	$2, %edx
- 139      00
- 140 010b BE000000 		movl	$.LC10, %esi
- 140      00
- 141 0110 31C0     		xorl	%eax, %eax
- 142 0112 E8000000 		call	__printf_chk
- 142      00
- 143 0117 BF000000 		movl	$.LC11, %edi
- 143      00
- 144 011c E8000000 		call	puts
- 144      00
- 145              	.L5:
- 146 0121 EBFE     		jmp	.L5
- 147              		.cfi_endproc
- 148              	.LFE77:
- 150              		.section	.text.unlikely
- 151              	.LCOLDE12:
- 152              		.section	.text.startup
- 153              	.LHOTE12:
- 154              		.section	.rodata
- 157              	__FUNCTION__.4742:
- 158 0000 6D61696E 		.string	"main"
- 158      00
- 159              		.ident	"GCC: (Ubuntu 5.4.0-6ubuntu1~16.04.4) 5.4.0 20160609"
- 160              		.section	.note.GNU-stack,"",@progbits
+ 130              		.ident	"GCC: (GNU) 4.5.2"
+ 131              		.section	.note.GNU-stack,"",@progbits
 DEFINED SYMBOLS
                             *ABS*:0000000000000000 main.c
-     /tmp/ccBGpx6q.s:12     .text:0000000000000000 sigHup
-     /tmp/ccBGpx6q.s:34     .text:0000000000000010 sigInt
-     /tmp/ccBGpx6q.s:80     .text.startup:0000000000000000 main
-     /tmp/ccBGpx6q.s:157    .rodata:0000000000000000 __FUNCTION__.4742
+     /tmp/ccxaEL2a.s:9      .text:0000000000000000 sigHup
+     /tmp/ccxaEL2a.s:24     .text:0000000000000010 sigInt
+     /tmp/ccxaEL2a.s:63     .text:0000000000000030 main
+     /tmp/ccxaEL2a.s:128    .rodata:0000000000000000 __FUNCTION__.3989
 
 UNDEFINED SYMBOLS
 puts
 exit
 signal
 stderr
-__fprintf_chk
-__printf_chk
+fprintf
+printf
