@@ -1,0 +1,425 @@
+   1              		.file	"main.c"
+   2              		.section	.rodata.str1.1,"aMS",@progbits,1
+   3              	.LC0:
+   4 0000 53696768 		.string	"Sighup"
+   4      757000
+   5              		.section	.text.unlikely,"ax",@progbits
+   6              	.LCOLDB1:
+   7              		.text
+   8              	.LHOTB1:
+   9              		.p2align 4,,15
+  10              		.globl	sigHup
+  12              	sigHup:
+  13              	.LFB494:
+  14              		.cfi_startproc
+  15 0000 BF000000 		movl	$.LC0, %edi
+  15      00
+  16 0005 E9000000 		jmp	puts
+  16      00
+  17              		.cfi_endproc
+  18              	.LFE494:
+  20              		.section	.text.unlikely
+  21              	.LCOLDE1:
+  22              		.text
+  23              	.LHOTE1:
+  24              		.section	.rodata.str1.1
+  25              	.LC2:
+  26 0007 0A457869 		.string	"\nExiting program"
+  26      74696E67 
+  26      2070726F 
+  26      6772616D 
+  26      00
+  27              		.section	.text.unlikely
+  28              	.LCOLDB3:
+  29              		.text
+  30              	.LHOTB3:
+  31 000a 660F1F44 		.p2align 4,,15
+  31      0000
+  32              		.globl	sigInt
+  34              	sigInt:
+  35              	.LFB493:
+  36              		.cfi_startproc
+  37 0010 BF000000 		movl	$.LC2, %edi
+  37      00
+  38 0015 4883EC08 		subq	$8, %rsp
+  39              		.cfi_def_cfa_offset 16
+  40 0019 E8000000 		call	puts
+  40      00
+  41 001e 31FF     		xorl	%edi, %edi
+  42 0020 E8000000 		call	exit
+  42      00
+  43              		.cfi_endproc
+  44              	.LFE493:
+  46              		.section	.text.unlikely
+  47              	.LCOLDE3:
+  48              		.text
+  49              	.LHOTE3:
+  50              		.section	.rodata.str1.1
+  51              	.LC4:
+  52 0018 48656C6C 		.string	"Hello World\n"
+  52      6F20576F 
+  52      726C640A 
+  52      00
+  53              		.section	.text.unlikely
+  54              	.LCOLDB5:
+  55              		.text
+  56              	.LHOTB5:
+  57 0025 90662E0F 		.p2align 4,,15
+  57      1F840000 
+  57      000000
+  58              		.globl	print_hello
+  60              	print_hello:
+  61              	.LFB495:
+  62              		.cfi_startproc
+  63 0030 31C0     		xorl	%eax, %eax
+  64 0032 4883EC08 		subq	$8, %rsp
+  65              		.cfi_def_cfa_offset 16
+  66 0036 BF000000 		movl	$.LC4, %edi
+  66      00
+  67 003b E8000000 		call	g_print
+  67      00
+  68 0040 4883C408 		addq	$8, %rsp
+  69              		.cfi_def_cfa_offset 8
+  70 0044 C3       		ret
+  71              		.cfi_endproc
+  72              	.LFE495:
+  74              		.section	.text.unlikely
+  75              	.LCOLDE5:
+  76              		.text
+  77              	.LHOTE5:
+  78              		.section	.rodata.str1.1
+  79              	.LC6:
+  80 0025 0A47544B 		.string	"\nGTK+ example program\n\n"
+  80      2B206578 
+  80      616D706C 
+  80      65207072 
+  80      6F677261 
+  81              	.LC7:
+  82 003d 67746B74 		.string	"gtktest"
+  82      65737400 
+  83              	.LC8:
+  84 0045 48656C6C 		.string	"Hello World"
+  84      6F20576F 
+  84      726C6400 
+  85              	.LC9:
+  86 0051 48656C6C 		.string	"Hello World 2"
+  86      6F20576F 
+  86      726C6420 
+  86      3200
+  87              	.LC10:
+  88 005f 636C6963 		.string	"clicked"
+  88      6B656400 
+  89              	.LC11:
+  90 0067 46696C65 		.string	"File"
+  90      00
+  91              	.LC12:
+  92 006c 51756974 		.string	"Quit"
+  92      00
+  93              	.LC13:
+  94 0071 64657374 		.string	"destroy"
+  94      726F7900 
+  95              	.LC14:
+  96 0079 61637469 		.string	"activate"
+  96      76617465 
+  96      00
+  97              		.section	.text.unlikely
+  98              	.LCOLDB15:
+  99              		.section	.text.startup,"ax",@progbits
+ 100              	.LHOTB15:
+ 101              		.p2align 4,,15
+ 102              		.globl	main
+ 104              	main:
+ 105              	.LFB496:
+ 106              		.cfi_startproc
+ 107 0000 4157     		pushq	%r15
+ 108              		.cfi_def_cfa_offset 16
+ 109              		.cfi_offset 15, -16
+ 110 0002 4156     		pushq	%r14
+ 111              		.cfi_def_cfa_offset 24
+ 112              		.cfi_offset 14, -24
+ 113 0004 4155     		pushq	%r13
+ 114              		.cfi_def_cfa_offset 32
+ 115              		.cfi_offset 13, -32
+ 116 0006 4154     		pushq	%r12
+ 117              		.cfi_def_cfa_offset 40
+ 118              		.cfi_offset 12, -40
+ 119 0008 55       		pushq	%rbp
+ 120              		.cfi_def_cfa_offset 48
+ 121              		.cfi_offset 6, -48
+ 122 0009 53       		pushq	%rbx
+ 123              		.cfi_def_cfa_offset 56
+ 124              		.cfi_offset 3, -56
+ 125 000a 4883EC38 		subq	$56, %rsp
+ 126              		.cfi_def_cfa_offset 112
+ 127 000e 897C242C 		movl	%edi, 44(%rsp)
+ 128 0012 48897424 		movq	%rsi, 32(%rsp)
+ 128      20
+ 129 0017 BF020000 		movl	$2, %edi
+ 129      00
+ 130 001c BE000000 		movl	$sigInt, %esi
+ 130      00
+ 131 0021 E8000000 		call	signal
+ 131      00
+ 132 0026 BE000000 		movl	$sigHup, %esi
+ 132      00
+ 133 002b BF010000 		movl	$1, %edi
+ 133      00
+ 134 0030 E8000000 		call	signal
+ 134      00
+ 135 0035 BF000000 		movl	$.LC6, %edi
+ 135      00
+ 136 003a E8000000 		call	puts
+ 136      00
+ 137 003f 488D7424 		leaq	32(%rsp), %rsi
+ 137      20
+ 138 0044 488D7C24 		leaq	44(%rsp), %rdi
+ 138      2C
+ 139 0049 E8000000 		call	gtk_init
+ 139      00
+ 140 004e 31FF     		xorl	%edi, %edi
+ 141 0050 E8000000 		call	gtk_window_new
+ 141      00
+ 142 0055 4889C3   		movq	%rax, %rbx
+ 143 0058 E8000000 		call	gtk_window_get_type
+ 143      00
+ 144 005d 4889DF   		movq	%rbx, %rdi
+ 145 0060 4889C6   		movq	%rax, %rsi
+ 146 0063 4889C5   		movq	%rax, %rbp
+ 147 0066 E8000000 		call	g_type_check_instance_cast
+ 147      00
+ 148 006b BE000000 		movl	$.LC7, %esi
+ 148      00
+ 149 0070 4889C7   		movq	%rax, %rdi
+ 150 0073 E8000000 		call	gtk_window_set_title
+ 150      00
+ 151 0078 4889EE   		movq	%rbp, %rsi
+ 152 007b 4889DF   		movq	%rbx, %rdi
+ 153 007e E8000000 		call	g_type_check_instance_cast
+ 153      00
+ 154 0083 BE010000 		movl	$1, %esi
+ 154      00
+ 155 0088 4889C7   		movq	%rax, %rdi
+ 156 008b E8000000 		call	gtk_window_set_position
+ 156      00
+ 157 0090 4889EE   		movq	%rbp, %rsi
+ 158 0093 4889DF   		movq	%rbx, %rdi
+ 159 0096 E8000000 		call	g_type_check_instance_cast
+ 159      00
+ 160 009b BAC80000 		movl	$200, %edx
+ 160      00
+ 161 00a0 4889C7   		movq	%rax, %rdi
+ 162 00a3 BEC80000 		movl	$200, %esi
+ 162      00
+ 163 00a8 E8000000 		call	gtk_window_set_default_size
+ 163      00
+ 164 00ad BE030000 		movl	$3, %esi
+ 164      00
+ 165 00b2 BF010000 		movl	$1, %edi
+ 165      00
+ 166 00b7 E8000000 		call	gtk_box_new
+ 166      00
+ 167 00bc 4889C5   		movq	%rax, %rbp
+ 168 00bf E8000000 		call	gtk_container_get_type
+ 168      00
+ 169 00c4 4889DF   		movq	%rbx, %rdi
+ 170 00c7 4889C6   		movq	%rax, %rsi
+ 171 00ca 4989C4   		movq	%rax, %r12
+ 172 00cd E8000000 		call	g_type_check_instance_cast
+ 172      00
+ 173 00d2 4889EE   		movq	%rbp, %rsi
+ 174 00d5 4889C7   		movq	%rax, %rdi
+ 175 00d8 E8000000 		call	gtk_container_add
+ 175      00
+ 176 00dd BF000000 		movl	$.LC8, %edi
+ 176      00
+ 177 00e2 E8000000 		call	gtk_button_new_with_label
+ 177      00
+ 178 00e7 BF000000 		movl	$.LC9, %edi
+ 178      00
+ 179 00ec 4989C6   		movq	%rax, %r14
+ 180 00ef E8000000 		call	gtk_button_new_with_label
+ 180      00
+ 181 00f4 4531C9   		xorl	%r9d, %r9d
+ 182 00f7 4531C0   		xorl	%r8d, %r8d
+ 183 00fa 31C9     		xorl	%ecx, %ecx
+ 184 00fc BA000000 		movl	$print_hello, %edx
+ 184      00
+ 185 0101 BE000000 		movl	$.LC10, %esi
+ 185      00
+ 186 0106 4C89F7   		movq	%r14, %rdi
+ 187 0109 4C893424 		movq	%r14, (%rsp)
+ 188 010d 48894424 		movq	%rax, 8(%rsp)
+ 188      08
+ 189 0112 E8000000 		call	g_signal_connect_data
+ 189      00
+ 190 0117 E8000000 		call	gtk_menu_bar_new
+ 190      00
+ 191 011c 4989C5   		movq	%rax, %r13
+ 192 011f E8000000 		call	gtk_menu_new
+ 192      00
+ 193 0124 BF000000 		movl	$.LC11, %edi
+ 193      00
+ 194 0129 4989C7   		movq	%rax, %r15
+ 195 012c E8000000 		call	gtk_menu_item_new_with_label
+ 195      00
+ 196 0131 BF000000 		movl	$.LC12, %edi
+ 196      00
+ 197 0136 4989C6   		movq	%rax, %r14
+ 198 0139 E8000000 		call	gtk_menu_item_new_with_label
+ 198      00
+ 199 013e 48894424 		movq	%rax, 16(%rsp)
+ 199      10
+ 200 0143 E8000000 		call	gtk_menu_item_get_type
+ 200      00
+ 201 0148 4C89F7   		movq	%r14, %rdi
+ 202 014b 4889C6   		movq	%rax, %rsi
+ 203 014e E8000000 		call	g_type_check_instance_cast
+ 203      00
+ 204 0153 4C89FE   		movq	%r15, %rsi
+ 205 0156 4889C7   		movq	%rax, %rdi
+ 206 0159 E8000000 		call	gtk_menu_item_set_submenu
+ 206      00
+ 207 015e E8000000 		call	gtk_menu_shell_get_type
+ 207      00
+ 208 0163 4C89FF   		movq	%r15, %rdi
+ 209 0166 4889C6   		movq	%rax, %rsi
+ 210 0169 48894424 		movq	%rax, 24(%rsp)
+ 210      18
+ 211 016e E8000000 		call	g_type_check_instance_cast
+ 211      00
+ 212 0173 4C8B7C24 		movq	16(%rsp), %r15
+ 212      10
+ 213 0178 4889C7   		movq	%rax, %rdi
+ 214 017b 4C89FE   		movq	%r15, %rsi
+ 215 017e E8000000 		call	gtk_menu_shell_append
+ 215      00
+ 216 0183 488B5424 		movq	24(%rsp), %rdx
+ 216      18
+ 217 0188 4C89EF   		movq	%r13, %rdi
+ 218 018b 4889D6   		movq	%rdx, %rsi
+ 219 018e E8000000 		call	g_type_check_instance_cast
+ 219      00
+ 220 0193 4C89F6   		movq	%r14, %rsi
+ 221 0196 4889C7   		movq	%rax, %rdi
+ 222 0199 E8000000 		call	gtk_menu_shell_append
+ 222      00
+ 223 019e E8000000 		call	gtk_box_get_type
+ 223      00
+ 224 01a3 4889EF   		movq	%rbp, %rdi
+ 225 01a6 4889C6   		movq	%rax, %rsi
+ 226 01a9 E8000000 		call	g_type_check_instance_cast
+ 226      00
+ 227 01ae 4C89EE   		movq	%r13, %rsi
+ 228 01b1 4889C7   		movq	%rax, %rdi
+ 229 01b4 4531C0   		xorl	%r8d, %r8d
+ 230 01b7 31C9     		xorl	%ecx, %ecx
+ 231 01b9 31D2     		xorl	%edx, %edx
+ 232 01bb E8000000 		call	gtk_box_pack_start
+ 232      00
+ 233 01c0 4531C9   		xorl	%r9d, %r9d
+ 234 01c3 4531C0   		xorl	%r8d, %r8d
+ 235 01c6 31C9     		xorl	%ecx, %ecx
+ 236 01c8 BA000000 		movl	$gtk_main_quit, %edx
+ 236      00
+ 237 01cd 4889DF   		movq	%rbx, %rdi
+ 238 01d0 BE000000 		movl	$.LC13, %esi
+ 238      00
+ 239 01d5 E8000000 		call	g_signal_connect_data
+ 239      00
+ 240 01da 4C89FF   		movq	%r15, %rdi
+ 241 01dd BE500000 		movl	$80, %esi
+ 241      00
+ 242 01e2 E8000000 		call	g_type_check_instance_cast
+ 242      00
+ 243 01e7 4531C9   		xorl	%r9d, %r9d
+ 244 01ea 4531C0   		xorl	%r8d, %r8d
+ 245 01ed 31C9     		xorl	%ecx, %ecx
+ 246 01ef BA000000 		movl	$gtk_main_quit, %edx
+ 246      00
+ 247 01f4 BE000000 		movl	$.LC14, %esi
+ 247      00
+ 248 01f9 4889C7   		movq	%rax, %rdi
+ 249 01fc E8000000 		call	g_signal_connect_data
+ 249      00
+ 250 0201 4C89E6   		movq	%r12, %rsi
+ 251 0204 4889EF   		movq	%rbp, %rdi
+ 252 0207 E8000000 		call	g_type_check_instance_cast
+ 252      00
+ 253 020c 488B3424 		movq	(%rsp), %rsi
+ 254 0210 4889C7   		movq	%rax, %rdi
+ 255 0213 E8000000 		call	gtk_container_add
+ 255      00
+ 256 0218 4C89E6   		movq	%r12, %rsi
+ 257 021b 4889EF   		movq	%rbp, %rdi
+ 258 021e E8000000 		call	g_type_check_instance_cast
+ 258      00
+ 259 0223 488B7424 		movq	8(%rsp), %rsi
+ 259      08
+ 260 0228 4889C7   		movq	%rax, %rdi
+ 261 022b E8000000 		call	gtk_container_add
+ 261      00
+ 262 0230 4889DF   		movq	%rbx, %rdi
+ 263 0233 E8000000 		call	gtk_widget_show_all
+ 263      00
+ 264 0238 E8000000 		call	gtk_main
+ 264      00
+ 265 023d 4883C438 		addq	$56, %rsp
+ 266              		.cfi_def_cfa_offset 56
+ 267 0241 31C0     		xorl	%eax, %eax
+ 268 0243 5B       		popq	%rbx
+ 269              		.cfi_def_cfa_offset 48
+ 270 0244 5D       		popq	%rbp
+ 271              		.cfi_def_cfa_offset 40
+ 272 0245 415C     		popq	%r12
+ 273              		.cfi_def_cfa_offset 32
+ 274 0247 415D     		popq	%r13
+ 275              		.cfi_def_cfa_offset 24
+ 276 0249 415E     		popq	%r14
+ 277              		.cfi_def_cfa_offset 16
+ 278 024b 415F     		popq	%r15
+ 279              		.cfi_def_cfa_offset 8
+ 280 024d C3       		ret
+ 281              		.cfi_endproc
+ 282              	.LFE496:
+ 284              		.section	.text.unlikely
+ 285              	.LCOLDE15:
+ 286              		.section	.text.startup
+ 287              	.LHOTE15:
+ 288              		.ident	"GCC: (Ubuntu 5.4.0-6ubuntu1~16.04.4) 5.4.0 20160609"
+ 289              		.section	.note.GNU-stack,"",@progbits
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 main.c
+     /tmp/cczJebhy.s:12     .text:0000000000000000 sigHup
+     /tmp/cczJebhy.s:34     .text:0000000000000010 sigInt
+     /tmp/cczJebhy.s:60     .text:0000000000000030 print_hello
+     /tmp/cczJebhy.s:104    .text.startup:0000000000000000 main
+
+UNDEFINED SYMBOLS
+puts
+exit
+g_print
+signal
+gtk_init
+gtk_window_new
+gtk_window_get_type
+g_type_check_instance_cast
+gtk_window_set_title
+gtk_window_set_position
+gtk_window_set_default_size
+gtk_box_new
+gtk_container_get_type
+gtk_container_add
+gtk_button_new_with_label
+g_signal_connect_data
+gtk_menu_bar_new
+gtk_menu_new
+gtk_menu_item_new_with_label
+gtk_menu_item_get_type
+gtk_menu_item_set_submenu
+gtk_menu_shell_get_type
+gtk_menu_shell_append
+gtk_box_get_type
+gtk_box_pack_start
+gtk_main_quit
+gtk_widget_show_all
+gtk_main

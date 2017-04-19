@@ -1,0 +1,1289 @@
+   1              		.file	"jdapistd.c"
+   2              		.text
+   3              	.Ltext0:
+   4              		.section	.text.unlikely.output_pass_setup,"ax",@progbits
+   5              	.LCOLDB0:
+   6              		.section	.text.output_pass_setup,"ax",@progbits
+   7              	.LHOTB0:
+   8              		.p2align 4,,15
+   9              		.section	.text.unlikely.output_pass_setup
+  10              	.Ltext_cold0:
+  11              		.section	.text.output_pass_setup
+  13              	output_pass_setup:
+  14              	.LFB62:
+  15              		.file 1 "fltk-1.3.4-1/jpeg/jdapistd.c"
+   1:fltk-1.3.4-1/jpeg/jdapistd.c **** /*
+   2:fltk-1.3.4-1/jpeg/jdapistd.c ****  * jdapistd.c
+   3:fltk-1.3.4-1/jpeg/jdapistd.c ****  *
+   4:fltk-1.3.4-1/jpeg/jdapistd.c ****  * Copyright (C) 1994-1996, Thomas G. Lane.
+   5:fltk-1.3.4-1/jpeg/jdapistd.c ****  * Modified 2002-2013 by Guido Vollbeding.
+   6:fltk-1.3.4-1/jpeg/jdapistd.c ****  * This file is part of the Independent JPEG Group's software.
+   7:fltk-1.3.4-1/jpeg/jdapistd.c ****  * For conditions of distribution and use, see the accompanying README file.
+   8:fltk-1.3.4-1/jpeg/jdapistd.c ****  *
+   9:fltk-1.3.4-1/jpeg/jdapistd.c ****  * This file contains application interface code for the decompression half
+  10:fltk-1.3.4-1/jpeg/jdapistd.c ****  * of the JPEG library.  These are the "standard" API routines that are
+  11:fltk-1.3.4-1/jpeg/jdapistd.c ****  * used in the normal full-decompression case.  They are not used by a
+  12:fltk-1.3.4-1/jpeg/jdapistd.c ****  * transcoding-only application.  Note that if an application links in
+  13:fltk-1.3.4-1/jpeg/jdapistd.c ****  * jpeg_start_decompress, it will end up linking in the entire decompressor.
+  14:fltk-1.3.4-1/jpeg/jdapistd.c ****  * We thus must separate this file from jdapimin.c to avoid linking the
+  15:fltk-1.3.4-1/jpeg/jdapistd.c ****  * whole decompression library into a transcoder.
+  16:fltk-1.3.4-1/jpeg/jdapistd.c ****  */
+  17:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+  18:fltk-1.3.4-1/jpeg/jdapistd.c **** #define JPEG_INTERNALS
+  19:fltk-1.3.4-1/jpeg/jdapistd.c **** #include "jinclude.h"
+  20:fltk-1.3.4-1/jpeg/jdapistd.c **** #include "jpeglib.h"
+  21:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+  22:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+  23:fltk-1.3.4-1/jpeg/jdapistd.c **** /* Forward declarations */
+  24:fltk-1.3.4-1/jpeg/jdapistd.c **** LOCAL(boolean) output_pass_setup JPP((j_decompress_ptr cinfo));
+  25:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+  26:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+  27:fltk-1.3.4-1/jpeg/jdapistd.c **** /*
+  28:fltk-1.3.4-1/jpeg/jdapistd.c ****  * Decompression initialization.
+  29:fltk-1.3.4-1/jpeg/jdapistd.c ****  * jpeg_read_header must be completed before calling this.
+  30:fltk-1.3.4-1/jpeg/jdapistd.c ****  *
+  31:fltk-1.3.4-1/jpeg/jdapistd.c ****  * If a multipass operating mode was selected, this will do all but the
+  32:fltk-1.3.4-1/jpeg/jdapistd.c ****  * last pass, and thus may take a great deal of time.
+  33:fltk-1.3.4-1/jpeg/jdapistd.c ****  *
+  34:fltk-1.3.4-1/jpeg/jdapistd.c ****  * Returns FALSE if suspended.  The return value need be inspected only if
+  35:fltk-1.3.4-1/jpeg/jdapistd.c ****  * a suspending data source is used.
+  36:fltk-1.3.4-1/jpeg/jdapistd.c ****  */
+  37:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+  38:fltk-1.3.4-1/jpeg/jdapistd.c **** GLOBAL(boolean)
+  39:fltk-1.3.4-1/jpeg/jdapistd.c **** jpeg_start_decompress (j_decompress_ptr cinfo)
+  40:fltk-1.3.4-1/jpeg/jdapistd.c **** {
+  41:fltk-1.3.4-1/jpeg/jdapistd.c ****   if (cinfo->global_state == DSTATE_READY) {
+  42:fltk-1.3.4-1/jpeg/jdapistd.c ****     /* First call: initialize master control, select active modules */
+  43:fltk-1.3.4-1/jpeg/jdapistd.c ****     jinit_master_decompress(cinfo);
+  44:fltk-1.3.4-1/jpeg/jdapistd.c ****     if (cinfo->buffered_image) {
+  45:fltk-1.3.4-1/jpeg/jdapistd.c ****       /* No more work here; expecting jpeg_start_output next */
+  46:fltk-1.3.4-1/jpeg/jdapistd.c ****       cinfo->global_state = DSTATE_BUFIMAGE;
+  47:fltk-1.3.4-1/jpeg/jdapistd.c ****       return TRUE;
+  48:fltk-1.3.4-1/jpeg/jdapistd.c ****     }
+  49:fltk-1.3.4-1/jpeg/jdapistd.c ****     cinfo->global_state = DSTATE_PRELOAD;
+  50:fltk-1.3.4-1/jpeg/jdapistd.c ****   }
+  51:fltk-1.3.4-1/jpeg/jdapistd.c ****   if (cinfo->global_state == DSTATE_PRELOAD) {
+  52:fltk-1.3.4-1/jpeg/jdapistd.c ****     /* If file has multiple scans, absorb them all into the coef buffer */
+  53:fltk-1.3.4-1/jpeg/jdapistd.c ****     if (cinfo->inputctl->has_multiple_scans) {
+  54:fltk-1.3.4-1/jpeg/jdapistd.c **** #ifdef D_MULTISCAN_FILES_SUPPORTED
+  55:fltk-1.3.4-1/jpeg/jdapistd.c ****       for (;;) {
+  56:fltk-1.3.4-1/jpeg/jdapistd.c **** 	int retcode;
+  57:fltk-1.3.4-1/jpeg/jdapistd.c **** 	/* Call progress monitor hook if present */
+  58:fltk-1.3.4-1/jpeg/jdapistd.c **** 	if (cinfo->progress != NULL)
+  59:fltk-1.3.4-1/jpeg/jdapistd.c **** 	  (*cinfo->progress->progress_monitor) ((j_common_ptr) cinfo);
+  60:fltk-1.3.4-1/jpeg/jdapistd.c **** 	/* Absorb some more input */
+  61:fltk-1.3.4-1/jpeg/jdapistd.c **** 	retcode = (*cinfo->inputctl->consume_input) (cinfo);
+  62:fltk-1.3.4-1/jpeg/jdapistd.c **** 	if (retcode == JPEG_SUSPENDED)
+  63:fltk-1.3.4-1/jpeg/jdapistd.c **** 	  return FALSE;
+  64:fltk-1.3.4-1/jpeg/jdapistd.c **** 	if (retcode == JPEG_REACHED_EOI)
+  65:fltk-1.3.4-1/jpeg/jdapistd.c **** 	  break;
+  66:fltk-1.3.4-1/jpeg/jdapistd.c **** 	/* Advance progress counter if appropriate */
+  67:fltk-1.3.4-1/jpeg/jdapistd.c **** 	if (cinfo->progress != NULL &&
+  68:fltk-1.3.4-1/jpeg/jdapistd.c **** 	    (retcode == JPEG_ROW_COMPLETED || retcode == JPEG_REACHED_SOS)) {
+  69:fltk-1.3.4-1/jpeg/jdapistd.c **** 	  if (++cinfo->progress->pass_counter >= cinfo->progress->pass_limit) {
+  70:fltk-1.3.4-1/jpeg/jdapistd.c **** 	    /* jdmaster underestimated number of scans; ratchet up one scan */
+  71:fltk-1.3.4-1/jpeg/jdapistd.c **** 	    cinfo->progress->pass_limit += (long) cinfo->total_iMCU_rows;
+  72:fltk-1.3.4-1/jpeg/jdapistd.c **** 	  }
+  73:fltk-1.3.4-1/jpeg/jdapistd.c **** 	}
+  74:fltk-1.3.4-1/jpeg/jdapistd.c ****       }
+  75:fltk-1.3.4-1/jpeg/jdapistd.c **** #else
+  76:fltk-1.3.4-1/jpeg/jdapistd.c ****       ERREXIT(cinfo, JERR_NOT_COMPILED);
+  77:fltk-1.3.4-1/jpeg/jdapistd.c **** #endif /* D_MULTISCAN_FILES_SUPPORTED */
+  78:fltk-1.3.4-1/jpeg/jdapistd.c ****     }
+  79:fltk-1.3.4-1/jpeg/jdapistd.c ****     cinfo->output_scan_number = cinfo->input_scan_number;
+  80:fltk-1.3.4-1/jpeg/jdapistd.c ****   } else if (cinfo->global_state != DSTATE_PRESCAN)
+  81:fltk-1.3.4-1/jpeg/jdapistd.c ****     ERREXIT1(cinfo, JERR_BAD_STATE, cinfo->global_state);
+  82:fltk-1.3.4-1/jpeg/jdapistd.c ****   /* Perform any dummy output passes, and set up for the final pass */
+  83:fltk-1.3.4-1/jpeg/jdapistd.c ****   return output_pass_setup(cinfo);
+  84:fltk-1.3.4-1/jpeg/jdapistd.c **** }
+  85:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+  86:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+  87:fltk-1.3.4-1/jpeg/jdapistd.c **** /*
+  88:fltk-1.3.4-1/jpeg/jdapistd.c ****  * Set up for an output pass, and perform any dummy pass(es) needed.
+  89:fltk-1.3.4-1/jpeg/jdapistd.c ****  * Common subroutine for jpeg_start_decompress and jpeg_start_output.
+  90:fltk-1.3.4-1/jpeg/jdapistd.c ****  * Entry: global_state = DSTATE_PRESCAN only if previously suspended.
+  91:fltk-1.3.4-1/jpeg/jdapistd.c ****  * Exit: If done, returns TRUE and sets global_state for proper output mode.
+  92:fltk-1.3.4-1/jpeg/jdapistd.c ****  *       If suspended, returns FALSE and sets global_state = DSTATE_PRESCAN.
+  93:fltk-1.3.4-1/jpeg/jdapistd.c ****  */
+  94:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+  95:fltk-1.3.4-1/jpeg/jdapistd.c **** LOCAL(boolean)
+  96:fltk-1.3.4-1/jpeg/jdapistd.c **** output_pass_setup (j_decompress_ptr cinfo)
+  97:fltk-1.3.4-1/jpeg/jdapistd.c **** {
+  16              		.loc 1 97 0
+  17              		.cfi_startproc
+  18              	.LVL0:
+  19 0000 4154     		pushq	%r12
+  20              		.cfi_def_cfa_offset 16
+  21              		.cfi_offset 12, -16
+  22 0002 55       		pushq	%rbp
+  23              		.cfi_def_cfa_offset 24
+  24              		.cfi_offset 6, -24
+  25 0003 53       		pushq	%rbx
+  26              		.cfi_def_cfa_offset 32
+  27              		.cfi_offset 3, -32
+  98:fltk-1.3.4-1/jpeg/jdapistd.c ****   if (cinfo->global_state != DSTATE_PRESCAN) {
+  28              		.loc 1 98 0
+  29 0004 817F24CC 		cmpl	$204, 36(%rdi)
+  29      000000
+  97:fltk-1.3.4-1/jpeg/jdapistd.c ****   if (cinfo->global_state != DSTATE_PRESCAN) {
+  30              		.loc 1 97 0
+  31 000b 4889FB   		movq	%rdi, %rbx
+  32              		.loc 1 98 0
+  33 000e 741A     		je	.L2
+  99:fltk-1.3.4-1/jpeg/jdapistd.c ****     /* First call: do pass setup */
+ 100:fltk-1.3.4-1/jpeg/jdapistd.c ****     (*cinfo->master->prepare_for_output_pass) (cinfo);
+  34              		.loc 1 100 0
+  35 0010 488B8740 		movq	576(%rdi), %rax
+  35      020000
+  36 0017 FF10     		call	*(%rax)
+  37              	.LVL1:
+ 101:fltk-1.3.4-1/jpeg/jdapistd.c ****     cinfo->output_scanline = 0;
+  38              		.loc 1 101 0
+  39 0019 C783A800 		movl	$0, 168(%rbx)
+  39      00000000 
+  39      0000
+ 102:fltk-1.3.4-1/jpeg/jdapistd.c ****     cinfo->global_state = DSTATE_PRESCAN;
+  40              		.loc 1 102 0
+  41 0023 C74324CC 		movl	$204, 36(%rbx)
+  41      000000
+  42              	.L2:
+ 103:fltk-1.3.4-1/jpeg/jdapistd.c ****   }
+ 104:fltk-1.3.4-1/jpeg/jdapistd.c ****   /* Loop over any required dummy passes */
+ 105:fltk-1.3.4-1/jpeg/jdapistd.c ****   while (cinfo->master->is_dummy_pass) {
+  43              		.loc 1 105 0
+  44 002a 488B8340 		movq	576(%rbx), %rax
+  44      020000
+  45 0031 8B4810   		movl	16(%rax), %ecx
+  46 0034 85C9     		testl	%ecx, %ecx
+  47 0036 0F849B00 		je	.L11
+  47      0000
+  48 003c 8B83A800 		movl	168(%rbx), %eax
+  48      0000
+  49              	.LBB2:
+ 106:fltk-1.3.4-1/jpeg/jdapistd.c **** #ifdef QUANT_2PASS_SUPPORTED
+ 107:fltk-1.3.4-1/jpeg/jdapistd.c ****     /* Crank through the dummy pass */
+ 108:fltk-1.3.4-1/jpeg/jdapistd.c ****     while (cinfo->output_scanline < cinfo->output_height) {
+ 109:fltk-1.3.4-1/jpeg/jdapistd.c ****       JDIMENSION last_scanline;
+ 110:fltk-1.3.4-1/jpeg/jdapistd.c ****       /* Call progress monitor hook if present */
+ 111:fltk-1.3.4-1/jpeg/jdapistd.c ****       if (cinfo->progress != NULL) {
+ 112:fltk-1.3.4-1/jpeg/jdapistd.c **** 	cinfo->progress->pass_counter = (long) cinfo->output_scanline;
+ 113:fltk-1.3.4-1/jpeg/jdapistd.c **** 	cinfo->progress->pass_limit = (long) cinfo->output_height;
+ 114:fltk-1.3.4-1/jpeg/jdapistd.c **** 	(*cinfo->progress->progress_monitor) ((j_common_ptr) cinfo);
+ 115:fltk-1.3.4-1/jpeg/jdapistd.c ****       }
+ 116:fltk-1.3.4-1/jpeg/jdapistd.c ****       /* Process some data */
+ 117:fltk-1.3.4-1/jpeg/jdapistd.c ****       last_scanline = cinfo->output_scanline;
+ 118:fltk-1.3.4-1/jpeg/jdapistd.c ****       (*cinfo->main->process_data) (cinfo, (JSAMPARRAY) NULL,
+  50              		.loc 1 118 0
+  51 0042 4C8DA3A8 		leaq	168(%rbx), %r12
+  51      000000
+  52 0049 EB51     		jmp	.L8
+  53 004b 0F1F4400 		.p2align 4,,10
+  53      00
+  54              		.p2align 3
+  55              	.L9:
+ 111:fltk-1.3.4-1/jpeg/jdapistd.c **** 	cinfo->progress->pass_counter = (long) cinfo->output_scanline;
+  56              		.loc 1 111 0
+  57 0050 488B5310 		movq	16(%rbx), %rdx
+  58 0054 89C5     		movl	%eax, %ebp
+  59 0056 4885D2   		testq	%rdx, %rdx
+  60 0059 7423     		je	.L6
+ 112:fltk-1.3.4-1/jpeg/jdapistd.c **** 	cinfo->progress->pass_limit = (long) cinfo->output_height;
+  61              		.loc 1 112 0
+  62 005b 89C0     		movl	%eax, %eax
+ 114:fltk-1.3.4-1/jpeg/jdapistd.c ****       }
+  63              		.loc 1 114 0
+  64 005d 4889DF   		movq	%rbx, %rdi
+ 112:fltk-1.3.4-1/jpeg/jdapistd.c **** 	cinfo->progress->pass_limit = (long) cinfo->output_height;
+  65              		.loc 1 112 0
+  66 0060 48894208 		movq	%rax, 8(%rdx)
+ 113:fltk-1.3.4-1/jpeg/jdapistd.c **** 	(*cinfo->progress->progress_monitor) ((j_common_ptr) cinfo);
+  67              		.loc 1 113 0
+  68 0064 8B8B8C00 		movl	140(%rbx), %ecx
+  68      0000
+  69 006a 488B4310 		movq	16(%rbx), %rax
+  70 006e 48894810 		movq	%rcx, 16(%rax)
+ 114:fltk-1.3.4-1/jpeg/jdapistd.c ****       }
+  71              		.loc 1 114 0
+  72 0072 488B4310 		movq	16(%rbx), %rax
+  73 0076 FF10     		call	*(%rax)
+  74              	.LVL2:
+  75 0078 8BABA800 		movl	168(%rbx), %ebp
+  75      0000
+  76              	.L6:
+  77              	.LVL3:
+  78              		.loc 1 118 0
+  79 007e 488B8348 		movq	584(%rbx), %rax
+  79      020000
+  80 0085 31C9     		xorl	%ecx, %ecx
+  81 0087 31F6     		xorl	%esi, %esi
+  82 0089 4C89E2   		movq	%r12, %rdx
+  83 008c 4889DF   		movq	%rbx, %rdi
+  84 008f FF5008   		call	*8(%rax)
+  85              	.LVL4:
+ 119:fltk-1.3.4-1/jpeg/jdapistd.c **** 				    &cinfo->output_scanline, (JDIMENSION) 0);
+ 120:fltk-1.3.4-1/jpeg/jdapistd.c ****       if (cinfo->output_scanline == last_scanline)
+  86              		.loc 1 120 0
+  87 0092 8B83A800 		movl	168(%rbx), %eax
+  87      0000
+  88 0098 39E8     		cmpl	%ebp, %eax
+  89 009a 7454     		je	.L19
+  90              	.L8:
+  91              	.LBE2:
+ 108:fltk-1.3.4-1/jpeg/jdapistd.c ****       JDIMENSION last_scanline;
+  92              		.loc 1 108 0
+  93 009c 39838C00 		cmpl	%eax, 140(%rbx)
+  93      0000
+  94 00a2 77AC     		ja	.L9
+ 121:fltk-1.3.4-1/jpeg/jdapistd.c **** 	return FALSE;		/* No progress made, must suspend */
+ 122:fltk-1.3.4-1/jpeg/jdapistd.c ****     }
+ 123:fltk-1.3.4-1/jpeg/jdapistd.c ****     /* Finish up dummy pass, and set up for another one */
+ 124:fltk-1.3.4-1/jpeg/jdapistd.c ****     (*cinfo->master->finish_output_pass) (cinfo);
+  95              		.loc 1 124 0
+  96 00a4 488B8340 		movq	576(%rbx), %rax
+  96      020000
+  97 00ab 4889DF   		movq	%rbx, %rdi
+  98 00ae FF5008   		call	*8(%rax)
+  99              	.LVL5:
+ 125:fltk-1.3.4-1/jpeg/jdapistd.c ****     (*cinfo->master->prepare_for_output_pass) (cinfo);
+ 100              		.loc 1 125 0
+ 101 00b1 488B8340 		movq	576(%rbx), %rax
+ 101      020000
+ 102 00b8 4889DF   		movq	%rbx, %rdi
+ 103 00bb FF10     		call	*(%rax)
+ 104              	.LVL6:
+ 105:fltk-1.3.4-1/jpeg/jdapistd.c **** #ifdef QUANT_2PASS_SUPPORTED
+ 105              		.loc 1 105 0
+ 106 00bd 488B9340 		movq	576(%rbx), %rdx
+ 106      020000
+ 126:fltk-1.3.4-1/jpeg/jdapistd.c ****     cinfo->output_scanline = 0;
+ 107              		.loc 1 126 0
+ 108 00c4 C783A800 		movl	$0, 168(%rbx)
+ 108      00000000 
+ 108      0000
+ 109 00ce 31C0     		xorl	%eax, %eax
+ 105:fltk-1.3.4-1/jpeg/jdapistd.c **** #ifdef QUANT_2PASS_SUPPORTED
+ 110              		.loc 1 105 0
+ 111 00d0 8B5210   		movl	16(%rdx), %edx
+ 112 00d3 85D2     		testl	%edx, %edx
+ 113 00d5 75C5     		jne	.L8
+ 114              	.L11:
+ 127:fltk-1.3.4-1/jpeg/jdapistd.c **** #else
+ 128:fltk-1.3.4-1/jpeg/jdapistd.c ****     ERREXIT(cinfo, JERR_NOT_COMPILED);
+ 129:fltk-1.3.4-1/jpeg/jdapistd.c **** #endif /* QUANT_2PASS_SUPPORTED */
+ 130:fltk-1.3.4-1/jpeg/jdapistd.c ****   }
+ 131:fltk-1.3.4-1/jpeg/jdapistd.c ****   /* Ready for application to drive output pass through
+ 132:fltk-1.3.4-1/jpeg/jdapistd.c ****    * jpeg_read_scanlines or jpeg_read_raw_data.
+ 133:fltk-1.3.4-1/jpeg/jdapistd.c ****    */
+ 134:fltk-1.3.4-1/jpeg/jdapistd.c ****   cinfo->global_state = cinfo->raw_data_out ? DSTATE_RAW_OK : DSTATE_SCANNING;
+ 115              		.loc 1 134 0
+ 116 00d7 837B5C01 		cmpl	$1, 92(%rbx)
+ 117 00db 19C0     		sbbl	%eax, %eax
+ 118 00dd 05CE0000 		addl	$206, %eax
+ 118      00
+ 119 00e2 894324   		movl	%eax, 36(%rbx)
+ 135:fltk-1.3.4-1/jpeg/jdapistd.c ****   return TRUE;
+ 120              		.loc 1 135 0
+ 121 00e5 B8010000 		movl	$1, %eax
+ 121      00
+ 122 00ea EB06     		jmp	.L7
+ 123 00ec 0F1F4000 		.p2align 4,,10
+ 124              		.p2align 3
+ 125              	.L19:
+ 126              	.LBB3:
+ 121:fltk-1.3.4-1/jpeg/jdapistd.c ****     }
+ 127              		.loc 1 121 0
+ 128 00f0 31C0     		xorl	%eax, %eax
+ 129              	.L7:
+ 130              	.LBE3:
+ 136:fltk-1.3.4-1/jpeg/jdapistd.c **** }
+ 131              		.loc 1 136 0
+ 132 00f2 5B       		popq	%rbx
+ 133              		.cfi_def_cfa_offset 24
+ 134              	.LVL7:
+ 135 00f3 5D       		popq	%rbp
+ 136              		.cfi_def_cfa_offset 16
+ 137 00f4 415C     		popq	%r12
+ 138              		.cfi_def_cfa_offset 8
+ 139 00f6 C3       		ret
+ 140              		.cfi_endproc
+ 141              	.LFE62:
+ 143              		.section	.text.unlikely.output_pass_setup
+ 144              	.LCOLDE0:
+ 145              		.section	.text.output_pass_setup
+ 146              	.LHOTE0:
+ 147              		.section	.text.unlikely.jpeg_start_decompress,"ax",@progbits
+ 148              	.LCOLDB1:
+ 149              		.section	.text.jpeg_start_decompress,"ax",@progbits
+ 150              	.LHOTB1:
+ 151              		.p2align 4,,15
+ 152              		.globl	jpeg_start_decompress
+ 154              	jpeg_start_decompress:
+ 155              	.LFB61:
+  40:fltk-1.3.4-1/jpeg/jdapistd.c ****   if (cinfo->global_state == DSTATE_READY) {
+ 156              		.loc 1 40 0
+ 157              		.cfi_startproc
+ 158              	.LVL8:
+ 159 0000 53       		pushq	%rbx
+ 160              		.cfi_def_cfa_offset 16
+ 161              		.cfi_offset 3, -16
+  41:fltk-1.3.4-1/jpeg/jdapistd.c ****     /* First call: initialize master control, select active modules */
+ 162              		.loc 1 41 0
+ 163 0001 8B4724   		movl	36(%rdi), %eax
+  40:fltk-1.3.4-1/jpeg/jdapistd.c ****   if (cinfo->global_state == DSTATE_READY) {
+ 164              		.loc 1 40 0
+ 165 0004 4889FB   		movq	%rdi, %rbx
+  41:fltk-1.3.4-1/jpeg/jdapistd.c ****     /* First call: initialize master control, select active modules */
+ 166              		.loc 1 41 0
+ 167 0007 3DCA0000 		cmpl	$202, %eax
+ 167      00
+ 168 000c 7432     		je	.L45
+  51:fltk-1.3.4-1/jpeg/jdapistd.c ****     /* If file has multiple scans, absorb them all into the coef buffer */
+ 169              		.loc 1 51 0
+ 170 000e 3DCB0000 		cmpl	$203, %eax
+ 170      00
+ 171 0013 7442     		je	.L24
+  80:fltk-1.3.4-1/jpeg/jdapistd.c ****     ERREXIT1(cinfo, JERR_BAD_STATE, cinfo->global_state);
+ 172              		.loc 1 80 0
+ 173 0015 3DCC0000 		cmpl	$204, %eax
+ 173      00
+ 174 001a 7418     		je	.L30
+  81:fltk-1.3.4-1/jpeg/jdapistd.c ****   /* Perform any dummy output passes, and set up for the final pass */
+ 175              		.loc 1 81 0
+ 176 001c 488B07   		movq	(%rdi), %rax
+ 177 001f C7402815 		movl	$21, 40(%rax)
+ 177      000000
+ 178 0026 488B07   		movq	(%rdi), %rax
+ 179 0029 8B5724   		movl	36(%rdi), %edx
+ 180 002c 89502C   		movl	%edx, 44(%rax)
+ 181 002f 488B07   		movq	(%rdi), %rax
+ 182 0032 FF10     		call	*(%rax)
+ 183              	.LVL9:
+ 184              	.L30:
+  83:fltk-1.3.4-1/jpeg/jdapistd.c **** }
+ 185              		.loc 1 83 0
+ 186 0034 4889DF   		movq	%rbx, %rdi
+  84:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 187              		.loc 1 84 0
+ 188 0037 5B       		popq	%rbx
+ 189              		.cfi_remember_state
+ 190              		.cfi_def_cfa_offset 8
+ 191              	.LVL10:
+  83:fltk-1.3.4-1/jpeg/jdapistd.c **** }
+ 192              		.loc 1 83 0
+ 193 0038 E9000000 		jmp	output_pass_setup
+ 193      00
+ 194              	.LVL11:
+ 195 003d 0F1F00   		.p2align 4,,10
+ 196              		.p2align 3
+ 197              	.L45:
+ 198              		.cfi_restore_state
+  43:fltk-1.3.4-1/jpeg/jdapistd.c ****     if (cinfo->buffered_image) {
+ 199              		.loc 1 43 0
+ 200 0040 E8000000 		call	jinit_master_decompress
+ 200      00
+ 201              	.LVL12:
+  44:fltk-1.3.4-1/jpeg/jdapistd.c ****       /* No more work here; expecting jpeg_start_output next */
+ 202              		.loc 1 44 0
+ 203 0045 8B5358   		movl	88(%rbx), %edx
+ 204 0048 85D2     		testl	%edx, %edx
+ 205 004a 0F85A800 		jne	.L46
+ 205      0000
+  49:fltk-1.3.4-1/jpeg/jdapistd.c ****   }
+ 206              		.loc 1 49 0
+ 207 0050 C74324CB 		movl	$203, 36(%rbx)
+ 207      000000
+ 208              	.L24:
+  53:fltk-1.3.4-1/jpeg/jdapistd.c **** #ifdef D_MULTISCAN_FILES_SUPPORTED
+ 209              		.loc 1 53 0
+ 210 0057 488B8360 		movq	608(%rbx), %rax
+ 210      020000
+ 211 005e 8B4020   		movl	32(%rax), %eax
+ 212 0061 85C0     		testl	%eax, %eax
+ 213 0063 7473     		je	.L26
+ 214 0065 488B5310 		movq	16(%rbx), %rdx
+ 215 0069 0F1F8000 		.p2align 4,,10
+ 215      000000
+ 216              		.p2align 3
+ 217              	.L27:
+ 218              	.LBB4:
+  58:fltk-1.3.4-1/jpeg/jdapistd.c **** 	  (*cinfo->progress->progress_monitor) ((j_common_ptr) cinfo);
+ 219              		.loc 1 58 0
+ 220 0070 4885D2   		testq	%rdx, %rdx
+ 221 0073 7405     		je	.L28
+ 222              	.L47:
+  59:fltk-1.3.4-1/jpeg/jdapistd.c **** 	/* Absorb some more input */
+ 223              		.loc 1 59 0
+ 224 0075 4889DF   		movq	%rbx, %rdi
+ 225 0078 FF12     		call	*(%rdx)
+ 226              	.LVL13:
+ 227              	.L28:
+  61:fltk-1.3.4-1/jpeg/jdapistd.c **** 	if (retcode == JPEG_SUSPENDED)
+ 228              		.loc 1 61 0
+ 229 007a 488B8360 		movq	608(%rbx), %rax
+ 229      020000
+ 230 0081 4889DF   		movq	%rbx, %rdi
+ 231 0084 FF10     		call	*(%rax)
+ 232              	.LVL14:
+  62:fltk-1.3.4-1/jpeg/jdapistd.c **** 	  return FALSE;
+ 233              		.loc 1 62 0
+ 234 0086 85C0     		testl	%eax, %eax
+ 235 0088 7466     		je	.L31
+  64:fltk-1.3.4-1/jpeg/jdapistd.c **** 	  break;
+ 236              		.loc 1 64 0
+ 237 008a 83F802   		cmpl	$2, %eax
+ 238 008d 7449     		je	.L26
+  67:fltk-1.3.4-1/jpeg/jdapistd.c **** 	    (retcode == JPEG_ROW_COMPLETED || retcode == JPEG_REACHED_SOS)) {
+ 239              		.loc 1 67 0
+ 240 008f 488B5310 		movq	16(%rbx), %rdx
+ 241 0093 4885D2   		testq	%rdx, %rdx
+ 242 0096 74E2     		je	.L28
+  67:fltk-1.3.4-1/jpeg/jdapistd.c **** 	    (retcode == JPEG_ROW_COMPLETED || retcode == JPEG_REACHED_SOS)) {
+ 243              		.loc 1 67 0 is_stmt 0 discriminator 1
+ 244 0098 83E0FD   		andl	$-3, %eax
+ 245              	.LVL15:
+ 246 009b 83F801   		cmpl	$1, %eax
+ 247 009e 75D0     		jne	.L27
+  69:fltk-1.3.4-1/jpeg/jdapistd.c **** 	    /* jdmaster underestimated number of scans; ratchet up one scan */
+ 248              		.loc 1 69 0 is_stmt 1
+ 249 00a0 488B4208 		movq	8(%rdx), %rax
+ 250 00a4 4883C001 		addq	$1, %rax
+ 251 00a8 48894208 		movq	%rax, 8(%rdx)
+ 252 00ac 488B5310 		movq	16(%rbx), %rdx
+ 253 00b0 488B4A10 		movq	16(%rdx), %rcx
+ 254 00b4 4839C8   		cmpq	%rcx, %rax
+ 255 00b7 7CB7     		jl	.L27
+  71:fltk-1.3.4-1/jpeg/jdapistd.c **** 	  }
+ 256              		.loc 1 71 0
+ 257 00b9 8B83B001 		movl	432(%rbx), %eax
+ 257      0000
+ 258 00bf 4801C1   		addq	%rax, %rcx
+ 259 00c2 48894A10 		movq	%rcx, 16(%rdx)
+ 260 00c6 488B5310 		movq	16(%rbx), %rdx
+  58:fltk-1.3.4-1/jpeg/jdapistd.c **** 	  (*cinfo->progress->progress_monitor) ((j_common_ptr) cinfo);
+ 261              		.loc 1 58 0
+ 262 00ca 4885D2   		testq	%rdx, %rdx
+ 263 00cd 75A6     		jne	.L47
+ 264 00cf EBA9     		jmp	.L28
+ 265              		.p2align 4,,10
+ 266 00d1 0F1F8000 		.p2align 3
+ 266      000000
+ 267              	.L26:
+ 268              	.LBE4:
+  79:fltk-1.3.4-1/jpeg/jdapistd.c ****   } else if (cinfo->global_state != DSTATE_PRESCAN)
+ 269              		.loc 1 79 0
+ 270 00d8 8B83AC00 		movl	172(%rbx), %eax
+ 270      0000
+  83:fltk-1.3.4-1/jpeg/jdapistd.c **** }
+ 271              		.loc 1 83 0
+ 272 00de 4889DF   		movq	%rbx, %rdi
+  79:fltk-1.3.4-1/jpeg/jdapistd.c ****   } else if (cinfo->global_state != DSTATE_PRESCAN)
+ 273              		.loc 1 79 0
+ 274 00e1 8983B400 		movl	%eax, 180(%rbx)
+ 274      0000
+  84:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 275              		.loc 1 84 0
+ 276 00e7 5B       		popq	%rbx
+ 277              		.cfi_remember_state
+ 278              		.cfi_def_cfa_offset 8
+ 279              	.LVL16:
+  83:fltk-1.3.4-1/jpeg/jdapistd.c **** }
+ 280              		.loc 1 83 0
+ 281 00e8 E9000000 		jmp	output_pass_setup
+ 281      00
+ 282              	.LVL17:
+ 283 00ed 0F1F00   		.p2align 4,,10
+ 284              		.p2align 3
+ 285              	.L31:
+ 286              		.cfi_restore_state
+ 287              	.LBB5:
+  63:fltk-1.3.4-1/jpeg/jdapistd.c **** 	if (retcode == JPEG_REACHED_EOI)
+ 288              		.loc 1 63 0
+ 289 00f0 31C0     		xorl	%eax, %eax
+ 290              	.LVL18:
+ 291              	.LBE5:
+  84:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 292              		.loc 1 84 0
+ 293 00f2 5B       		popq	%rbx
+ 294              		.cfi_remember_state
+ 295              		.cfi_def_cfa_offset 8
+ 296              	.LVL19:
+ 297 00f3 C3       		ret
+ 298              	.LVL20:
+ 299              		.p2align 4,,10
+ 300 00f4 0F1F4000 		.p2align 3
+ 301              	.L46:
+ 302              		.cfi_restore_state
+  46:fltk-1.3.4-1/jpeg/jdapistd.c ****       return TRUE;
+ 303              		.loc 1 46 0
+ 304 00f8 C74324CF 		movl	$207, 36(%rbx)
+ 304      000000
+  47:fltk-1.3.4-1/jpeg/jdapistd.c ****     }
+ 305              		.loc 1 47 0
+ 306 00ff B8010000 		movl	$1, %eax
+ 306      00
+  84:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 307              		.loc 1 84 0
+ 308 0104 5B       		popq	%rbx
+ 309              		.cfi_def_cfa_offset 8
+ 310              	.LVL21:
+ 311 0105 C3       		ret
+ 312              		.cfi_endproc
+ 313              	.LFE61:
+ 315              		.section	.text.unlikely.jpeg_start_decompress
+ 316              	.LCOLDE1:
+ 317              		.section	.text.jpeg_start_decompress
+ 318              	.LHOTE1:
+ 319              		.section	.text.unlikely.jpeg_read_scanlines,"ax",@progbits
+ 320              	.LCOLDB2:
+ 321              		.section	.text.jpeg_read_scanlines,"ax",@progbits
+ 322              	.LHOTB2:
+ 323              		.p2align 4,,15
+ 324              		.globl	jpeg_read_scanlines
+ 326              	jpeg_read_scanlines:
+ 327              	.LFB63:
+ 137:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 138:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 139:fltk-1.3.4-1/jpeg/jdapistd.c **** /*
+ 140:fltk-1.3.4-1/jpeg/jdapistd.c ****  * Read some scanlines of data from the JPEG decompressor.
+ 141:fltk-1.3.4-1/jpeg/jdapistd.c ****  *
+ 142:fltk-1.3.4-1/jpeg/jdapistd.c ****  * The return value will be the number of lines actually read.
+ 143:fltk-1.3.4-1/jpeg/jdapistd.c ****  * This may be less than the number requested in several cases,
+ 144:fltk-1.3.4-1/jpeg/jdapistd.c ****  * including bottom of image, data source suspension, and operating
+ 145:fltk-1.3.4-1/jpeg/jdapistd.c ****  * modes that emit multiple scanlines at a time.
+ 146:fltk-1.3.4-1/jpeg/jdapistd.c ****  *
+ 147:fltk-1.3.4-1/jpeg/jdapistd.c ****  * Note: we warn about excess calls to jpeg_read_scanlines() since
+ 148:fltk-1.3.4-1/jpeg/jdapistd.c ****  * this likely signals an application programmer error.  However,
+ 149:fltk-1.3.4-1/jpeg/jdapistd.c ****  * an oversize buffer (max_lines > scanlines remaining) is not an error.
+ 150:fltk-1.3.4-1/jpeg/jdapistd.c ****  */
+ 151:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 152:fltk-1.3.4-1/jpeg/jdapistd.c **** GLOBAL(JDIMENSION)
+ 153:fltk-1.3.4-1/jpeg/jdapistd.c **** jpeg_read_scanlines (j_decompress_ptr cinfo, JSAMPARRAY scanlines,
+ 154:fltk-1.3.4-1/jpeg/jdapistd.c **** 		     JDIMENSION max_lines)
+ 155:fltk-1.3.4-1/jpeg/jdapistd.c **** {
+ 328              		.loc 1 155 0
+ 329              		.cfi_startproc
+ 330              	.LVL22:
+ 331 0000 4154     		pushq	%r12
+ 332              		.cfi_def_cfa_offset 16
+ 333              		.cfi_offset 12, -16
+ 334 0002 55       		pushq	%rbp
+ 335              		.cfi_def_cfa_offset 24
+ 336              		.cfi_offset 6, -24
+ 337 0003 4189D4   		movl	%edx, %r12d
+ 338 0006 53       		pushq	%rbx
+ 339              		.cfi_def_cfa_offset 32
+ 340              		.cfi_offset 3, -32
+ 341 0007 4889F5   		movq	%rsi, %rbp
+ 342 000a 4889FB   		movq	%rdi, %rbx
+ 343 000d 4883EC10 		subq	$16, %rsp
+ 344              		.cfi_def_cfa_offset 48
+ 345              		.loc 1 155 0
+ 346 0011 64488B04 		movq	%fs:40, %rax
+ 346      25280000 
+ 346      00
+ 347 001a 48894424 		movq	%rax, 8(%rsp)
+ 347      08
+ 348 001f 31C0     		xorl	%eax, %eax
+ 156:fltk-1.3.4-1/jpeg/jdapistd.c ****   JDIMENSION row_ctr;
+ 157:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 158:fltk-1.3.4-1/jpeg/jdapistd.c ****   if (cinfo->global_state != DSTATE_SCANNING)
+ 349              		.loc 1 158 0
+ 350 0021 817F24CD 		cmpl	$205, 36(%rdi)
+ 350      000000
+ 351 0028 7418     		je	.L49
+ 159:fltk-1.3.4-1/jpeg/jdapistd.c ****     ERREXIT1(cinfo, JERR_BAD_STATE, cinfo->global_state);
+ 352              		.loc 1 159 0
+ 353 002a 488B07   		movq	(%rdi), %rax
+ 354 002d C7402815 		movl	$21, 40(%rax)
+ 354      000000
+ 355 0034 488B07   		movq	(%rdi), %rax
+ 356 0037 8B5724   		movl	36(%rdi), %edx
+ 357              	.LVL23:
+ 358 003a 89502C   		movl	%edx, 44(%rax)
+ 359 003d 488B07   		movq	(%rdi), %rax
+ 360 0040 FF10     		call	*(%rax)
+ 361              	.LVL24:
+ 362              	.L49:
+ 160:fltk-1.3.4-1/jpeg/jdapistd.c ****   if (cinfo->output_scanline >= cinfo->output_height) {
+ 363              		.loc 1 160 0
+ 364 0042 8B83A800 		movl	168(%rbx), %eax
+ 364      0000
+ 365 0048 3B838C00 		cmpl	140(%rbx), %eax
+ 365      0000
+ 366 004e 7370     		jnb	.L58
+ 161:fltk-1.3.4-1/jpeg/jdapistd.c ****     WARNMS(cinfo, JWRN_TOO_MUCH_DATA);
+ 162:fltk-1.3.4-1/jpeg/jdapistd.c ****     return 0;
+ 163:fltk-1.3.4-1/jpeg/jdapistd.c ****   }
+ 164:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 165:fltk-1.3.4-1/jpeg/jdapistd.c ****   /* Call progress monitor hook if present */
+ 166:fltk-1.3.4-1/jpeg/jdapistd.c ****   if (cinfo->progress != NULL) {
+ 367              		.loc 1 166 0
+ 368 0050 488B7B10 		movq	16(%rbx), %rdi
+ 369 0054 4885FF   		testq	%rdi, %rdi
+ 370 0057 741B     		je	.L52
+ 167:fltk-1.3.4-1/jpeg/jdapistd.c ****     cinfo->progress->pass_counter = (long) cinfo->output_scanline;
+ 371              		.loc 1 167 0
+ 372 0059 48894708 		movq	%rax, 8(%rdi)
+ 168:fltk-1.3.4-1/jpeg/jdapistd.c ****     cinfo->progress->pass_limit = (long) cinfo->output_height;
+ 373              		.loc 1 168 0
+ 374 005d 8B8B8C00 		movl	140(%rbx), %ecx
+ 374      0000
+ 169:fltk-1.3.4-1/jpeg/jdapistd.c ****     (*cinfo->progress->progress_monitor) ((j_common_ptr) cinfo);
+ 375              		.loc 1 169 0
+ 376 0063 4889DF   		movq	%rbx, %rdi
+ 168:fltk-1.3.4-1/jpeg/jdapistd.c ****     cinfo->progress->pass_limit = (long) cinfo->output_height;
+ 377              		.loc 1 168 0
+ 378 0066 488B4310 		movq	16(%rbx), %rax
+ 379 006a 48894810 		movq	%rcx, 16(%rax)
+ 380              		.loc 1 169 0
+ 381 006e 488B4310 		movq	16(%rbx), %rax
+ 382 0072 FF10     		call	*(%rax)
+ 383              	.LVL25:
+ 384              	.L52:
+ 170:fltk-1.3.4-1/jpeg/jdapistd.c ****   }
+ 171:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 172:fltk-1.3.4-1/jpeg/jdapistd.c ****   /* Process some data */
+ 173:fltk-1.3.4-1/jpeg/jdapistd.c ****   row_ctr = 0;
+ 174:fltk-1.3.4-1/jpeg/jdapistd.c ****   (*cinfo->main->process_data) (cinfo, scanlines, &row_ctr, max_lines);
+ 385              		.loc 1 174 0
+ 386 0074 488B8348 		movq	584(%rbx), %rax
+ 386      020000
+ 173:fltk-1.3.4-1/jpeg/jdapistd.c ****   (*cinfo->main->process_data) (cinfo, scanlines, &row_ctr, max_lines);
+ 387              		.loc 1 173 0
+ 388 007b C7442404 		movl	$0, 4(%rsp)
+ 388      00000000 
+ 389              		.loc 1 174 0
+ 390 0083 4489E1   		movl	%r12d, %ecx
+ 391 0086 488D5424 		leaq	4(%rsp), %rdx
+ 391      04
+ 392 008b 4889EE   		movq	%rbp, %rsi
+ 393 008e 4889DF   		movq	%rbx, %rdi
+ 394 0091 FF5008   		call	*8(%rax)
+ 395              	.LVL26:
+ 175:fltk-1.3.4-1/jpeg/jdapistd.c ****   cinfo->output_scanline += row_ctr;
+ 396              		.loc 1 175 0
+ 397 0094 8B442404 		movl	4(%rsp), %eax
+ 398 0098 0183A800 		addl	%eax, 168(%rbx)
+ 398      0000
+ 399              	.L51:
+ 176:fltk-1.3.4-1/jpeg/jdapistd.c ****   return row_ctr;
+ 177:fltk-1.3.4-1/jpeg/jdapistd.c **** }
+ 400              		.loc 1 177 0
+ 401 009e 488B4C24 		movq	8(%rsp), %rcx
+ 401      08
+ 402 00a3 6448330C 		xorq	%fs:40, %rcx
+ 402      25280000 
+ 402      00
+ 403 00ac 752E     		jne	.L59
+ 404 00ae 4883C410 		addq	$16, %rsp
+ 405              		.cfi_remember_state
+ 406              		.cfi_def_cfa_offset 32
+ 407 00b2 5B       		popq	%rbx
+ 408              		.cfi_def_cfa_offset 24
+ 409              	.LVL27:
+ 410 00b3 5D       		popq	%rbp
+ 411              		.cfi_def_cfa_offset 16
+ 412              	.LVL28:
+ 413 00b4 415C     		popq	%r12
+ 414              		.cfi_def_cfa_offset 8
+ 415              	.LVL29:
+ 416 00b6 C3       		ret
+ 417              	.LVL30:
+ 418 00b7 660F1F84 		.p2align 4,,10
+ 418      00000000 
+ 418      00
+ 419              		.p2align 3
+ 420              	.L58:
+ 421              		.cfi_restore_state
+ 161:fltk-1.3.4-1/jpeg/jdapistd.c ****     return 0;
+ 422              		.loc 1 161 0
+ 423 00c0 488B03   		movq	(%rbx), %rax
+ 424 00c3 BEFFFFFF 		movl	$-1, %esi
+ 424      FF
+ 425 00c8 4889DF   		movq	%rbx, %rdi
+ 426 00cb C740287E 		movl	$126, 40(%rax)
+ 426      000000
+ 427 00d2 488B03   		movq	(%rbx), %rax
+ 428 00d5 FF5008   		call	*8(%rax)
+ 429              	.LVL31:
+ 162:fltk-1.3.4-1/jpeg/jdapistd.c ****   }
+ 430              		.loc 1 162 0
+ 431 00d8 31C0     		xorl	%eax, %eax
+ 432 00da EBC2     		jmp	.L51
+ 433              	.L59:
+ 434              		.loc 1 177 0
+ 435 00dc E8000000 		call	__stack_chk_fail
+ 435      00
+ 436              	.LVL32:
+ 437              		.cfi_endproc
+ 438              	.LFE63:
+ 440              		.section	.text.unlikely.jpeg_read_scanlines
+ 441              	.LCOLDE2:
+ 442              		.section	.text.jpeg_read_scanlines
+ 443              	.LHOTE2:
+ 444              		.section	.text.unlikely.jpeg_read_raw_data,"ax",@progbits
+ 445              	.LCOLDB3:
+ 446              		.section	.text.jpeg_read_raw_data,"ax",@progbits
+ 447              	.LHOTB3:
+ 448              		.p2align 4,,15
+ 449              		.globl	jpeg_read_raw_data
+ 451              	jpeg_read_raw_data:
+ 452              	.LFB64:
+ 178:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 179:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 180:fltk-1.3.4-1/jpeg/jdapistd.c **** /*
+ 181:fltk-1.3.4-1/jpeg/jdapistd.c ****  * Alternate entry point to read raw data.
+ 182:fltk-1.3.4-1/jpeg/jdapistd.c ****  * Processes exactly one iMCU row per call, unless suspended.
+ 183:fltk-1.3.4-1/jpeg/jdapistd.c ****  */
+ 184:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 185:fltk-1.3.4-1/jpeg/jdapistd.c **** GLOBAL(JDIMENSION)
+ 186:fltk-1.3.4-1/jpeg/jdapistd.c **** jpeg_read_raw_data (j_decompress_ptr cinfo, JSAMPIMAGE data,
+ 187:fltk-1.3.4-1/jpeg/jdapistd.c **** 		    JDIMENSION max_lines)
+ 188:fltk-1.3.4-1/jpeg/jdapistd.c **** {
+ 453              		.loc 1 188 0
+ 454              		.cfi_startproc
+ 455              	.LVL33:
+ 456 0000 4155     		pushq	%r13
+ 457              		.cfi_def_cfa_offset 16
+ 458              		.cfi_offset 13, -16
+ 459 0002 4154     		pushq	%r12
+ 460              		.cfi_def_cfa_offset 24
+ 461              		.cfi_offset 12, -24
+ 462 0004 4189D5   		movl	%edx, %r13d
+ 463 0007 55       		pushq	%rbp
+ 464              		.cfi_def_cfa_offset 32
+ 465              		.cfi_offset 6, -32
+ 466 0008 53       		pushq	%rbx
+ 467              		.cfi_def_cfa_offset 40
+ 468              		.cfi_offset 3, -40
+ 469 0009 4989F4   		movq	%rsi, %r12
+ 470 000c 4889FB   		movq	%rdi, %rbx
+ 471 000f 4883EC08 		subq	$8, %rsp
+ 472              		.cfi_def_cfa_offset 48
+ 189:fltk-1.3.4-1/jpeg/jdapistd.c ****   JDIMENSION lines_per_iMCU_row;
+ 190:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 191:fltk-1.3.4-1/jpeg/jdapistd.c ****   if (cinfo->global_state != DSTATE_RAW_OK)
+ 473              		.loc 1 191 0
+ 474 0013 817F24CE 		cmpl	$206, 36(%rdi)
+ 474      000000
+ 475 001a 7418     		je	.L61
+ 192:fltk-1.3.4-1/jpeg/jdapistd.c ****     ERREXIT1(cinfo, JERR_BAD_STATE, cinfo->global_state);
+ 476              		.loc 1 192 0
+ 477 001c 488B07   		movq	(%rdi), %rax
+ 478 001f C7402815 		movl	$21, 40(%rax)
+ 478      000000
+ 479 0026 488B07   		movq	(%rdi), %rax
+ 480 0029 8B5724   		movl	36(%rdi), %edx
+ 481              	.LVL34:
+ 482 002c 89502C   		movl	%edx, 44(%rax)
+ 483 002f 488B07   		movq	(%rdi), %rax
+ 484 0032 FF10     		call	*(%rax)
+ 485              	.LVL35:
+ 486              	.L61:
+ 193:fltk-1.3.4-1/jpeg/jdapistd.c ****   if (cinfo->output_scanline >= cinfo->output_height) {
+ 487              		.loc 1 193 0
+ 488 0034 8B83A800 		movl	168(%rbx), %eax
+ 488      0000
+ 489 003a 3B838C00 		cmpl	140(%rbx), %eax
+ 489      0000
+ 490 0040 737E     		jnb	.L72
+ 194:fltk-1.3.4-1/jpeg/jdapistd.c ****     WARNMS(cinfo, JWRN_TOO_MUCH_DATA);
+ 195:fltk-1.3.4-1/jpeg/jdapistd.c ****     return 0;
+ 196:fltk-1.3.4-1/jpeg/jdapistd.c ****   }
+ 197:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 198:fltk-1.3.4-1/jpeg/jdapistd.c ****   /* Call progress monitor hook if present */
+ 199:fltk-1.3.4-1/jpeg/jdapistd.c ****   if (cinfo->progress != NULL) {
+ 491              		.loc 1 199 0
+ 492 0042 488B4B10 		movq	16(%rbx), %rcx
+ 493 0046 4885C9   		testq	%rcx, %rcx
+ 494 0049 741B     		je	.L64
+ 200:fltk-1.3.4-1/jpeg/jdapistd.c ****     cinfo->progress->pass_counter = (long) cinfo->output_scanline;
+ 495              		.loc 1 200 0
+ 496 004b 48894108 		movq	%rax, 8(%rcx)
+ 201:fltk-1.3.4-1/jpeg/jdapistd.c ****     cinfo->progress->pass_limit = (long) cinfo->output_height;
+ 497              		.loc 1 201 0
+ 498 004f 8BB38C00 		movl	140(%rbx), %esi
+ 498      0000
+ 202:fltk-1.3.4-1/jpeg/jdapistd.c ****     (*cinfo->progress->progress_monitor) ((j_common_ptr) cinfo);
+ 499              		.loc 1 202 0
+ 500 0055 4889DF   		movq	%rbx, %rdi
+ 201:fltk-1.3.4-1/jpeg/jdapistd.c ****     cinfo->progress->pass_limit = (long) cinfo->output_height;
+ 501              		.loc 1 201 0
+ 502 0058 488B4310 		movq	16(%rbx), %rax
+ 503 005c 48897010 		movq	%rsi, 16(%rax)
+ 504              		.loc 1 202 0
+ 505 0060 488B4310 		movq	16(%rbx), %rax
+ 506 0064 FF10     		call	*(%rax)
+ 507              	.LVL36:
+ 508              	.L64:
+ 203:fltk-1.3.4-1/jpeg/jdapistd.c ****   }
+ 204:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 205:fltk-1.3.4-1/jpeg/jdapistd.c ****   /* Verify that at least one iMCU row can be returned. */
+ 206:fltk-1.3.4-1/jpeg/jdapistd.c ****   lines_per_iMCU_row = cinfo->max_v_samp_factor * cinfo->min_DCT_v_scaled_size;
+ 509              		.loc 1 206 0
+ 510 0066 8BABA401 		movl	420(%rbx), %ebp
+ 510      0000
+ 511 006c 0FAFABAC 		imull	428(%rbx), %ebp
+ 511      010000
+ 512              	.LVL37:
+ 207:fltk-1.3.4-1/jpeg/jdapistd.c ****   if (max_lines < lines_per_iMCU_row)
+ 513              		.loc 1 207 0
+ 514 0073 4439ED   		cmpl	%r13d, %ebp
+ 515 0076 7730     		ja	.L73
+ 516              	.L65:
+ 208:fltk-1.3.4-1/jpeg/jdapistd.c ****     ERREXIT(cinfo, JERR_BUFFER_SIZE);
+ 209:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 210:fltk-1.3.4-1/jpeg/jdapistd.c ****   /* Decompress directly into user's buffer. */
+ 211:fltk-1.3.4-1/jpeg/jdapistd.c ****   if (! (*cinfo->coef->decompress_data) (cinfo, data))
+ 517              		.loc 1 211 0
+ 518 0078 488B8350 		movq	592(%rbx), %rax
+ 518      020000
+ 519 007f 4C89E6   		movq	%r12, %rsi
+ 520 0082 4889DF   		movq	%rbx, %rdi
+ 521 0085 FF5018   		call	*24(%rax)
+ 522              	.LVL38:
+ 212:fltk-1.3.4-1/jpeg/jdapistd.c ****     return 0;			/* suspension forced, can do nothing more */
+ 523              		.loc 1 212 0
+ 524 0088 31D2     		xorl	%edx, %edx
+ 211:fltk-1.3.4-1/jpeg/jdapistd.c ****     return 0;			/* suspension forced, can do nothing more */
+ 525              		.loc 1 211 0
+ 526 008a 85C0     		testl	%eax, %eax
+ 527 008c 7408     		je	.L63
+ 213:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 214:fltk-1.3.4-1/jpeg/jdapistd.c ****   /* OK, we processed one iMCU row. */
+ 215:fltk-1.3.4-1/jpeg/jdapistd.c ****   cinfo->output_scanline += lines_per_iMCU_row;
+ 528              		.loc 1 215 0
+ 529 008e 01ABA800 		addl	%ebp, 168(%rbx)
+ 529      0000
+ 206:fltk-1.3.4-1/jpeg/jdapistd.c ****   if (max_lines < lines_per_iMCU_row)
+ 530              		.loc 1 206 0
+ 531 0094 89EA     		movl	%ebp, %edx
+ 532              	.L63:
+ 216:fltk-1.3.4-1/jpeg/jdapistd.c ****   return lines_per_iMCU_row;
+ 217:fltk-1.3.4-1/jpeg/jdapistd.c **** }
+ 533              		.loc 1 217 0
+ 534 0096 4883C408 		addq	$8, %rsp
+ 535              		.cfi_remember_state
+ 536              		.cfi_def_cfa_offset 40
+ 537 009a 89D0     		movl	%edx, %eax
+ 538 009c 5B       		popq	%rbx
+ 539              		.cfi_def_cfa_offset 32
+ 540              	.LVL39:
+ 541 009d 5D       		popq	%rbp
+ 542              		.cfi_def_cfa_offset 24
+ 543              	.LVL40:
+ 544 009e 415C     		popq	%r12
+ 545              		.cfi_def_cfa_offset 16
+ 546              	.LVL41:
+ 547 00a0 415D     		popq	%r13
+ 548              		.cfi_def_cfa_offset 8
+ 549              	.LVL42:
+ 550 00a2 C3       		ret
+ 551              	.LVL43:
+ 552              		.p2align 4,,10
+ 553 00a3 0F1F4400 		.p2align 3
+ 553      00
+ 554              	.L73:
+ 555              		.cfi_restore_state
+ 208:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 556              		.loc 1 208 0
+ 557 00a8 488B03   		movq	(%rbx), %rax
+ 558 00ab 4889DF   		movq	%rbx, %rdi
+ 559 00ae C7402818 		movl	$24, 40(%rax)
+ 559      000000
+ 560 00b5 488B03   		movq	(%rbx), %rax
+ 561 00b8 FF10     		call	*(%rax)
+ 562              	.LVL44:
+ 563 00ba EBBC     		jmp	.L65
+ 564              	.LVL45:
+ 565 00bc 0F1F4000 		.p2align 4,,10
+ 566              		.p2align 3
+ 567              	.L72:
+ 194:fltk-1.3.4-1/jpeg/jdapistd.c ****     return 0;
+ 568              		.loc 1 194 0
+ 569 00c0 488B03   		movq	(%rbx), %rax
+ 570 00c3 4889DF   		movq	%rbx, %rdi
+ 571 00c6 BEFFFFFF 		movl	$-1, %esi
+ 571      FF
+ 572 00cb C740287E 		movl	$126, 40(%rax)
+ 572      000000
+ 573 00d2 488B03   		movq	(%rbx), %rax
+ 574 00d5 FF5008   		call	*8(%rax)
+ 575              	.LVL46:
+ 576              		.loc 1 217 0
+ 577 00d8 4883C408 		addq	$8, %rsp
+ 578              		.cfi_def_cfa_offset 40
+ 195:fltk-1.3.4-1/jpeg/jdapistd.c ****   }
+ 579              		.loc 1 195 0
+ 580 00dc 31D2     		xorl	%edx, %edx
+ 581              		.loc 1 217 0
+ 582 00de 5B       		popq	%rbx
+ 583              		.cfi_def_cfa_offset 32
+ 584              	.LVL47:
+ 585 00df 89D0     		movl	%edx, %eax
+ 586 00e1 5D       		popq	%rbp
+ 587              		.cfi_def_cfa_offset 24
+ 588 00e2 415C     		popq	%r12
+ 589              		.cfi_def_cfa_offset 16
+ 590              	.LVL48:
+ 591 00e4 415D     		popq	%r13
+ 592              		.cfi_def_cfa_offset 8
+ 593              	.LVL49:
+ 594 00e6 C3       		ret
+ 595              		.cfi_endproc
+ 596              	.LFE64:
+ 598              		.section	.text.unlikely.jpeg_read_raw_data
+ 599              	.LCOLDE3:
+ 600              		.section	.text.jpeg_read_raw_data
+ 601              	.LHOTE3:
+ 602              		.section	.text.unlikely.jpeg_start_output,"ax",@progbits
+ 603              	.LCOLDB4:
+ 604              		.section	.text.jpeg_start_output,"ax",@progbits
+ 605              	.LHOTB4:
+ 606              		.p2align 4,,15
+ 607              		.globl	jpeg_start_output
+ 609              	jpeg_start_output:
+ 610              	.LFB65:
+ 218:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 219:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 220:fltk-1.3.4-1/jpeg/jdapistd.c **** /* Additional entry points for buffered-image mode. */
+ 221:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 222:fltk-1.3.4-1/jpeg/jdapistd.c **** #ifdef D_MULTISCAN_FILES_SUPPORTED
+ 223:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 224:fltk-1.3.4-1/jpeg/jdapistd.c **** /*
+ 225:fltk-1.3.4-1/jpeg/jdapistd.c ****  * Initialize for an output pass in buffered-image mode.
+ 226:fltk-1.3.4-1/jpeg/jdapistd.c ****  */
+ 227:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 228:fltk-1.3.4-1/jpeg/jdapistd.c **** GLOBAL(boolean)
+ 229:fltk-1.3.4-1/jpeg/jdapistd.c **** jpeg_start_output (j_decompress_ptr cinfo, int scan_number)
+ 230:fltk-1.3.4-1/jpeg/jdapistd.c **** {
+ 611              		.loc 1 230 0
+ 612              		.cfi_startproc
+ 613              	.LVL50:
+ 614 0000 53       		pushq	%rbx
+ 615              		.cfi_def_cfa_offset 16
+ 616              		.cfi_offset 3, -16
+ 617 0001 4889FB   		movq	%rdi, %rbx
+ 618 0004 4883EC10 		subq	$16, %rsp
+ 619              		.cfi_def_cfa_offset 32
+ 231:fltk-1.3.4-1/jpeg/jdapistd.c ****   if (cinfo->global_state != DSTATE_BUFIMAGE &&
+ 620              		.loc 1 231 0
+ 621 0008 8B4724   		movl	36(%rdi), %eax
+ 622 000b 3DCF0000 		cmpl	$207, %eax
+ 622      00
+ 623 0010 7407     		je	.L75
+ 624 0012 3DCC0000 		cmpl	$204, %eax
+ 624      00
+ 625 0017 7537     		jne	.L85
+ 626              	.LVL51:
+ 627              	.L75:
+ 232:fltk-1.3.4-1/jpeg/jdapistd.c ****       cinfo->global_state != DSTATE_PRESCAN)
+ 233:fltk-1.3.4-1/jpeg/jdapistd.c ****     ERREXIT1(cinfo, JERR_BAD_STATE, cinfo->global_state);
+ 234:fltk-1.3.4-1/jpeg/jdapistd.c ****   /* Limit scan number to valid range */
+ 235:fltk-1.3.4-1/jpeg/jdapistd.c ****   if (scan_number <= 0)
+ 236:fltk-1.3.4-1/jpeg/jdapistd.c ****     scan_number = 1;
+ 628              		.loc 1 236 0
+ 629 0019 85F6     		testl	%esi, %esi
+ 630 001b B8010000 		movl	$1, %eax
+ 630      00
+ 631 0020 0F4EF0   		cmovle	%eax, %esi
+ 632              	.LVL52:
+ 237:fltk-1.3.4-1/jpeg/jdapistd.c ****   if (cinfo->inputctl->eoi_reached &&
+ 633              		.loc 1 237 0
+ 634 0023 488B8360 		movq	608(%rbx), %rax
+ 634      020000
+ 635 002a 8B4024   		movl	36(%rax), %eax
+ 636 002d 85C0     		testl	%eax, %eax
+ 637 002f 740B     		je	.L77
+ 238:fltk-1.3.4-1/jpeg/jdapistd.c ****       scan_number > cinfo->input_scan_number)
+ 638              		.loc 1 238 0 discriminator 1
+ 639 0031 8B83AC00 		movl	172(%rbx), %eax
+ 639      0000
+ 640 0037 39C6     		cmpl	%eax, %esi
+ 641 0039 0F4FF0   		cmovg	%eax, %esi
+ 642              	.LVL53:
+ 643              	.L77:
+ 239:fltk-1.3.4-1/jpeg/jdapistd.c ****     scan_number = cinfo->input_scan_number;
+ 240:fltk-1.3.4-1/jpeg/jdapistd.c ****   cinfo->output_scan_number = scan_number;
+ 644              		.loc 1 240 0
+ 645 003c 89B3B400 		movl	%esi, 180(%rbx)
+ 645      0000
+ 241:fltk-1.3.4-1/jpeg/jdapistd.c ****   /* Perform any dummy output passes, and set up for the real pass */
+ 242:fltk-1.3.4-1/jpeg/jdapistd.c ****   return output_pass_setup(cinfo);
+ 243:fltk-1.3.4-1/jpeg/jdapistd.c **** }
+ 646              		.loc 1 243 0
+ 647 0042 4883C410 		addq	$16, %rsp
+ 648              		.cfi_remember_state
+ 649              		.cfi_def_cfa_offset 16
+ 242:fltk-1.3.4-1/jpeg/jdapistd.c **** }
+ 650              		.loc 1 242 0
+ 651 0046 4889DF   		movq	%rbx, %rdi
+ 652              		.loc 1 243 0
+ 653 0049 5B       		popq	%rbx
+ 654              		.cfi_def_cfa_offset 8
+ 655              	.LVL54:
+ 242:fltk-1.3.4-1/jpeg/jdapistd.c **** }
+ 656              		.loc 1 242 0
+ 657 004a E9000000 		jmp	output_pass_setup
+ 657      00
+ 658              	.LVL55:
+ 659 004f 90       		.p2align 4,,10
+ 660              		.p2align 3
+ 661              	.L85:
+ 662              		.cfi_restore_state
+ 233:fltk-1.3.4-1/jpeg/jdapistd.c ****   /* Limit scan number to valid range */
+ 663              		.loc 1 233 0
+ 664 0050 488B07   		movq	(%rdi), %rax
+ 665 0053 8974240C 		movl	%esi, 12(%rsp)
+ 666 0057 C7402815 		movl	$21, 40(%rax)
+ 666      000000
+ 667 005e 488B07   		movq	(%rdi), %rax
+ 668 0061 8B5724   		movl	36(%rdi), %edx
+ 669 0064 89502C   		movl	%edx, 44(%rax)
+ 670 0067 488B07   		movq	(%rdi), %rax
+ 671 006a FF10     		call	*(%rax)
+ 672              	.LVL56:
+ 673 006c 8B74240C 		movl	12(%rsp), %esi
+ 674 0070 EBA7     		jmp	.L75
+ 675              		.cfi_endproc
+ 676              	.LFE65:
+ 678              		.section	.text.unlikely.jpeg_start_output
+ 679              	.LCOLDE4:
+ 680              		.section	.text.jpeg_start_output
+ 681              	.LHOTE4:
+ 682              		.section	.text.unlikely.jpeg_finish_output,"ax",@progbits
+ 683              	.LCOLDB5:
+ 684              		.section	.text.jpeg_finish_output,"ax",@progbits
+ 685              	.LHOTB5:
+ 686              		.p2align 4,,15
+ 687              		.globl	jpeg_finish_output
+ 689              	jpeg_finish_output:
+ 690              	.LFB66:
+ 244:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 245:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 246:fltk-1.3.4-1/jpeg/jdapistd.c **** /*
+ 247:fltk-1.3.4-1/jpeg/jdapistd.c ****  * Finish up after an output pass in buffered-image mode.
+ 248:fltk-1.3.4-1/jpeg/jdapistd.c ****  *
+ 249:fltk-1.3.4-1/jpeg/jdapistd.c ****  * Returns FALSE if suspended.  The return value need be inspected only if
+ 250:fltk-1.3.4-1/jpeg/jdapistd.c ****  * a suspending data source is used.
+ 251:fltk-1.3.4-1/jpeg/jdapistd.c ****  */
+ 252:fltk-1.3.4-1/jpeg/jdapistd.c **** 
+ 253:fltk-1.3.4-1/jpeg/jdapistd.c **** GLOBAL(boolean)
+ 254:fltk-1.3.4-1/jpeg/jdapistd.c **** jpeg_finish_output (j_decompress_ptr cinfo)
+ 255:fltk-1.3.4-1/jpeg/jdapistd.c **** {
+ 691              		.loc 1 255 0
+ 692              		.cfi_startproc
+ 693              	.LVL57:
+ 694 0000 55       		pushq	%rbp
+ 695              		.cfi_def_cfa_offset 16
+ 696              		.cfi_offset 6, -16
+ 697 0001 53       		pushq	%rbx
+ 698              		.cfi_def_cfa_offset 24
+ 699              		.cfi_offset 3, -24
+ 700 0002 4889FB   		movq	%rdi, %rbx
+ 701 0005 4883EC08 		subq	$8, %rsp
+ 702              		.cfi_def_cfa_offset 32
+ 256:fltk-1.3.4-1/jpeg/jdapistd.c ****   if ((cinfo->global_state == DSTATE_SCANNING ||
+ 703              		.loc 1 256 0
+ 704 0009 8B4724   		movl	36(%rdi), %eax
+ 705 000c 8D9033FF 		leal	-205(%rax), %edx
+ 705      FFFF
+ 706 0012 83FA01   		cmpl	$1, %edx
+ 707 0015 7679     		jbe	.L101
+ 257:fltk-1.3.4-1/jpeg/jdapistd.c ****        cinfo->global_state == DSTATE_RAW_OK) && cinfo->buffered_image) {
+ 258:fltk-1.3.4-1/jpeg/jdapistd.c ****     /* Terminate this pass. */
+ 259:fltk-1.3.4-1/jpeg/jdapistd.c ****     /* We do not require the whole pass to have been completed. */
+ 260:fltk-1.3.4-1/jpeg/jdapistd.c ****     (*cinfo->master->finish_output_pass) (cinfo);
+ 261:fltk-1.3.4-1/jpeg/jdapistd.c ****     cinfo->global_state = DSTATE_BUFPOST;
+ 262:fltk-1.3.4-1/jpeg/jdapistd.c ****   } else if (cinfo->global_state != DSTATE_BUFPOST) {
+ 708              		.loc 1 262 0
+ 709 0017 3DD00000 		cmpl	$208, %eax
+ 709      00
+ 710 001c 7449     		je	.L89
+ 711              	.L88:
+ 263:fltk-1.3.4-1/jpeg/jdapistd.c ****     /* BUFPOST = repeat call after a suspension, anything else is error */
+ 264:fltk-1.3.4-1/jpeg/jdapistd.c ****     ERREXIT1(cinfo, JERR_BAD_STATE, cinfo->global_state);
+ 712              		.loc 1 264 0
+ 713 001e 488B03   		movq	(%rbx), %rax
+ 714 0021 4889DF   		movq	%rbx, %rdi
+ 715              	.LVL58:
+ 716 0024 C7402815 		movl	$21, 40(%rax)
+ 716      000000
+ 717 002b 488B03   		movq	(%rbx), %rax
+ 718 002e 8B5324   		movl	36(%rbx), %edx
+ 719 0031 89502C   		movl	%edx, 44(%rax)
+ 720 0034 488B03   		movq	(%rbx), %rax
+ 721 0037 FF10     		call	*(%rax)
+ 722              	.LVL59:
+ 265:fltk-1.3.4-1/jpeg/jdapistd.c ****   }
+ 266:fltk-1.3.4-1/jpeg/jdapistd.c ****   /* Read markers looking for SOS or EOI */
+ 267:fltk-1.3.4-1/jpeg/jdapistd.c ****   while (cinfo->input_scan_number <= cinfo->output_scan_number &&
+ 723              		.loc 1 267 0
+ 724 0039 8B83B400 		movl	180(%rbx), %eax
+ 724      0000
+ 725 003f 3983AC00 		cmpl	%eax, 172(%rbx)
+ 725      0000
+ 726 0045 7F2E     		jg	.L92
+ 727 0047 660F1F84 		.p2align 4,,10
+ 727      00000000 
+ 727      00
+ 728              		.p2align 3
+ 729              	.L102:
+ 268:fltk-1.3.4-1/jpeg/jdapistd.c **** 	 ! cinfo->inputctl->eoi_reached) {
+ 730              		.loc 1 268 0 discriminator 1
+ 731 0050 488B8360 		movq	608(%rbx), %rax
+ 731      020000
+ 732 0057 8B6824   		movl	36(%rax), %ebp
+ 267:fltk-1.3.4-1/jpeg/jdapistd.c **** 	 ! cinfo->inputctl->eoi_reached) {
+ 733              		.loc 1 267 0 discriminator 1
+ 734 005a 85ED     		testl	%ebp, %ebp
+ 735 005c 7517     		jne	.L92
+ 269:fltk-1.3.4-1/jpeg/jdapistd.c ****     if ((*cinfo->inputctl->consume_input) (cinfo) == JPEG_SUSPENDED)
+ 736              		.loc 1 269 0
+ 737 005e 4889DF   		movq	%rbx, %rdi
+ 738 0061 FF10     		call	*(%rax)
+ 739              	.LVL60:
+ 740 0063 85C0     		testl	%eax, %eax
+ 741 0065 741A     		je	.L91
+ 742              	.L89:
+ 267:fltk-1.3.4-1/jpeg/jdapistd.c **** 	 ! cinfo->inputctl->eoi_reached) {
+ 743              		.loc 1 267 0
+ 744 0067 8B83B400 		movl	180(%rbx), %eax
+ 744      0000
+ 745 006d 3983AC00 		cmpl	%eax, 172(%rbx)
+ 745      0000
+ 746 0073 7EDB     		jle	.L102
+ 747              	.L92:
+ 270:fltk-1.3.4-1/jpeg/jdapistd.c ****       return FALSE;		/* Suspend, come back later */
+ 271:fltk-1.3.4-1/jpeg/jdapistd.c ****   }
+ 272:fltk-1.3.4-1/jpeg/jdapistd.c ****   cinfo->global_state = DSTATE_BUFIMAGE;
+ 748              		.loc 1 272 0
+ 749 0075 C74324CF 		movl	$207, 36(%rbx)
+ 749      000000
+ 273:fltk-1.3.4-1/jpeg/jdapistd.c ****   return TRUE;
+ 750              		.loc 1 273 0
+ 751 007c BD010000 		movl	$1, %ebp
+ 751      00
+ 752              	.L91:
+ 274:fltk-1.3.4-1/jpeg/jdapistd.c **** }
+ 753              		.loc 1 274 0
+ 754 0081 4883C408 		addq	$8, %rsp
+ 755              		.cfi_remember_state
+ 756              		.cfi_def_cfa_offset 24
+ 757 0085 89E8     		movl	%ebp, %eax
+ 758 0087 5B       		popq	%rbx
+ 759              		.cfi_def_cfa_offset 16
+ 760              	.LVL61:
+ 761 0088 5D       		popq	%rbp
+ 762              		.cfi_def_cfa_offset 8
+ 763 0089 C3       		ret
+ 764              	.LVL62:
+ 765 008a 660F1F44 		.p2align 4,,10
+ 765      0000
+ 766              		.p2align 3
+ 767              	.L101:
+ 768              		.cfi_restore_state
+ 257:fltk-1.3.4-1/jpeg/jdapistd.c ****     /* Terminate this pass. */
+ 769              		.loc 1 257 0
+ 770 0090 8B4758   		movl	88(%rdi), %eax
+ 771 0093 85C0     		testl	%eax, %eax
+ 772 0095 7487     		je	.L88
+ 260:fltk-1.3.4-1/jpeg/jdapistd.c ****     cinfo->global_state = DSTATE_BUFPOST;
+ 773              		.loc 1 260 0
+ 774 0097 488B8740 		movq	576(%rdi), %rax
+ 774      020000
+ 775 009e FF5008   		call	*8(%rax)
+ 776              	.LVL63:
+ 261:fltk-1.3.4-1/jpeg/jdapistd.c ****   } else if (cinfo->global_state != DSTATE_BUFPOST) {
+ 777              		.loc 1 261 0
+ 778 00a1 C74324D0 		movl	$208, 36(%rbx)
+ 778      000000
+ 779 00a8 EBBD     		jmp	.L89
+ 780              		.cfi_endproc
+ 781              	.LFE66:
+ 783              		.section	.text.unlikely.jpeg_finish_output
+ 784              	.LCOLDE5:
+ 785              		.section	.text.jpeg_finish_output
+ 786              	.LHOTE5:
+ 787              		.text
+ 788              	.Letext0:
+ 789              		.section	.text.unlikely.output_pass_setup
+ 790              	.Letext_cold0:
+ 791              		.file 2 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
+ 792              		.file 3 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 793              		.file 4 "/usr/include/libio.h"
+ 794              		.file 5 "fltk-1.3.4-1/jpeg/jmorecfg.h"
+ 795              		.file 6 "fltk-1.3.4-1/jpeg/jpeglib.h"
+ 796              		.file 7 "fltk-1.3.4-1/jpeg/jpegint.h"
+ 797              		.file 8 "fltk-1.3.4-1/jpeg/jerror.h"
+ 798              		.file 9 "/usr/include/stdio.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 jdapistd.c
+     /tmp/ccUuKb4e.s:13     .text.output_pass_setup:0000000000000000 output_pass_setup
+     /tmp/ccUuKb4e.s:154    .text.jpeg_start_decompress:0000000000000000 jpeg_start_decompress
+     /tmp/ccUuKb4e.s:326    .text.jpeg_read_scanlines:0000000000000000 jpeg_read_scanlines
+     /tmp/ccUuKb4e.s:451    .text.jpeg_read_raw_data:0000000000000000 jpeg_read_raw_data
+     /tmp/ccUuKb4e.s:609    .text.jpeg_start_output:0000000000000000 jpeg_start_output
+     /tmp/ccUuKb4e.s:689    .text.jpeg_finish_output:0000000000000000 jpeg_finish_output
+                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
+                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+                           .group:0000000000000000 wm4.jconfig.h.10.247fc3ff67998f3074970b1373c70333
+                           .group:0000000000000000 wm4.features.h.19.24da27e0a4d0d521fd057013d982b8b5
+                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
+                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
+                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
+                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
+                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
+                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
+                           .group:0000000000000000 wm4.waitflags.h.25.e401b8bcfee800b540b27abd7cc78de9
+                           .group:0000000000000000 wm4.waitstatus.h.28.93f167f49d64e2b9b99f98d1162a93bf
+                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
+                           .group:0000000000000000 wm4.endian.h.41.24cced64aef71195a51d4daa8e4f4a95
+                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
+                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
+                           .group:0000000000000000 wm4.byteswap.h.38.11ee5fdc0f6cc53a16c505b9233cecef
+                           .group:0000000000000000 wm4.endian.h.63.97272d7c64d5db8020003b32e9289502
+                           .group:0000000000000000 wm4.waitstatus.h.99.408b6270fa6eb71377201a241ef15f79
+                           .group:0000000000000000 wm4.stdlib.h.50.84aeca2ac6f37d40e1e9b3cef757ba2d
+                           .group:0000000000000000 wm4.types.h.23.f6dcbaa72f8f71361acef09804d45a5e
+                           .group:0000000000000000 wm4.time.h.53.beb46e650cd406cb917b6b96b45e640a
+                           .group:0000000000000000 wm4.stddef.h.238.847b6907dabda77be90a9ab7ad789e2e
+                           .group:0000000000000000 wm4.types.h.187.bd5a05039b505b3620e6973f1b2ffeb1
+                           .group:0000000000000000 wm4.select.h.28.eb2f3debdbcffd1442ebddaebc4fb6ff
+                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
+                           .group:0000000000000000 wm4.select.h.36.f76c3b9e55c871743863013cc4cc14c9
+                           .group:0000000000000000 wm4.time.h.66.e70ce69790c975f0efb369340c432e0b
+                           .group:0000000000000000 wm4.time.h.25.ae5284cdff565e87a9198d819340325d
+                           .group:0000000000000000 wm4.select.h.49.e9d2041e5035cc68ebd1a20f7dbc8514
+                           .group:0000000000000000 wm4.select2.h.27.f95f2ab0ffee66dc1b6575014894b21a
+                           .group:0000000000000000 wm4.sysmacros.h.20.8a0c33ff175cd9b434a86c0aaa36f0a2
+                           .group:0000000000000000 wm4.types.h.229.67b3f66bd74b06b451caec392a72a945
+                           .group:0000000000000000 wm4.pthreadtypes.h.25.6892b1493314fcf446bbc76e7362acba
+                           .group:0000000000000000 wm4.alloca.h.19.edefa922a76c1cbaaf1e416903ba2d1c
+                           .group:0000000000000000 wm4.alloca.h.29.156e12058824cc23d961c4d3b13031f6
+                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
+                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
+                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
+                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
+                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
+                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
+                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
+                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
+                           .group:0000000000000000 wm4.stdio.h.80.17b7dd1ca72d8a61987532cb1d80194a
+                           .group:0000000000000000 wm4.stdio_lim.h.23.557290a6cddeba0587f574f29e3a5fb9
+                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
+                           .group:0000000000000000 wm4.stdio.h.26.cae64f7ada9bb8327a89dba6a5e93655
+                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
+                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
+                           .group:0000000000000000 wm4.string2.h.45.00535b99420fc3014c2da41d6645330d
+                           .group:0000000000000000 wm4.string3.h.31.0c4b9301b754a2db05eaafef869657d2
+                           .group:0000000000000000 wm4.jinclude.h.67.b19f941ec97c4845fa4609292c7e2db4
+                           .group:0000000000000000 wm4.jmorecfg.h.33.3b4c5f9cc07b3737823b06caf24d5b05
+                           .group:0000000000000000 wm4.jpeglib.h.40.4f111c27252a38df39328d65454e82f4
+                           .group:0000000000000000 wm4.jpegint.h.26.5219ef5d4e4921371d38e77b6091fd20
+                           .group:0000000000000000 wm4.jerror.h.25.1dbd8674e70ab5215bc0037320e5c2a2
+
+UNDEFINED SYMBOLS
+jinit_master_decompress
+__stack_chk_fail

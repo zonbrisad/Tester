@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
 	
 	//barTest();
 	
-	sinTest();
+	//sinTest();
  
 	printf(E_SHOW_CURSOR);
 	return 0;

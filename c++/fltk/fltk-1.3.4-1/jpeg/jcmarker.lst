@@ -1,0 +1,3838 @@
+   1              		.file	"jcmarker.c"
+   2              		.text
+   3              	.Ltext0:
+   4              		.section	.text.unlikely.emit_byte,"ax",@progbits
+   5              	.LCOLDB0:
+   6              		.section	.text.emit_byte,"ax",@progbits
+   7              	.LHOTB0:
+   8              		.p2align 4,,15
+   9              		.section	.text.unlikely.emit_byte
+  10              	.Ltext_cold0:
+  11              		.section	.text.emit_byte
+  13              	emit_byte:
+  14              	.LFB61:
+  15              		.file 1 "fltk-1.3.4-1/jpeg/jcmarker.c"
+   1:fltk-1.3.4-1/jpeg/jcmarker.c **** /*
+   2:fltk-1.3.4-1/jpeg/jcmarker.c ****  * jcmarker.c
+   3:fltk-1.3.4-1/jpeg/jcmarker.c ****  *
+   4:fltk-1.3.4-1/jpeg/jcmarker.c ****  * Copyright (C) 1991-1998, Thomas G. Lane.
+   5:fltk-1.3.4-1/jpeg/jcmarker.c ****  * Modified 2003-2013 by Guido Vollbeding.
+   6:fltk-1.3.4-1/jpeg/jcmarker.c ****  * This file is part of the Independent JPEG Group's software.
+   7:fltk-1.3.4-1/jpeg/jcmarker.c ****  * For conditions of distribution and use, see the accompanying README file.
+   8:fltk-1.3.4-1/jpeg/jcmarker.c ****  *
+   9:fltk-1.3.4-1/jpeg/jcmarker.c ****  * This file contains routines to write JPEG datastream markers.
+  10:fltk-1.3.4-1/jpeg/jcmarker.c ****  */
+  11:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+  12:fltk-1.3.4-1/jpeg/jcmarker.c **** #define JPEG_INTERNALS
+  13:fltk-1.3.4-1/jpeg/jcmarker.c **** #include "jinclude.h"
+  14:fltk-1.3.4-1/jpeg/jcmarker.c **** #include "jpeglib.h"
+  15:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+  16:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+  17:fltk-1.3.4-1/jpeg/jcmarker.c **** typedef enum {			/* JPEG marker codes */
+  18:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_SOF0  = 0xc0,
+  19:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_SOF1  = 0xc1,
+  20:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_SOF2  = 0xc2,
+  21:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_SOF3  = 0xc3,
+  22:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+  23:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_SOF5  = 0xc5,
+  24:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_SOF6  = 0xc6,
+  25:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_SOF7  = 0xc7,
+  26:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+  27:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_JPG   = 0xc8,
+  28:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_SOF9  = 0xc9,
+  29:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_SOF10 = 0xca,
+  30:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_SOF11 = 0xcb,
+  31:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+  32:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_SOF13 = 0xcd,
+  33:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_SOF14 = 0xce,
+  34:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_SOF15 = 0xcf,
+  35:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+  36:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_DHT   = 0xc4,
+  37:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+  38:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_DAC   = 0xcc,
+  39:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+  40:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_RST0  = 0xd0,
+  41:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_RST1  = 0xd1,
+  42:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_RST2  = 0xd2,
+  43:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_RST3  = 0xd3,
+  44:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_RST4  = 0xd4,
+  45:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_RST5  = 0xd5,
+  46:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_RST6  = 0xd6,
+  47:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_RST7  = 0xd7,
+  48:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+  49:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_SOI   = 0xd8,
+  50:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_EOI   = 0xd9,
+  51:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_SOS   = 0xda,
+  52:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_DQT   = 0xdb,
+  53:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_DNL   = 0xdc,
+  54:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_DRI   = 0xdd,
+  55:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_DHP   = 0xde,
+  56:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_EXP   = 0xdf,
+  57:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+  58:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_APP0  = 0xe0,
+  59:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_APP1  = 0xe1,
+  60:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_APP2  = 0xe2,
+  61:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_APP3  = 0xe3,
+  62:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_APP4  = 0xe4,
+  63:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_APP5  = 0xe5,
+  64:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_APP6  = 0xe6,
+  65:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_APP7  = 0xe7,
+  66:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_APP8  = 0xe8,
+  67:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_APP9  = 0xe9,
+  68:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_APP10 = 0xea,
+  69:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_APP11 = 0xeb,
+  70:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_APP12 = 0xec,
+  71:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_APP13 = 0xed,
+  72:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_APP14 = 0xee,
+  73:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_APP15 = 0xef,
+  74:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+  75:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_JPG0  = 0xf0,
+  76:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_JPG8  = 0xf8,
+  77:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_JPG13 = 0xfd,
+  78:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_COM   = 0xfe,
+  79:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+  80:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_TEM   = 0x01,
+  81:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+  82:fltk-1.3.4-1/jpeg/jcmarker.c ****   M_ERROR = 0x100
+  83:fltk-1.3.4-1/jpeg/jcmarker.c **** } JPEG_MARKER;
+  84:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+  85:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+  86:fltk-1.3.4-1/jpeg/jcmarker.c **** /* Private state */
+  87:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+  88:fltk-1.3.4-1/jpeg/jcmarker.c **** typedef struct {
+  89:fltk-1.3.4-1/jpeg/jcmarker.c ****   struct jpeg_marker_writer pub; /* public fields */
+  90:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+  91:fltk-1.3.4-1/jpeg/jcmarker.c ****   unsigned int last_restart_interval; /* last DRI value emitted; 0 after SOI */
+  92:fltk-1.3.4-1/jpeg/jcmarker.c **** } my_marker_writer;
+  93:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+  94:fltk-1.3.4-1/jpeg/jcmarker.c **** typedef my_marker_writer * my_marker_ptr;
+  95:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+  96:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+  97:fltk-1.3.4-1/jpeg/jcmarker.c **** /*
+  98:fltk-1.3.4-1/jpeg/jcmarker.c ****  * Basic output routines.
+  99:fltk-1.3.4-1/jpeg/jcmarker.c ****  *
+ 100:fltk-1.3.4-1/jpeg/jcmarker.c ****  * Note that we do not support suspension while writing a marker.
+ 101:fltk-1.3.4-1/jpeg/jcmarker.c ****  * Therefore, an application using suspension must ensure that there is
+ 102:fltk-1.3.4-1/jpeg/jcmarker.c ****  * enough buffer space for the initial markers (typ. 600-700 bytes) before
+ 103:fltk-1.3.4-1/jpeg/jcmarker.c ****  * calling jpeg_start_compress, and enough space to write the trailing EOI
+ 104:fltk-1.3.4-1/jpeg/jcmarker.c ****  * (a few bytes) before calling jpeg_finish_compress.  Multipass compression
+ 105:fltk-1.3.4-1/jpeg/jcmarker.c ****  * modes are not supported at all with suspension, so those two are the only
+ 106:fltk-1.3.4-1/jpeg/jcmarker.c ****  * points where markers will be written.
+ 107:fltk-1.3.4-1/jpeg/jcmarker.c ****  */
+ 108:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 109:fltk-1.3.4-1/jpeg/jcmarker.c **** LOCAL(void)
+ 110:fltk-1.3.4-1/jpeg/jcmarker.c **** emit_byte (j_compress_ptr cinfo, int val)
+ 111:fltk-1.3.4-1/jpeg/jcmarker.c **** /* Emit a byte */
+ 112:fltk-1.3.4-1/jpeg/jcmarker.c **** {
+  16              		.loc 1 112 0
+  17              		.cfi_startproc
+  18              	.LVL0:
+  19 0000 53       		pushq	%rbx
+  20              		.cfi_def_cfa_offset 16
+  21              		.cfi_offset 3, -16
+ 113:fltk-1.3.4-1/jpeg/jcmarker.c ****   struct jpeg_destination_mgr * dest = cinfo->dest;
+  22              		.loc 1 113 0
+  23 0001 488B4728 		movq	40(%rdi), %rax
+  24              	.LVL1:
+ 114:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 115:fltk-1.3.4-1/jpeg/jcmarker.c ****   *(dest->next_output_byte)++ = (JOCTET) val;
+  25              		.loc 1 115 0
+  26 0005 488B10   		movq	(%rax), %rdx
+  27 0008 488D4A01 		leaq	1(%rdx), %rcx
+  28 000c 488908   		movq	%rcx, (%rax)
+  29 000f 408832   		movb	%sil, (%rdx)
+ 116:fltk-1.3.4-1/jpeg/jcmarker.c ****   if (--dest->free_in_buffer == 0) {
+  30              		.loc 1 116 0
+  31 0012 488B5808 		movq	8(%rax), %rbx
+  32 0016 488D53FF 		leaq	-1(%rbx), %rdx
+  33 001a 4885D2   		testq	%rdx, %rdx
+  34 001d 48895008 		movq	%rdx, 8(%rax)
+  35 0021 7405     		je	.L7
+  36              	.LVL2:
+  37              	.L1:
+ 117:fltk-1.3.4-1/jpeg/jcmarker.c ****     if (! (*dest->empty_output_buffer) (cinfo))
+ 118:fltk-1.3.4-1/jpeg/jcmarker.c ****       ERREXIT(cinfo, JERR_CANT_SUSPEND);
+ 119:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+ 120:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+  38              		.loc 1 120 0
+  39 0023 5B       		popq	%rbx
+  40              		.cfi_remember_state
+  41              		.cfi_def_cfa_offset 8
+  42 0024 C3       		ret
+  43              	.LVL3:
+  44              		.p2align 4,,10
+  45 0025 0F1F00   		.p2align 3
+  46              	.L7:
+  47              		.cfi_restore_state
+  48 0028 4889FB   		movq	%rdi, %rbx
+ 117:fltk-1.3.4-1/jpeg/jcmarker.c ****     if (! (*dest->empty_output_buffer) (cinfo))
+  49              		.loc 1 117 0
+  50 002b FF5018   		call	*24(%rax)
+  51              	.LVL4:
+  52 002e 85C0     		testl	%eax, %eax
+  53 0030 75F1     		jne	.L1
+  54              	.LVL5:
+  55              	.LBB65:
+  56              	.LBB66:
+ 118:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+  57              		.loc 1 118 0
+  58 0032 488B03   		movq	(%rbx), %rax
+  59 0035 4889DF   		movq	%rbx, %rdi
+  60 0038 C7402819 		movl	$25, 40(%rax)
+  60      000000
+  61 003f 488B03   		movq	(%rbx), %rax
+  62              	.LBE66:
+  63              	.LBE65:
+  64              		.loc 1 120 0
+  65 0042 5B       		popq	%rbx
+  66              		.cfi_def_cfa_offset 8
+  67              	.LVL6:
+  68              	.LBB68:
+  69              	.LBB67:
+ 118:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+  70              		.loc 1 118 0
+  71 0043 488B00   		movq	(%rax), %rax
+  72 0046 FFE0     		jmp	*%rax
+  73              	.LVL7:
+  74              	.LBE67:
+  75              	.LBE68:
+  76              		.cfi_endproc
+  77              	.LFE61:
+  79              		.section	.text.unlikely.emit_byte
+  80              	.LCOLDE0:
+  81              		.section	.text.emit_byte
+  82              	.LHOTE0:
+  83              		.section	.text.unlikely.emit_2bytes,"ax",@progbits
+  84              	.LCOLDB1:
+  85              		.section	.text.emit_2bytes,"ax",@progbits
+  86              	.LHOTB1:
+  87              		.p2align 4,,15
+  89              	emit_2bytes:
+  90              	.LFB63:
+ 121:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 122:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 123:fltk-1.3.4-1/jpeg/jcmarker.c **** LOCAL(void)
+ 124:fltk-1.3.4-1/jpeg/jcmarker.c **** emit_marker (j_compress_ptr cinfo, JPEG_MARKER mark)
+ 125:fltk-1.3.4-1/jpeg/jcmarker.c **** /* Emit a marker code */
+ 126:fltk-1.3.4-1/jpeg/jcmarker.c **** {
+ 127:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0xFF);
+ 128:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, (int) mark);
+ 129:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 130:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 131:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 132:fltk-1.3.4-1/jpeg/jcmarker.c **** LOCAL(void)
+ 133:fltk-1.3.4-1/jpeg/jcmarker.c **** emit_2bytes (j_compress_ptr cinfo, int value)
+ 134:fltk-1.3.4-1/jpeg/jcmarker.c **** /* Emit a 2-byte integer; these are always MSB first in JPEG files */
+ 135:fltk-1.3.4-1/jpeg/jcmarker.c **** {
+  91              		.loc 1 135 0
+  92              		.cfi_startproc
+  93              	.LVL8:
+  94 0000 55       		pushq	%rbp
+  95              		.cfi_def_cfa_offset 16
+  96              		.cfi_offset 6, -16
+  97 0001 53       		pushq	%rbx
+  98              		.cfi_def_cfa_offset 24
+  99              		.cfi_offset 3, -24
+ 100 0002 89F3     		movl	%esi, %ebx
+ 136:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, (value >> 8) & 0xFF);
+ 101              		.loc 1 136 0
+ 102 0004 0FB6F7   		movzbl	%bh, %esi
+ 103              	.LVL9:
+ 135:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, (value >> 8) & 0xFF);
+ 104              		.loc 1 135 0
+ 105 0007 4889FD   		movq	%rdi, %rbp
+ 106 000a 4883EC08 		subq	$8, %rsp
+ 107              		.cfi_def_cfa_offset 32
+ 108              		.loc 1 136 0
+ 109 000e E8000000 		call	emit_byte
+ 109      00
+ 110              	.LVL10:
+ 137:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, value & 0xFF);
+ 138:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 111              		.loc 1 138 0
+ 112 0013 4883C408 		addq	$8, %rsp
+ 113              		.cfi_def_cfa_offset 24
+ 137:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, value & 0xFF);
+ 114              		.loc 1 137 0
+ 115 0017 0FB6F3   		movzbl	%bl, %esi
+ 116 001a 4889EF   		movq	%rbp, %rdi
+ 117              		.loc 1 138 0
+ 118 001d 5B       		popq	%rbx
+ 119              		.cfi_def_cfa_offset 16
+ 120              	.LVL11:
+ 121 001e 5D       		popq	%rbp
+ 122              		.cfi_def_cfa_offset 8
+ 123              	.LVL12:
+ 137:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, value & 0xFF);
+ 124              		.loc 1 137 0
+ 125 001f E9000000 		jmp	emit_byte
+ 125      00
+ 126              	.LVL13:
+ 127              		.cfi_endproc
+ 128              	.LFE63:
+ 130              		.section	.text.unlikely.emit_2bytes
+ 131              	.LCOLDE1:
+ 132              		.section	.text.emit_2bytes
+ 133              	.LHOTE1:
+ 134              		.section	.text.unlikely.emit_dqt,"ax",@progbits
+ 135              	.LCOLDB2:
+ 136              		.section	.text.emit_dqt,"ax",@progbits
+ 137              	.LHOTB2:
+ 138              		.p2align 4,,15
+ 140              	emit_dqt:
+ 141              	.LFB64:
+ 139:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 140:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 141:fltk-1.3.4-1/jpeg/jcmarker.c **** /*
+ 142:fltk-1.3.4-1/jpeg/jcmarker.c ****  * Routines to write specific marker types.
+ 143:fltk-1.3.4-1/jpeg/jcmarker.c ****  */
+ 144:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 145:fltk-1.3.4-1/jpeg/jcmarker.c **** LOCAL(int)
+ 146:fltk-1.3.4-1/jpeg/jcmarker.c **** emit_dqt (j_compress_ptr cinfo, int index)
+ 147:fltk-1.3.4-1/jpeg/jcmarker.c **** /* Emit a DQT marker */
+ 148:fltk-1.3.4-1/jpeg/jcmarker.c **** /* Returns the precision used (0 = 8bits, 1 = 16bits) for baseline checking */
+ 149:fltk-1.3.4-1/jpeg/jcmarker.c **** {
+ 142              		.loc 1 149 0
+ 143              		.cfi_startproc
+ 144              	.LVL14:
+ 145 0000 4157     		pushq	%r15
+ 146              		.cfi_def_cfa_offset 16
+ 147              		.cfi_offset 15, -16
+ 148 0002 4156     		pushq	%r14
+ 149              		.cfi_def_cfa_offset 24
+ 150              		.cfi_offset 14, -24
+ 151 0004 4863C6   		movslq	%esi, %rax
+ 152 0007 4155     		pushq	%r13
+ 153              		.cfi_def_cfa_offset 32
+ 154              		.cfi_offset 13, -32
+ 155 0009 4154     		pushq	%r12
+ 156              		.cfi_def_cfa_offset 40
+ 157              		.cfi_offset 12, -40
+ 158 000b 4989C5   		movq	%rax, %r13
+ 159 000e 55       		pushq	%rbp
+ 160              		.cfi_def_cfa_offset 48
+ 161              		.cfi_offset 6, -48
+ 162 000f 53       		pushq	%rbx
+ 163              		.cfi_def_cfa_offset 56
+ 164              		.cfi_offset 3, -56
+ 165 0010 4889FD   		movq	%rdi, %rbp
+ 166 0013 4883EC08 		subq	$8, %rsp
+ 167              		.cfi_def_cfa_offset 64
+ 150:fltk-1.3.4-1/jpeg/jcmarker.c ****   JQUANT_TBL * qtbl = cinfo->quant_tbl_ptrs[index];
+ 168              		.loc 1 150 0
+ 169 0017 4C8B64C7 		movq	112(%rdi,%rax,8), %r12
+ 169      70
+ 170              	.LVL15:
+ 151:fltk-1.3.4-1/jpeg/jcmarker.c ****   int prec;
+ 152:fltk-1.3.4-1/jpeg/jcmarker.c ****   int i;
+ 153:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 154:fltk-1.3.4-1/jpeg/jcmarker.c ****   if (qtbl == NULL)
+ 171              		.loc 1 154 0
+ 172 001c 4D85E4   		testq	%r12, %r12
+ 173 001f 0F846701 		je	.L35
+ 173      0000
+ 174              	.LVL16:
+ 175              	.L11:
+ 155:fltk-1.3.4-1/jpeg/jcmarker.c ****     ERREXIT1(cinfo, JERR_NO_QUANT_TABLE, index);
+ 156:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 157:fltk-1.3.4-1/jpeg/jcmarker.c ****   prec = 0;
+ 158:fltk-1.3.4-1/jpeg/jcmarker.c ****   for (i = 0; i <= cinfo->lim_Se; i++) {
+ 176              		.loc 1 158 0
+ 177 0025 486385E8 		movslq	488(%rbp), %rax
+ 177      010000
+ 178 002c 85C0     		testl	%eax, %eax
+ 179 002e 0F884501 		js	.L12
+ 179      0000
+ 180 0034 488B95E0 		movq	480(%rbp), %rdx
+ 180      010000
+ 181 003b 31DB     		xorl	%ebx, %ebx
+ 159:fltk-1.3.4-1/jpeg/jcmarker.c ****     if (qtbl->quantval[cinfo->natural_order[i]] > 255)
+ 160:fltk-1.3.4-1/jpeg/jcmarker.c ****       prec = 1;
+ 182              		.loc 1 160 0
+ 183 003d B9010000 		movl	$1, %ecx
+ 183      00
+ 184 0042 488D7C82 		leaq	4(%rdx,%rax,4), %rdi
+ 184      04
+ 185              	.LVL17:
+ 186 0047 660F1F84 		.p2align 4,,10
+ 186      00000000 
+ 186      00
+ 187              		.p2align 3
+ 188              	.L14:
+ 159:fltk-1.3.4-1/jpeg/jcmarker.c ****     if (qtbl->quantval[cinfo->natural_order[i]] > 255)
+ 189              		.loc 1 159 0
+ 190 0050 486302   		movslq	(%rdx), %rax
+ 191              		.loc 1 160 0
+ 192 0053 6641813C 		cmpw	$256, (%r12,%rax,2)
+ 192      440001
+ 193 005a 0F43D9   		cmovnb	%ecx, %ebx
+ 194              	.LVL18:
+ 195 005d 4883C204 		addq	$4, %rdx
+ 158:fltk-1.3.4-1/jpeg/jcmarker.c ****     if (qtbl->quantval[cinfo->natural_order[i]] > 255)
+ 196              		.loc 1 158 0
+ 197 0061 4839D7   		cmpq	%rdx, %rdi
+ 198 0064 75EA     		jne	.L14
+ 161:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+ 162:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 163:fltk-1.3.4-1/jpeg/jcmarker.c ****   if (! qtbl->sent_table) {
+ 199              		.loc 1 163 0
+ 200 0066 418B8C24 		movl	128(%r12), %ecx
+ 200      80000000 
+ 201 006e 85C9     		testl	%ecx, %ecx
+ 202 0070 7416     		je	.L36
+ 203              	.LVL19:
+ 204              	.L26:
+ 164:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_marker(cinfo, M_DQT);
+ 165:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 166:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_2bytes(cinfo,
+ 167:fltk-1.3.4-1/jpeg/jcmarker.c ****       prec ? cinfo->lim_Se * 2 + 2 + 1 + 2 : cinfo->lim_Se + 1 + 1 + 2);
+ 168:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 169:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_byte(cinfo, index + (prec<<4));
+ 170:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 171:fltk-1.3.4-1/jpeg/jcmarker.c ****     for (i = 0; i <= cinfo->lim_Se; i++) {
+ 172:fltk-1.3.4-1/jpeg/jcmarker.c ****       /* The table entries must be emitted in zigzag order. */
+ 173:fltk-1.3.4-1/jpeg/jcmarker.c ****       unsigned int qval = qtbl->quantval[cinfo->natural_order[i]];
+ 174:fltk-1.3.4-1/jpeg/jcmarker.c ****       if (prec)
+ 175:fltk-1.3.4-1/jpeg/jcmarker.c **** 	emit_byte(cinfo, (int) (qval >> 8));
+ 176:fltk-1.3.4-1/jpeg/jcmarker.c ****       emit_byte(cinfo, (int) (qval & 0xFF));
+ 177:fltk-1.3.4-1/jpeg/jcmarker.c ****     }
+ 178:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 179:fltk-1.3.4-1/jpeg/jcmarker.c ****     qtbl->sent_table = TRUE;
+ 180:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+ 181:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 182:fltk-1.3.4-1/jpeg/jcmarker.c ****   return prec;
+ 183:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 205              		.loc 1 183 0
+ 206 0072 4883C408 		addq	$8, %rsp
+ 207              		.cfi_remember_state
+ 208              		.cfi_def_cfa_offset 56
+ 209 0076 89D8     		movl	%ebx, %eax
+ 210 0078 5B       		popq	%rbx
+ 211              		.cfi_def_cfa_offset 48
+ 212 0079 5D       		popq	%rbp
+ 213              		.cfi_def_cfa_offset 40
+ 214              	.LVL20:
+ 215 007a 415C     		popq	%r12
+ 216              		.cfi_def_cfa_offset 32
+ 217              	.LVL21:
+ 218 007c 415D     		popq	%r13
+ 219              		.cfi_def_cfa_offset 24
+ 220 007e 415E     		popq	%r14
+ 221              		.cfi_def_cfa_offset 16
+ 222 0080 415F     		popq	%r15
+ 223              		.cfi_def_cfa_offset 8
+ 224 0082 C3       		ret
+ 225              	.LVL22:
+ 226              		.p2align 4,,10
+ 227 0083 0F1F4400 		.p2align 3
+ 227      00
+ 228              	.L36:
+ 229              		.cfi_restore_state
+ 230              	.LBB69:
+ 231              	.LBB70:
+ 127:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, (int) mark);
+ 232              		.loc 1 127 0
+ 233 0088 BEFF0000 		movl	$255, %esi
+ 233      00
+ 234 008d 4889EF   		movq	%rbp, %rdi
+ 235 0090 E8000000 		call	emit_byte
+ 235      00
+ 236              	.LVL23:
+ 128:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 237              		.loc 1 128 0
+ 238 0095 BEDB0000 		movl	$219, %esi
+ 238      00
+ 239 009a 4889EF   		movq	%rbp, %rdi
+ 240 009d E8000000 		call	emit_byte
+ 240      00
+ 241              	.LVL24:
+ 242              	.LBE70:
+ 243              	.LBE69:
+ 166:fltk-1.3.4-1/jpeg/jcmarker.c ****       prec ? cinfo->lim_Se * 2 + 2 + 1 + 2 : cinfo->lim_Se + 1 + 1 + 2);
+ 244              		.loc 1 166 0
+ 245 00a2 85DB     		testl	%ebx, %ebx
+ 246 00a4 0F84A600 		je	.L16
+ 246      0000
+ 166:fltk-1.3.4-1/jpeg/jcmarker.c ****       prec ? cinfo->lim_Se * 2 + 2 + 1 + 2 : cinfo->lim_Se + 1 + 1 + 2);
+ 247              		.loc 1 166 0 is_stmt 0 discriminator 1
+ 248 00aa 8B85E801 		movl	488(%rbp), %eax
+ 248      0000
+ 249 00b0 41BE1000 		movl	$16, %r14d
+ 249      0000
+ 250 00b6 BB010000 		movl	$1, %ebx
+ 250      00
+ 251              	.LVL25:
+ 252 00bb 8D740005 		leal	5(%rax,%rax), %esi
+ 253              	.L17:
+ 166:fltk-1.3.4-1/jpeg/jcmarker.c ****       prec ? cinfo->lim_Se * 2 + 2 + 1 + 2 : cinfo->lim_Se + 1 + 1 + 2);
+ 254              		.loc 1 166 0 discriminator 4
+ 255 00bf 4889EF   		movq	%rbp, %rdi
+ 171:fltk-1.3.4-1/jpeg/jcmarker.c ****       /* The table entries must be emitted in zigzag order. */
+ 256              		.loc 1 171 0 is_stmt 1 discriminator 4
+ 257 00c2 4531FF   		xorl	%r15d, %r15d
+ 166:fltk-1.3.4-1/jpeg/jcmarker.c ****       prec ? cinfo->lim_Se * 2 + 2 + 1 + 2 : cinfo->lim_Se + 1 + 1 + 2);
+ 258              		.loc 1 166 0 discriminator 4
+ 259 00c5 E8000000 		call	emit_2bytes
+ 259      00
+ 260              	.LVL26:
+ 169:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 261              		.loc 1 169 0 discriminator 4
+ 262 00ca 438D7435 		leal	0(%r13,%r14), %esi
+ 262      00
+ 263 00cf 4889EF   		movq	%rbp, %rdi
+ 171:fltk-1.3.4-1/jpeg/jcmarker.c ****       /* The table entries must be emitted in zigzag order. */
+ 264              		.loc 1 171 0 discriminator 4
+ 265 00d2 4531F6   		xorl	%r14d, %r14d
+ 169:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 266              		.loc 1 169 0 discriminator 4
+ 267 00d5 E8000000 		call	emit_byte
+ 267      00
+ 268              	.LVL27:
+ 171:fltk-1.3.4-1/jpeg/jcmarker.c ****       /* The table entries must be emitted in zigzag order. */
+ 269              		.loc 1 171 0 discriminator 4
+ 270 00da 8B95E801 		movl	488(%rbp), %edx
+ 270      0000
+ 271 00e0 85D2     		testl	%edx, %edx
+ 272 00e2 7929     		jns	.L29
+ 273 00e4 E97F0000 		jmp	.L21
+ 273      00
+ 274              	.LVL28:
+ 275 00e9 0F1F8000 		.p2align 4,,10
+ 275      000000
+ 276              		.p2align 3
+ 277              	.L19:
+ 278              	.LBB72:
+ 176:fltk-1.3.4-1/jpeg/jcmarker.c ****     }
+ 279              		.loc 1 176 0 discriminator 2
+ 280 00f0 410FB6F5 		movzbl	%r13b, %esi
+ 281 00f4 4889EF   		movq	%rbp, %rdi
+ 282              	.LBE72:
+ 171:fltk-1.3.4-1/jpeg/jcmarker.c ****       /* The table entries must be emitted in zigzag order. */
+ 283              		.loc 1 171 0 discriminator 2
+ 284 00f7 4183C601 		addl	$1, %r14d
+ 285              	.LVL29:
+ 286              	.LBB73:
+ 176:fltk-1.3.4-1/jpeg/jcmarker.c ****     }
+ 287              		.loc 1 176 0 discriminator 2
+ 288 00fb E8000000 		call	emit_byte
+ 288      00
+ 289              	.LVL30:
+ 290 0100 4983C704 		addq	$4, %r15
+ 291              	.LBE73:
+ 171:fltk-1.3.4-1/jpeg/jcmarker.c ****       /* The table entries must be emitted in zigzag order. */
+ 292              		.loc 1 171 0 discriminator 2
+ 293 0104 4439B5E8 		cmpl	%r14d, 488(%rbp)
+ 293      010000
+ 294 010b 7C5B     		jl	.L21
+ 295              	.LVL31:
+ 296              	.L29:
+ 297              	.LBB74:
+ 173:fltk-1.3.4-1/jpeg/jcmarker.c ****       if (prec)
+ 298              		.loc 1 173 0
+ 299 010d 488B85E0 		movq	480(%rbp), %rax
+ 299      010000
+ 174:fltk-1.3.4-1/jpeg/jcmarker.c **** 	emit_byte(cinfo, (int) (qval >> 8));
+ 300              		.loc 1 174 0
+ 301 0114 85DB     		testl	%ebx, %ebx
+ 173:fltk-1.3.4-1/jpeg/jcmarker.c ****       if (prec)
+ 302              		.loc 1 173 0
+ 303 0116 4A630438 		movslq	(%rax,%r15), %rax
+ 304 011a 450FB72C 		movzwl	(%r12,%rax,2), %r13d
+ 304      44
+ 305              	.LVL32:
+ 174:fltk-1.3.4-1/jpeg/jcmarker.c **** 	emit_byte(cinfo, (int) (qval >> 8));
+ 306              		.loc 1 174 0
+ 307 011f 74CF     		je	.L19
+ 175:fltk-1.3.4-1/jpeg/jcmarker.c ****       emit_byte(cinfo, (int) (qval & 0xFF));
+ 308              		.loc 1 175 0
+ 309 0121 4C89E8   		movq	%r13, %rax
+ 310 0124 4889EF   		movq	%rbp, %rdi
+ 311 0127 0FB6F4   		movzbl	%ah, %esi
+ 312 012a E8000000 		call	emit_byte
+ 312      00
+ 313              	.LVL33:
+ 314 012f EBBF     		jmp	.L19
+ 315              	.LVL34:
+ 316              	.L22:
+ 317              	.LBE74:
+ 318              	.LBB75:
+ 319              	.LBB71:
+ 127:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, (int) mark);
+ 320              		.loc 1 127 0
+ 321 0131 BEFF0000 		movl	$255, %esi
+ 321      00
+ 322 0136 4889EF   		movq	%rbp, %rdi
+ 323 0139 E8000000 		call	emit_byte
+ 323      00
+ 324              	.LVL35:
+ 128:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 325              		.loc 1 128 0
+ 326 013e BEDB0000 		movl	$219, %esi
+ 326      00
+ 327 0143 4889EF   		movq	%rbp, %rdi
+ 328 0146 E8000000 		call	emit_byte
+ 328      00
+ 329              	.LVL36:
+ 330 014b 0F1F4400 		.p2align 4,,10
+ 330      00
+ 331              		.p2align 3
+ 332              	.L16:
+ 333              	.LBE71:
+ 334              	.LBE75:
+ 166:fltk-1.3.4-1/jpeg/jcmarker.c ****       prec ? cinfo->lim_Se * 2 + 2 + 1 + 2 : cinfo->lim_Se + 1 + 1 + 2);
+ 335              		.loc 1 166 0 discriminator 2
+ 336 0150 8B85E801 		movl	488(%rbp), %eax
+ 336      0000
+ 337 0156 4531F6   		xorl	%r14d, %r14d
+ 338 0159 31DB     		xorl	%ebx, %ebx
+ 339 015b 8D7004   		leal	4(%rax), %esi
+ 340 015e E95CFFFF 		jmp	.L17
+ 340      FF
+ 341              		.p2align 4,,10
+ 342 0163 0F1F4400 		.p2align 3
+ 342      00
+ 343              	.L21:
+ 179:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+ 344              		.loc 1 179 0
+ 345 0168 41C78424 		movl	$1, 128(%r12)
+ 345      80000000 
+ 345      01000000 
+ 346 0174 E9F9FEFF 		jmp	.L26
+ 346      FF
+ 347              	.LVL37:
+ 348              	.L12:
+ 163:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_marker(cinfo, M_DQT);
+ 349              		.loc 1 163 0
+ 350 0179 418B8424 		movl	128(%r12), %eax
+ 350      80000000 
+ 351 0181 85C0     		testl	%eax, %eax
+ 352 0183 74AC     		je	.L22
+ 157:fltk-1.3.4-1/jpeg/jcmarker.c ****   for (i = 0; i <= cinfo->lim_Se; i++) {
+ 353              		.loc 1 157 0
+ 354 0185 31DB     		xorl	%ebx, %ebx
+ 182:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 355              		.loc 1 182 0
+ 356 0187 E9E6FEFF 		jmp	.L26
+ 356      FF
+ 357              	.LVL38:
+ 358              	.L35:
+ 155:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 359              		.loc 1 155 0
+ 360 018c 488B07   		movq	(%rdi), %rax
+ 361 018f C7402836 		movl	$54, 40(%rax)
+ 361      000000
+ 362 0196 488B07   		movq	(%rdi), %rax
+ 363 0199 4489682C 		movl	%r13d, 44(%rax)
+ 364 019d 488B07   		movq	(%rdi), %rax
+ 365 01a0 FF10     		call	*(%rax)
+ 366              	.LVL39:
+ 367 01a2 E97EFEFF 		jmp	.L11
+ 367      FF
+ 368              		.cfi_endproc
+ 369              	.LFE64:
+ 371              		.section	.text.unlikely.emit_dqt
+ 372              	.LCOLDE2:
+ 373              		.section	.text.emit_dqt
+ 374              	.LHOTE2:
+ 375              		.section	.text.unlikely.emit_dht,"ax",@progbits
+ 376              	.LCOLDB3:
+ 377              		.section	.text.emit_dht,"ax",@progbits
+ 378              	.LHOTB3:
+ 379              		.p2align 4,,15
+ 381              	emit_dht:
+ 382              	.LFB65:
+ 184:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 185:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 186:fltk-1.3.4-1/jpeg/jcmarker.c **** LOCAL(void)
+ 187:fltk-1.3.4-1/jpeg/jcmarker.c **** emit_dht (j_compress_ptr cinfo, int index, boolean is_ac)
+ 188:fltk-1.3.4-1/jpeg/jcmarker.c **** /* Emit a DHT marker */
+ 189:fltk-1.3.4-1/jpeg/jcmarker.c **** {
+ 383              		.loc 1 189 0
+ 384              		.cfi_startproc
+ 385              	.LVL40:
+ 386 0000 4157     		pushq	%r15
+ 387              		.cfi_def_cfa_offset 16
+ 388              		.cfi_offset 15, -16
+ 389 0002 4156     		pushq	%r14
+ 390              		.cfi_def_cfa_offset 24
+ 391              		.cfi_offset 14, -24
+ 392 0004 4189F7   		movl	%esi, %r15d
+ 393 0007 4155     		pushq	%r13
+ 394              		.cfi_def_cfa_offset 32
+ 395              		.cfi_offset 13, -32
+ 396 0009 4154     		pushq	%r12
+ 397              		.cfi_def_cfa_offset 40
+ 398              		.cfi_offset 12, -40
+ 190:fltk-1.3.4-1/jpeg/jcmarker.c ****   JHUFF_TBL * htbl;
+ 191:fltk-1.3.4-1/jpeg/jcmarker.c ****   int length, i;
+ 192:fltk-1.3.4-1/jpeg/jcmarker.c ****   
+ 193:fltk-1.3.4-1/jpeg/jcmarker.c ****   if (is_ac) {
+ 194:fltk-1.3.4-1/jpeg/jcmarker.c ****     htbl = cinfo->ac_huff_tbl_ptrs[index];
+ 399              		.loc 1 194 0
+ 400 000b 4863C6   		movslq	%esi, %rax
+ 189:fltk-1.3.4-1/jpeg/jcmarker.c ****   JHUFF_TBL * htbl;
+ 401              		.loc 1 189 0
+ 402 000e 55       		pushq	%rbp
+ 403              		.cfi_def_cfa_offset 48
+ 404              		.cfi_offset 6, -48
+ 405 000f 53       		pushq	%rbx
+ 406              		.cfi_def_cfa_offset 56
+ 407              		.cfi_offset 3, -56
+ 408 0010 4889FD   		movq	%rdi, %rbp
+ 409 0013 4883EC08 		subq	$8, %rsp
+ 410              		.cfi_def_cfa_offset 64
+ 193:fltk-1.3.4-1/jpeg/jcmarker.c ****     htbl = cinfo->ac_huff_tbl_ptrs[index];
+ 411              		.loc 1 193 0
+ 412 0017 85D2     		testl	%edx, %edx
+ 413 0019 7435     		je	.L38
+ 414              		.loc 1 194 0
+ 415 001b 4C8BACC7 		movq	192(%rdi,%rax,8), %r13
+ 415      C0000000 
+ 416              	.LVL41:
+ 195:fltk-1.3.4-1/jpeg/jcmarker.c ****     index += 0x10;		/* output index has AC bit set */
+ 417              		.loc 1 195 0
+ 418 0023 4183C710 		addl	$16, %r15d
+ 419              	.LVL42:
+ 420              	.L39:
+ 196:fltk-1.3.4-1/jpeg/jcmarker.c ****   } else {
+ 197:fltk-1.3.4-1/jpeg/jcmarker.c ****     htbl = cinfo->dc_huff_tbl_ptrs[index];
+ 198:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+ 199:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 200:fltk-1.3.4-1/jpeg/jcmarker.c ****   if (htbl == NULL)
+ 421              		.loc 1 200 0
+ 422 0027 4D85ED   		testq	%r13, %r13
+ 423 002a 0F84E600 		je	.L51
+ 423      0000
+ 424              	.LVL43:
+ 425              	.L40:
+ 201:fltk-1.3.4-1/jpeg/jcmarker.c ****     ERREXIT1(cinfo, JERR_NO_HUFF_TABLE, index);
+ 202:fltk-1.3.4-1/jpeg/jcmarker.c ****   
+ 203:fltk-1.3.4-1/jpeg/jcmarker.c ****   if (! htbl->sent_table) {
+ 426              		.loc 1 203 0
+ 427 0030 418B8514 		movl	276(%r13), %eax
+ 427      010000
+ 428 0037 85C0     		testl	%eax, %eax
+ 429 0039 7425     		je	.L52
+ 204:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_marker(cinfo, M_DHT);
+ 205:fltk-1.3.4-1/jpeg/jcmarker.c ****     
+ 206:fltk-1.3.4-1/jpeg/jcmarker.c ****     length = 0;
+ 207:fltk-1.3.4-1/jpeg/jcmarker.c ****     for (i = 1; i <= 16; i++)
+ 208:fltk-1.3.4-1/jpeg/jcmarker.c ****       length += htbl->bits[i];
+ 209:fltk-1.3.4-1/jpeg/jcmarker.c ****     
+ 210:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_2bytes(cinfo, length + 2 + 1 + 16);
+ 211:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_byte(cinfo, index);
+ 212:fltk-1.3.4-1/jpeg/jcmarker.c ****     
+ 213:fltk-1.3.4-1/jpeg/jcmarker.c ****     for (i = 1; i <= 16; i++)
+ 214:fltk-1.3.4-1/jpeg/jcmarker.c ****       emit_byte(cinfo, htbl->bits[i]);
+ 215:fltk-1.3.4-1/jpeg/jcmarker.c ****     
+ 216:fltk-1.3.4-1/jpeg/jcmarker.c ****     for (i = 0; i < length; i++)
+ 217:fltk-1.3.4-1/jpeg/jcmarker.c ****       emit_byte(cinfo, htbl->huffval[i]);
+ 218:fltk-1.3.4-1/jpeg/jcmarker.c ****     
+ 219:fltk-1.3.4-1/jpeg/jcmarker.c ****     htbl->sent_table = TRUE;
+ 220:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+ 221:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 430              		.loc 1 221 0
+ 431 003b 4883C408 		addq	$8, %rsp
+ 432              		.cfi_remember_state
+ 433              		.cfi_def_cfa_offset 56
+ 434 003f 5B       		popq	%rbx
+ 435              		.cfi_def_cfa_offset 48
+ 436 0040 5D       		popq	%rbp
+ 437              		.cfi_def_cfa_offset 40
+ 438              	.LVL44:
+ 439 0041 415C     		popq	%r12
+ 440              		.cfi_def_cfa_offset 32
+ 441 0043 415D     		popq	%r13
+ 442              		.cfi_def_cfa_offset 24
+ 443              	.LVL45:
+ 444 0045 415E     		popq	%r14
+ 445              		.cfi_def_cfa_offset 16
+ 446 0047 415F     		popq	%r15
+ 447              		.cfi_def_cfa_offset 8
+ 448              	.LVL46:
+ 449 0049 C3       		ret
+ 450              	.LVL47:
+ 451 004a 660F1F44 		.p2align 4,,10
+ 451      0000
+ 452              		.p2align 3
+ 453              	.L38:
+ 454              		.cfi_restore_state
+ 197:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+ 455              		.loc 1 197 0
+ 456 0050 4C8BACC7 		movq	160(%rdi,%rax,8), %r13
+ 456      A0000000 
+ 457              	.LVL48:
+ 458 0058 EBCD     		jmp	.L39
+ 459              	.LVL49:
+ 460 005a 660F1F44 		.p2align 4,,10
+ 460      0000
+ 461              		.p2align 3
+ 462              	.L52:
+ 463              	.LBB76:
+ 464              	.LBB77:
+ 127:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, (int) mark);
+ 465              		.loc 1 127 0
+ 466 0060 BEFF0000 		movl	$255, %esi
+ 466      00
+ 467 0065 4889EF   		movq	%rbp, %rdi
+ 468 0068 4D8D6501 		leaq	1(%r13), %r12
+ 469 006c E8000000 		call	emit_byte
+ 469      00
+ 470              	.LVL50:
+ 471 0071 498D5D11 		leaq	17(%r13), %rbx
+ 128:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 472              		.loc 1 128 0
+ 473 0075 BEC40000 		movl	$196, %esi
+ 473      00
+ 474 007a 4889EF   		movq	%rbp, %rdi
+ 475 007d E8000000 		call	emit_byte
+ 475      00
+ 476              	.LVL51:
+ 477              	.LBE77:
+ 478              	.LBE76:
+ 206:fltk-1.3.4-1/jpeg/jcmarker.c ****     for (i = 1; i <= 16; i++)
+ 479              		.loc 1 206 0
+ 480 0082 4531F6   		xorl	%r14d, %r14d
+ 481              	.LBB79:
+ 482              	.LBB78:
+ 128:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 483              		.loc 1 128 0
+ 484 0085 4C89E0   		movq	%r12, %rax
+ 485              	.LVL52:
+ 486 0088 0F1F8400 		.p2align 4,,10
+ 486      00000000 
+ 487              		.p2align 3
+ 488              	.L42:
+ 489              	.LBE78:
+ 490              	.LBE79:
+ 208:fltk-1.3.4-1/jpeg/jcmarker.c ****     
+ 491              		.loc 1 208 0 discriminator 3
+ 492 0090 0FB610   		movzbl	(%rax), %edx
+ 493 0093 4883C001 		addq	$1, %rax
+ 494              	.LVL53:
+ 495 0097 4101D6   		addl	%edx, %r14d
+ 496              	.LVL54:
+ 207:fltk-1.3.4-1/jpeg/jcmarker.c ****       length += htbl->bits[i];
+ 497              		.loc 1 207 0 discriminator 3
+ 498 009a 4839D8   		cmpq	%rbx, %rax
+ 499 009d 75F1     		jne	.L42
+ 210:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_byte(cinfo, index);
+ 500              		.loc 1 210 0
+ 501 009f 418D7613 		leal	19(%r14), %esi
+ 502 00a3 4889EF   		movq	%rbp, %rdi
+ 503 00a6 E8000000 		call	emit_2bytes
+ 503      00
+ 504              	.LVL55:
+ 211:fltk-1.3.4-1/jpeg/jcmarker.c ****     
+ 505              		.loc 1 211 0
+ 506 00ab 4489FE   		movl	%r15d, %esi
+ 507 00ae 4889EF   		movq	%rbp, %rdi
+ 508 00b1 E8000000 		call	emit_byte
+ 508      00
+ 509              	.LVL56:
+ 510 00b6 662E0F1F 		.p2align 4,,10
+ 510      84000000 
+ 510      0000
+ 511              		.p2align 3
+ 512              	.L43:
+ 214:fltk-1.3.4-1/jpeg/jcmarker.c ****     
+ 513              		.loc 1 214 0 discriminator 3
+ 514 00c0 410FB634 		movzbl	(%r12), %esi
+ 514      24
+ 515 00c5 4889EF   		movq	%rbp, %rdi
+ 516 00c8 4983C401 		addq	$1, %r12
+ 517              	.LVL57:
+ 518 00cc E8000000 		call	emit_byte
+ 518      00
+ 519              	.LVL58:
+ 213:fltk-1.3.4-1/jpeg/jcmarker.c ****       emit_byte(cinfo, htbl->bits[i]);
+ 520              		.loc 1 213 0 discriminator 3
+ 521 00d1 4939DC   		cmpq	%rbx, %r12
+ 522 00d4 75EA     		jne	.L43
+ 523              	.LVL59:
+ 216:fltk-1.3.4-1/jpeg/jcmarker.c ****       emit_byte(cinfo, htbl->huffval[i]);
+ 524              		.loc 1 216 0 discriminator 1
+ 525 00d6 4585F6   		testl	%r14d, %r14d
+ 526 00d9 7421     		je	.L46
+ 527 00db 418D46FF 		leal	-1(%r14), %eax
+ 528 00df 4D8D6405 		leaq	18(%r13,%rax), %r12
+ 528      12
+ 529              	.LVL60:
+ 530              		.p2align 4,,10
+ 531 00e4 0F1F4000 		.p2align 3
+ 532              	.L45:
+ 217:fltk-1.3.4-1/jpeg/jcmarker.c ****     
+ 533              		.loc 1 217 0 discriminator 3
+ 534 00e8 0FB633   		movzbl	(%rbx), %esi
+ 535 00eb 4889EF   		movq	%rbp, %rdi
+ 536 00ee 4883C301 		addq	$1, %rbx
+ 537              	.LVL61:
+ 538 00f2 E8000000 		call	emit_byte
+ 538      00
+ 539              	.LVL62:
+ 216:fltk-1.3.4-1/jpeg/jcmarker.c ****       emit_byte(cinfo, htbl->huffval[i]);
+ 540              		.loc 1 216 0 discriminator 3
+ 541 00f7 4C39E3   		cmpq	%r12, %rbx
+ 542 00fa 75EC     		jne	.L45
+ 543              	.L46:
+ 219:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+ 544              		.loc 1 219 0
+ 545 00fc 41C78514 		movl	$1, 276(%r13)
+ 545      01000001 
+ 545      000000
+ 546              		.loc 1 221 0
+ 547 0107 4883C408 		addq	$8, %rsp
+ 548              		.cfi_remember_state
+ 549              		.cfi_def_cfa_offset 56
+ 550 010b 5B       		popq	%rbx
+ 551              		.cfi_def_cfa_offset 48
+ 552 010c 5D       		popq	%rbp
+ 553              		.cfi_def_cfa_offset 40
+ 554              	.LVL63:
+ 555 010d 415C     		popq	%r12
+ 556              		.cfi_def_cfa_offset 32
+ 557 010f 415D     		popq	%r13
+ 558              		.cfi_def_cfa_offset 24
+ 559              	.LVL64:
+ 560 0111 415E     		popq	%r14
+ 561              		.cfi_def_cfa_offset 16
+ 562              	.LVL65:
+ 563 0113 415F     		popq	%r15
+ 564              		.cfi_def_cfa_offset 8
+ 565              	.LVL66:
+ 566 0115 C3       		ret
+ 567              	.LVL67:
+ 568              	.L51:
+ 569              		.cfi_restore_state
+ 201:fltk-1.3.4-1/jpeg/jcmarker.c ****   
+ 570              		.loc 1 201 0
+ 571 0116 488B4500 		movq	0(%rbp), %rax
+ 572 011a 4889EF   		movq	%rbp, %rdi
+ 573              	.LVL68:
+ 574 011d C7402834 		movl	$52, 40(%rax)
+ 574      000000
+ 575 0124 488B4500 		movq	0(%rbp), %rax
+ 576 0128 4489782C 		movl	%r15d, 44(%rax)
+ 577 012c 488B4500 		movq	0(%rbp), %rax
+ 578 0130 FF10     		call	*(%rax)
+ 579              	.LVL69:
+ 580 0132 E9F9FEFF 		jmp	.L40
+ 580      FF
+ 581              		.cfi_endproc
+ 582              	.LFE65:
+ 584              		.section	.text.unlikely.emit_dht
+ 585              	.LCOLDE3:
+ 586              		.section	.text.emit_dht
+ 587              	.LHOTE3:
+ 588              		.section	.text.unlikely.emit_sof,"ax",@progbits
+ 589              	.LCOLDB4:
+ 590              		.section	.text.emit_sof,"ax",@progbits
+ 591              	.LHOTB4:
+ 592              		.p2align 4,,15
+ 594              	emit_sof:
+ 595              	.LFB69:
+ 222:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 223:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 224:fltk-1.3.4-1/jpeg/jcmarker.c **** LOCAL(void)
+ 225:fltk-1.3.4-1/jpeg/jcmarker.c **** emit_dac (j_compress_ptr cinfo)
+ 226:fltk-1.3.4-1/jpeg/jcmarker.c **** /* Emit a DAC marker */
+ 227:fltk-1.3.4-1/jpeg/jcmarker.c **** /* Since the useful info is so small, we want to emit all the tables in */
+ 228:fltk-1.3.4-1/jpeg/jcmarker.c **** /* one DAC marker.  Therefore this routine does its own scan of the table. */
+ 229:fltk-1.3.4-1/jpeg/jcmarker.c **** {
+ 230:fltk-1.3.4-1/jpeg/jcmarker.c **** #ifdef C_ARITH_CODING_SUPPORTED
+ 231:fltk-1.3.4-1/jpeg/jcmarker.c ****   char dc_in_use[NUM_ARITH_TBLS];
+ 232:fltk-1.3.4-1/jpeg/jcmarker.c ****   char ac_in_use[NUM_ARITH_TBLS];
+ 233:fltk-1.3.4-1/jpeg/jcmarker.c ****   int length, i;
+ 234:fltk-1.3.4-1/jpeg/jcmarker.c ****   jpeg_component_info *compptr;
+ 235:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 236:fltk-1.3.4-1/jpeg/jcmarker.c ****   for (i = 0; i < NUM_ARITH_TBLS; i++)
+ 237:fltk-1.3.4-1/jpeg/jcmarker.c ****     dc_in_use[i] = ac_in_use[i] = 0;
+ 238:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 239:fltk-1.3.4-1/jpeg/jcmarker.c ****   for (i = 0; i < cinfo->comps_in_scan; i++) {
+ 240:fltk-1.3.4-1/jpeg/jcmarker.c ****     compptr = cinfo->cur_comp_info[i];
+ 241:fltk-1.3.4-1/jpeg/jcmarker.c ****     /* DC needs no table for refinement scan */
+ 242:fltk-1.3.4-1/jpeg/jcmarker.c ****     if (cinfo->Ss == 0 && cinfo->Ah == 0)
+ 243:fltk-1.3.4-1/jpeg/jcmarker.c ****       dc_in_use[compptr->dc_tbl_no] = 1;
+ 244:fltk-1.3.4-1/jpeg/jcmarker.c ****     /* AC needs no table when not present */
+ 245:fltk-1.3.4-1/jpeg/jcmarker.c ****     if (cinfo->Se)
+ 246:fltk-1.3.4-1/jpeg/jcmarker.c ****       ac_in_use[compptr->ac_tbl_no] = 1;
+ 247:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+ 248:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 249:fltk-1.3.4-1/jpeg/jcmarker.c ****   length = 0;
+ 250:fltk-1.3.4-1/jpeg/jcmarker.c ****   for (i = 0; i < NUM_ARITH_TBLS; i++)
+ 251:fltk-1.3.4-1/jpeg/jcmarker.c ****     length += dc_in_use[i] + ac_in_use[i];
+ 252:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 253:fltk-1.3.4-1/jpeg/jcmarker.c ****   if (length) {
+ 254:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_marker(cinfo, M_DAC);
+ 255:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 256:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_2bytes(cinfo, length*2 + 2);
+ 257:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 258:fltk-1.3.4-1/jpeg/jcmarker.c ****     for (i = 0; i < NUM_ARITH_TBLS; i++) {
+ 259:fltk-1.3.4-1/jpeg/jcmarker.c ****       if (dc_in_use[i]) {
+ 260:fltk-1.3.4-1/jpeg/jcmarker.c **** 	emit_byte(cinfo, i);
+ 261:fltk-1.3.4-1/jpeg/jcmarker.c **** 	emit_byte(cinfo, cinfo->arith_dc_L[i] + (cinfo->arith_dc_U[i]<<4));
+ 262:fltk-1.3.4-1/jpeg/jcmarker.c ****       }
+ 263:fltk-1.3.4-1/jpeg/jcmarker.c ****       if (ac_in_use[i]) {
+ 264:fltk-1.3.4-1/jpeg/jcmarker.c **** 	emit_byte(cinfo, i + 0x10);
+ 265:fltk-1.3.4-1/jpeg/jcmarker.c **** 	emit_byte(cinfo, cinfo->arith_ac_K[i]);
+ 266:fltk-1.3.4-1/jpeg/jcmarker.c ****       }
+ 267:fltk-1.3.4-1/jpeg/jcmarker.c ****     }
+ 268:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+ 269:fltk-1.3.4-1/jpeg/jcmarker.c **** #endif /* C_ARITH_CODING_SUPPORTED */
+ 270:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 271:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 272:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 273:fltk-1.3.4-1/jpeg/jcmarker.c **** LOCAL(void)
+ 274:fltk-1.3.4-1/jpeg/jcmarker.c **** emit_dri (j_compress_ptr cinfo)
+ 275:fltk-1.3.4-1/jpeg/jcmarker.c **** /* Emit a DRI marker */
+ 276:fltk-1.3.4-1/jpeg/jcmarker.c **** {
+ 277:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_marker(cinfo, M_DRI);
+ 278:fltk-1.3.4-1/jpeg/jcmarker.c ****   
+ 279:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, 4);	/* fixed length */
+ 280:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 281:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, (int) cinfo->restart_interval);
+ 282:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 283:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 284:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 285:fltk-1.3.4-1/jpeg/jcmarker.c **** LOCAL(void)
+ 286:fltk-1.3.4-1/jpeg/jcmarker.c **** emit_lse_ict (j_compress_ptr cinfo)
+ 287:fltk-1.3.4-1/jpeg/jcmarker.c **** /* Emit an LSE inverse color transform specification marker */
+ 288:fltk-1.3.4-1/jpeg/jcmarker.c **** {
+ 289:fltk-1.3.4-1/jpeg/jcmarker.c ****   /* Support only 1 transform */
+ 290:fltk-1.3.4-1/jpeg/jcmarker.c ****   if (cinfo->color_transform != JCT_SUBTRACT_GREEN ||
+ 291:fltk-1.3.4-1/jpeg/jcmarker.c ****       cinfo->num_components < 3)
+ 292:fltk-1.3.4-1/jpeg/jcmarker.c ****     ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
+ 293:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 294:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_marker(cinfo, M_JPG8);
+ 295:fltk-1.3.4-1/jpeg/jcmarker.c ****   
+ 296:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, 24);	/* fixed length */
+ 297:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 298:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0x0D);	/* ID inverse transform specification */
+ 299:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, MAXJSAMPLE);	/* MAXTRANS */
+ 300:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 3);		/* Nt=3 */
+ 301:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, cinfo->comp_info[1].component_id);
+ 302:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, cinfo->comp_info[0].component_id);
+ 303:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, cinfo->comp_info[2].component_id);
+ 304:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0x80);	/* F1: CENTER1=1, NORM1=0 */
+ 305:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, 0);	/* A(1,1)=0 */
+ 306:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, 0);	/* A(1,2)=0 */
+ 307:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0);		/* F2: CENTER2=0, NORM2=0 */
+ 308:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, 1);	/* A(2,1)=1 */
+ 309:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, 0);	/* A(2,2)=0 */
+ 310:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0);		/* F3: CENTER3=0, NORM3=0 */
+ 311:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, 1);	/* A(3,1)=1 */
+ 312:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, 0);	/* A(3,2)=0 */
+ 313:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 314:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 315:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 316:fltk-1.3.4-1/jpeg/jcmarker.c **** LOCAL(void)
+ 317:fltk-1.3.4-1/jpeg/jcmarker.c **** emit_sof (j_compress_ptr cinfo, JPEG_MARKER code)
+ 318:fltk-1.3.4-1/jpeg/jcmarker.c **** /* Emit a SOF marker */
+ 319:fltk-1.3.4-1/jpeg/jcmarker.c **** {
+ 596              		.loc 1 319 0
+ 597              		.cfi_startproc
+ 598              	.LVL70:
+ 599 0000 4154     		pushq	%r12
+ 600              		.cfi_def_cfa_offset 16
+ 601              		.cfi_offset 12, -16
+ 602 0002 55       		pushq	%rbp
+ 603              		.cfi_def_cfa_offset 24
+ 604              		.cfi_offset 6, -24
+ 605 0003 4889FD   		movq	%rdi, %rbp
+ 606              	.LVL71:
+ 607 0006 53       		pushq	%rbx
+ 608              		.cfi_def_cfa_offset 32
+ 609              		.cfi_offset 3, -32
+ 610              		.loc 1 319 0
+ 611 0007 89F3     		movl	%esi, %ebx
+ 612              	.LVL72:
+ 613              	.LBB80:
+ 614              	.LBB81:
+ 127:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, (int) mark);
+ 615              		.loc 1 127 0
+ 616 0009 BEFF0000 		movl	$255, %esi
+ 616      00
+ 617              	.LVL73:
+ 618 000e E8000000 		call	emit_byte
+ 618      00
+ 619              	.LVL74:
+ 128:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 620              		.loc 1 128 0
+ 621 0013 89DE     		movl	%ebx, %esi
+ 622 0015 4889EF   		movq	%rbp, %rdi
+ 623 0018 E8000000 		call	emit_byte
+ 623      00
+ 624              	.LVL75:
+ 625              	.LBE81:
+ 626              	.LBE80:
+ 320:fltk-1.3.4-1/jpeg/jcmarker.c ****   int ci;
+ 321:fltk-1.3.4-1/jpeg/jcmarker.c ****   jpeg_component_info *compptr;
+ 322:fltk-1.3.4-1/jpeg/jcmarker.c ****   
+ 323:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_marker(cinfo, code);
+ 324:fltk-1.3.4-1/jpeg/jcmarker.c ****   
+ 325:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, 3 * cinfo->num_components + 2 + 5 + 1); /* length */
+ 627              		.loc 1 325 0
+ 628 001d 8B455C   		movl	92(%rbp), %eax
+ 629 0020 4889EF   		movq	%rbp, %rdi
+ 630 0023 8D744008 		leal	8(%rax,%rax,2), %esi
+ 631 0027 E8000000 		call	emit_2bytes
+ 631      00
+ 632              	.LVL76:
+ 326:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 327:fltk-1.3.4-1/jpeg/jcmarker.c ****   /* Make sure image isn't bigger than SOF field can handle */
+ 328:fltk-1.3.4-1/jpeg/jcmarker.c ****   if ((long) cinfo->jpeg_height > 65535L ||
+ 633              		.loc 1 328 0
+ 634 002c 817D54FF 		cmpl	$65535, 84(%rbp)
+ 634      FF0000
+ 635 0033 0F878700 		ja	.L54
+ 635      0000
+ 636              		.loc 1 328 0 is_stmt 0 discriminator 1
+ 637 0039 817D50FF 		cmpl	$65535, 80(%rbp)
+ 637      FF0000
+ 638 0040 777E     		ja	.L54
+ 639              	.L55:
+ 329:fltk-1.3.4-1/jpeg/jcmarker.c ****       (long) cinfo->jpeg_width > 65535L)
+ 330:fltk-1.3.4-1/jpeg/jcmarker.c ****     ERREXIT1(cinfo, JERR_IMAGE_TOO_BIG, (unsigned int) 65535);
+ 331:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 332:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, cinfo->data_precision);
+ 640              		.loc 1 332 0 is_stmt 1
+ 641 0042 8B7558   		movl	88(%rbp), %esi
+ 642 0045 4889EF   		movq	%rbp, %rdi
+ 333:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, (int) cinfo->jpeg_height);
+ 334:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, (int) cinfo->jpeg_width);
+ 335:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 336:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, cinfo->num_components);
+ 337:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 338:fltk-1.3.4-1/jpeg/jcmarker.c ****   for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
+ 643              		.loc 1 338 0
+ 644 0048 4531E4   		xorl	%r12d, %r12d
+ 332:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, (int) cinfo->jpeg_height);
+ 645              		.loc 1 332 0
+ 646 004b E8000000 		call	emit_byte
+ 646      00
+ 647              	.LVL77:
+ 333:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, (int) cinfo->jpeg_height);
+ 648              		.loc 1 333 0
+ 649 0050 8B7554   		movl	84(%rbp), %esi
+ 650 0053 4889EF   		movq	%rbp, %rdi
+ 651 0056 E8000000 		call	emit_2bytes
+ 651      00
+ 652              	.LVL78:
+ 334:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 653              		.loc 1 334 0
+ 654 005b 8B7550   		movl	80(%rbp), %esi
+ 655 005e 4889EF   		movq	%rbp, %rdi
+ 656 0061 E8000000 		call	emit_2bytes
+ 656      00
+ 657              	.LVL79:
+ 336:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 658              		.loc 1 336 0
+ 659 0066 8B755C   		movl	92(%rbp), %esi
+ 660 0069 4889EF   		movq	%rbp, %rdi
+ 661 006c E8000000 		call	emit_byte
+ 661      00
+ 662              	.LVL80:
+ 663              		.loc 1 338 0
+ 664 0071 8B455C   		movl	92(%rbp), %eax
+ 665 0074 488B5D68 		movq	104(%rbp), %rbx
+ 666              	.LVL81:
+ 667 0078 85C0     		testl	%eax, %eax
+ 668 007a 7E38     		jle	.L53
+ 669              	.LVL82:
+ 670 007c 0F1F4000 		.p2align 4,,10
+ 671              		.p2align 3
+ 672              	.L59:
+ 339:fltk-1.3.4-1/jpeg/jcmarker.c ****        ci++, compptr++) {
+ 340:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_byte(cinfo, compptr->component_id);
+ 673              		.loc 1 340 0
+ 674 0080 8B33     		movl	(%rbx), %esi
+ 675 0082 4889EF   		movq	%rbp, %rdi
+ 339:fltk-1.3.4-1/jpeg/jcmarker.c ****        ci++, compptr++) {
+ 676              		.loc 1 339 0
+ 677 0085 4183C401 		addl	$1, %r12d
+ 678              	.LVL83:
+ 679 0089 4883C360 		addq	$96, %rbx
+ 680              	.LVL84:
+ 681              		.loc 1 340 0
+ 682 008d E8000000 		call	emit_byte
+ 682      00
+ 683              	.LVL85:
+ 341:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_byte(cinfo, (compptr->h_samp_factor << 4) + compptr->v_samp_factor);
+ 684              		.loc 1 341 0
+ 685 0092 8B73A8   		movl	-88(%rbx), %esi
+ 686 0095 4889EF   		movq	%rbp, %rdi
+ 687 0098 C1E604   		sall	$4, %esi
+ 688 009b 0373AC   		addl	-84(%rbx), %esi
+ 689 009e E8000000 		call	emit_byte
+ 689      00
+ 690              	.LVL86:
+ 342:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_byte(cinfo, compptr->quant_tbl_no);
+ 691              		.loc 1 342 0
+ 692 00a3 8B73B0   		movl	-80(%rbx), %esi
+ 693 00a6 4889EF   		movq	%rbp, %rdi
+ 694 00a9 E8000000 		call	emit_byte
+ 694      00
+ 695              	.LVL87:
+ 338:fltk-1.3.4-1/jpeg/jcmarker.c ****        ci++, compptr++) {
+ 696              		.loc 1 338 0
+ 697 00ae 4439655C 		cmpl	%r12d, 92(%rbp)
+ 698 00b2 7FCC     		jg	.L59
+ 699              	.LVL88:
+ 700              	.L53:
+ 343:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+ 344:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 701              		.loc 1 344 0
+ 702 00b4 5B       		popq	%rbx
+ 703              		.cfi_remember_state
+ 704              		.cfi_def_cfa_offset 24
+ 705              	.LVL89:
+ 706 00b5 5D       		popq	%rbp
+ 707              		.cfi_def_cfa_offset 16
+ 708              	.LVL90:
+ 709 00b6 415C     		popq	%r12
+ 710              		.cfi_def_cfa_offset 8
+ 711 00b8 C3       		ret
+ 712              	.LVL91:
+ 713 00b9 0F1F8000 		.p2align 4,,10
+ 713      000000
+ 714              		.p2align 3
+ 715              	.L54:
+ 716              		.cfi_restore_state
+ 330:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 717              		.loc 1 330 0
+ 718 00c0 488B4500 		movq	0(%rbp), %rax
+ 719 00c4 4889EF   		movq	%rbp, %rdi
+ 720 00c7 C740282A 		movl	$42, 40(%rax)
+ 720      000000
+ 721 00ce 488B4500 		movq	0(%rbp), %rax
+ 722 00d2 C7402CFF 		movl	$65535, 44(%rax)
+ 722      FF0000
+ 723 00d9 488B4500 		movq	0(%rbp), %rax
+ 724 00dd FF10     		call	*(%rax)
+ 725              	.LVL92:
+ 726 00df E95EFFFF 		jmp	.L55
+ 726      FF
+ 727              		.cfi_endproc
+ 728              	.LFE69:
+ 730              		.section	.text.unlikely.emit_sof
+ 731              	.LCOLDE4:
+ 732              		.section	.text.emit_sof
+ 733              	.LHOTE4:
+ 734              		.section	.text.unlikely.write_scan_header,"ax",@progbits
+ 735              	.LCOLDB5:
+ 736              		.section	.text.write_scan_header,"ax",@progbits
+ 737              	.LHOTB5:
+ 738              		.p2align 4,,15
+ 740              	write_scan_header:
+ 741              	.LFB78:
+ 345:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 346:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 347:fltk-1.3.4-1/jpeg/jcmarker.c **** LOCAL(void)
+ 348:fltk-1.3.4-1/jpeg/jcmarker.c **** emit_sos (j_compress_ptr cinfo)
+ 349:fltk-1.3.4-1/jpeg/jcmarker.c **** /* Emit a SOS marker */
+ 350:fltk-1.3.4-1/jpeg/jcmarker.c **** {
+ 351:fltk-1.3.4-1/jpeg/jcmarker.c ****   int i, td, ta;
+ 352:fltk-1.3.4-1/jpeg/jcmarker.c ****   jpeg_component_info *compptr;
+ 353:fltk-1.3.4-1/jpeg/jcmarker.c ****   
+ 354:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_marker(cinfo, M_SOS);
+ 355:fltk-1.3.4-1/jpeg/jcmarker.c ****   
+ 356:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, 2 * cinfo->comps_in_scan + 2 + 1 + 3); /* length */
+ 357:fltk-1.3.4-1/jpeg/jcmarker.c ****   
+ 358:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, cinfo->comps_in_scan);
+ 359:fltk-1.3.4-1/jpeg/jcmarker.c ****   
+ 360:fltk-1.3.4-1/jpeg/jcmarker.c ****   for (i = 0; i < cinfo->comps_in_scan; i++) {
+ 361:fltk-1.3.4-1/jpeg/jcmarker.c ****     compptr = cinfo->cur_comp_info[i];
+ 362:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_byte(cinfo, compptr->component_id);
+ 363:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 364:fltk-1.3.4-1/jpeg/jcmarker.c ****     /* We emit 0 for unused field(s); this is recommended by the P&M text
+ 365:fltk-1.3.4-1/jpeg/jcmarker.c ****      * but does not seem to be specified in the standard.
+ 366:fltk-1.3.4-1/jpeg/jcmarker.c ****      */
+ 367:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 368:fltk-1.3.4-1/jpeg/jcmarker.c ****     /* DC needs no table for refinement scan */
+ 369:fltk-1.3.4-1/jpeg/jcmarker.c ****     td = cinfo->Ss == 0 && cinfo->Ah == 0 ? compptr->dc_tbl_no : 0;
+ 370:fltk-1.3.4-1/jpeg/jcmarker.c ****     /* AC needs no table when not present */
+ 371:fltk-1.3.4-1/jpeg/jcmarker.c ****     ta = cinfo->Se ? compptr->ac_tbl_no : 0;
+ 372:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 373:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_byte(cinfo, (td << 4) + ta);
+ 374:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+ 375:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 376:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, cinfo->Ss);
+ 377:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, cinfo->Se);
+ 378:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, (cinfo->Ah << 4) + cinfo->Al);
+ 379:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 380:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 381:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 382:fltk-1.3.4-1/jpeg/jcmarker.c **** LOCAL(void)
+ 383:fltk-1.3.4-1/jpeg/jcmarker.c **** emit_pseudo_sos (j_compress_ptr cinfo)
+ 384:fltk-1.3.4-1/jpeg/jcmarker.c **** /* Emit a pseudo SOS marker */
+ 385:fltk-1.3.4-1/jpeg/jcmarker.c **** {
+ 386:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_marker(cinfo, M_SOS);
+ 387:fltk-1.3.4-1/jpeg/jcmarker.c ****   
+ 388:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, 2 + 1 + 3); /* length */
+ 389:fltk-1.3.4-1/jpeg/jcmarker.c ****   
+ 390:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0); /* Ns */
+ 391:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 392:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0); /* Ss */
+ 393:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, cinfo->block_size * cinfo->block_size - 1); /* Se */
+ 394:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0); /* Ah/Al */
+ 395:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 396:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 397:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 398:fltk-1.3.4-1/jpeg/jcmarker.c **** LOCAL(void)
+ 399:fltk-1.3.4-1/jpeg/jcmarker.c **** emit_jfif_app0 (j_compress_ptr cinfo)
+ 400:fltk-1.3.4-1/jpeg/jcmarker.c **** /* Emit a JFIF-compliant APP0 marker */
+ 401:fltk-1.3.4-1/jpeg/jcmarker.c **** {
+ 402:fltk-1.3.4-1/jpeg/jcmarker.c ****   /*
+ 403:fltk-1.3.4-1/jpeg/jcmarker.c ****    * Length of APP0 block	(2 bytes)
+ 404:fltk-1.3.4-1/jpeg/jcmarker.c ****    * Block ID			(4 bytes - ASCII "JFIF")
+ 405:fltk-1.3.4-1/jpeg/jcmarker.c ****    * Zero byte			(1 byte to terminate the ID string)
+ 406:fltk-1.3.4-1/jpeg/jcmarker.c ****    * Version Major, Minor	(2 bytes - major first)
+ 407:fltk-1.3.4-1/jpeg/jcmarker.c ****    * Units			(1 byte - 0x00 = none, 0x01 = inch, 0x02 = cm)
+ 408:fltk-1.3.4-1/jpeg/jcmarker.c ****    * Xdpu			(2 bytes - dots per unit horizontal)
+ 409:fltk-1.3.4-1/jpeg/jcmarker.c ****    * Ydpu			(2 bytes - dots per unit vertical)
+ 410:fltk-1.3.4-1/jpeg/jcmarker.c ****    * Thumbnail X size		(1 byte)
+ 411:fltk-1.3.4-1/jpeg/jcmarker.c ****    * Thumbnail Y size		(1 byte)
+ 412:fltk-1.3.4-1/jpeg/jcmarker.c ****    */
+ 413:fltk-1.3.4-1/jpeg/jcmarker.c ****   
+ 414:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_marker(cinfo, M_APP0);
+ 415:fltk-1.3.4-1/jpeg/jcmarker.c ****   
+ 416:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, 2 + 4 + 1 + 2 + 1 + 2 + 2 + 1 + 1); /* length */
+ 417:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 418:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0x4A);	/* Identifier: ASCII "JFIF" */
+ 419:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0x46);
+ 420:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0x49);
+ 421:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0x46);
+ 422:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0);
+ 423:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, cinfo->JFIF_major_version); /* Version fields */
+ 424:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, cinfo->JFIF_minor_version);
+ 425:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, cinfo->density_unit); /* Pixel size information */
+ 426:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, (int) cinfo->X_density);
+ 427:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, (int) cinfo->Y_density);
+ 428:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0);		/* No thumbnail image */
+ 429:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0);
+ 430:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 431:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 432:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 433:fltk-1.3.4-1/jpeg/jcmarker.c **** LOCAL(void)
+ 434:fltk-1.3.4-1/jpeg/jcmarker.c **** emit_adobe_app14 (j_compress_ptr cinfo)
+ 435:fltk-1.3.4-1/jpeg/jcmarker.c **** /* Emit an Adobe APP14 marker */
+ 436:fltk-1.3.4-1/jpeg/jcmarker.c **** {
+ 437:fltk-1.3.4-1/jpeg/jcmarker.c ****   /*
+ 438:fltk-1.3.4-1/jpeg/jcmarker.c ****    * Length of APP14 block	(2 bytes)
+ 439:fltk-1.3.4-1/jpeg/jcmarker.c ****    * Block ID			(5 bytes - ASCII "Adobe")
+ 440:fltk-1.3.4-1/jpeg/jcmarker.c ****    * Version Number		(2 bytes - currently 100)
+ 441:fltk-1.3.4-1/jpeg/jcmarker.c ****    * Flags0			(2 bytes - currently 0)
+ 442:fltk-1.3.4-1/jpeg/jcmarker.c ****    * Flags1			(2 bytes - currently 0)
+ 443:fltk-1.3.4-1/jpeg/jcmarker.c ****    * Color transform		(1 byte)
+ 444:fltk-1.3.4-1/jpeg/jcmarker.c ****    *
+ 445:fltk-1.3.4-1/jpeg/jcmarker.c ****    * Although Adobe TN 5116 mentions Version = 101, all the Adobe files
+ 446:fltk-1.3.4-1/jpeg/jcmarker.c ****    * now in circulation seem to use Version = 100, so that's what we write.
+ 447:fltk-1.3.4-1/jpeg/jcmarker.c ****    *
+ 448:fltk-1.3.4-1/jpeg/jcmarker.c ****    * We write the color transform byte as 1 if the JPEG color space is
+ 449:fltk-1.3.4-1/jpeg/jcmarker.c ****    * YCbCr, 2 if it's YCCK, 0 otherwise.  Adobe's definition has to do with
+ 450:fltk-1.3.4-1/jpeg/jcmarker.c ****    * whether the encoder performed a transformation, which is pretty useless.
+ 451:fltk-1.3.4-1/jpeg/jcmarker.c ****    */
+ 452:fltk-1.3.4-1/jpeg/jcmarker.c ****   
+ 453:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_marker(cinfo, M_APP14);
+ 454:fltk-1.3.4-1/jpeg/jcmarker.c ****   
+ 455:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, 2 + 5 + 2 + 2 + 2 + 1); /* length */
+ 456:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 457:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0x41);	/* Identifier: ASCII "Adobe" */
+ 458:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0x64);
+ 459:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0x6F);
+ 460:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0x62);
+ 461:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0x65);
+ 462:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, 100);	/* Version */
+ 463:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, 0);	/* Flags0 */
+ 464:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, 0);	/* Flags1 */
+ 465:fltk-1.3.4-1/jpeg/jcmarker.c ****   switch (cinfo->jpeg_color_space) {
+ 466:fltk-1.3.4-1/jpeg/jcmarker.c ****   case JCS_YCbCr:
+ 467:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_byte(cinfo, 1);	/* Color transform = 1 */
+ 468:fltk-1.3.4-1/jpeg/jcmarker.c ****     break;
+ 469:fltk-1.3.4-1/jpeg/jcmarker.c ****   case JCS_YCCK:
+ 470:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_byte(cinfo, 2);	/* Color transform = 2 */
+ 471:fltk-1.3.4-1/jpeg/jcmarker.c ****     break;
+ 472:fltk-1.3.4-1/jpeg/jcmarker.c ****   default:
+ 473:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_byte(cinfo, 0);	/* Color transform = 0 */
+ 474:fltk-1.3.4-1/jpeg/jcmarker.c ****     break;
+ 475:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+ 476:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 477:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 478:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 479:fltk-1.3.4-1/jpeg/jcmarker.c **** /*
+ 480:fltk-1.3.4-1/jpeg/jcmarker.c ****  * These routines allow writing an arbitrary marker with parameters.
+ 481:fltk-1.3.4-1/jpeg/jcmarker.c ****  * The only intended use is to emit COM or APPn markers after calling
+ 482:fltk-1.3.4-1/jpeg/jcmarker.c ****  * write_file_header and before calling write_frame_header.
+ 483:fltk-1.3.4-1/jpeg/jcmarker.c ****  * Other uses are not guaranteed to produce desirable results.
+ 484:fltk-1.3.4-1/jpeg/jcmarker.c ****  * Counting the parameter bytes properly is the caller's responsibility.
+ 485:fltk-1.3.4-1/jpeg/jcmarker.c ****  */
+ 486:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 487:fltk-1.3.4-1/jpeg/jcmarker.c **** METHODDEF(void)
+ 488:fltk-1.3.4-1/jpeg/jcmarker.c **** write_marker_header (j_compress_ptr cinfo, int marker, unsigned int datalen)
+ 489:fltk-1.3.4-1/jpeg/jcmarker.c **** /* Emit an arbitrary marker header */
+ 490:fltk-1.3.4-1/jpeg/jcmarker.c **** {
+ 491:fltk-1.3.4-1/jpeg/jcmarker.c ****   if (datalen > (unsigned int) 65533)		/* safety check */
+ 492:fltk-1.3.4-1/jpeg/jcmarker.c ****     ERREXIT(cinfo, JERR_BAD_LENGTH);
+ 493:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 494:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_marker(cinfo, (JPEG_MARKER) marker);
+ 495:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 496:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, (int) (datalen + 2));	/* total length */
+ 497:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 498:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 499:fltk-1.3.4-1/jpeg/jcmarker.c **** METHODDEF(void)
+ 500:fltk-1.3.4-1/jpeg/jcmarker.c **** write_marker_byte (j_compress_ptr cinfo, int val)
+ 501:fltk-1.3.4-1/jpeg/jcmarker.c **** /* Emit one byte of marker parameters following write_marker_header */
+ 502:fltk-1.3.4-1/jpeg/jcmarker.c **** {
+ 503:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, val);
+ 504:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 505:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 506:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 507:fltk-1.3.4-1/jpeg/jcmarker.c **** /*
+ 508:fltk-1.3.4-1/jpeg/jcmarker.c ****  * Write datastream header.
+ 509:fltk-1.3.4-1/jpeg/jcmarker.c ****  * This consists of an SOI and optional APPn markers.
+ 510:fltk-1.3.4-1/jpeg/jcmarker.c ****  * We recommend use of the JFIF marker, but not the Adobe marker,
+ 511:fltk-1.3.4-1/jpeg/jcmarker.c ****  * when using YCbCr or grayscale data.  The JFIF marker is also used
+ 512:fltk-1.3.4-1/jpeg/jcmarker.c ****  * for other standard JPEG colorspaces.  The Adobe marker is helpful
+ 513:fltk-1.3.4-1/jpeg/jcmarker.c ****  * to distinguish RGB, CMYK, and YCCK colorspaces.
+ 514:fltk-1.3.4-1/jpeg/jcmarker.c ****  * Note that an application can write additional header markers after
+ 515:fltk-1.3.4-1/jpeg/jcmarker.c ****  * jpeg_start_compress returns.
+ 516:fltk-1.3.4-1/jpeg/jcmarker.c ****  */
+ 517:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 518:fltk-1.3.4-1/jpeg/jcmarker.c **** METHODDEF(void)
+ 519:fltk-1.3.4-1/jpeg/jcmarker.c **** write_file_header (j_compress_ptr cinfo)
+ 520:fltk-1.3.4-1/jpeg/jcmarker.c **** {
+ 521:fltk-1.3.4-1/jpeg/jcmarker.c ****   my_marker_ptr marker = (my_marker_ptr) cinfo->marker;
+ 522:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 523:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_marker(cinfo, M_SOI);	/* first the SOI */
+ 524:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 525:fltk-1.3.4-1/jpeg/jcmarker.c ****   /* SOI is defined to reset restart interval to 0 */
+ 526:fltk-1.3.4-1/jpeg/jcmarker.c ****   marker->last_restart_interval = 0;
+ 527:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 528:fltk-1.3.4-1/jpeg/jcmarker.c ****   if (cinfo->write_JFIF_header)	/* next an optional JFIF APP0 */
+ 529:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_jfif_app0(cinfo);
+ 530:fltk-1.3.4-1/jpeg/jcmarker.c ****   if (cinfo->write_Adobe_marker) /* next an optional Adobe APP14 */
+ 531:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_adobe_app14(cinfo);
+ 532:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 533:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 534:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 535:fltk-1.3.4-1/jpeg/jcmarker.c **** /*
+ 536:fltk-1.3.4-1/jpeg/jcmarker.c ****  * Write frame header.
+ 537:fltk-1.3.4-1/jpeg/jcmarker.c ****  * This consists of DQT and SOFn markers,
+ 538:fltk-1.3.4-1/jpeg/jcmarker.c ****  * a conditional LSE marker and a conditional pseudo SOS marker.
+ 539:fltk-1.3.4-1/jpeg/jcmarker.c ****  * Note that we do not emit the SOF until we have emitted the DQT(s).
+ 540:fltk-1.3.4-1/jpeg/jcmarker.c ****  * This avoids compatibility problems with incorrect implementations that
+ 541:fltk-1.3.4-1/jpeg/jcmarker.c ****  * try to error-check the quant table numbers as soon as they see the SOF.
+ 542:fltk-1.3.4-1/jpeg/jcmarker.c ****  */
+ 543:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 544:fltk-1.3.4-1/jpeg/jcmarker.c **** METHODDEF(void)
+ 545:fltk-1.3.4-1/jpeg/jcmarker.c **** write_frame_header (j_compress_ptr cinfo)
+ 546:fltk-1.3.4-1/jpeg/jcmarker.c **** {
+ 547:fltk-1.3.4-1/jpeg/jcmarker.c ****   int ci, prec;
+ 548:fltk-1.3.4-1/jpeg/jcmarker.c ****   boolean is_baseline;
+ 549:fltk-1.3.4-1/jpeg/jcmarker.c ****   jpeg_component_info *compptr;
+ 550:fltk-1.3.4-1/jpeg/jcmarker.c ****   
+ 551:fltk-1.3.4-1/jpeg/jcmarker.c ****   /* Emit DQT for each quantization table.
+ 552:fltk-1.3.4-1/jpeg/jcmarker.c ****    * Note that emit_dqt() suppresses any duplicate tables.
+ 553:fltk-1.3.4-1/jpeg/jcmarker.c ****    */
+ 554:fltk-1.3.4-1/jpeg/jcmarker.c ****   prec = 0;
+ 555:fltk-1.3.4-1/jpeg/jcmarker.c ****   for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
+ 556:fltk-1.3.4-1/jpeg/jcmarker.c ****        ci++, compptr++) {
+ 557:fltk-1.3.4-1/jpeg/jcmarker.c ****     prec += emit_dqt(cinfo, compptr->quant_tbl_no);
+ 558:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+ 559:fltk-1.3.4-1/jpeg/jcmarker.c ****   /* now prec is nonzero iff there are any 16-bit quant tables. */
+ 560:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 561:fltk-1.3.4-1/jpeg/jcmarker.c ****   /* Check for a non-baseline specification.
+ 562:fltk-1.3.4-1/jpeg/jcmarker.c ****    * Note we assume that Huffman table numbers won't be changed later.
+ 563:fltk-1.3.4-1/jpeg/jcmarker.c ****    */
+ 564:fltk-1.3.4-1/jpeg/jcmarker.c ****   if (cinfo->arith_code || cinfo->progressive_mode ||
+ 565:fltk-1.3.4-1/jpeg/jcmarker.c ****       cinfo->data_precision != 8 || cinfo->block_size != DCTSIZE) {
+ 566:fltk-1.3.4-1/jpeg/jcmarker.c ****     is_baseline = FALSE;
+ 567:fltk-1.3.4-1/jpeg/jcmarker.c ****   } else {
+ 568:fltk-1.3.4-1/jpeg/jcmarker.c ****     is_baseline = TRUE;
+ 569:fltk-1.3.4-1/jpeg/jcmarker.c ****     for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
+ 570:fltk-1.3.4-1/jpeg/jcmarker.c **** 	 ci++, compptr++) {
+ 571:fltk-1.3.4-1/jpeg/jcmarker.c ****       if (compptr->dc_tbl_no > 1 || compptr->ac_tbl_no > 1)
+ 572:fltk-1.3.4-1/jpeg/jcmarker.c **** 	is_baseline = FALSE;
+ 573:fltk-1.3.4-1/jpeg/jcmarker.c ****     }
+ 574:fltk-1.3.4-1/jpeg/jcmarker.c ****     if (prec && is_baseline) {
+ 575:fltk-1.3.4-1/jpeg/jcmarker.c ****       is_baseline = FALSE;
+ 576:fltk-1.3.4-1/jpeg/jcmarker.c ****       /* If it's baseline except for quantizer size, warn the user */
+ 577:fltk-1.3.4-1/jpeg/jcmarker.c ****       TRACEMS(cinfo, 0, JTRC_16BIT_TABLES);
+ 578:fltk-1.3.4-1/jpeg/jcmarker.c ****     }
+ 579:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+ 580:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 581:fltk-1.3.4-1/jpeg/jcmarker.c ****   /* Emit the proper SOF marker */
+ 582:fltk-1.3.4-1/jpeg/jcmarker.c ****   if (cinfo->arith_code) {
+ 583:fltk-1.3.4-1/jpeg/jcmarker.c ****     if (cinfo->progressive_mode)
+ 584:fltk-1.3.4-1/jpeg/jcmarker.c ****       emit_sof(cinfo, M_SOF10); /* SOF code for progressive arithmetic */
+ 585:fltk-1.3.4-1/jpeg/jcmarker.c ****     else
+ 586:fltk-1.3.4-1/jpeg/jcmarker.c ****       emit_sof(cinfo, M_SOF9);  /* SOF code for sequential arithmetic */
+ 587:fltk-1.3.4-1/jpeg/jcmarker.c ****   } else {
+ 588:fltk-1.3.4-1/jpeg/jcmarker.c ****     if (cinfo->progressive_mode)
+ 589:fltk-1.3.4-1/jpeg/jcmarker.c ****       emit_sof(cinfo, M_SOF2);	/* SOF code for progressive Huffman */
+ 590:fltk-1.3.4-1/jpeg/jcmarker.c ****     else if (is_baseline)
+ 591:fltk-1.3.4-1/jpeg/jcmarker.c ****       emit_sof(cinfo, M_SOF0);	/* SOF code for baseline implementation */
+ 592:fltk-1.3.4-1/jpeg/jcmarker.c ****     else
+ 593:fltk-1.3.4-1/jpeg/jcmarker.c ****       emit_sof(cinfo, M_SOF1);	/* SOF code for non-baseline Huffman file */
+ 594:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+ 595:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 596:fltk-1.3.4-1/jpeg/jcmarker.c ****   /* Check to emit LSE inverse color transform specification marker */
+ 597:fltk-1.3.4-1/jpeg/jcmarker.c ****   if (cinfo->color_transform)
+ 598:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_lse_ict(cinfo);
+ 599:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 600:fltk-1.3.4-1/jpeg/jcmarker.c ****   /* Check to emit pseudo SOS marker */
+ 601:fltk-1.3.4-1/jpeg/jcmarker.c ****   if (cinfo->progressive_mode && cinfo->block_size != DCTSIZE)
+ 602:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_pseudo_sos(cinfo);
+ 603:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 604:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 605:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 606:fltk-1.3.4-1/jpeg/jcmarker.c **** /*
+ 607:fltk-1.3.4-1/jpeg/jcmarker.c ****  * Write scan header.
+ 608:fltk-1.3.4-1/jpeg/jcmarker.c ****  * This consists of DHT or DAC markers, optional DRI, and SOS.
+ 609:fltk-1.3.4-1/jpeg/jcmarker.c ****  * Compressed data will be written following the SOS.
+ 610:fltk-1.3.4-1/jpeg/jcmarker.c ****  */
+ 611:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 612:fltk-1.3.4-1/jpeg/jcmarker.c **** METHODDEF(void)
+ 613:fltk-1.3.4-1/jpeg/jcmarker.c **** write_scan_header (j_compress_ptr cinfo)
+ 614:fltk-1.3.4-1/jpeg/jcmarker.c **** {
+ 742              		.loc 1 614 0
+ 743              		.cfi_startproc
+ 744              	.LVL93:
+ 745 0000 4156     		pushq	%r14
+ 746              		.cfi_def_cfa_offset 16
+ 747              		.cfi_offset 14, -16
+ 748 0002 4155     		pushq	%r13
+ 749              		.cfi_def_cfa_offset 24
+ 750              		.cfi_offset 13, -24
+ 751 0004 4154     		pushq	%r12
+ 752              		.cfi_def_cfa_offset 32
+ 753              		.cfi_offset 12, -32
+ 754 0006 55       		pushq	%rbp
+ 755              		.cfi_def_cfa_offset 40
+ 756              		.cfi_offset 6, -40
+ 757 0007 53       		pushq	%rbx
+ 758              		.cfi_def_cfa_offset 48
+ 759              		.cfi_offset 3, -48
+ 760 0008 4889FB   		movq	%rdi, %rbx
+ 761 000b 4883EC30 		subq	$48, %rsp
+ 762              		.cfi_def_cfa_offset 96
+ 615:fltk-1.3.4-1/jpeg/jcmarker.c ****   my_marker_ptr marker = (my_marker_ptr) cinfo->marker;
+ 616:fltk-1.3.4-1/jpeg/jcmarker.c ****   int i;
+ 617:fltk-1.3.4-1/jpeg/jcmarker.c ****   jpeg_component_info *compptr;
+ 618:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 619:fltk-1.3.4-1/jpeg/jcmarker.c ****   if (cinfo->arith_code) {
+ 763              		.loc 1 619 0
+ 764 000f 448BA724 		movl	292(%rdi), %r12d
+ 764      010000
+ 615:fltk-1.3.4-1/jpeg/jcmarker.c ****   my_marker_ptr marker = (my_marker_ptr) cinfo->marker;
+ 765              		.loc 1 615 0
+ 766 0016 488BAF10 		movq	528(%rdi), %rbp
+ 766      020000
+ 767              	.LVL94:
+ 614:fltk-1.3.4-1/jpeg/jcmarker.c ****   my_marker_ptr marker = (my_marker_ptr) cinfo->marker;
+ 768              		.loc 1 614 0
+ 769 001d 64488B04 		movq	%fs:40, %rax
+ 769      25280000 
+ 769      00
+ 770 0026 48894424 		movq	%rax, 40(%rsp)
+ 770      28
+ 771 002b 31C0     		xorl	%eax, %eax
+ 772              		.loc 1 619 0
+ 773 002d 4585E4   		testl	%r12d, %r12d
+ 774 0030 0F85F201 		jne	.L63
+ 774      0000
+ 775              	.LVL95:
+ 620:fltk-1.3.4-1/jpeg/jcmarker.c ****     /* Emit arith conditioning info.  We may have some duplication
+ 621:fltk-1.3.4-1/jpeg/jcmarker.c ****      * if the file has multiple scans, but it's so small it's hardly
+ 622:fltk-1.3.4-1/jpeg/jcmarker.c ****      * worth worrying about.
+ 623:fltk-1.3.4-1/jpeg/jcmarker.c ****      */
+ 624:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_dac(cinfo);
+ 625:fltk-1.3.4-1/jpeg/jcmarker.c ****   } else {
+ 626:fltk-1.3.4-1/jpeg/jcmarker.c ****     /* Emit Huffman tables.
+ 627:fltk-1.3.4-1/jpeg/jcmarker.c ****      * Note that emit_dht() suppresses any duplicate tables.
+ 628:fltk-1.3.4-1/jpeg/jcmarker.c ****      */
+ 629:fltk-1.3.4-1/jpeg/jcmarker.c ****     for (i = 0; i < cinfo->comps_in_scan; i++) {
+ 776              		.loc 1 629 0 discriminator 1
+ 777 0036 448B9F74 		movl	372(%rdi), %r11d
+ 777      010000
+ 778 003d 4531E4   		xorl	%r12d, %r12d
+ 779 0040 4C8DAF78 		leaq	376(%rdi), %r13
+ 779      010000
+ 780 0047 4585DB   		testl	%r11d, %r11d
+ 781 004a 7E3F     		jle	.L65
+ 782              	.LVL96:
+ 783              	.L95:
+ 630:fltk-1.3.4-1/jpeg/jcmarker.c ****       compptr = cinfo->cur_comp_info[i];
+ 631:fltk-1.3.4-1/jpeg/jcmarker.c ****       /* DC needs no table for refinement scan */
+ 632:fltk-1.3.4-1/jpeg/jcmarker.c ****       if (cinfo->Ss == 0 && cinfo->Ah == 0)
+ 784              		.loc 1 632 0
+ 785 004c 448B8BCC 		movl	460(%rbx), %r9d
+ 785      010000
+ 630:fltk-1.3.4-1/jpeg/jcmarker.c ****       compptr = cinfo->cur_comp_info[i];
+ 786              		.loc 1 630 0
+ 787 0053 4D8B7500 		movq	0(%r13), %r14
+ 788              	.LVL97:
+ 789              		.loc 1 632 0
+ 790 0057 4585C9   		testl	%r9d, %r9d
+ 791 005a 7510     		jne	.L78
+ 792              		.loc 1 632 0 is_stmt 0 discriminator 1
+ 793 005c 448B83D4 		movl	468(%rbx), %r8d
+ 793      010000
+ 794 0063 4585C0   		testl	%r8d, %r8d
+ 795 0066 0F84A401 		je	.L104
+ 795      0000
+ 796              	.L78:
+ 633:fltk-1.3.4-1/jpeg/jcmarker.c **** 	emit_dht(cinfo, compptr->dc_tbl_no, FALSE);
+ 634:fltk-1.3.4-1/jpeg/jcmarker.c ****       /* AC needs no table when not present */
+ 635:fltk-1.3.4-1/jpeg/jcmarker.c ****       if (cinfo->Se)
+ 797              		.loc 1 635 0 is_stmt 1
+ 798 006c 8BBBD001 		movl	464(%rbx), %edi
+ 798      0000
+ 799 0072 85FF     		testl	%edi, %edi
+ 800 0074 0F857601 		jne	.L105
+ 800      0000
+ 801              	.L79:
+ 629:fltk-1.3.4-1/jpeg/jcmarker.c ****       compptr = cinfo->cur_comp_info[i];
+ 802              		.loc 1 629 0 discriminator 2
+ 803 007a 4183C401 		addl	$1, %r12d
+ 804              	.LVL98:
+ 805 007e 4983C508 		addq	$8, %r13
+ 806 0082 4439A374 		cmpl	%r12d, 372(%rbx)
+ 806      010000
+ 807 0089 7FC1     		jg	.L95
+ 808              	.LVL99:
+ 809              	.L65:
+ 636:fltk-1.3.4-1/jpeg/jcmarker.c **** 	emit_dht(cinfo, compptr->ac_tbl_no, TRUE);
+ 637:fltk-1.3.4-1/jpeg/jcmarker.c ****     }
+ 638:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+ 639:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 640:fltk-1.3.4-1/jpeg/jcmarker.c ****   /* Emit DRI if required --- note that DRI value could change for each scan.
+ 641:fltk-1.3.4-1/jpeg/jcmarker.c ****    * We avoid wasting space with unnecessary DRIs, however.
+ 642:fltk-1.3.4-1/jpeg/jcmarker.c ****    */
+ 643:fltk-1.3.4-1/jpeg/jcmarker.c ****   if (cinfo->restart_interval != marker->last_restart_interval) {
+ 810              		.loc 1 643 0
+ 811 008b 8B4538   		movl	56(%rbp), %eax
+ 812 008e 39833C01 		cmpl	%eax, 316(%rbx)
+ 812      0000
+ 813 0094 7448     		je	.L82
+ 814              	.LVL100:
+ 815              	.LBB96:
+ 816              	.LBB97:
+ 817              	.LBB98:
+ 818              	.LBB99:
+ 127:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, (int) mark);
+ 819              		.loc 1 127 0
+ 820 0096 BEFF0000 		movl	$255, %esi
+ 820      00
+ 821 009b 4889DF   		movq	%rbx, %rdi
+ 822 009e E8000000 		call	emit_byte
+ 822      00
+ 823              	.LVL101:
+ 128:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 824              		.loc 1 128 0
+ 825 00a3 BEDD0000 		movl	$221, %esi
+ 825      00
+ 826 00a8 4889DF   		movq	%rbx, %rdi
+ 827 00ab E8000000 		call	emit_byte
+ 827      00
+ 828              	.LVL102:
+ 829              	.LBE99:
+ 830              	.LBE98:
+ 831              	.LBB100:
+ 832              	.LBB101:
+ 136:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, value & 0xFF);
+ 833              		.loc 1 136 0
+ 834 00b0 31F6     		xorl	%esi, %esi
+ 835 00b2 4889DF   		movq	%rbx, %rdi
+ 836 00b5 E8000000 		call	emit_byte
+ 836      00
+ 837              	.LVL103:
+ 137:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 838              		.loc 1 137 0
+ 839 00ba BE040000 		movl	$4, %esi
+ 839      00
+ 840 00bf 4889DF   		movq	%rbx, %rdi
+ 841 00c2 E8000000 		call	emit_byte
+ 841      00
+ 842              	.LVL104:
+ 843              	.LBE101:
+ 844              	.LBE100:
+ 281:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 845              		.loc 1 281 0
+ 846 00c7 8BB33C01 		movl	316(%rbx), %esi
+ 846      0000
+ 847 00cd 4889DF   		movq	%rbx, %rdi
+ 848 00d0 E8000000 		call	emit_2bytes
+ 848      00
+ 849              	.LVL105:
+ 850              	.LBE97:
+ 851              	.LBE96:
+ 644:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_dri(cinfo);
+ 645:fltk-1.3.4-1/jpeg/jcmarker.c ****     marker->last_restart_interval = cinfo->restart_interval;
+ 852              		.loc 1 645 0
+ 853 00d5 8B833C01 		movl	316(%rbx), %eax
+ 853      0000
+ 854 00db 894538   		movl	%eax, 56(%rbp)
+ 855              	.L82:
+ 856              	.LVL106:
+ 857              	.LBB102:
+ 858              	.LBB103:
+ 859              	.LBB104:
+ 860              	.LBB105:
+ 127:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, (int) mark);
+ 861              		.loc 1 127 0
+ 862 00de BEFF0000 		movl	$255, %esi
+ 862      00
+ 863 00e3 4889DF   		movq	%rbx, %rdi
+ 864              	.LBE105:
+ 865              	.LBE104:
+ 360:fltk-1.3.4-1/jpeg/jcmarker.c ****     compptr = cinfo->cur_comp_info[i];
+ 866              		.loc 1 360 0
+ 867 00e6 31ED     		xorl	%ebp, %ebp
+ 868              	.LVL107:
+ 869              	.LBB107:
+ 870              	.LBB106:
+ 127:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, (int) mark);
+ 871              		.loc 1 127 0
+ 872 00e8 E8000000 		call	emit_byte
+ 872      00
+ 873              	.LVL108:
+ 128:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 874              		.loc 1 128 0
+ 875 00ed BEDA0000 		movl	$218, %esi
+ 875      00
+ 876 00f2 4889DF   		movq	%rbx, %rdi
+ 877 00f5 4C8DA378 		leaq	376(%rbx), %r12
+ 877      010000
+ 878 00fc E8000000 		call	emit_byte
+ 878      00
+ 879              	.LVL109:
+ 880              	.LBE106:
+ 881              	.LBE107:
+ 356:fltk-1.3.4-1/jpeg/jcmarker.c ****   
+ 882              		.loc 1 356 0
+ 883 0101 8B837401 		movl	372(%rbx), %eax
+ 883      0000
+ 884 0107 4889DF   		movq	%rbx, %rdi
+ 885 010a 8D740006 		leal	6(%rax,%rax), %esi
+ 886 010e E8000000 		call	emit_2bytes
+ 886      00
+ 887              	.LVL110:
+ 358:fltk-1.3.4-1/jpeg/jcmarker.c ****   
+ 888              		.loc 1 358 0
+ 889 0113 8BB37401 		movl	372(%rbx), %esi
+ 889      0000
+ 890 0119 4889DF   		movq	%rbx, %rdi
+ 891 011c E8000000 		call	emit_byte
+ 891      00
+ 892              	.LVL111:
+ 360:fltk-1.3.4-1/jpeg/jcmarker.c ****     compptr = cinfo->cur_comp_info[i];
+ 893              		.loc 1 360 0
+ 894 0121 8BB37401 		movl	372(%rbx), %esi
+ 894      0000
+ 895 0127 85F6     		testl	%esi, %esi
+ 896 0129 7E58     		jle	.L88
+ 897              	.LVL112:
+ 898              	.L94:
+ 361:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_byte(cinfo, compptr->component_id);
+ 899              		.loc 1 361 0
+ 900 012b 4D8B2C24 		movq	(%r12), %r13
+ 901              	.LVL113:
+ 362:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 902              		.loc 1 362 0
+ 903 012f 4889DF   		movq	%rbx, %rdi
+ 904 0132 418B7500 		movl	0(%r13), %esi
+ 905 0136 E8000000 		call	emit_byte
+ 905      00
+ 906              	.LVL114:
+ 369:fltk-1.3.4-1/jpeg/jcmarker.c ****     /* AC needs no table when not present */
+ 907              		.loc 1 369 0
+ 908 013b 8B83CC01 		movl	460(%rbx), %eax
+ 908      0000
+ 909 0141 85C0     		testl	%eax, %eax
+ 910 0143 0F859700 		jne	.L90
+ 910      0000
+ 911 0149 8B8BD401 		movl	468(%rbx), %ecx
+ 911      0000
+ 912 014f 85C9     		testl	%ecx, %ecx
+ 913 0151 7507     		jne	.L85
+ 914 0153 418B4514 		movl	20(%r13), %eax
+ 915 0157 C1E004   		sall	$4, %eax
+ 916              	.L85:
+ 371:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 917              		.loc 1 371 0
+ 918 015a 8B93D001 		movl	464(%rbx), %edx
+ 918      0000
+ 919 0160 31F6     		xorl	%esi, %esi
+ 920 0162 85D2     		testl	%edx, %edx
+ 921 0164 7404     		je	.L86
+ 922 0166 418B7518 		movl	24(%r13), %esi
+ 923              	.L86:
+ 924              	.LVL115:
+ 373:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+ 925              		.loc 1 373 0
+ 926 016a 01C6     		addl	%eax, %esi
+ 927              	.LVL116:
+ 928 016c 4889DF   		movq	%rbx, %rdi
+ 360:fltk-1.3.4-1/jpeg/jcmarker.c ****     compptr = cinfo->cur_comp_info[i];
+ 929              		.loc 1 360 0
+ 930 016f 83C501   		addl	$1, %ebp
+ 931              	.LVL117:
+ 373:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+ 932              		.loc 1 373 0
+ 933 0172 E8000000 		call	emit_byte
+ 933      00
+ 934              	.LVL118:
+ 935 0177 4983C408 		addq	$8, %r12
+ 360:fltk-1.3.4-1/jpeg/jcmarker.c ****     compptr = cinfo->cur_comp_info[i];
+ 936              		.loc 1 360 0
+ 937 017b 3BAB7401 		cmpl	372(%rbx), %ebp
+ 937      0000
+ 938 0181 7CA8     		jl	.L94
+ 939              	.LVL119:
+ 940              	.L88:
+ 376:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, cinfo->Se);
+ 941              		.loc 1 376 0
+ 942 0183 8BB3CC01 		movl	460(%rbx), %esi
+ 942      0000
+ 943 0189 4889DF   		movq	%rbx, %rdi
+ 944 018c E8000000 		call	emit_byte
+ 944      00
+ 945              	.LVL120:
+ 377:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, (cinfo->Ah << 4) + cinfo->Al);
+ 946              		.loc 1 377 0
+ 947 0191 8BB3D001 		movl	464(%rbx), %esi
+ 947      0000
+ 948 0197 4889DF   		movq	%rbx, %rdi
+ 949 019a E8000000 		call	emit_byte
+ 949      00
+ 950              	.LVL121:
+ 378:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 951              		.loc 1 378 0
+ 952 019f 488B4424 		movq	40(%rsp), %rax
+ 952      28
+ 953 01a4 64483304 		xorq	%fs:40, %rax
+ 953      25280000 
+ 953      00
+ 954 01ad 0F85AC01 		jne	.L106
+ 954      0000
+ 955 01b3 8BB3D401 		movl	468(%rbx), %esi
+ 955      0000
+ 956 01b9 4889DF   		movq	%rbx, %rdi
+ 957 01bc C1E604   		sall	$4, %esi
+ 958 01bf 03B3D801 		addl	472(%rbx), %esi
+ 958      0000
+ 959              	.LBE103:
+ 960              	.LBE102:
+ 646:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+ 647:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 648:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_sos(cinfo);
+ 649:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 961              		.loc 1 649 0
+ 962 01c5 4883C430 		addq	$48, %rsp
+ 963              		.cfi_remember_state
+ 964              		.cfi_def_cfa_offset 48
+ 965 01c9 5B       		popq	%rbx
+ 966              		.cfi_def_cfa_offset 40
+ 967              	.LVL122:
+ 968 01ca 5D       		popq	%rbp
+ 969              		.cfi_def_cfa_offset 32
+ 970 01cb 415C     		popq	%r12
+ 971              		.cfi_def_cfa_offset 24
+ 972 01cd 415D     		popq	%r13
+ 973              		.cfi_def_cfa_offset 16
+ 974 01cf 415E     		popq	%r14
+ 975              		.cfi_def_cfa_offset 8
+ 976              	.LBB110:
+ 977              	.LBB108:
+ 378:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 978              		.loc 1 378 0
+ 979 01d1 E9000000 		jmp	emit_byte
+ 979      00
+ 980              	.LVL123:
+ 981 01d6 662E0F1F 		.p2align 4,,10
+ 981      84000000 
+ 981      0000
+ 982              		.p2align 3
+ 983              	.L90:
+ 984              		.cfi_restore_state
+ 369:fltk-1.3.4-1/jpeg/jcmarker.c ****     /* AC needs no table when not present */
+ 985              		.loc 1 369 0
+ 986 01e0 31C0     		xorl	%eax, %eax
+ 987 01e2 E973FFFF 		jmp	.L85
+ 987      FF
+ 988              	.LVL124:
+ 989 01e7 660F1F84 		.p2align 4,,10
+ 989      00000000 
+ 989      00
+ 990              		.p2align 3
+ 991              	.L105:
+ 992              	.LBE108:
+ 993              	.LBE110:
+ 636:fltk-1.3.4-1/jpeg/jcmarker.c ****     }
+ 994              		.loc 1 636 0
+ 995 01f0 418B7618 		movl	24(%r14), %esi
+ 996 01f4 BA010000 		movl	$1, %edx
+ 996      00
+ 997 01f9 4889DF   		movq	%rbx, %rdi
+ 998 01fc E8000000 		call	emit_dht
+ 998      00
+ 999              	.LVL125:
+ 1000 0201 E974FEFF 		jmp	.L79
+ 1000      FF
+ 1001 0206 662E0F1F 		.p2align 4,,10
+ 1001      84000000 
+ 1001      0000
+ 1002              		.p2align 3
+ 1003              	.L104:
+ 633:fltk-1.3.4-1/jpeg/jcmarker.c ****       /* AC needs no table when not present */
+ 1004              		.loc 1 633 0
+ 1005 0210 418B7614 		movl	20(%r14), %esi
+ 1006 0214 31D2     		xorl	%edx, %edx
+ 1007 0216 4889DF   		movq	%rbx, %rdi
+ 1008 0219 E8000000 		call	emit_dht
+ 1008      00
+ 1009              	.LVL126:
+ 1010 021e E949FEFF 		jmp	.L78
+ 1010      FF
+ 1011              	.LVL127:
+ 1012              		.p2align 4,,10
+ 1013 0223 0F1F4400 		.p2align 3
+ 1013      00
+ 1014              	.L63:
+ 1015 0228 31C0     		xorl	%eax, %eax
+ 1016 022a 660F1F44 		.p2align 4,,10
+ 1016      0000
+ 1017              		.p2align 3
+ 1018              	.L66:
+ 1019              	.LVL128:
+ 1020              	.LBB111:
+ 1021              	.LBB112:
+ 237:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 1022              		.loc 1 237 0
+ 1023 0230 C6440410 		movb	$0, 16(%rsp,%rax)
+ 1023      00
+ 1024 0235 C6040400 		movb	$0, (%rsp,%rax)
+ 1025              	.LVL129:
+ 1026 0239 4883C001 		addq	$1, %rax
+ 1027              	.LVL130:
+ 236:fltk-1.3.4-1/jpeg/jcmarker.c ****     dc_in_use[i] = ac_in_use[i] = 0;
+ 1028              		.loc 1 236 0
+ 1029 023d 4883F810 		cmpq	$16, %rax
+ 1030 0241 75ED     		jne	.L66
+ 1031              	.LVL131:
+ 239:fltk-1.3.4-1/jpeg/jcmarker.c ****     compptr = cinfo->cur_comp_info[i];
+ 1032              		.loc 1 239 0
+ 1033 0243 8B8B7401 		movl	372(%rbx), %ecx
+ 1033      0000
+ 1034 0249 85C9     		testl	%ecx, %ecx
+ 1035 024b 7E44     		jle	.L72
+ 1036 024d 8BBBCC01 		movl	460(%rbx), %edi
+ 1036      0000
+ 1037 0253 8BB3D001 		movl	464(%rbx), %esi
+ 1037      0000
+ 1038 0259 31C0     		xorl	%eax, %eax
+ 1039              	.LVL132:
+ 1040              	.L71:
+ 242:fltk-1.3.4-1/jpeg/jcmarker.c ****       dc_in_use[compptr->dc_tbl_no] = 1;
+ 1041              		.loc 1 242 0
+ 1042 025b 85FF     		testl	%edi, %edi
+ 240:fltk-1.3.4-1/jpeg/jcmarker.c ****     /* DC needs no table for refinement scan */
+ 1043              		.loc 1 240 0
+ 1044 025d 488B94C3 		movq	376(%rbx,%rax,8), %rdx
+ 1044      78010000 
+ 1045              	.LVL133:
+ 242:fltk-1.3.4-1/jpeg/jcmarker.c ****       dc_in_use[compptr->dc_tbl_no] = 1;
+ 1046              		.loc 1 242 0
+ 1047 0265 7515     		jne	.L69
+ 1048 0267 448B93D4 		movl	468(%rbx), %r10d
+ 1048      010000
+ 1049 026e 4585D2   		testl	%r10d, %r10d
+ 1050 0271 7509     		jne	.L69
+ 243:fltk-1.3.4-1/jpeg/jcmarker.c ****     /* AC needs no table when not present */
+ 1051              		.loc 1 243 0
+ 1052 0273 4C634214 		movslq	20(%rdx), %r8
+ 1053 0277 42C60404 		movb	$1, (%rsp,%r8)
+ 1053      01
+ 1054              	.L69:
+ 245:fltk-1.3.4-1/jpeg/jcmarker.c ****       ac_in_use[compptr->ac_tbl_no] = 1;
+ 1055              		.loc 1 245 0
+ 1056 027c 85F6     		testl	%esi, %esi
+ 1057 027e 7409     		je	.L70
+ 246:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+ 1058              		.loc 1 246 0
+ 1059 0280 48635218 		movslq	24(%rdx), %rdx
+ 1060              	.LVL134:
+ 1061 0284 C6441410 		movb	$1, 16(%rsp,%rdx)
+ 1061      01
+ 1062              	.L70:
+ 1063              	.LVL135:
+ 1064 0289 4883C001 		addq	$1, %rax
+ 1065              	.LVL136:
+ 239:fltk-1.3.4-1/jpeg/jcmarker.c ****     compptr = cinfo->cur_comp_info[i];
+ 1066              		.loc 1 239 0
+ 1067 028d 39C1     		cmpl	%eax, %ecx
+ 1068 028f 7FCA     		jg	.L71
+ 1069              	.LVL137:
+ 1070              	.L72:
+ 1071 0291 31C0     		xorl	%eax, %eax
+ 1072 0293 4531E4   		xorl	%r12d, %r12d
+ 1073 0296 662E0F1F 		.p2align 4,,10
+ 1073      84000000 
+ 1073      0000
+ 1074              		.p2align 3
+ 1075              	.L68:
+ 1076              	.LVL138:
+ 251:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 1077              		.loc 1 251 0
+ 1078 02a0 0FB60C04 		movzbl	(%rsp,%rax), %ecx
+ 1079 02a4 0FB65404 		movzbl	16(%rsp,%rax), %edx
+ 1079      10
+ 1080 02a9 4883C001 		addq	$1, %rax
+ 1081              	.LVL139:
+ 1082 02ad 01CA     		addl	%ecx, %edx
+ 1083 02af 4101D4   		addl	%edx, %r12d
+ 1084              	.LVL140:
+ 250:fltk-1.3.4-1/jpeg/jcmarker.c ****     length += dc_in_use[i] + ac_in_use[i];
+ 1085              		.loc 1 250 0
+ 1086 02b2 4883F810 		cmpq	$16, %rax
+ 1087 02b6 75E8     		jne	.L68
+ 253:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_marker(cinfo, M_DAC);
+ 1088              		.loc 1 253 0
+ 1089 02b8 4585E4   		testl	%r12d, %r12d
+ 1090 02bb 0F84CAFD 		je	.L65
+ 1090      FFFF
+ 1091              	.LVL141:
+ 1092              	.LBB113:
+ 1093              	.LBB114:
+ 127:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, (int) mark);
+ 1094              		.loc 1 127 0
+ 1095 02c1 BEFF0000 		movl	$255, %esi
+ 1095      00
+ 1096 02c6 4889DF   		movq	%rbx, %rdi
+ 1097 02c9 4C8DAB00 		leaq	256(%rbx), %r13
+ 1097      010000
+ 1098 02d0 E8000000 		call	emit_byte
+ 1098      00
+ 1099              	.LVL142:
+ 128:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 1100              		.loc 1 128 0
+ 1101 02d5 BECC0000 		movl	$204, %esi
+ 1101      00
+ 1102 02da 4889DF   		movq	%rbx, %rdi
+ 1103 02dd E8000000 		call	emit_byte
+ 1103      00
+ 1104              	.LVL143:
+ 1105              	.LBE114:
+ 1106              	.LBE113:
+ 256:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 1107              		.loc 1 256 0
+ 1108 02e2 438D7424 		leal	2(%r12,%r12), %esi
+ 1108      02
+ 1109 02e7 4889DF   		movq	%rbx, %rdi
+ 1110 02ea 4531E4   		xorl	%r12d, %r12d
+ 1111              	.LVL144:
+ 1112 02ed E8000000 		call	emit_2bytes
+ 1112      00
+ 1113              	.LVL145:
+ 1114 02f2 EB1E     		jmp	.L76
+ 1115              	.LVL146:
+ 1116              		.p2align 4,,10
+ 1117 02f4 0F1F4000 		.p2align 3
+ 1118              	.L74:
+ 263:fltk-1.3.4-1/jpeg/jcmarker.c **** 	emit_byte(cinfo, i + 0x10);
+ 1119              		.loc 1 263 0
+ 1120 02f8 42807C24 		cmpb	$0, 16(%rsp,%r12)
+ 1120      1000
+ 1121 02fe 7543     		jne	.L107
+ 1122              	.L75:
+ 1123              	.LVL147:
+ 1124 0300 4983C401 		addq	$1, %r12
+ 1125              	.LVL148:
+ 1126 0304 4983C501 		addq	$1, %r13
+ 258:fltk-1.3.4-1/jpeg/jcmarker.c ****       if (dc_in_use[i]) {
+ 1127              		.loc 1 258 0
+ 1128 0308 4983FC10 		cmpq	$16, %r12
+ 1129 030c 0F8479FD 		je	.L65
+ 1129      FFFF
+ 1130              	.L76:
+ 1131              	.LVL149:
+ 259:fltk-1.3.4-1/jpeg/jcmarker.c **** 	emit_byte(cinfo, i);
+ 1132              		.loc 1 259 0
+ 1133 0312 42803C24 		cmpb	$0, (%rsp,%r12)
+ 1133      00
+ 1134 0317 74DF     		je	.L74
+ 260:fltk-1.3.4-1/jpeg/jcmarker.c **** 	emit_byte(cinfo, cinfo->arith_dc_L[i] + (cinfo->arith_dc_U[i]<<4));
+ 1135              		.loc 1 260 0
+ 1136 0319 4489E6   		movl	%r12d, %esi
+ 1137 031c 4889DF   		movq	%rbx, %rdi
+ 1138 031f E8000000 		call	emit_byte
+ 1138      00
+ 1139              	.LVL150:
+ 261:fltk-1.3.4-1/jpeg/jcmarker.c ****       }
+ 1140              		.loc 1 261 0
+ 1141 0324 410FB675 		movzbl	-16(%r13), %esi
+ 1141      F0
+ 1142 0329 410FB645 		movzbl	-32(%r13), %eax
+ 1142      E0
+ 1143 032e 4889DF   		movq	%rbx, %rdi
+ 1144 0331 C1E604   		sall	$4, %esi
+ 1145 0334 01C6     		addl	%eax, %esi
+ 1146 0336 E8000000 		call	emit_byte
+ 1146      00
+ 1147              	.LVL151:
+ 263:fltk-1.3.4-1/jpeg/jcmarker.c **** 	emit_byte(cinfo, i + 0x10);
+ 1148              		.loc 1 263 0
+ 1149 033b 42807C24 		cmpb	$0, 16(%rsp,%r12)
+ 1149      1000
+ 1150 0341 74BD     		je	.L75
+ 1151              	.L107:
+ 264:fltk-1.3.4-1/jpeg/jcmarker.c **** 	emit_byte(cinfo, cinfo->arith_ac_K[i]);
+ 1152              		.loc 1 264 0
+ 1153 0343 418D7424 		leal	16(%r12), %esi
+ 1153      10
+ 1154 0348 4889DF   		movq	%rbx, %rdi
+ 1155 034b E8000000 		call	emit_byte
+ 1155      00
+ 1156              	.LVL152:
+ 265:fltk-1.3.4-1/jpeg/jcmarker.c ****       }
+ 1157              		.loc 1 265 0
+ 1158 0350 410FB675 		movzbl	0(%r13), %esi
+ 1158      00
+ 1159 0355 4889DF   		movq	%rbx, %rdi
+ 1160 0358 E8000000 		call	emit_byte
+ 1160      00
+ 1161              	.LVL153:
+ 1162 035d EBA1     		jmp	.L75
+ 1163              	.LVL154:
+ 1164              	.L106:
+ 1165              	.LBE112:
+ 1166              	.LBE111:
+ 1167              	.LBB115:
+ 1168              	.LBB109:
+ 378:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 1169              		.loc 1 378 0
+ 1170 035f E8000000 		call	__stack_chk_fail
+ 1170      00
+ 1171              	.LVL155:
+ 1172              	.LBE109:
+ 1173              	.LBE115:
+ 1174              		.cfi_endproc
+ 1175              	.LFE78:
+ 1177              		.section	.text.unlikely.write_scan_header
+ 1178              	.LCOLDE5:
+ 1179              		.section	.text.write_scan_header
+ 1180              	.LHOTE5:
+ 1181              		.section	.text.unlikely.write_frame_header,"ax",@progbits
+ 1182              	.LCOLDB6:
+ 1183              		.section	.text.write_frame_header,"ax",@progbits
+ 1184              	.LHOTB6:
+ 1185              		.p2align 4,,15
+ 1187              	write_frame_header:
+ 1188              	.LFB77:
+ 546:fltk-1.3.4-1/jpeg/jcmarker.c ****   int ci, prec;
+ 1189              		.loc 1 546 0
+ 1190              		.cfi_startproc
+ 1191              	.LVL156:
+ 1192 0000 4155     		pushq	%r13
+ 1193              		.cfi_def_cfa_offset 16
+ 1194              		.cfi_offset 13, -16
+ 1195 0002 4154     		pushq	%r12
+ 1196              		.cfi_def_cfa_offset 24
+ 1197              		.cfi_offset 12, -24
+ 555:fltk-1.3.4-1/jpeg/jcmarker.c ****        ci++, compptr++) {
+ 1198              		.loc 1 555 0
+ 1199 0004 4531ED   		xorl	%r13d, %r13d
+ 546:fltk-1.3.4-1/jpeg/jcmarker.c ****   int ci, prec;
+ 1200              		.loc 1 546 0
+ 1201 0007 55       		pushq	%rbp
+ 1202              		.cfi_def_cfa_offset 32
+ 1203              		.cfi_offset 6, -32
+ 1204 0008 53       		pushq	%rbx
+ 1205              		.cfi_def_cfa_offset 40
+ 1206              		.cfi_offset 3, -40
+ 1207 0009 4889FB   		movq	%rdi, %rbx
+ 1208 000c 4883EC08 		subq	$8, %rsp
+ 1209              		.cfi_def_cfa_offset 48
+ 555:fltk-1.3.4-1/jpeg/jcmarker.c ****        ci++, compptr++) {
+ 1210              		.loc 1 555 0
+ 1211 0010 8B475C   		movl	92(%rdi), %eax
+ 1212 0013 488B6F68 		movq	104(%rdi), %rbp
+ 1213              	.LVL157:
+ 1214 0017 85C0     		testl	%eax, %eax
+ 1215 0019 7E23     		jle	.L109
+ 1216 001b 4531E4   		xorl	%r12d, %r12d
+ 1217              	.LVL158:
+ 1218 001e 6690     		.p2align 4,,10
+ 1219              		.p2align 3
+ 1220              	.L110:
+ 557:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+ 1221              		.loc 1 557 0
+ 1222 0020 8B7510   		movl	16(%rbp), %esi
+ 1223 0023 4889DF   		movq	%rbx, %rdi
+ 556:fltk-1.3.4-1/jpeg/jcmarker.c ****     prec += emit_dqt(cinfo, compptr->quant_tbl_no);
+ 1224              		.loc 1 556 0
+ 1225 0026 4183C401 		addl	$1, %r12d
+ 1226              	.LVL159:
+ 1227 002a 4883C560 		addq	$96, %rbp
+ 1228              	.LVL160:
+ 557:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+ 1229              		.loc 1 557 0
+ 1230 002e E8000000 		call	emit_dqt
+ 1230      00
+ 1231              	.LVL161:
+ 1232 0033 4101C5   		addl	%eax, %r13d
+ 1233              	.LVL162:
+ 555:fltk-1.3.4-1/jpeg/jcmarker.c ****        ci++, compptr++) {
+ 1234              		.loc 1 555 0
+ 1235 0036 8B435C   		movl	92(%rbx), %eax
+ 1236 0039 4439E0   		cmpl	%r12d, %eax
+ 1237 003c 7FE2     		jg	.L110
+ 1238              	.LVL163:
+ 1239              	.L109:
+ 564:fltk-1.3.4-1/jpeg/jcmarker.c ****       cinfo->data_precision != 8 || cinfo->block_size != DCTSIZE) {
+ 1240              		.loc 1 564 0
+ 1241 003e 448B8324 		movl	292(%rbx), %r8d
+ 1241      010000
+ 1242 0045 4585C0   		testl	%r8d, %r8d
+ 1243 0048 0F84B200 		je	.L111
+ 1243      0000
+ 1244              	.LVL164:
+ 1245              	.L120:
+ 583:fltk-1.3.4-1/jpeg/jcmarker.c ****       emit_sof(cinfo, M_SOF10); /* SOF code for progressive arithmetic */
+ 1246              		.loc 1 583 0
+ 1247 004e 8BBB5C01 		movl	348(%rbx), %edi
+ 1247      0000
+ 1248 0054 85FF     		testl	%edi, %edi
+ 1249 0056 0F855402 		jne	.L112
+ 1249      0000
+ 586:fltk-1.3.4-1/jpeg/jcmarker.c ****   } else {
+ 1250              		.loc 1 586 0
+ 1251 005c BEC90000 		movl	$201, %esi
+ 1251      00
+ 1252 0061 4889DF   		movq	%rbx, %rdi
+ 1253 0064 E8000000 		call	emit_sof
+ 1253      00
+ 1254              	.LVL165:
+ 1255              	.L122:
+ 597:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_lse_ict(cinfo);
+ 1256              		.loc 1 597 0
+ 1257 0069 8B835401 		movl	340(%rbx), %eax
+ 1257      0000
+ 1258 006f 85C0     		testl	%eax, %eax
+ 1259 0071 0F85B900 		jne	.L147
+ 1259      0000
+ 1260              	.L123:
+ 601:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_pseudo_sos(cinfo);
+ 1261              		.loc 1 601 0
+ 1262 0077 8B835C01 		movl	348(%rbx), %eax
+ 1262      0000
+ 1263 007d 85C0     		testl	%eax, %eax
+ 1264 007f 0F840402 		je	.L108
+ 1264      0000
+ 1265              	.L150:
+ 601:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_pseudo_sos(cinfo);
+ 1266              		.loc 1 601 0 is_stmt 0 discriminator 1
+ 1267 0085 83BBDC01 		cmpl	$8, 476(%rbx)
+ 1267      000008
+ 1268 008c 0F84F701 		je	.L108
+ 1268      0000
+ 1269              	.LVL166:
+ 1270              	.LBB142:
+ 1271              	.LBB143:
+ 1272              	.LBB144:
+ 1273              	.LBB145:
+ 127:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, (int) mark);
+ 1274              		.loc 1 127 0 is_stmt 1
+ 1275 0092 4889DF   		movq	%rbx, %rdi
+ 1276 0095 BEFF0000 		movl	$255, %esi
+ 1276      00
+ 1277 009a E8000000 		call	emit_byte
+ 1277      00
+ 1278              	.LVL167:
+ 128:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 1279              		.loc 1 128 0
+ 1280 009f 4889DF   		movq	%rbx, %rdi
+ 1281 00a2 BEDA0000 		movl	$218, %esi
+ 1281      00
+ 1282 00a7 E8000000 		call	emit_byte
+ 1282      00
+ 1283              	.LVL168:
+ 1284              	.LBE145:
+ 1285              	.LBE144:
+ 1286              	.LBB146:
+ 1287              	.LBB147:
+ 136:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, value & 0xFF);
+ 1288              		.loc 1 136 0
+ 1289 00ac 4889DF   		movq	%rbx, %rdi
+ 1290 00af 31F6     		xorl	%esi, %esi
+ 1291 00b1 E8000000 		call	emit_byte
+ 1291      00
+ 1292              	.LVL169:
+ 137:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 1293              		.loc 1 137 0
+ 1294 00b6 4889DF   		movq	%rbx, %rdi
+ 1295 00b9 BE060000 		movl	$6, %esi
+ 1295      00
+ 1296 00be E8000000 		call	emit_byte
+ 1296      00
+ 1297              	.LVL170:
+ 1298              	.LBE147:
+ 1299              	.LBE146:
+ 390:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 1300              		.loc 1 390 0
+ 1301 00c3 4889DF   		movq	%rbx, %rdi
+ 1302 00c6 31F6     		xorl	%esi, %esi
+ 1303 00c8 E8000000 		call	emit_byte
+ 1303      00
+ 1304              	.LVL171:
+ 392:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, cinfo->block_size * cinfo->block_size - 1); /* Se */
+ 1305              		.loc 1 392 0
+ 1306 00cd 4889DF   		movq	%rbx, %rdi
+ 1307 00d0 31F6     		xorl	%esi, %esi
+ 1308 00d2 E8000000 		call	emit_byte
+ 1308      00
+ 1309              	.LVL172:
+ 393:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0); /* Ah/Al */
+ 1310              		.loc 1 393 0
+ 1311 00d7 8BB3DC01 		movl	476(%rbx), %esi
+ 1311      0000
+ 1312 00dd 4889DF   		movq	%rbx, %rdi
+ 1313 00e0 0FAFF6   		imull	%esi, %esi
+ 1314 00e3 83EE01   		subl	$1, %esi
+ 1315 00e6 E8000000 		call	emit_byte
+ 1315      00
+ 1316              	.LVL173:
+ 1317              	.LBE143:
+ 1318              	.LBE142:
+ 603:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 1319              		.loc 1 603 0
+ 1320 00eb 4883C408 		addq	$8, %rsp
+ 1321              		.cfi_remember_state
+ 1322              		.cfi_def_cfa_offset 40
+ 1323              	.LBB150:
+ 1324              	.LBB148:
+ 394:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 1325              		.loc 1 394 0
+ 1326 00ef 4889DF   		movq	%rbx, %rdi
+ 1327 00f2 31F6     		xorl	%esi, %esi
+ 1328              	.LBE148:
+ 1329              	.LBE150:
+ 603:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 1330              		.loc 1 603 0
+ 1331 00f4 5B       		popq	%rbx
+ 1332              		.cfi_def_cfa_offset 32
+ 1333              	.LVL174:
+ 1334 00f5 5D       		popq	%rbp
+ 1335              		.cfi_def_cfa_offset 24
+ 1336 00f6 415C     		popq	%r12
+ 1337              		.cfi_def_cfa_offset 16
+ 1338 00f8 415D     		popq	%r13
+ 1339              		.cfi_def_cfa_offset 8
+ 1340              	.LBB151:
+ 1341              	.LBB149:
+ 394:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 1342              		.loc 1 394 0
+ 1343 00fa E9000000 		jmp	emit_byte
+ 1343      00
+ 1344              	.LVL175:
+ 1345 00ff 90       		.p2align 4,,10
+ 1346              		.p2align 3
+ 1347              	.L111:
+ 1348              		.cfi_restore_state
+ 1349              	.LBE149:
+ 1350              	.LBE151:
+ 564:fltk-1.3.4-1/jpeg/jcmarker.c ****       cinfo->data_precision != 8 || cinfo->block_size != DCTSIZE) {
+ 1351              		.loc 1 564 0 discriminator 1
+ 1352 0100 8BB35C01 		movl	348(%rbx), %esi
+ 1352      0000
+ 1353 0106 85F6     		testl	%esi, %esi
+ 1354 0108 0F848A01 		je	.L148
+ 1354      0000
+ 1355              	.LVL176:
+ 1356              	.L114:
+ 589:fltk-1.3.4-1/jpeg/jcmarker.c ****     else if (is_baseline)
+ 1357              		.loc 1 589 0
+ 1358 010e BEC20000 		movl	$194, %esi
+ 1358      00
+ 1359 0113 4889DF   		movq	%rbx, %rdi
+ 1360 0116 E8000000 		call	emit_sof
+ 1360      00
+ 1361              	.LVL177:
+ 597:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_lse_ict(cinfo);
+ 1362              		.loc 1 597 0
+ 1363 011b 8B835401 		movl	340(%rbx), %eax
+ 1363      0000
+ 1364 0121 85C0     		testl	%eax, %eax
+ 1365 0123 0F844EFF 		je	.L123
+ 1365      FFFF
+ 1366 0129 0F1F8000 		.p2align 4,,10
+ 1366      000000
+ 1367              		.p2align 3
+ 1368              	.L147:
+ 1369              	.LVL178:
+ 1370              	.LBB152:
+ 1371              	.LBB153:
+ 290:fltk-1.3.4-1/jpeg/jcmarker.c ****       cinfo->num_components < 3)
+ 1372              		.loc 1 290 0
+ 1373 0130 83F801   		cmpl	$1, %eax
+ 1374 0133 0F848F01 		je	.L149
+ 1374      0000
+ 1375              	.L124:
+ 292:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 1376              		.loc 1 292 0
+ 1377 0139 488B03   		movq	(%rbx), %rax
+ 1378 013c 4889DF   		movq	%rbx, %rdi
+ 1379 013f C740281C 		movl	$28, 40(%rax)
+ 1379      000000
+ 1380 0146 488B03   		movq	(%rbx), %rax
+ 1381 0149 FF10     		call	*(%rax)
+ 1382              	.LVL179:
+ 1383              	.L125:
+ 1384              	.LBB154:
+ 1385              	.LBB155:
+ 127:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, (int) mark);
+ 1386              		.loc 1 127 0
+ 1387 014b BEFF0000 		movl	$255, %esi
+ 1387      00
+ 1388 0150 4889DF   		movq	%rbx, %rdi
+ 1389 0153 E8000000 		call	emit_byte
+ 1389      00
+ 1390              	.LVL180:
+ 128:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 1391              		.loc 1 128 0
+ 1392 0158 BEF80000 		movl	$248, %esi
+ 1392      00
+ 1393 015d 4889DF   		movq	%rbx, %rdi
+ 1394 0160 E8000000 		call	emit_byte
+ 1394      00
+ 1395              	.LVL181:
+ 1396              	.LBE155:
+ 1397              	.LBE154:
+ 1398              	.LBB156:
+ 1399              	.LBB157:
+ 136:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, value & 0xFF);
+ 1400              		.loc 1 136 0
+ 1401 0165 31F6     		xorl	%esi, %esi
+ 1402 0167 4889DF   		movq	%rbx, %rdi
+ 1403 016a E8000000 		call	emit_byte
+ 1403      00
+ 1404              	.LVL182:
+ 137:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 1405              		.loc 1 137 0
+ 1406 016f BE180000 		movl	$24, %esi
+ 1406      00
+ 1407 0174 4889DF   		movq	%rbx, %rdi
+ 1408 0177 E8000000 		call	emit_byte
+ 1408      00
+ 1409              	.LVL183:
+ 1410              	.LBE157:
+ 1411              	.LBE156:
+ 298:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, MAXJSAMPLE);	/* MAXTRANS */
+ 1412              		.loc 1 298 0
+ 1413 017c BE0D0000 		movl	$13, %esi
+ 1413      00
+ 1414 0181 4889DF   		movq	%rbx, %rdi
+ 1415 0184 E8000000 		call	emit_byte
+ 1415      00
+ 1416              	.LVL184:
+ 1417              	.LBB158:
+ 1418              	.LBB159:
+ 136:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, value & 0xFF);
+ 1419              		.loc 1 136 0
+ 1420 0189 31F6     		xorl	%esi, %esi
+ 1421 018b 4889DF   		movq	%rbx, %rdi
+ 1422 018e E8000000 		call	emit_byte
+ 1422      00
+ 1423              	.LVL185:
+ 137:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 1424              		.loc 1 137 0
+ 1425 0193 BEFF0000 		movl	$255, %esi
+ 1425      00
+ 1426 0198 4889DF   		movq	%rbx, %rdi
+ 1427 019b E8000000 		call	emit_byte
+ 1427      00
+ 1428              	.LVL186:
+ 1429              	.LBE159:
+ 1430              	.LBE158:
+ 300:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, cinfo->comp_info[1].component_id);
+ 1431              		.loc 1 300 0
+ 1432 01a0 BE030000 		movl	$3, %esi
+ 1432      00
+ 1433 01a5 4889DF   		movq	%rbx, %rdi
+ 1434 01a8 E8000000 		call	emit_byte
+ 1434      00
+ 1435              	.LVL187:
+ 301:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, cinfo->comp_info[0].component_id);
+ 1436              		.loc 1 301 0
+ 1437 01ad 488B4368 		movq	104(%rbx), %rax
+ 1438 01b1 4889DF   		movq	%rbx, %rdi
+ 1439 01b4 8B7060   		movl	96(%rax), %esi
+ 1440 01b7 E8000000 		call	emit_byte
+ 1440      00
+ 1441              	.LVL188:
+ 302:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, cinfo->comp_info[2].component_id);
+ 1442              		.loc 1 302 0
+ 1443 01bc 488B4368 		movq	104(%rbx), %rax
+ 1444 01c0 4889DF   		movq	%rbx, %rdi
+ 1445 01c3 8B30     		movl	(%rax), %esi
+ 1446 01c5 E8000000 		call	emit_byte
+ 1446      00
+ 1447              	.LVL189:
+ 303:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0x80);	/* F1: CENTER1=1, NORM1=0 */
+ 1448              		.loc 1 303 0
+ 1449 01ca 488B4368 		movq	104(%rbx), %rax
+ 1450 01ce 4889DF   		movq	%rbx, %rdi
+ 1451 01d1 8BB0C000 		movl	192(%rax), %esi
+ 1451      0000
+ 1452 01d7 E8000000 		call	emit_byte
+ 1452      00
+ 1453              	.LVL190:
+ 304:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, 0);	/* A(1,1)=0 */
+ 1454              		.loc 1 304 0
+ 1455 01dc BE800000 		movl	$128, %esi
+ 1455      00
+ 1456 01e1 4889DF   		movq	%rbx, %rdi
+ 1457 01e4 E8000000 		call	emit_byte
+ 1457      00
+ 1458              	.LVL191:
+ 1459              	.LBB160:
+ 1460              	.LBB161:
+ 136:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, value & 0xFF);
+ 1461              		.loc 1 136 0
+ 1462 01e9 31F6     		xorl	%esi, %esi
+ 1463 01eb 4889DF   		movq	%rbx, %rdi
+ 1464 01ee E8000000 		call	emit_byte
+ 1464      00
+ 1465              	.LVL192:
+ 137:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 1466              		.loc 1 137 0
+ 1467 01f3 31F6     		xorl	%esi, %esi
+ 1468 01f5 4889DF   		movq	%rbx, %rdi
+ 1469 01f8 E8000000 		call	emit_byte
+ 1469      00
+ 1470              	.LVL193:
+ 1471              	.LBE161:
+ 1472              	.LBE160:
+ 1473              	.LBB162:
+ 1474              	.LBB163:
+ 136:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, value & 0xFF);
+ 1475              		.loc 1 136 0
+ 1476 01fd 31F6     		xorl	%esi, %esi
+ 1477 01ff 4889DF   		movq	%rbx, %rdi
+ 1478 0202 E8000000 		call	emit_byte
+ 1478      00
+ 1479              	.LVL194:
+ 137:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 1480              		.loc 1 137 0
+ 1481 0207 31F6     		xorl	%esi, %esi
+ 1482 0209 4889DF   		movq	%rbx, %rdi
+ 1483 020c E8000000 		call	emit_byte
+ 1483      00
+ 1484              	.LVL195:
+ 1485              	.LBE163:
+ 1486              	.LBE162:
+ 307:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, 1);	/* A(2,1)=1 */
+ 1487              		.loc 1 307 0
+ 1488 0211 31F6     		xorl	%esi, %esi
+ 1489 0213 4889DF   		movq	%rbx, %rdi
+ 1490 0216 E8000000 		call	emit_byte
+ 1490      00
+ 1491              	.LVL196:
+ 1492              	.LBB164:
+ 1493              	.LBB165:
+ 136:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, value & 0xFF);
+ 1494              		.loc 1 136 0
+ 1495 021b 31F6     		xorl	%esi, %esi
+ 1496 021d 4889DF   		movq	%rbx, %rdi
+ 1497 0220 E8000000 		call	emit_byte
+ 1497      00
+ 1498              	.LVL197:
+ 137:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 1499              		.loc 1 137 0
+ 1500 0225 BE010000 		movl	$1, %esi
+ 1500      00
+ 1501 022a 4889DF   		movq	%rbx, %rdi
+ 1502 022d E8000000 		call	emit_byte
+ 1502      00
+ 1503              	.LVL198:
+ 1504              	.LBE165:
+ 1505              	.LBE164:
+ 1506              	.LBB166:
+ 1507              	.LBB167:
+ 136:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, value & 0xFF);
+ 1508              		.loc 1 136 0
+ 1509 0232 31F6     		xorl	%esi, %esi
+ 1510 0234 4889DF   		movq	%rbx, %rdi
+ 1511 0237 E8000000 		call	emit_byte
+ 1511      00
+ 1512              	.LVL199:
+ 137:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 1513              		.loc 1 137 0
+ 1514 023c 31F6     		xorl	%esi, %esi
+ 1515 023e 4889DF   		movq	%rbx, %rdi
+ 1516 0241 E8000000 		call	emit_byte
+ 1516      00
+ 1517              	.LVL200:
+ 1518              	.LBE167:
+ 1519              	.LBE166:
+ 310:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, 1);	/* A(3,1)=1 */
+ 1520              		.loc 1 310 0
+ 1521 0246 31F6     		xorl	%esi, %esi
+ 1522 0248 4889DF   		movq	%rbx, %rdi
+ 1523 024b E8000000 		call	emit_byte
+ 1523      00
+ 1524              	.LVL201:
+ 1525              	.LBB168:
+ 1526              	.LBB169:
+ 136:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, value & 0xFF);
+ 1527              		.loc 1 136 0
+ 1528 0250 31F6     		xorl	%esi, %esi
+ 1529 0252 4889DF   		movq	%rbx, %rdi
+ 1530 0255 E8000000 		call	emit_byte
+ 1530      00
+ 1531              	.LVL202:
+ 137:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 1532              		.loc 1 137 0
+ 1533 025a BE010000 		movl	$1, %esi
+ 1533      00
+ 1534 025f 4889DF   		movq	%rbx, %rdi
+ 1535 0262 E8000000 		call	emit_byte
+ 1535      00
+ 1536              	.LVL203:
+ 1537              	.LBE169:
+ 1538              	.LBE168:
+ 1539              	.LBB170:
+ 1540              	.LBB171:
+ 136:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, value & 0xFF);
+ 1541              		.loc 1 136 0
+ 1542 0267 31F6     		xorl	%esi, %esi
+ 1543 0269 4889DF   		movq	%rbx, %rdi
+ 1544 026c E8000000 		call	emit_byte
+ 1544      00
+ 1545              	.LVL204:
+ 137:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 1546              		.loc 1 137 0
+ 1547 0271 31F6     		xorl	%esi, %esi
+ 1548 0273 4889DF   		movq	%rbx, %rdi
+ 1549 0276 E8000000 		call	emit_byte
+ 1549      00
+ 1550              	.LVL205:
+ 1551              	.LBE171:
+ 1552              	.LBE170:
+ 1553              	.LBE153:
+ 1554              	.LBE152:
+ 601:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_pseudo_sos(cinfo);
+ 1555              		.loc 1 601 0
+ 1556 027b 8B835C01 		movl	348(%rbx), %eax
+ 1556      0000
+ 1557 0281 85C0     		testl	%eax, %eax
+ 1558 0283 0F85FCFD 		jne	.L150
+ 1558      FFFF
+ 1559              	.LVL206:
+ 1560              	.L108:
+ 603:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 1561              		.loc 1 603 0
+ 1562 0289 4883C408 		addq	$8, %rsp
+ 1563              		.cfi_remember_state
+ 1564              		.cfi_def_cfa_offset 40
+ 1565 028d 5B       		popq	%rbx
+ 1566              		.cfi_def_cfa_offset 32
+ 1567              	.LVL207:
+ 1568 028e 5D       		popq	%rbp
+ 1569              		.cfi_def_cfa_offset 24
+ 1570 028f 415C     		popq	%r12
+ 1571              		.cfi_def_cfa_offset 16
+ 1572 0291 415D     		popq	%r13
+ 1573              		.cfi_def_cfa_offset 8
+ 1574 0293 C3       		ret
+ 1575              	.LVL208:
+ 1576              		.p2align 4,,10
+ 1577 0294 0F1F4000 		.p2align 3
+ 1578              	.L148:
+ 1579              		.cfi_restore_state
+ 564:fltk-1.3.4-1/jpeg/jcmarker.c ****       cinfo->data_precision != 8 || cinfo->block_size != DCTSIZE) {
+ 1580              		.loc 1 564 0 discriminator 2
+ 1581 0298 837B5808 		cmpl	$8, 88(%rbx)
+ 1582 029c 7439     		je	.L151
+ 1583              	.LVL209:
+ 1584              	.L115:
+ 593:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+ 1585              		.loc 1 593 0
+ 1586 029e BEC10000 		movl	$193, %esi
+ 1586      00
+ 1587 02a3 4889DF   		movq	%rbx, %rdi
+ 1588 02a6 E8000000 		call	emit_sof
+ 1588      00
+ 1589              	.LVL210:
+ 1590 02ab E9B9FDFF 		jmp	.L122
+ 1590      FF
+ 1591              	.LVL211:
+ 1592              		.p2align 4,,10
+ 1593              		.p2align 3
+ 1594              	.L112:
+ 584:fltk-1.3.4-1/jpeg/jcmarker.c ****     else
+ 1595              		.loc 1 584 0
+ 1596 02b0 BECA0000 		movl	$202, %esi
+ 1596      00
+ 1597 02b5 4889DF   		movq	%rbx, %rdi
+ 1598 02b8 E8000000 		call	emit_sof
+ 1598      00
+ 1599              	.LVL212:
+ 1600 02bd E9A7FDFF 		jmp	.L122
+ 1600      FF
+ 1601              	.LVL213:
+ 1602              		.p2align 4,,10
+ 1603 02c2 660F1F44 		.p2align 3
+ 1603      0000
+ 1604              	.L149:
+ 1605              	.LBB173:
+ 1606              	.LBB172:
+ 290:fltk-1.3.4-1/jpeg/jcmarker.c ****       cinfo->num_components < 3)
+ 1607              		.loc 1 290 0
+ 1608 02c8 837B5C02 		cmpl	$2, 92(%rbx)
+ 1609 02cc 0F8E67FE 		jle	.L124
+ 1609      FFFF
+ 1610 02d2 E974FEFF 		jmp	.L125
+ 1610      FF
+ 1611              	.LVL214:
+ 1612              	.L151:
+ 1613              	.LBE172:
+ 1614              	.LBE173:
+ 565:fltk-1.3.4-1/jpeg/jcmarker.c ****     is_baseline = FALSE;
+ 1615              		.loc 1 565 0
+ 1616 02d7 83BBDC01 		cmpl	$8, 476(%rbx)
+ 1616      000008
+ 1617 02de 75BE     		jne	.L115
+ 1618              	.LVL215:
+ 569:fltk-1.3.4-1/jpeg/jcmarker.c **** 	 ci++, compptr++) {
+ 1619              		.loc 1 569 0
+ 1620 02e0 85C0     		testl	%eax, %eax
+ 1621 02e2 488B5368 		movq	104(%rbx), %rdx
+ 1622              	.LVL216:
+ 1623 02e6 0F8E9400 		jle	.L129
+ 1623      0000
+ 1624 02ec 83E801   		subl	$1, %eax
+ 572:fltk-1.3.4-1/jpeg/jcmarker.c ****     }
+ 1625              		.loc 1 572 0
+ 1626 02ef 31F6     		xorl	%esi, %esi
+ 1627 02f1 488D4C40 		leaq	3(%rax,%rax,2), %rcx
+ 1627      03
+ 569:fltk-1.3.4-1/jpeg/jcmarker.c **** 	 ci++, compptr++) {
+ 1628              		.loc 1 569 0
+ 1629 02f6 B8010000 		movl	$1, %eax
+ 1629      00
+ 1630 02fb 48C1E105 		salq	$5, %rcx
+ 1631 02ff 4801D1   		addq	%rdx, %rcx
+ 1632 0302 EB0F     		jmp	.L118
+ 1633              	.LVL217:
+ 1634              		.p2align 4,,10
+ 1635 0304 0F1F4000 		.p2align 3
+ 1636              	.L130:
+ 572:fltk-1.3.4-1/jpeg/jcmarker.c ****     }
+ 1637              		.loc 1 572 0
+ 1638 0308 31C0     		xorl	%eax, %eax
+ 1639              	.LVL218:
+ 1640              	.L117:
+ 570:fltk-1.3.4-1/jpeg/jcmarker.c ****       if (compptr->dc_tbl_no > 1 || compptr->ac_tbl_no > 1)
+ 1641              		.loc 1 570 0
+ 1642 030a 4883C260 		addq	$96, %rdx
+ 1643              	.LVL219:
+ 569:fltk-1.3.4-1/jpeg/jcmarker.c **** 	 ci++, compptr++) {
+ 1644              		.loc 1 569 0
+ 1645 030e 4839D1   		cmpq	%rdx, %rcx
+ 1646 0311 740F     		je	.L152
+ 1647              	.LVL220:
+ 1648              	.L118:
+ 571:fltk-1.3.4-1/jpeg/jcmarker.c **** 	is_baseline = FALSE;
+ 1649              		.loc 1 571 0
+ 1650 0313 837A1401 		cmpl	$1, 20(%rdx)
+ 1651 0317 7FEF     		jg	.L130
+ 572:fltk-1.3.4-1/jpeg/jcmarker.c ****     }
+ 1652              		.loc 1 572 0 discriminator 1
+ 1653 0319 837A1802 		cmpl	$2, 24(%rdx)
+ 1654 031d 0F4DC6   		cmovge	%esi, %eax
+ 1655              	.LVL221:
+ 1656 0320 EBE8     		jmp	.L117
+ 1657              	.LVL222:
+ 1658              	.L152:
+ 1659 0322 89C2     		movl	%eax, %edx
+ 1660              	.LVL223:
+ 1661 0324 83E201   		andl	$1, %edx
+ 1662              	.LVL224:
+ 1663              	.L116:
+ 574:fltk-1.3.4-1/jpeg/jcmarker.c ****       is_baseline = FALSE;
+ 1664              		.loc 1 574 0
+ 1665 0327 4585ED   		testl	%r13d, %r13d
+ 1666 032a 7404     		je	.L119
+ 1667 032c 84D2     		testb	%dl, %dl
+ 1668 032e 751A     		jne	.L153
+ 1669              	.L119:
+ 1670              	.LVL225:
+ 590:fltk-1.3.4-1/jpeg/jcmarker.c ****       emit_sof(cinfo, M_SOF0);	/* SOF code for baseline implementation */
+ 1671              		.loc 1 590 0
+ 1672 0330 85C0     		testl	%eax, %eax
+ 1673 0332 0F8466FF 		je	.L115
+ 1673      FFFF
+ 591:fltk-1.3.4-1/jpeg/jcmarker.c ****     else
+ 1674              		.loc 1 591 0
+ 1675 0338 BEC00000 		movl	$192, %esi
+ 1675      00
+ 1676 033d 4889DF   		movq	%rbx, %rdi
+ 1677 0340 E8000000 		call	emit_sof
+ 1677      00
+ 1678              	.LVL226:
+ 1679 0345 E91FFDFF 		jmp	.L122
+ 1679      FF
+ 1680              	.L153:
+ 1681              	.LVL227:
+ 577:fltk-1.3.4-1/jpeg/jcmarker.c ****     }
+ 1682              		.loc 1 577 0
+ 1683 034a 488B03   		movq	(%rbx), %rax
+ 1684 034d 31F6     		xorl	%esi, %esi
+ 1685 034f 4889DF   		movq	%rbx, %rdi
+ 1686 0352 C740284D 		movl	$77, 40(%rax)
+ 1686      000000
+ 1687 0359 488B03   		movq	(%rbx), %rax
+ 1688 035c FF5008   		call	*8(%rax)
+ 1689              	.LVL228:
+ 582:fltk-1.3.4-1/jpeg/jcmarker.c ****     if (cinfo->progressive_mode)
+ 1690              		.loc 1 582 0
+ 1691 035f 8B8B2401 		movl	292(%rbx), %ecx
+ 1691      0000
+ 1692 0365 85C9     		testl	%ecx, %ecx
+ 1693 0367 0F85E1FC 		jne	.L120
+ 1693      FFFF
+ 588:fltk-1.3.4-1/jpeg/jcmarker.c ****       emit_sof(cinfo, M_SOF2);	/* SOF code for progressive Huffman */
+ 1694              		.loc 1 588 0
+ 1695 036d 8B935C01 		movl	348(%rbx), %edx
+ 1695      0000
+ 1696 0373 85D2     		testl	%edx, %edx
+ 1697 0375 0F8423FF 		je	.L115
+ 1697      FFFF
+ 1698 037b E98EFDFF 		jmp	.L114
+ 1698      FF
+ 1699              	.LVL229:
+ 1700              	.L129:
+ 569:fltk-1.3.4-1/jpeg/jcmarker.c **** 	 ci++, compptr++) {
+ 1701              		.loc 1 569 0
+ 1702 0380 BA010000 		movl	$1, %edx
+ 1702      00
+ 1703              	.LVL230:
+ 568:fltk-1.3.4-1/jpeg/jcmarker.c ****     for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
+ 1704              		.loc 1 568 0
+ 1705 0385 B8010000 		movl	$1, %eax
+ 1705      00
+ 1706 038a EB9B     		jmp	.L116
+ 1707              		.cfi_endproc
+ 1708              	.LFE77:
+ 1710              		.section	.text.unlikely.write_frame_header
+ 1711              	.LCOLDE6:
+ 1712              		.section	.text.write_frame_header
+ 1713              	.LHOTE6:
+ 1714              		.section	.text.unlikely.write_marker_header,"ax",@progbits
+ 1715              	.LCOLDB7:
+ 1716              		.section	.text.write_marker_header,"ax",@progbits
+ 1717              	.LHOTB7:
+ 1718              		.p2align 4,,15
+ 1720              	write_marker_header:
+ 1721              	.LFB74:
+ 490:fltk-1.3.4-1/jpeg/jcmarker.c ****   if (datalen > (unsigned int) 65533)		/* safety check */
+ 1722              		.loc 1 490 0
+ 1723              		.cfi_startproc
+ 1724              	.LVL231:
+ 491:fltk-1.3.4-1/jpeg/jcmarker.c ****     ERREXIT(cinfo, JERR_BAD_LENGTH);
+ 1725              		.loc 1 491 0
+ 1726 0000 81FAFDFF 		cmpl	$65533, %edx
+ 1726      0000
+ 490:fltk-1.3.4-1/jpeg/jcmarker.c ****   if (datalen > (unsigned int) 65533)		/* safety check */
+ 1727              		.loc 1 490 0
+ 1728 0006 4154     		pushq	%r12
+ 1729              		.cfi_def_cfa_offset 16
+ 1730              		.cfi_offset 12, -16
+ 1731 0008 4189F4   		movl	%esi, %r12d
+ 1732 000b 55       		pushq	%rbp
+ 1733              		.cfi_def_cfa_offset 24
+ 1734              		.cfi_offset 6, -24
+ 1735 000c 89D5     		movl	%edx, %ebp
+ 1736 000e 53       		pushq	%rbx
+ 1737              		.cfi_def_cfa_offset 32
+ 1738              		.cfi_offset 3, -32
+ 490:fltk-1.3.4-1/jpeg/jcmarker.c ****   if (datalen > (unsigned int) 65533)		/* safety check */
+ 1739              		.loc 1 490 0
+ 1740 000f 4889FB   		movq	%rdi, %rbx
+ 491:fltk-1.3.4-1/jpeg/jcmarker.c ****     ERREXIT(cinfo, JERR_BAD_LENGTH);
+ 1741              		.loc 1 491 0
+ 1742 0012 760F     		jbe	.L155
+ 492:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 1743              		.loc 1 492 0
+ 1744 0014 488B07   		movq	(%rdi), %rax
+ 1745 0017 C740280C 		movl	$12, 40(%rax)
+ 1745      000000
+ 1746 001e 488B07   		movq	(%rdi), %rax
+ 1747 0021 FF10     		call	*(%rax)
+ 1748              	.LVL232:
+ 1749              	.L155:
+ 1750              	.LBB174:
+ 1751              	.LBB175:
+ 127:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, (int) mark);
+ 1752              		.loc 1 127 0
+ 1753 0023 4889DF   		movq	%rbx, %rdi
+ 1754 0026 BEFF0000 		movl	$255, %esi
+ 1754      00
+ 1755 002b E8000000 		call	emit_byte
+ 1755      00
+ 1756              	.LVL233:
+ 128:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 1757              		.loc 1 128 0
+ 1758 0030 4489E6   		movl	%r12d, %esi
+ 1759 0033 4889DF   		movq	%rbx, %rdi
+ 1760 0036 E8000000 		call	emit_byte
+ 1760      00
+ 1761              	.LVL234:
+ 1762              	.LBE175:
+ 1763              	.LBE174:
+ 496:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 1764              		.loc 1 496 0
+ 1765 003b 8D7502   		leal	2(%rbp), %esi
+ 1766 003e 4889DF   		movq	%rbx, %rdi
+ 497:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 1767              		.loc 1 497 0
+ 1768 0041 5B       		popq	%rbx
+ 1769              		.cfi_def_cfa_offset 24
+ 1770              	.LVL235:
+ 1771 0042 5D       		popq	%rbp
+ 1772              		.cfi_def_cfa_offset 16
+ 1773              	.LVL236:
+ 1774 0043 415C     		popq	%r12
+ 1775              		.cfi_def_cfa_offset 8
+ 1776              	.LVL237:
+ 496:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 1777              		.loc 1 496 0
+ 1778 0045 E9000000 		jmp	emit_2bytes
+ 1778      00
+ 1779              	.LVL238:
+ 1780              		.cfi_endproc
+ 1781              	.LFE74:
+ 1783              		.section	.text.unlikely.write_marker_header
+ 1784              	.LCOLDE7:
+ 1785              		.section	.text.write_marker_header
+ 1786              	.LHOTE7:
+ 1787              		.section	.text.unlikely.write_marker_byte,"ax",@progbits
+ 1788              	.LCOLDB8:
+ 1789              		.section	.text.write_marker_byte,"ax",@progbits
+ 1790              	.LHOTB8:
+ 1791              		.p2align 4,,15
+ 1793              	write_marker_byte:
+ 1794              	.LFB75:
+ 502:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, val);
+ 1795              		.loc 1 502 0
+ 1796              		.cfi_startproc
+ 1797              	.LVL239:
+ 503:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 1798              		.loc 1 503 0
+ 1799 0000 E9000000 		jmp	emit_byte
+ 1799      00
+ 1800              	.LVL240:
+ 1801              		.cfi_endproc
+ 1802              	.LFE75:
+ 1804              		.section	.text.unlikely.write_marker_byte
+ 1805              	.LCOLDE8:
+ 1806              		.section	.text.write_marker_byte
+ 1807              	.LHOTE8:
+ 1808              		.section	.text.unlikely.write_file_header,"ax",@progbits
+ 1809              	.LCOLDB9:
+ 1810              		.section	.text.write_file_header,"ax",@progbits
+ 1811              	.LHOTB9:
+ 1812              		.p2align 4,,15
+ 1814              	write_file_header:
+ 1815              	.LFB76:
+ 520:fltk-1.3.4-1/jpeg/jcmarker.c ****   my_marker_ptr marker = (my_marker_ptr) cinfo->marker;
+ 1816              		.loc 1 520 0
+ 1817              		.cfi_startproc
+ 1818              	.LVL241:
+ 1819 0000 55       		pushq	%rbp
+ 1820              		.cfi_def_cfa_offset 16
+ 1821              		.cfi_offset 6, -16
+ 1822 0001 53       		pushq	%rbx
+ 1823              		.cfi_def_cfa_offset 24
+ 1824              		.cfi_offset 3, -24
+ 1825              	.LBB196:
+ 1826              	.LBB197:
+ 127:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, (int) mark);
+ 1827              		.loc 1 127 0
+ 1828 0002 BEFF0000 		movl	$255, %esi
+ 1828      00
+ 1829              	.LBE197:
+ 1830              	.LBE196:
+ 520:fltk-1.3.4-1/jpeg/jcmarker.c ****   my_marker_ptr marker = (my_marker_ptr) cinfo->marker;
+ 1831              		.loc 1 520 0
+ 1832 0007 4889FB   		movq	%rdi, %rbx
+ 1833 000a 4883EC08 		subq	$8, %rsp
+ 1834              		.cfi_def_cfa_offset 32
+ 521:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 1835              		.loc 1 521 0
+ 1836 000e 488BAF10 		movq	528(%rdi), %rbp
+ 1836      020000
+ 1837              	.LVL242:
+ 1838              	.LBB199:
+ 1839              	.LBB198:
+ 127:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, (int) mark);
+ 1840              		.loc 1 127 0
+ 1841 0015 E8000000 		call	emit_byte
+ 1841      00
+ 1842              	.LVL243:
+ 128:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 1843              		.loc 1 128 0
+ 1844 001a BED80000 		movl	$216, %esi
+ 1844      00
+ 1845 001f 4889DF   		movq	%rbx, %rdi
+ 1846 0022 E8000000 		call	emit_byte
+ 1846      00
+ 1847              	.LVL244:
+ 1848              	.LBE198:
+ 1849              	.LBE199:
+ 526:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 1850              		.loc 1 526 0
+ 1851 0027 C7453800 		movl	$0, 56(%rbp)
+ 1851      000000
+ 528:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_jfif_app0(cinfo);
+ 1852              		.loc 1 528 0
+ 1853 002e 8B934401 		movl	324(%rbx), %edx
+ 1853      0000
+ 1854 0034 85D2     		testl	%edx, %edx
+ 1855 0036 0F85F400 		jne	.L168
+ 1855      0000
+ 1856              	.L159:
+ 530:fltk-1.3.4-1/jpeg/jcmarker.c ****     emit_adobe_app14(cinfo);
+ 1857              		.loc 1 530 0
+ 1858 003c 8B835001 		movl	336(%rbx), %eax
+ 1858      0000
+ 1859 0042 85C0     		testl	%eax, %eax
+ 1860 0044 750A     		jne	.L169
+ 532:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 1861              		.loc 1 532 0
+ 1862 0046 4883C408 		addq	$8, %rsp
+ 1863              		.cfi_remember_state
+ 1864              		.cfi_def_cfa_offset 24
+ 1865 004a 5B       		popq	%rbx
+ 1866              		.cfi_def_cfa_offset 16
+ 1867              	.LVL245:
+ 1868 004b 5D       		popq	%rbp
+ 1869              		.cfi_def_cfa_offset 8
+ 1870              	.LVL246:
+ 1871 004c C3       		ret
+ 1872              	.LVL247:
+ 1873 004d 0F1F00   		.p2align 4,,10
+ 1874              		.p2align 3
+ 1875              	.L169:
+ 1876              		.cfi_restore_state
+ 1877              	.LBB200:
+ 1878              	.LBB201:
+ 1879              	.LBB202:
+ 1880              	.LBB203:
+ 127:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, (int) mark);
+ 1881              		.loc 1 127 0
+ 1882 0050 BEFF0000 		movl	$255, %esi
+ 1882      00
+ 1883 0055 4889DF   		movq	%rbx, %rdi
+ 1884 0058 E8000000 		call	emit_byte
+ 1884      00
+ 1885              	.LVL248:
+ 128:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 1886              		.loc 1 128 0
+ 1887 005d BEEE0000 		movl	$238, %esi
+ 1887      00
+ 1888 0062 4889DF   		movq	%rbx, %rdi
+ 1889 0065 E8000000 		call	emit_byte
+ 1889      00
+ 1890              	.LVL249:
+ 1891              	.LBE203:
+ 1892              	.LBE202:
+ 1893              	.LBB204:
+ 1894              	.LBB205:
+ 136:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, value & 0xFF);
+ 1895              		.loc 1 136 0
+ 1896 006a 31F6     		xorl	%esi, %esi
+ 1897 006c 4889DF   		movq	%rbx, %rdi
+ 1898 006f E8000000 		call	emit_byte
+ 1898      00
+ 1899              	.LVL250:
+ 137:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 1900              		.loc 1 137 0
+ 1901 0074 BE0E0000 		movl	$14, %esi
+ 1901      00
+ 1902 0079 4889DF   		movq	%rbx, %rdi
+ 1903 007c E8000000 		call	emit_byte
+ 1903      00
+ 1904              	.LVL251:
+ 1905              	.LBE205:
+ 1906              	.LBE204:
+ 457:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0x64);
+ 1907              		.loc 1 457 0
+ 1908 0081 BE410000 		movl	$65, %esi
+ 1908      00
+ 1909 0086 4889DF   		movq	%rbx, %rdi
+ 1910 0089 E8000000 		call	emit_byte
+ 1910      00
+ 1911              	.LVL252:
+ 458:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0x6F);
+ 1912              		.loc 1 458 0
+ 1913 008e BE640000 		movl	$100, %esi
+ 1913      00
+ 1914 0093 4889DF   		movq	%rbx, %rdi
+ 1915 0096 E8000000 		call	emit_byte
+ 1915      00
+ 1916              	.LVL253:
+ 459:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0x62);
+ 1917              		.loc 1 459 0
+ 1918 009b BE6F0000 		movl	$111, %esi
+ 1918      00
+ 1919 00a0 4889DF   		movq	%rbx, %rdi
+ 1920 00a3 E8000000 		call	emit_byte
+ 1920      00
+ 1921              	.LVL254:
+ 460:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0x65);
+ 1922              		.loc 1 460 0
+ 1923 00a8 BE620000 		movl	$98, %esi
+ 1923      00
+ 1924 00ad 4889DF   		movq	%rbx, %rdi
+ 1925 00b0 E8000000 		call	emit_byte
+ 1925      00
+ 1926              	.LVL255:
+ 461:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, 100);	/* Version */
+ 1927              		.loc 1 461 0
+ 1928 00b5 BE650000 		movl	$101, %esi
+ 1928      00
+ 1929 00ba 4889DF   		movq	%rbx, %rdi
+ 1930 00bd E8000000 		call	emit_byte
+ 1930      00
+ 1931              	.LVL256:
+ 1932              	.LBB206:
+ 1933              	.LBB207:
+ 136:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, value & 0xFF);
+ 1934              		.loc 1 136 0
+ 1935 00c2 31F6     		xorl	%esi, %esi
+ 1936 00c4 4889DF   		movq	%rbx, %rdi
+ 1937 00c7 E8000000 		call	emit_byte
+ 1937      00
+ 1938              	.LVL257:
+ 137:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 1939              		.loc 1 137 0
+ 1940 00cc BE640000 		movl	$100, %esi
+ 1940      00
+ 1941 00d1 4889DF   		movq	%rbx, %rdi
+ 1942 00d4 E8000000 		call	emit_byte
+ 1942      00
+ 1943              	.LVL258:
+ 1944              	.LBE207:
+ 1945              	.LBE206:
+ 1946              	.LBB208:
+ 1947              	.LBB209:
+ 136:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, value & 0xFF);
+ 1948              		.loc 1 136 0
+ 1949 00d9 31F6     		xorl	%esi, %esi
+ 1950 00db 4889DF   		movq	%rbx, %rdi
+ 1951 00de E8000000 		call	emit_byte
+ 1951      00
+ 1952              	.LVL259:
+ 137:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 1953              		.loc 1 137 0
+ 1954 00e3 31F6     		xorl	%esi, %esi
+ 1955 00e5 4889DF   		movq	%rbx, %rdi
+ 1956 00e8 E8000000 		call	emit_byte
+ 1956      00
+ 1957              	.LVL260:
+ 1958              	.LBE209:
+ 1959              	.LBE208:
+ 1960              	.LBB210:
+ 1961              	.LBB211:
+ 136:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, value & 0xFF);
+ 1962              		.loc 1 136 0
+ 1963 00ed 31F6     		xorl	%esi, %esi
+ 1964 00ef 4889DF   		movq	%rbx, %rdi
+ 1965 00f2 E8000000 		call	emit_byte
+ 1965      00
+ 1966              	.LVL261:
+ 137:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 1967              		.loc 1 137 0
+ 1968 00f7 31F6     		xorl	%esi, %esi
+ 1969 00f9 4889DF   		movq	%rbx, %rdi
+ 1970 00fc E8000000 		call	emit_byte
+ 1970      00
+ 1971              	.LVL262:
+ 1972              	.LBE211:
+ 1973              	.LBE210:
+ 465:fltk-1.3.4-1/jpeg/jcmarker.c ****   case JCS_YCbCr:
+ 1974              		.loc 1 465 0
+ 1975 0101 8B4360   		movl	96(%rbx), %eax
+ 467:fltk-1.3.4-1/jpeg/jcmarker.c ****     break;
+ 1976              		.loc 1 467 0
+ 1977 0104 BE010000 		movl	$1, %esi
+ 1977      00
+ 465:fltk-1.3.4-1/jpeg/jcmarker.c ****   case JCS_YCbCr:
+ 1978              		.loc 1 465 0
+ 1979 0109 83F803   		cmpl	$3, %eax
+ 1980 010c 740E     		je	.L166
+ 1981 010e 83F805   		cmpl	$5, %eax
+ 470:fltk-1.3.4-1/jpeg/jcmarker.c ****     break;
+ 1982              		.loc 1 470 0
+ 1983 0111 BE020000 		movl	$2, %esi
+ 1983      00
+ 465:fltk-1.3.4-1/jpeg/jcmarker.c ****   case JCS_YCbCr:
+ 1984              		.loc 1 465 0
+ 1985 0116 0F85EC00 		jne	.L170
+ 1985      0000
+ 1986              	.L166:
+ 1987              	.LBE201:
+ 1988              	.LBE200:
+ 532:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 1989              		.loc 1 532 0
+ 1990 011c 4883C408 		addq	$8, %rsp
+ 1991              		.cfi_remember_state
+ 1992              		.cfi_def_cfa_offset 24
+ 1993              	.LBB216:
+ 1994              	.LBB212:
+ 473:fltk-1.3.4-1/jpeg/jcmarker.c ****     break;
+ 1995              		.loc 1 473 0
+ 1996 0120 4889DF   		movq	%rbx, %rdi
+ 1997              	.LBE212:
+ 1998              	.LBE216:
+ 532:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 1999              		.loc 1 532 0
+ 2000 0123 5B       		popq	%rbx
+ 2001              		.cfi_def_cfa_offset 16
+ 2002              	.LVL263:
+ 2003 0124 5D       		popq	%rbp
+ 2004              		.cfi_def_cfa_offset 8
+ 2005              	.LVL264:
+ 2006              	.LBB217:
+ 2007              	.LBB213:
+ 473:fltk-1.3.4-1/jpeg/jcmarker.c ****     break;
+ 2008              		.loc 1 473 0
+ 2009 0125 E9000000 		jmp	emit_byte
+ 2009      00
+ 2010              	.LVL265:
+ 2011 012a 660F1F44 		.p2align 4,,10
+ 2011      0000
+ 2012              		.p2align 3
+ 2013              	.L168:
+ 2014              		.cfi_restore_state
+ 2015              	.LBE213:
+ 2016              	.LBE217:
+ 2017              	.LBB218:
+ 2018              	.LBB219:
+ 2019              	.LBB220:
+ 2020              	.LBB221:
+ 127:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, (int) mark);
+ 2021              		.loc 1 127 0
+ 2022 0130 4889DF   		movq	%rbx, %rdi
+ 2023 0133 BEFF0000 		movl	$255, %esi
+ 2023      00
+ 2024 0138 E8000000 		call	emit_byte
+ 2024      00
+ 2025              	.LVL266:
+ 128:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 2026              		.loc 1 128 0
+ 2027 013d 4889DF   		movq	%rbx, %rdi
+ 2028 0140 BEE00000 		movl	$224, %esi
+ 2028      00
+ 2029 0145 E8000000 		call	emit_byte
+ 2029      00
+ 2030              	.LVL267:
+ 2031              	.LBE221:
+ 2032              	.LBE220:
+ 2033              	.LBB222:
+ 2034              	.LBB223:
+ 136:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, value & 0xFF);
+ 2035              		.loc 1 136 0
+ 2036 014a 31F6     		xorl	%esi, %esi
+ 2037 014c 4889DF   		movq	%rbx, %rdi
+ 2038 014f E8000000 		call	emit_byte
+ 2038      00
+ 2039              	.LVL268:
+ 137:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 2040              		.loc 1 137 0
+ 2041 0154 4889DF   		movq	%rbx, %rdi
+ 2042 0157 BE100000 		movl	$16, %esi
+ 2042      00
+ 2043 015c E8000000 		call	emit_byte
+ 2043      00
+ 2044              	.LVL269:
+ 2045              	.LBE223:
+ 2046              	.LBE222:
+ 418:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0x46);
+ 2047              		.loc 1 418 0
+ 2048 0161 4889DF   		movq	%rbx, %rdi
+ 2049 0164 BE4A0000 		movl	$74, %esi
+ 2049      00
+ 2050 0169 E8000000 		call	emit_byte
+ 2050      00
+ 2051              	.LVL270:
+ 419:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0x49);
+ 2052              		.loc 1 419 0
+ 2053 016e 4889DF   		movq	%rbx, %rdi
+ 2054 0171 BE460000 		movl	$70, %esi
+ 2054      00
+ 2055 0176 E8000000 		call	emit_byte
+ 2055      00
+ 2056              	.LVL271:
+ 420:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0x46);
+ 2057              		.loc 1 420 0
+ 2058 017b 4889DF   		movq	%rbx, %rdi
+ 2059 017e BE490000 		movl	$73, %esi
+ 2059      00
+ 2060 0183 E8000000 		call	emit_byte
+ 2060      00
+ 2061              	.LVL272:
+ 421:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0);
+ 2062              		.loc 1 421 0
+ 2063 0188 4889DF   		movq	%rbx, %rdi
+ 2064 018b BE460000 		movl	$70, %esi
+ 2064      00
+ 2065 0190 E8000000 		call	emit_byte
+ 2065      00
+ 2066              	.LVL273:
+ 422:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, cinfo->JFIF_major_version); /* Version fields */
+ 2067              		.loc 1 422 0
+ 2068 0195 31F6     		xorl	%esi, %esi
+ 2069 0197 4889DF   		movq	%rbx, %rdi
+ 2070 019a E8000000 		call	emit_byte
+ 2070      00
+ 2071              	.LVL274:
+ 423:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, cinfo->JFIF_minor_version);
+ 2072              		.loc 1 423 0
+ 2073 019f 0FB6B348 		movzbl	328(%rbx), %esi
+ 2073      010000
+ 2074 01a6 4889DF   		movq	%rbx, %rdi
+ 2075 01a9 E8000000 		call	emit_byte
+ 2075      00
+ 2076              	.LVL275:
+ 424:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, cinfo->density_unit); /* Pixel size information */
+ 2077              		.loc 1 424 0
+ 2078 01ae 0FB6B349 		movzbl	329(%rbx), %esi
+ 2078      010000
+ 2079 01b5 4889DF   		movq	%rbx, %rdi
+ 2080 01b8 E8000000 		call	emit_byte
+ 2080      00
+ 2081              	.LVL276:
+ 425:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, (int) cinfo->X_density);
+ 2082              		.loc 1 425 0
+ 2083 01bd 0FB6B34A 		movzbl	330(%rbx), %esi
+ 2083      010000
+ 2084 01c4 4889DF   		movq	%rbx, %rdi
+ 2085 01c7 E8000000 		call	emit_byte
+ 2085      00
+ 2086              	.LVL277:
+ 426:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_2bytes(cinfo, (int) cinfo->Y_density);
+ 2087              		.loc 1 426 0
+ 2088 01cc 0FB7B34C 		movzwl	332(%rbx), %esi
+ 2088      010000
+ 2089 01d3 4889DF   		movq	%rbx, %rdi
+ 2090 01d6 E8000000 		call	emit_2bytes
+ 2090      00
+ 2091              	.LVL278:
+ 427:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0);		/* No thumbnail image */
+ 2092              		.loc 1 427 0
+ 2093 01db 0FB7B34E 		movzwl	334(%rbx), %esi
+ 2093      010000
+ 2094 01e2 4889DF   		movq	%rbx, %rdi
+ 2095 01e5 E8000000 		call	emit_2bytes
+ 2095      00
+ 2096              	.LVL279:
+ 428:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, 0);
+ 2097              		.loc 1 428 0
+ 2098 01ea 31F6     		xorl	%esi, %esi
+ 2099 01ec 4889DF   		movq	%rbx, %rdi
+ 2100 01ef E8000000 		call	emit_byte
+ 2100      00
+ 2101              	.LVL280:
+ 429:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 2102              		.loc 1 429 0
+ 2103 01f4 31F6     		xorl	%esi, %esi
+ 2104 01f6 4889DF   		movq	%rbx, %rdi
+ 2105 01f9 E8000000 		call	emit_byte
+ 2105      00
+ 2106              	.LVL281:
+ 2107 01fe E939FEFF 		jmp	.L159
+ 2107      FF
+ 2108              	.LVL282:
+ 2109              		.p2align 4,,10
+ 2110 0203 0F1F4400 		.p2align 3
+ 2110      00
+ 2111              	.L170:
+ 2112              	.LBE219:
+ 2113              	.LBE218:
+ 532:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 2114              		.loc 1 532 0
+ 2115 0208 4883C408 		addq	$8, %rsp
+ 2116              		.cfi_def_cfa_offset 24
+ 2117              	.LBB224:
+ 2118              	.LBB214:
+ 473:fltk-1.3.4-1/jpeg/jcmarker.c ****     break;
+ 2119              		.loc 1 473 0
+ 2120 020c 4889DF   		movq	%rbx, %rdi
+ 2121 020f 31F6     		xorl	%esi, %esi
+ 2122              	.LBE214:
+ 2123              	.LBE224:
+ 532:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 2124              		.loc 1 532 0
+ 2125 0211 5B       		popq	%rbx
+ 2126              		.cfi_def_cfa_offset 16
+ 2127              	.LVL283:
+ 2128 0212 5D       		popq	%rbp
+ 2129              		.cfi_def_cfa_offset 8
+ 2130              	.LVL284:
+ 2131              	.LBB225:
+ 2132              	.LBB215:
+ 473:fltk-1.3.4-1/jpeg/jcmarker.c ****     break;
+ 2133              		.loc 1 473 0
+ 2134 0213 E9000000 		jmp	emit_byte
+ 2134      00
+ 2135              	.LVL285:
+ 2136              	.LBE215:
+ 2137              	.LBE225:
+ 2138              		.cfi_endproc
+ 2139              	.LFE76:
+ 2141              		.section	.text.unlikely.write_file_header
+ 2142              	.LCOLDE9:
+ 2143              		.section	.text.write_file_header
+ 2144              	.LHOTE9:
+ 2145              		.section	.text.unlikely.write_file_trailer,"ax",@progbits
+ 2146              	.LCOLDB10:
+ 2147              		.section	.text.write_file_trailer,"ax",@progbits
+ 2148              	.LHOTB10:
+ 2149              		.p2align 4,,15
+ 2151              	write_file_trailer:
+ 2152              	.LFB79:
+ 650:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 651:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 652:fltk-1.3.4-1/jpeg/jcmarker.c **** /*
+ 653:fltk-1.3.4-1/jpeg/jcmarker.c ****  * Write datastream trailer.
+ 654:fltk-1.3.4-1/jpeg/jcmarker.c ****  */
+ 655:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 656:fltk-1.3.4-1/jpeg/jcmarker.c **** METHODDEF(void)
+ 657:fltk-1.3.4-1/jpeg/jcmarker.c **** write_file_trailer (j_compress_ptr cinfo)
+ 658:fltk-1.3.4-1/jpeg/jcmarker.c **** {
+ 2153              		.loc 1 658 0
+ 2154              		.cfi_startproc
+ 2155              	.LVL286:
+ 2156 0000 53       		pushq	%rbx
+ 2157              		.cfi_def_cfa_offset 16
+ 2158              		.cfi_offset 3, -16
+ 2159              	.LBB226:
+ 2160              	.LBB227:
+ 127:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, (int) mark);
+ 2161              		.loc 1 127 0
+ 2162 0001 BEFF0000 		movl	$255, %esi
+ 2162      00
+ 2163              	.LBE227:
+ 2164              	.LBE226:
+ 2165              		.loc 1 658 0
+ 2166 0006 4889FB   		movq	%rdi, %rbx
+ 2167              	.LBB230:
+ 2168              	.LBB228:
+ 127:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, (int) mark);
+ 2169              		.loc 1 127 0
+ 2170 0009 E8000000 		call	emit_byte
+ 2170      00
+ 2171              	.LVL287:
+ 128:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 2172              		.loc 1 128 0
+ 2173 000e 4889DF   		movq	%rbx, %rdi
+ 2174 0011 BED90000 		movl	$217, %esi
+ 2174      00
+ 2175              	.LBE228:
+ 2176              	.LBE230:
+ 659:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_marker(cinfo, M_EOI);
+ 660:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 2177              		.loc 1 660 0
+ 2178 0016 5B       		popq	%rbx
+ 2179              		.cfi_def_cfa_offset 8
+ 2180              	.LVL288:
+ 2181              	.LBB231:
+ 2182              	.LBB229:
+ 128:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 2183              		.loc 1 128 0
+ 2184 0017 E9000000 		jmp	emit_byte
+ 2184      00
+ 2185              	.LVL289:
+ 2186              	.LBE229:
+ 2187              	.LBE231:
+ 2188              		.cfi_endproc
+ 2189              	.LFE79:
+ 2191              		.section	.text.unlikely.write_file_trailer
+ 2192              	.LCOLDE10:
+ 2193              		.section	.text.write_file_trailer
+ 2194              	.LHOTE10:
+ 2195              		.section	.text.unlikely.write_tables_only,"ax",@progbits
+ 2196              	.LCOLDB11:
+ 2197              		.section	.text.write_tables_only,"ax",@progbits
+ 2198              	.LHOTB11:
+ 2199              		.p2align 4,,15
+ 2201              	write_tables_only:
+ 2202              	.LFB80:
+ 661:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 662:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 663:fltk-1.3.4-1/jpeg/jcmarker.c **** /*
+ 664:fltk-1.3.4-1/jpeg/jcmarker.c ****  * Write an abbreviated table-specification datastream.
+ 665:fltk-1.3.4-1/jpeg/jcmarker.c ****  * This consists of SOI, DQT and DHT tables, and EOI.
+ 666:fltk-1.3.4-1/jpeg/jcmarker.c ****  * Any table that is defined and not marked sent_table = TRUE will be
+ 667:fltk-1.3.4-1/jpeg/jcmarker.c ****  * emitted.  Note that all tables will be marked sent_table = TRUE at exit.
+ 668:fltk-1.3.4-1/jpeg/jcmarker.c ****  */
+ 669:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 670:fltk-1.3.4-1/jpeg/jcmarker.c **** METHODDEF(void)
+ 671:fltk-1.3.4-1/jpeg/jcmarker.c **** write_tables_only (j_compress_ptr cinfo)
+ 672:fltk-1.3.4-1/jpeg/jcmarker.c **** {
+ 2203              		.loc 1 672 0
+ 2204              		.cfi_startproc
+ 2205              	.LVL290:
+ 2206 0000 4154     		pushq	%r12
+ 2207              		.cfi_def_cfa_offset 16
+ 2208              		.cfi_offset 12, -16
+ 2209 0002 55       		pushq	%rbp
+ 2210              		.cfi_def_cfa_offset 24
+ 2211              		.cfi_offset 6, -24
+ 2212              	.LBB232:
+ 2213              	.LBB233:
+ 127:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, (int) mark);
+ 2214              		.loc 1 127 0
+ 2215 0003 BEFF0000 		movl	$255, %esi
+ 2215      00
+ 2216              	.LBE233:
+ 2217              	.LBE232:
+ 2218              		.loc 1 672 0
+ 2219 0008 53       		pushq	%rbx
+ 2220              		.cfi_def_cfa_offset 32
+ 2221              		.cfi_offset 3, -32
+ 2222              		.loc 1 672 0
+ 2223 0009 4889FD   		movq	%rdi, %rbp
+ 2224              	.LBB235:
+ 2225              	.LBB234:
+ 128:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 2226              		.loc 1 128 0
+ 2227 000c 31DB     		xorl	%ebx, %ebx
+ 127:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, (int) mark);
+ 2228              		.loc 1 127 0
+ 2229 000e E8000000 		call	emit_byte
+ 2229      00
+ 2230              	.LVL291:
+ 128:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 2231              		.loc 1 128 0
+ 2232 0013 BED80000 		movl	$216, %esi
+ 2232      00
+ 2233 0018 4889EF   		movq	%rbp, %rdi
+ 2234 001b E8000000 		call	emit_byte
+ 2234      00
+ 2235              	.LVL292:
+ 2236              	.L175:
+ 2237              	.LBE234:
+ 2238              	.LBE235:
+ 673:fltk-1.3.4-1/jpeg/jcmarker.c ****   int i;
+ 674:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 675:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_marker(cinfo, M_SOI);
+ 676:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 677:fltk-1.3.4-1/jpeg/jcmarker.c ****   for (i = 0; i < NUM_QUANT_TBLS; i++) {
+ 678:fltk-1.3.4-1/jpeg/jcmarker.c ****     if (cinfo->quant_tbl_ptrs[i] != NULL)
+ 2239              		.loc 1 678 0
+ 2240 0020 48837CDD 		cmpq	$0, 112(%rbp,%rbx,8)
+ 2240      7000
+ 2241 0026 740A     		je	.L174
+ 679:fltk-1.3.4-1/jpeg/jcmarker.c ****       (void) emit_dqt(cinfo, i);
+ 2242              		.loc 1 679 0
+ 2243 0028 89DE     		movl	%ebx, %esi
+ 2244 002a 4889EF   		movq	%rbp, %rdi
+ 2245 002d E8000000 		call	emit_dqt
+ 2245      00
+ 2246              	.LVL293:
+ 2247              	.L174:
+ 2248 0032 4883C301 		addq	$1, %rbx
+ 2249              	.LVL294:
+ 677:fltk-1.3.4-1/jpeg/jcmarker.c ****     if (cinfo->quant_tbl_ptrs[i] != NULL)
+ 2250              		.loc 1 677 0 discriminator 2
+ 2251 0036 4883FB04 		cmpq	$4, %rbx
+ 2252 003a 75E4     		jne	.L175
+ 680:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+ 681:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 682:fltk-1.3.4-1/jpeg/jcmarker.c ****   if (! cinfo->arith_code) {
+ 2253              		.loc 1 682 0
+ 2254 003c 8B852401 		movl	292(%rbp), %eax
+ 2254      0000
+ 2255 0042 31DB     		xorl	%ebx, %ebx
+ 2256 0044 4C8DA5A0 		leaq	160(%rbp), %r12
+ 2256      000000
+ 2257 004b 85C0     		testl	%eax, %eax
+ 2258 004d 7536     		jne	.L180
+ 2259              	.L181:
+ 2260              	.LVL295:
+ 683:fltk-1.3.4-1/jpeg/jcmarker.c ****     for (i = 0; i < NUM_HUFF_TBLS; i++) {
+ 684:fltk-1.3.4-1/jpeg/jcmarker.c ****       if (cinfo->dc_huff_tbl_ptrs[i] != NULL)
+ 2261              		.loc 1 684 0
+ 2262 004f 49833C24 		cmpq	$0, (%r12)
+ 2262      00
+ 2263 0054 740C     		je	.L177
+ 685:fltk-1.3.4-1/jpeg/jcmarker.c **** 	emit_dht(cinfo, i, FALSE);
+ 2264              		.loc 1 685 0
+ 2265 0056 31D2     		xorl	%edx, %edx
+ 2266 0058 89DE     		movl	%ebx, %esi
+ 2267 005a 4889EF   		movq	%rbp, %rdi
+ 2268 005d E8000000 		call	emit_dht
+ 2268      00
+ 2269              	.LVL296:
+ 2270              	.L177:
+ 686:fltk-1.3.4-1/jpeg/jcmarker.c ****       if (cinfo->ac_huff_tbl_ptrs[i] != NULL)
+ 2271              		.loc 1 686 0
+ 2272 0062 49837C24 		cmpq	$0, 32(%r12)
+ 2272      2000
+ 2273 0068 740F     		je	.L178
+ 687:fltk-1.3.4-1/jpeg/jcmarker.c **** 	emit_dht(cinfo, i, TRUE);
+ 2274              		.loc 1 687 0
+ 2275 006a BA010000 		movl	$1, %edx
+ 2275      00
+ 2276 006f 89DE     		movl	%ebx, %esi
+ 2277 0071 4889EF   		movq	%rbp, %rdi
+ 2278 0074 E8000000 		call	emit_dht
+ 2278      00
+ 2279              	.LVL297:
+ 2280              	.L178:
+ 683:fltk-1.3.4-1/jpeg/jcmarker.c ****       if (cinfo->dc_huff_tbl_ptrs[i] != NULL)
+ 2281              		.loc 1 683 0 discriminator 2
+ 2282 0079 83C301   		addl	$1, %ebx
+ 2283              	.LVL298:
+ 2284 007c 4983C408 		addq	$8, %r12
+ 2285 0080 83FB04   		cmpl	$4, %ebx
+ 2286 0083 75CA     		jne	.L181
+ 2287              	.LVL299:
+ 2288              	.L180:
+ 2289              	.LBB236:
+ 2290              	.LBB237:
+ 127:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_byte(cinfo, (int) mark);
+ 2291              		.loc 1 127 0
+ 2292 0085 4889EF   		movq	%rbp, %rdi
+ 2293 0088 BEFF0000 		movl	$255, %esi
+ 2293      00
+ 2294 008d E8000000 		call	emit_byte
+ 2294      00
+ 2295              	.LVL300:
+ 2296              	.LBE237:
+ 2297              	.LBE236:
+ 688:fltk-1.3.4-1/jpeg/jcmarker.c ****     }
+ 689:fltk-1.3.4-1/jpeg/jcmarker.c ****   }
+ 690:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 691:fltk-1.3.4-1/jpeg/jcmarker.c ****   emit_marker(cinfo, M_EOI);
+ 692:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 2298              		.loc 1 692 0
+ 2299 0092 5B       		popq	%rbx
+ 2300              		.cfi_def_cfa_offset 24
+ 2301              	.LBB240:
+ 2302              	.LBB238:
+ 128:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 2303              		.loc 1 128 0
+ 2304 0093 4889EF   		movq	%rbp, %rdi
+ 2305 0096 BED90000 		movl	$217, %esi
+ 2305      00
+ 2306              	.LBE238:
+ 2307              	.LBE240:
+ 2308              		.loc 1 692 0
+ 2309 009b 5D       		popq	%rbp
+ 2310              		.cfi_def_cfa_offset 16
+ 2311              	.LVL301:
+ 2312 009c 415C     		popq	%r12
+ 2313              		.cfi_def_cfa_offset 8
+ 2314              	.LBB241:
+ 2315              	.LBB239:
+ 128:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 2316              		.loc 1 128 0
+ 2317 009e E9000000 		jmp	emit_byte
+ 2317      00
+ 2318              	.LVL302:
+ 2319              	.LBE239:
+ 2320              	.LBE241:
+ 2321              		.cfi_endproc
+ 2322              	.LFE80:
+ 2324              		.section	.text.unlikely.write_tables_only
+ 2325              	.LCOLDE11:
+ 2326              		.section	.text.write_tables_only
+ 2327              	.LHOTE11:
+ 2328              		.section	.text.unlikely.jinit_marker_writer,"ax",@progbits
+ 2329              	.LCOLDB12:
+ 2330              		.section	.text.jinit_marker_writer,"ax",@progbits
+ 2331              	.LHOTB12:
+ 2332              		.p2align 4,,15
+ 2333              		.globl	jinit_marker_writer
+ 2335              	jinit_marker_writer:
+ 2336              	.LFB81:
+ 693:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 694:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 695:fltk-1.3.4-1/jpeg/jcmarker.c **** /*
+ 696:fltk-1.3.4-1/jpeg/jcmarker.c ****  * Initialize the marker writer module.
+ 697:fltk-1.3.4-1/jpeg/jcmarker.c ****  */
+ 698:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 699:fltk-1.3.4-1/jpeg/jcmarker.c **** GLOBAL(void)
+ 700:fltk-1.3.4-1/jpeg/jcmarker.c **** jinit_marker_writer (j_compress_ptr cinfo)
+ 701:fltk-1.3.4-1/jpeg/jcmarker.c **** {
+ 2337              		.loc 1 701 0
+ 2338              		.cfi_startproc
+ 2339              	.LVL303:
+ 702:fltk-1.3.4-1/jpeg/jcmarker.c ****   my_marker_ptr marker;
+ 703:fltk-1.3.4-1/jpeg/jcmarker.c **** 
+ 704:fltk-1.3.4-1/jpeg/jcmarker.c ****   /* Create the subobject */
+ 705:fltk-1.3.4-1/jpeg/jcmarker.c ****   marker = (my_marker_ptr)
+ 706:fltk-1.3.4-1/jpeg/jcmarker.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 2340              		.loc 1 706 0
+ 2341 0000 488B4708 		movq	8(%rdi), %rax
+ 701:fltk-1.3.4-1/jpeg/jcmarker.c ****   my_marker_ptr marker;
+ 2342              		.loc 1 701 0
+ 2343 0004 53       		pushq	%rbx
+ 2344              		.cfi_def_cfa_offset 16
+ 2345              		.cfi_offset 3, -16
+ 701:fltk-1.3.4-1/jpeg/jcmarker.c ****   my_marker_ptr marker;
+ 2346              		.loc 1 701 0
+ 2347 0005 4889FB   		movq	%rdi, %rbx
+ 705:fltk-1.3.4-1/jpeg/jcmarker.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 2348              		.loc 1 705 0
+ 2349 0008 BA400000 		movl	$64, %edx
+ 2349      00
+ 2350 000d BE010000 		movl	$1, %esi
+ 2350      00
+ 2351 0012 FF10     		call	*(%rax)
+ 2352              	.LVL304:
+ 707:fltk-1.3.4-1/jpeg/jcmarker.c **** 				SIZEOF(my_marker_writer));
+ 708:fltk-1.3.4-1/jpeg/jcmarker.c ****   cinfo->marker = &marker->pub;
+ 2353              		.loc 1 708 0
+ 2354 0014 48898310 		movq	%rax, 528(%rbx)
+ 2354      020000
+ 709:fltk-1.3.4-1/jpeg/jcmarker.c ****   /* Initialize method pointers */
+ 710:fltk-1.3.4-1/jpeg/jcmarker.c ****   marker->pub.write_file_header = write_file_header;
+ 2355              		.loc 1 710 0
+ 2356 001b 48C70000 		movq	$write_file_header, (%rax)
+ 2356      000000
+ 711:fltk-1.3.4-1/jpeg/jcmarker.c ****   marker->pub.write_frame_header = write_frame_header;
+ 2357              		.loc 1 711 0
+ 2358 0022 48C74008 		movq	$write_frame_header, 8(%rax)
+ 2358      00000000 
+ 712:fltk-1.3.4-1/jpeg/jcmarker.c ****   marker->pub.write_scan_header = write_scan_header;
+ 2359              		.loc 1 712 0
+ 2360 002a 48C74010 		movq	$write_scan_header, 16(%rax)
+ 2360      00000000 
+ 713:fltk-1.3.4-1/jpeg/jcmarker.c ****   marker->pub.write_file_trailer = write_file_trailer;
+ 2361              		.loc 1 713 0
+ 2362 0032 48C74018 		movq	$write_file_trailer, 24(%rax)
+ 2362      00000000 
+ 714:fltk-1.3.4-1/jpeg/jcmarker.c ****   marker->pub.write_tables_only = write_tables_only;
+ 2363              		.loc 1 714 0
+ 2364 003a 48C74020 		movq	$write_tables_only, 32(%rax)
+ 2364      00000000 
+ 715:fltk-1.3.4-1/jpeg/jcmarker.c ****   marker->pub.write_marker_header = write_marker_header;
+ 2365              		.loc 1 715 0
+ 2366 0042 48C74028 		movq	$write_marker_header, 40(%rax)
+ 2366      00000000 
+ 716:fltk-1.3.4-1/jpeg/jcmarker.c ****   marker->pub.write_marker_byte = write_marker_byte;
+ 2367              		.loc 1 716 0
+ 2368 004a 48C74030 		movq	$write_marker_byte, 48(%rax)
+ 2368      00000000 
+ 717:fltk-1.3.4-1/jpeg/jcmarker.c ****   /* Initialize private state */
+ 718:fltk-1.3.4-1/jpeg/jcmarker.c ****   marker->last_restart_interval = 0;
+ 2369              		.loc 1 718 0
+ 2370 0052 C7403800 		movl	$0, 56(%rax)
+ 2370      000000
+ 719:fltk-1.3.4-1/jpeg/jcmarker.c **** }
+ 2371              		.loc 1 719 0
+ 2372 0059 5B       		popq	%rbx
+ 2373              		.cfi_def_cfa_offset 8
+ 2374              	.LVL305:
+ 2375 005a C3       		ret
+ 2376              		.cfi_endproc
+ 2377              	.LFE81:
+ 2379              		.section	.text.unlikely.jinit_marker_writer
+ 2380              	.LCOLDE12:
+ 2381              		.section	.text.jinit_marker_writer
+ 2382              	.LHOTE12:
+ 2383              		.text
+ 2384              	.Letext0:
+ 2385              		.section	.text.unlikely.emit_byte
+ 2386              	.Letext_cold0:
+ 2387              		.file 2 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
+ 2388              		.file 3 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 2389              		.file 4 "/usr/include/libio.h"
+ 2390              		.file 5 "fltk-1.3.4-1/jpeg/jmorecfg.h"
+ 2391              		.file 6 "fltk-1.3.4-1/jpeg/jpeglib.h"
+ 2392              		.file 7 "fltk-1.3.4-1/jpeg/jpegint.h"
+ 2393              		.file 8 "fltk-1.3.4-1/jpeg/jerror.h"
+ 2394              		.file 9 "/usr/include/stdio.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 jcmarker.c
+     /tmp/ccOpDBri.s:13     .text.emit_byte:0000000000000000 emit_byte
+     /tmp/ccOpDBri.s:89     .text.emit_2bytes:0000000000000000 emit_2bytes
+     /tmp/ccOpDBri.s:140    .text.emit_dqt:0000000000000000 emit_dqt
+     /tmp/ccOpDBri.s:381    .text.emit_dht:0000000000000000 emit_dht
+     /tmp/ccOpDBri.s:594    .text.emit_sof:0000000000000000 emit_sof
+     /tmp/ccOpDBri.s:740    .text.write_scan_header:0000000000000000 write_scan_header
+     /tmp/ccOpDBri.s:1187   .text.write_frame_header:0000000000000000 write_frame_header
+     /tmp/ccOpDBri.s:1720   .text.write_marker_header:0000000000000000 write_marker_header
+     /tmp/ccOpDBri.s:1793   .text.write_marker_byte:0000000000000000 write_marker_byte
+     /tmp/ccOpDBri.s:1814   .text.write_file_header:0000000000000000 write_file_header
+     /tmp/ccOpDBri.s:2151   .text.write_file_trailer:0000000000000000 write_file_trailer
+     /tmp/ccOpDBri.s:2201   .text.write_tables_only:0000000000000000 write_tables_only
+     /tmp/ccOpDBri.s:2335   .text.jinit_marker_writer:0000000000000000 jinit_marker_writer
+                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
+                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+                           .group:0000000000000000 wm4.jconfig.h.10.247fc3ff67998f3074970b1373c70333
+                           .group:0000000000000000 wm4.features.h.19.24da27e0a4d0d521fd057013d982b8b5
+                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
+                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
+                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
+                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
+                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
+                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
+                           .group:0000000000000000 wm4.waitflags.h.25.e401b8bcfee800b540b27abd7cc78de9
+                           .group:0000000000000000 wm4.waitstatus.h.28.93f167f49d64e2b9b99f98d1162a93bf
+                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
+                           .group:0000000000000000 wm4.endian.h.41.24cced64aef71195a51d4daa8e4f4a95
+                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
+                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
+                           .group:0000000000000000 wm4.byteswap.h.38.11ee5fdc0f6cc53a16c505b9233cecef
+                           .group:0000000000000000 wm4.endian.h.63.97272d7c64d5db8020003b32e9289502
+                           .group:0000000000000000 wm4.waitstatus.h.99.408b6270fa6eb71377201a241ef15f79
+                           .group:0000000000000000 wm4.stdlib.h.50.84aeca2ac6f37d40e1e9b3cef757ba2d
+                           .group:0000000000000000 wm4.types.h.23.f6dcbaa72f8f71361acef09804d45a5e
+                           .group:0000000000000000 wm4.time.h.53.beb46e650cd406cb917b6b96b45e640a
+                           .group:0000000000000000 wm4.stddef.h.238.847b6907dabda77be90a9ab7ad789e2e
+                           .group:0000000000000000 wm4.types.h.187.bd5a05039b505b3620e6973f1b2ffeb1
+                           .group:0000000000000000 wm4.select.h.28.eb2f3debdbcffd1442ebddaebc4fb6ff
+                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
+                           .group:0000000000000000 wm4.select.h.36.f76c3b9e55c871743863013cc4cc14c9
+                           .group:0000000000000000 wm4.time.h.66.e70ce69790c975f0efb369340c432e0b
+                           .group:0000000000000000 wm4.time.h.25.ae5284cdff565e87a9198d819340325d
+                           .group:0000000000000000 wm4.select.h.49.e9d2041e5035cc68ebd1a20f7dbc8514
+                           .group:0000000000000000 wm4.select2.h.27.f95f2ab0ffee66dc1b6575014894b21a
+                           .group:0000000000000000 wm4.sysmacros.h.20.8a0c33ff175cd9b434a86c0aaa36f0a2
+                           .group:0000000000000000 wm4.types.h.229.67b3f66bd74b06b451caec392a72a945
+                           .group:0000000000000000 wm4.pthreadtypes.h.25.6892b1493314fcf446bbc76e7362acba
+                           .group:0000000000000000 wm4.alloca.h.19.edefa922a76c1cbaaf1e416903ba2d1c
+                           .group:0000000000000000 wm4.alloca.h.29.156e12058824cc23d961c4d3b13031f6
+                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
+                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
+                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
+                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
+                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
+                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
+                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
+                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
+                           .group:0000000000000000 wm4.stdio.h.80.17b7dd1ca72d8a61987532cb1d80194a
+                           .group:0000000000000000 wm4.stdio_lim.h.23.557290a6cddeba0587f574f29e3a5fb9
+                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
+                           .group:0000000000000000 wm4.stdio.h.26.cae64f7ada9bb8327a89dba6a5e93655
+                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
+                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
+                           .group:0000000000000000 wm4.string2.h.45.00535b99420fc3014c2da41d6645330d
+                           .group:0000000000000000 wm4.string3.h.31.0c4b9301b754a2db05eaafef869657d2
+                           .group:0000000000000000 wm4.jinclude.h.67.b19f941ec97c4845fa4609292c7e2db4
+                           .group:0000000000000000 wm4.jmorecfg.h.33.3b4c5f9cc07b3737823b06caf24d5b05
+                           .group:0000000000000000 wm4.jpeglib.h.40.4f111c27252a38df39328d65454e82f4
+                           .group:0000000000000000 wm4.jpegint.h.26.5219ef5d4e4921371d38e77b6091fd20
+                           .group:0000000000000000 wm4.jerror.h.25.1dbd8674e70ab5215bc0037320e5c2a2
+
+UNDEFINED SYMBOLS
+__stack_chk_fail

@@ -1,0 +1,2900 @@
+   1              		.file	"jcsample.c"
+   2              		.text
+   3              	.Ltext0:
+   4              		.section	.text.unlikely.start_pass_downsample,"ax",@progbits
+   5              	.LCOLDB0:
+   6              		.section	.text.start_pass_downsample,"ax",@progbits
+   7              	.LHOTB0:
+   8              		.p2align 4,,15
+   9              		.section	.text.unlikely.start_pass_downsample
+  10              	.Ltext_cold0:
+  11              		.section	.text.start_pass_downsample
+  13              	start_pass_downsample:
+  14              	.LFB61:
+  15              		.file 1 "fltk-1.3.4-1/jpeg/jcsample.c"
+   1:fltk-1.3.4-1/jpeg/jcsample.c **** /*
+   2:fltk-1.3.4-1/jpeg/jcsample.c ****  * jcsample.c
+   3:fltk-1.3.4-1/jpeg/jcsample.c ****  *
+   4:fltk-1.3.4-1/jpeg/jcsample.c ****  * Copyright (C) 1991-1996, Thomas G. Lane.
+   5:fltk-1.3.4-1/jpeg/jcsample.c ****  * This file is part of the Independent JPEG Group's software.
+   6:fltk-1.3.4-1/jpeg/jcsample.c ****  * For conditions of distribution and use, see the accompanying README file.
+   7:fltk-1.3.4-1/jpeg/jcsample.c ****  *
+   8:fltk-1.3.4-1/jpeg/jcsample.c ****  * This file contains downsampling routines.
+   9:fltk-1.3.4-1/jpeg/jcsample.c ****  *
+  10:fltk-1.3.4-1/jpeg/jcsample.c ****  * Downsampling input data is counted in "row groups".  A row group
+  11:fltk-1.3.4-1/jpeg/jcsample.c ****  * is defined to be max_v_samp_factor pixel rows of each component,
+  12:fltk-1.3.4-1/jpeg/jcsample.c ****  * from which the downsampler produces v_samp_factor sample rows.
+  13:fltk-1.3.4-1/jpeg/jcsample.c ****  * A single row group is processed in each call to the downsampler module.
+  14:fltk-1.3.4-1/jpeg/jcsample.c ****  *
+  15:fltk-1.3.4-1/jpeg/jcsample.c ****  * The downsampler is responsible for edge-expansion of its output data
+  16:fltk-1.3.4-1/jpeg/jcsample.c ****  * to fill an integral number of DCT blocks horizontally.  The source buffer
+  17:fltk-1.3.4-1/jpeg/jcsample.c ****  * may be modified if it is helpful for this purpose (the source buffer is
+  18:fltk-1.3.4-1/jpeg/jcsample.c ****  * allocated wide enough to correspond to the desired output width).
+  19:fltk-1.3.4-1/jpeg/jcsample.c ****  * The caller (the prep controller) is responsible for vertical padding.
+  20:fltk-1.3.4-1/jpeg/jcsample.c ****  *
+  21:fltk-1.3.4-1/jpeg/jcsample.c ****  * The downsampler may request "context rows" by setting need_context_rows
+  22:fltk-1.3.4-1/jpeg/jcsample.c ****  * during startup.  In this case, the input arrays will contain at least
+  23:fltk-1.3.4-1/jpeg/jcsample.c ****  * one row group's worth of pixels above and below the passed-in data;
+  24:fltk-1.3.4-1/jpeg/jcsample.c ****  * the caller will create dummy rows at image top and bottom by replicating
+  25:fltk-1.3.4-1/jpeg/jcsample.c ****  * the first or last real pixel row.
+  26:fltk-1.3.4-1/jpeg/jcsample.c ****  *
+  27:fltk-1.3.4-1/jpeg/jcsample.c ****  * An excellent reference for image resampling is
+  28:fltk-1.3.4-1/jpeg/jcsample.c ****  *   Digital Image Warping, George Wolberg, 1990.
+  29:fltk-1.3.4-1/jpeg/jcsample.c ****  *   Pub. by IEEE Computer Society Press, Los Alamitos, CA. ISBN 0-8186-8944-7.
+  30:fltk-1.3.4-1/jpeg/jcsample.c ****  *
+  31:fltk-1.3.4-1/jpeg/jcsample.c ****  * The downsampling algorithm used here is a simple average of the source
+  32:fltk-1.3.4-1/jpeg/jcsample.c ****  * pixels covered by the output pixel.  The hi-falutin sampling literature
+  33:fltk-1.3.4-1/jpeg/jcsample.c ****  * refers to this as a "box filter".  In general the characteristics of a box
+  34:fltk-1.3.4-1/jpeg/jcsample.c ****  * filter are not very good, but for the specific cases we normally use (1:1
+  35:fltk-1.3.4-1/jpeg/jcsample.c ****  * and 2:1 ratios) the box is equivalent to a "triangle filter" which is not
+  36:fltk-1.3.4-1/jpeg/jcsample.c ****  * nearly so bad.  If you intend to use other sampling ratios, you'd be well
+  37:fltk-1.3.4-1/jpeg/jcsample.c ****  * advised to improve this code.
+  38:fltk-1.3.4-1/jpeg/jcsample.c ****  *
+  39:fltk-1.3.4-1/jpeg/jcsample.c ****  * A simple input-smoothing capability is provided.  This is mainly intended
+  40:fltk-1.3.4-1/jpeg/jcsample.c ****  * for cleaning up color-dithered GIF input files (if you find it inadequate,
+  41:fltk-1.3.4-1/jpeg/jcsample.c ****  * we suggest using an external filtering program such as pnmconvol).  When
+  42:fltk-1.3.4-1/jpeg/jcsample.c ****  * enabled, each input pixel P is replaced by a weighted sum of itself and its
+  43:fltk-1.3.4-1/jpeg/jcsample.c ****  * eight neighbors.  P's weight is 1-8*SF and each neighbor's weight is SF,
+  44:fltk-1.3.4-1/jpeg/jcsample.c ****  * where SF = (smoothing_factor / 1024).
+  45:fltk-1.3.4-1/jpeg/jcsample.c ****  * Currently, smoothing is only supported for 2h2v sampling factors.
+  46:fltk-1.3.4-1/jpeg/jcsample.c ****  */
+  47:fltk-1.3.4-1/jpeg/jcsample.c **** 
+  48:fltk-1.3.4-1/jpeg/jcsample.c **** #define JPEG_INTERNALS
+  49:fltk-1.3.4-1/jpeg/jcsample.c **** #include "jinclude.h"
+  50:fltk-1.3.4-1/jpeg/jcsample.c **** #include "jpeglib.h"
+  51:fltk-1.3.4-1/jpeg/jcsample.c **** 
+  52:fltk-1.3.4-1/jpeg/jcsample.c **** 
+  53:fltk-1.3.4-1/jpeg/jcsample.c **** /* Pointer to routine to downsample a single component */
+  54:fltk-1.3.4-1/jpeg/jcsample.c **** typedef JMETHOD(void, downsample1_ptr,
+  55:fltk-1.3.4-1/jpeg/jcsample.c **** 		(j_compress_ptr cinfo, jpeg_component_info * compptr,
+  56:fltk-1.3.4-1/jpeg/jcsample.c **** 		 JSAMPARRAY input_data, JSAMPARRAY output_data));
+  57:fltk-1.3.4-1/jpeg/jcsample.c **** 
+  58:fltk-1.3.4-1/jpeg/jcsample.c **** /* Private subobject */
+  59:fltk-1.3.4-1/jpeg/jcsample.c **** 
+  60:fltk-1.3.4-1/jpeg/jcsample.c **** typedef struct {
+  61:fltk-1.3.4-1/jpeg/jcsample.c ****   struct jpeg_downsampler pub;	/* public fields */
+  62:fltk-1.3.4-1/jpeg/jcsample.c **** 
+  63:fltk-1.3.4-1/jpeg/jcsample.c ****   /* Downsampling method pointers, one per component */
+  64:fltk-1.3.4-1/jpeg/jcsample.c ****   downsample1_ptr methods[MAX_COMPONENTS];
+  65:fltk-1.3.4-1/jpeg/jcsample.c **** 
+  66:fltk-1.3.4-1/jpeg/jcsample.c ****   /* Height of an output row group for each component. */
+  67:fltk-1.3.4-1/jpeg/jcsample.c ****   int rowgroup_height[MAX_COMPONENTS];
+  68:fltk-1.3.4-1/jpeg/jcsample.c **** 
+  69:fltk-1.3.4-1/jpeg/jcsample.c ****   /* These arrays save pixel expansion factors so that int_downsample need not
+  70:fltk-1.3.4-1/jpeg/jcsample.c ****    * recompute them each time.  They are unused for other downsampling methods.
+  71:fltk-1.3.4-1/jpeg/jcsample.c ****    */
+  72:fltk-1.3.4-1/jpeg/jcsample.c ****   UINT8 h_expand[MAX_COMPONENTS];
+  73:fltk-1.3.4-1/jpeg/jcsample.c ****   UINT8 v_expand[MAX_COMPONENTS];
+  74:fltk-1.3.4-1/jpeg/jcsample.c **** } my_downsampler;
+  75:fltk-1.3.4-1/jpeg/jcsample.c **** 
+  76:fltk-1.3.4-1/jpeg/jcsample.c **** typedef my_downsampler * my_downsample_ptr;
+  77:fltk-1.3.4-1/jpeg/jcsample.c **** 
+  78:fltk-1.3.4-1/jpeg/jcsample.c **** 
+  79:fltk-1.3.4-1/jpeg/jcsample.c **** /*
+  80:fltk-1.3.4-1/jpeg/jcsample.c ****  * Initialize for a downsampling pass.
+  81:fltk-1.3.4-1/jpeg/jcsample.c ****  */
+  82:fltk-1.3.4-1/jpeg/jcsample.c **** 
+  83:fltk-1.3.4-1/jpeg/jcsample.c **** METHODDEF(void)
+  84:fltk-1.3.4-1/jpeg/jcsample.c **** start_pass_downsample (j_compress_ptr cinfo)
+  85:fltk-1.3.4-1/jpeg/jcsample.c **** {
+  16              		.loc 1 85 0
+  17              		.cfi_startproc
+  18              	.LVL0:
+  19 0000 F3C3     		rep ret
+  20              		.cfi_endproc
+  21              	.LFE61:
+  23              		.section	.text.unlikely.start_pass_downsample
+  24              	.LCOLDE0:
+  25              		.section	.text.start_pass_downsample
+  26              	.LHOTE0:
+  27              		.section	.text.unlikely.sep_downsample,"ax",@progbits
+  28              	.LCOLDB1:
+  29              		.section	.text.sep_downsample,"ax",@progbits
+  30              	.LHOTB1:
+  31              		.p2align 4,,15
+  33              	sep_downsample:
+  34              	.LFB63:
+  86:fltk-1.3.4-1/jpeg/jcsample.c ****   /* no work for now */
+  87:fltk-1.3.4-1/jpeg/jcsample.c **** }
+  88:fltk-1.3.4-1/jpeg/jcsample.c **** 
+  89:fltk-1.3.4-1/jpeg/jcsample.c **** 
+  90:fltk-1.3.4-1/jpeg/jcsample.c **** /*
+  91:fltk-1.3.4-1/jpeg/jcsample.c ****  * Expand a component horizontally from width input_cols to width output_cols,
+  92:fltk-1.3.4-1/jpeg/jcsample.c ****  * by duplicating the rightmost samples.
+  93:fltk-1.3.4-1/jpeg/jcsample.c ****  */
+  94:fltk-1.3.4-1/jpeg/jcsample.c **** 
+  95:fltk-1.3.4-1/jpeg/jcsample.c **** LOCAL(void)
+  96:fltk-1.3.4-1/jpeg/jcsample.c **** expand_right_edge (JSAMPARRAY image_data, int num_rows,
+  97:fltk-1.3.4-1/jpeg/jcsample.c **** 		   JDIMENSION input_cols, JDIMENSION output_cols)
+  98:fltk-1.3.4-1/jpeg/jcsample.c **** {
+  99:fltk-1.3.4-1/jpeg/jcsample.c ****   register JSAMPROW ptr;
+ 100:fltk-1.3.4-1/jpeg/jcsample.c ****   register JSAMPLE pixval;
+ 101:fltk-1.3.4-1/jpeg/jcsample.c ****   register int count;
+ 102:fltk-1.3.4-1/jpeg/jcsample.c ****   int row;
+ 103:fltk-1.3.4-1/jpeg/jcsample.c ****   int numcols = (int) (output_cols - input_cols);
+ 104:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 105:fltk-1.3.4-1/jpeg/jcsample.c ****   if (numcols > 0) {
+ 106:fltk-1.3.4-1/jpeg/jcsample.c ****     for (row = 0; row < num_rows; row++) {
+ 107:fltk-1.3.4-1/jpeg/jcsample.c ****       ptr = image_data[row] + input_cols;
+ 108:fltk-1.3.4-1/jpeg/jcsample.c ****       pixval = ptr[-1];		/* don't need GETJSAMPLE() here */
+ 109:fltk-1.3.4-1/jpeg/jcsample.c ****       for (count = numcols; count > 0; count--)
+ 110:fltk-1.3.4-1/jpeg/jcsample.c **** 	*ptr++ = pixval;
+ 111:fltk-1.3.4-1/jpeg/jcsample.c ****     }
+ 112:fltk-1.3.4-1/jpeg/jcsample.c ****   }
+ 113:fltk-1.3.4-1/jpeg/jcsample.c **** }
+ 114:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 115:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 116:fltk-1.3.4-1/jpeg/jcsample.c **** /*
+ 117:fltk-1.3.4-1/jpeg/jcsample.c ****  * Do downsampling for a whole row group (all components).
+ 118:fltk-1.3.4-1/jpeg/jcsample.c ****  *
+ 119:fltk-1.3.4-1/jpeg/jcsample.c ****  * In this version we simply downsample each component independently.
+ 120:fltk-1.3.4-1/jpeg/jcsample.c ****  */
+ 121:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 122:fltk-1.3.4-1/jpeg/jcsample.c **** METHODDEF(void)
+ 123:fltk-1.3.4-1/jpeg/jcsample.c **** sep_downsample (j_compress_ptr cinfo,
+ 124:fltk-1.3.4-1/jpeg/jcsample.c **** 		JSAMPIMAGE input_buf, JDIMENSION in_row_index,
+ 125:fltk-1.3.4-1/jpeg/jcsample.c **** 		JSAMPIMAGE output_buf, JDIMENSION out_row_group_index)
+ 126:fltk-1.3.4-1/jpeg/jcsample.c **** {
+  35              		.loc 1 126 0
+  36              		.cfi_startproc
+  37              	.LVL1:
+  38              		.loc 1 126 0
+  39 0000 4157     		pushq	%r15
+  40              		.cfi_def_cfa_offset 16
+  41              		.cfi_offset 15, -16
+  42 0002 89D2     		movl	%edx, %edx
+  43 0004 4156     		pushq	%r14
+  44              		.cfi_def_cfa_offset 24
+  45              		.cfi_offset 14, -24
+  46 0006 4155     		pushq	%r13
+  47              		.cfi_def_cfa_offset 32
+  48              		.cfi_offset 13, -32
+  49 0008 4154     		pushq	%r12
+  50              		.cfi_def_cfa_offset 40
+  51              		.cfi_offset 12, -40
+  52 000a 488D04D5 		leaq	0(,%rdx,8), %rax
+  52      00000000 
+  53 0012 55       		pushq	%rbp
+  54              		.cfi_def_cfa_offset 48
+  55              		.cfi_offset 6, -48
+  56 0013 53       		pushq	%rbx
+  57              		.cfi_def_cfa_offset 56
+  58              		.cfi_offset 3, -56
+  59 0014 4883EC18 		subq	$24, %rsp
+  60              		.cfi_def_cfa_offset 80
+ 127:fltk-1.3.4-1/jpeg/jcsample.c ****   my_downsample_ptr downsample = (my_downsample_ptr) cinfo->downsample;
+  61              		.loc 1 127 0
+  62 0018 4C8BAF20 		movq	544(%rdi), %r13
+  62      020000
+  63              	.LVL2:
+ 128:fltk-1.3.4-1/jpeg/jcsample.c ****   int ci;
+ 129:fltk-1.3.4-1/jpeg/jcsample.c ****   jpeg_component_info * compptr;
+ 130:fltk-1.3.4-1/jpeg/jcsample.c ****   JSAMPARRAY in_ptr, out_ptr;
+ 131:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 132:fltk-1.3.4-1/jpeg/jcsample.c ****   for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
+  64              		.loc 1 132 0
+  65 001f 488B6F68 		movq	104(%rdi), %rbp
+  66              	.LVL3:
+  67 0023 48890424 		movq	%rax, (%rsp)
+  68 0027 8B475C   		movl	92(%rdi), %eax
+ 126:fltk-1.3.4-1/jpeg/jcsample.c ****   my_downsample_ptr downsample = (my_downsample_ptr) cinfo->downsample;
+  69              		.loc 1 126 0
+  70 002a 48897424 		movq	%rsi, 8(%rsp)
+  70      08
+  71              		.loc 1 132 0
+  72 002f 85C0     		testl	%eax, %eax
+  73 0031 7E48     		jle	.L2
+  74 0033 4989FC   		movq	%rdi, %r12
+  75 0036 4989CF   		movq	%rcx, %r15
+  76 0039 4589C6   		movl	%r8d, %r14d
+  77 003c 31DB     		xorl	%ebx, %ebx
+  78              	.LVL4:
+  79 003e 6690     		.p2align 4,,10
+  80              		.p2align 3
+  81              	.L6:
+ 133:fltk-1.3.4-1/jpeg/jcsample.c ****        ci++, compptr++) {
+ 134:fltk-1.3.4-1/jpeg/jcsample.c ****     in_ptr = input_buf[ci] + in_row_index;
+ 135:fltk-1.3.4-1/jpeg/jcsample.c ****     out_ptr = output_buf[ci] +
+ 136:fltk-1.3.4-1/jpeg/jcsample.c **** 	      (out_row_group_index * downsample->rowgroup_height[ci]);
+ 137:fltk-1.3.4-1/jpeg/jcsample.c ****     (*downsample->methods[ci]) (cinfo, compptr, in_ptr, out_ptr);
+  82              		.loc 1 137 0
+  83 0040 4489F1   		movl	%r14d, %ecx
+  84 0043 498B14DF 		movq	(%r15,%rbx,8), %rdx
+  85 0047 488B4424 		movq	8(%rsp), %rax
+  85      08
+  86 004c 410FAF4C 		imull	104(%r13,%rbx,4), %ecx
+  86      9D68
+  87 0052 4889EE   		movq	%rbp, %rsi
+  88 0055 4C89E7   		movq	%r12, %rdi
+ 133:fltk-1.3.4-1/jpeg/jcsample.c ****        ci++, compptr++) {
+  89              		.loc 1 133 0
+  90 0058 4883C560 		addq	$96, %rbp
+  91              	.LVL5:
+  92              		.loc 1 137 0
+  93 005c 488D0CCA 		leaq	(%rdx,%rcx,8), %rcx
+  94 0060 488B1424 		movq	(%rsp), %rdx
+  95 0064 480314D8 		addq	(%rax,%rbx,8), %rdx
+  96 0068 41FF54DD 		call	*24(%r13,%rbx,8)
+  96      18
+  97              	.LVL6:
+  98 006d 8D5301   		leal	1(%rbx), %edx
+  99              	.LVL7:
+ 100 0070 4883C301 		addq	$1, %rbx
+ 132:fltk-1.3.4-1/jpeg/jcsample.c ****        ci++, compptr++) {
+ 101              		.loc 1 132 0
+ 102 0074 41395424 		cmpl	%edx, 92(%r12)
+ 102      5C
+ 103 0079 7FC5     		jg	.L6
+ 104              	.LVL8:
+ 105              	.L2:
+ 138:fltk-1.3.4-1/jpeg/jcsample.c ****   }
+ 139:fltk-1.3.4-1/jpeg/jcsample.c **** }
+ 106              		.loc 1 139 0
+ 107 007b 4883C418 		addq	$24, %rsp
+ 108              		.cfi_def_cfa_offset 56
+ 109 007f 5B       		popq	%rbx
+ 110              		.cfi_def_cfa_offset 48
+ 111 0080 5D       		popq	%rbp
+ 112              		.cfi_def_cfa_offset 40
+ 113              	.LVL9:
+ 114 0081 415C     		popq	%r12
+ 115              		.cfi_def_cfa_offset 32
+ 116 0083 415D     		popq	%r13
+ 117              		.cfi_def_cfa_offset 24
+ 118              	.LVL10:
+ 119 0085 415E     		popq	%r14
+ 120              		.cfi_def_cfa_offset 16
+ 121 0087 415F     		popq	%r15
+ 122              		.cfi_def_cfa_offset 8
+ 123 0089 C3       		ret
+ 124              		.cfi_endproc
+ 125              	.LFE63:
+ 127              		.section	.text.unlikely.sep_downsample
+ 128              	.LCOLDE1:
+ 129              		.section	.text.sep_downsample
+ 130              	.LHOTE1:
+ 131              		.section	.text.unlikely.int_downsample,"ax",@progbits
+ 132              	.LCOLDB2:
+ 133              		.section	.text.int_downsample,"ax",@progbits
+ 134              	.LHOTB2:
+ 135              		.p2align 4,,15
+ 137              	int_downsample:
+ 138              	.LFB64:
+ 140:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 141:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 142:fltk-1.3.4-1/jpeg/jcsample.c **** /*
+ 143:fltk-1.3.4-1/jpeg/jcsample.c ****  * Downsample pixel values of a single component.
+ 144:fltk-1.3.4-1/jpeg/jcsample.c ****  * One row group is processed per call.
+ 145:fltk-1.3.4-1/jpeg/jcsample.c ****  * This version handles arbitrary integral sampling ratios, without smoothing.
+ 146:fltk-1.3.4-1/jpeg/jcsample.c ****  * Note that this version is not actually used for customary sampling ratios.
+ 147:fltk-1.3.4-1/jpeg/jcsample.c ****  */
+ 148:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 149:fltk-1.3.4-1/jpeg/jcsample.c **** METHODDEF(void)
+ 150:fltk-1.3.4-1/jpeg/jcsample.c **** int_downsample (j_compress_ptr cinfo, jpeg_component_info * compptr,
+ 151:fltk-1.3.4-1/jpeg/jcsample.c **** 		JSAMPARRAY input_data, JSAMPARRAY output_data)
+ 152:fltk-1.3.4-1/jpeg/jcsample.c **** {
+ 139              		.loc 1 152 0
+ 140              		.cfi_startproc
+ 141              	.LVL11:
+ 142 0000 4157     		pushq	%r15
+ 143              		.cfi_def_cfa_offset 16
+ 144              		.cfi_offset 15, -16
+ 145 0002 4156     		pushq	%r14
+ 146              		.cfi_def_cfa_offset 24
+ 147              		.cfi_offset 14, -24
+ 148 0004 4155     		pushq	%r13
+ 149              		.cfi_def_cfa_offset 32
+ 150              		.cfi_offset 13, -32
+ 151 0006 4154     		pushq	%r12
+ 152              		.cfi_def_cfa_offset 40
+ 153              		.cfi_offset 12, -40
+ 154 0008 55       		pushq	%rbp
+ 155              		.cfi_def_cfa_offset 48
+ 156              		.cfi_offset 6, -48
+ 157 0009 53       		pushq	%rbx
+ 158              		.cfi_def_cfa_offset 56
+ 159              		.cfi_offset 3, -56
+ 160              		.loc 1 152 0
+ 161 000a 4889FD   		movq	%rdi, %rbp
+ 153:fltk-1.3.4-1/jpeg/jcsample.c ****   my_downsample_ptr downsample = (my_downsample_ptr) cinfo->downsample;
+ 154:fltk-1.3.4-1/jpeg/jcsample.c ****   int inrow, outrow, h_expand, v_expand, numpix, numpix2, h, v;
+ 155:fltk-1.3.4-1/jpeg/jcsample.c ****   JDIMENSION outcol, outcol_h;	/* outcol_h == outcol*h_expand */
+ 156:fltk-1.3.4-1/jpeg/jcsample.c ****   JDIMENSION output_cols = compptr->width_in_blocks * compptr->DCT_h_scaled_size;
+ 162              		.loc 1 156 0
+ 163 000d 8B461C   		movl	28(%rsi), %eax
+ 153:fltk-1.3.4-1/jpeg/jcsample.c ****   my_downsample_ptr downsample = (my_downsample_ptr) cinfo->downsample;
+ 164              		.loc 1 153 0
+ 165 0010 488BBF20 		movq	544(%rdi), %rdi
+ 165      020000
+ 166              	.LVL12:
+ 167              		.loc 1 156 0
+ 168 0017 0FAF4624 		imull	36(%rsi), %eax
+ 157:fltk-1.3.4-1/jpeg/jcsample.c ****   JSAMPROW inptr, outptr;
+ 158:fltk-1.3.4-1/jpeg/jcsample.c ****   INT32 outvalue;
+ 159:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 160:fltk-1.3.4-1/jpeg/jcsample.c ****   h_expand = downsample->h_expand[compptr->component_index];
+ 161:fltk-1.3.4-1/jpeg/jcsample.c ****   v_expand = downsample->v_expand[compptr->component_index];
+ 162:fltk-1.3.4-1/jpeg/jcsample.c ****   numpix = h_expand * v_expand;
+ 163:fltk-1.3.4-1/jpeg/jcsample.c ****   numpix2 = numpix/2;
+ 164:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 165:fltk-1.3.4-1/jpeg/jcsample.c ****   /* Expand input data enough to let all the output samples be generated
+ 166:fltk-1.3.4-1/jpeg/jcsample.c ****    * by the standard loop.  Special-casing padded output would be more
+ 167:fltk-1.3.4-1/jpeg/jcsample.c ****    * efficient.
+ 168:fltk-1.3.4-1/jpeg/jcsample.c ****    */
+ 169:fltk-1.3.4-1/jpeg/jcsample.c ****   expand_right_edge(input_data, cinfo->max_v_samp_factor,
+ 169              		.loc 1 169 0
+ 170 001b 448B6530 		movl	48(%rbp), %r12d
+ 156:fltk-1.3.4-1/jpeg/jcsample.c ****   JSAMPROW inptr, outptr;
+ 171              		.loc 1 156 0
+ 172 001f 89C3     		movl	%eax, %ebx
+ 173 0021 894424D4 		movl	%eax, -44(%rsp)
+ 174              	.LVL13:
+ 160:fltk-1.3.4-1/jpeg/jcsample.c ****   v_expand = downsample->v_expand[compptr->component_index];
+ 175              		.loc 1 160 0
+ 176 0025 48634604 		movslq	4(%rsi), %rax
+ 177              	.LVL14:
+ 178              	.LBB14:
+ 179              	.LBB15:
+ 103:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 180              		.loc 1 103 0
+ 181 0029 89DE     		movl	%ebx, %esi
+ 182              	.LVL15:
+ 183              	.LBE15:
+ 184              	.LBE14:
+ 160:fltk-1.3.4-1/jpeg/jcsample.c ****   v_expand = downsample->v_expand[compptr->component_index];
+ 185              		.loc 1 160 0
+ 186 002b 440FB684 		movzbl	144(%rdi,%rax), %r8d
+ 186      07900000 
+ 186      00
+ 187              	.LVL16:
+ 161:fltk-1.3.4-1/jpeg/jcsample.c ****   numpix = h_expand * v_expand;
+ 188              		.loc 1 161 0
+ 189 0034 440FB68C 		movzbl	154(%rdi,%rax), %r9d
+ 189      079A0000 
+ 189      00
+ 190              		.loc 1 169 0
+ 191 003d 8B856401 		movl	356(%rbp), %eax
+ 191      0000
+ 162:fltk-1.3.4-1/jpeg/jcsample.c ****   numpix2 = numpix/2;
+ 192              		.loc 1 162 0
+ 193 0043 4589C5   		movl	%r8d, %r13d
+ 161:fltk-1.3.4-1/jpeg/jcsample.c ****   numpix = h_expand * v_expand;
+ 194              		.loc 1 161 0
+ 195 0046 4D89CB   		movq	%r9, %r11
+ 196              	.LVL17:
+ 162:fltk-1.3.4-1/jpeg/jcsample.c ****   numpix2 = numpix/2;
+ 197              		.loc 1 162 0
+ 198 0049 450FAFE9 		imull	%r9d, %r13d
+ 199              	.LVL18:
+ 200              	.LBB19:
+ 201              	.LBB16:
+ 103:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 202              		.loc 1 103 0
+ 203 004d 410FAFF0 		imull	%r8d, %esi
+ 204              	.LBE16:
+ 205              	.LBE19:
+ 163:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 206              		.loc 1 163 0
+ 207 0051 4589EF   		movl	%r13d, %r15d
+ 208              	.LBB20:
+ 209              	.LBB17:
+ 103:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 210              		.loc 1 103 0
+ 211 0054 4429E6   		subl	%r12d, %esi
+ 212              	.LBE17:
+ 213              	.LBE20:
+ 163:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 214              		.loc 1 163 0
+ 215 0057 41D1FF   		sarl	%r15d
+ 216              	.LVL19:
+ 217              	.LBB21:
+ 218              	.LBB18:
+ 105:fltk-1.3.4-1/jpeg/jcsample.c ****     for (row = 0; row < num_rows; row++) {
+ 219              		.loc 1 105 0
+ 220 005a 85F6     		testl	%esi, %esi
+ 221 005c 7E45     		jle	.L11
+ 222              	.LVL20:
+ 106:fltk-1.3.4-1/jpeg/jcsample.c ****       ptr = image_data[row] + input_cols;
+ 223              		.loc 1 106 0
+ 224 005e 85C0     		testl	%eax, %eax
+ 225 0060 0F8E2001 		jle	.L10
+ 225      0000
+ 226 0066 83E801   		subl	$1, %eax
+ 227              	.LVL21:
+ 228 0069 448D56FF 		leal	-1(%rsi), %r10d
+ 229 006d 4889D3   		movq	%rdx, %rbx
+ 230              	.LVL22:
+ 231 0070 4C8D74C2 		leaq	8(%rdx,%rax,8), %r14
+ 231      08
+ 232 0075 4983C201 		addq	$1, %r10
+ 233              	.LVL23:
+ 234              	.L14:
+ 107:fltk-1.3.4-1/jpeg/jcsample.c ****       pixval = ptr[-1];		/* don't need GETJSAMPLE() here */
+ 235              		.loc 1 107 0
+ 236 0079 4C89E0   		movq	%r12, %rax
+ 237 007c 480303   		addq	(%rbx), %rax
+ 238              	.LVL24:
+ 108:fltk-1.3.4-1/jpeg/jcsample.c ****       for (count = numcols; count > 0; count--)
+ 239              		.loc 1 108 0
+ 240 007f 0FB678FF 		movzbl	-1(%rax), %edi
+ 241              	.LVL25:
+ 242 0083 4A8D3410 		leaq	(%rax,%r10), %rsi
+ 243              	.L13:
+ 110:fltk-1.3.4-1/jpeg/jcsample.c ****     }
+ 244              		.loc 1 110 0
+ 245 0087 4883C001 		addq	$1, %rax
+ 246              	.LVL26:
+ 247 008b 408878FF 		movb	%dil, -1(%rax)
+ 109:fltk-1.3.4-1/jpeg/jcsample.c **** 	*ptr++ = pixval;
+ 248              		.loc 1 109 0
+ 249 008f 4839F0   		cmpq	%rsi, %rax
+ 250 0092 75F3     		jne	.L13
+ 251 0094 4883C308 		addq	$8, %rbx
+ 106:fltk-1.3.4-1/jpeg/jcsample.c ****       ptr = image_data[row] + input_cols;
+ 252              		.loc 1 106 0
+ 253 0098 4939DE   		cmpq	%rbx, %r14
+ 254 009b 75DC     		jne	.L14
+ 255 009d 8B856401 		movl	356(%rbp), %eax
+ 255      0000
+ 256              	.LVL27:
+ 257              	.L11:
+ 258              	.LBE18:
+ 259              	.LBE21:
+ 170:fltk-1.3.4-1/jpeg/jcsample.c **** 		    cinfo->image_width, output_cols * h_expand);
+ 171:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 172:fltk-1.3.4-1/jpeg/jcsample.c ****   inrow = outrow = 0;
+ 173:fltk-1.3.4-1/jpeg/jcsample.c ****   while (inrow < cinfo->max_v_samp_factor) {
+ 260              		.loc 1 173 0
+ 261 00a3 85C0     		testl	%eax, %eax
+ 262 00a5 0F8EDB00 		jle	.L10
+ 262      0000
+ 263 00ab 4A8D04DD 		leaq	0(,%r11,8), %rax
+ 263      00000000 
+ 264 00b3 458D58FF 		leal	-1(%r8), %r11d
+ 265 00b7 48894C24 		movq	%rcx, -40(%rsp)
+ 265      D8
+ 266 00bc 4989D2   		movq	%rdx, %r10
+ 267 00bf C74424D0 		movl	$0, -48(%rsp)
+ 267      00000000 
+ 268 00c7 4D63E7   		movslq	%r15d, %r12
+ 269              	.LVL28:
+ 270 00ca 48894424 		movq	%rax, -32(%rsp)
+ 270      E0
+ 271 00cf 4963C5   		movslq	%r13d, %rax
+ 272 00d2 4983C301 		addq	$1, %r11
+ 273 00d6 48894424 		movq	%rax, -24(%rsp)
+ 273      E8
+ 274 00db 8B4424D4 		movl	-44(%rsp), %eax
+ 275 00df 83E801   		subl	$1, %eax
+ 276 00e2 4883C001 		addq	$1, %rax
+ 277 00e6 48894424 		movq	%rax, -16(%rsp)
+ 277      F0
+ 278              	.LVL29:
+ 279              	.L22:
+ 174:fltk-1.3.4-1/jpeg/jcsample.c ****     outptr = output_data[outrow];
+ 280              		.loc 1 174 0
+ 281 00eb 488B4424 		movq	-40(%rsp), %rax
+ 281      D8
+ 282 00f0 488B38   		movq	(%rax), %rdi
+ 283              	.LVL30:
+ 175:fltk-1.3.4-1/jpeg/jcsample.c ****     for (outcol = 0, outcol_h = 0; outcol < output_cols;
+ 284              		.loc 1 175 0
+ 285 00f3 8B4424D4 		movl	-44(%rsp), %eax
+ 286 00f7 85C0     		testl	%eax, %eax
+ 287 00f9 746B     		je	.L16
+ 288 00fb 488B4424 		movq	-16(%rsp), %rax
+ 288      F0
+ 289 0100 48896C24 		movq	%rbp, -8(%rsp)
+ 289      F8
+ 290 0105 31DB     		xorl	%ebx, %ebx
+ 291 0107 488B6C24 		movq	-24(%rsp), %rbp
+ 291      E8
+ 292 010c 4C8D2C07 		leaq	(%rdi,%rax), %r13
+ 293              	.LVL31:
+ 294              	.L17:
+ 176:fltk-1.3.4-1/jpeg/jcsample.c **** 	 outcol++, outcol_h += h_expand) {
+ 177:fltk-1.3.4-1/jpeg/jcsample.c ****       outvalue = 0;
+ 178:fltk-1.3.4-1/jpeg/jcsample.c ****       for (v = 0; v < v_expand; v++) {
+ 295              		.loc 1 178 0 discriminator 1
+ 296 0110 4585C9   		testl	%r9d, %r9d
+ 297 0113 747C     		je	.L23
+ 298 0115 4189DF   		movl	%ebx, %r15d
+ 299              		.loc 1 178 0 is_stmt 0
+ 300 0118 4531F6   		xorl	%r14d, %r14d
+ 301 011b 31D2     		xorl	%edx, %edx
+ 302              	.LVL32:
+ 303 011d 0F1F00   		.p2align 4,,10
+ 304              		.p2align 3
+ 305              	.L20:
+ 179:fltk-1.3.4-1/jpeg/jcsample.c **** 	inptr = input_data[inrow+v] + outcol_h;
+ 306              		.loc 1 179 0 is_stmt 1
+ 307 0120 4C89F8   		movq	%r15, %rax
+ 308 0123 4B0304F2 		addq	(%r10,%r14,8), %rax
+ 309              	.LVL33:
+ 180:fltk-1.3.4-1/jpeg/jcsample.c **** 	for (h = 0; h < h_expand; h++) {
+ 310              		.loc 1 180 0
+ 311 0127 4585C0   		testl	%r8d, %r8d
+ 312 012a 7414     		je	.L18
+ 313 012c 4A8D3418 		leaq	(%rax,%r11), %rsi
+ 314              	.LVL34:
+ 315              		.p2align 4,,10
+ 316              		.p2align 3
+ 317              	.L19:
+ 181:fltk-1.3.4-1/jpeg/jcsample.c **** 	  outvalue += (INT32) GETJSAMPLE(*inptr++);
+ 318              		.loc 1 181 0 discriminator 3
+ 319 0130 4883C001 		addq	$1, %rax
+ 320              	.LVL35:
+ 321 0134 0FB648FF 		movzbl	-1(%rax), %ecx
+ 322 0138 4801CA   		addq	%rcx, %rdx
+ 323              	.LVL36:
+ 180:fltk-1.3.4-1/jpeg/jcsample.c **** 	for (h = 0; h < h_expand; h++) {
+ 324              		.loc 1 180 0 discriminator 3
+ 325 013b 4839F0   		cmpq	%rsi, %rax
+ 326 013e 75F0     		jne	.L19
+ 327              	.LVL37:
+ 328              	.L18:
+ 329 0140 4983C601 		addq	$1, %r14
+ 330              	.LVL38:
+ 178:fltk-1.3.4-1/jpeg/jcsample.c **** 	inptr = input_data[inrow+v] + outcol_h;
+ 331              		.loc 1 178 0 discriminator 2
+ 332 0144 4539F1   		cmpl	%r14d, %r9d
+ 333 0147 7FD7     		jg	.L20
+ 334              	.LVL39:
+ 335              	.L21:
+ 182:fltk-1.3.4-1/jpeg/jcsample.c **** 	}
+ 183:fltk-1.3.4-1/jpeg/jcsample.c ****       }
+ 184:fltk-1.3.4-1/jpeg/jcsample.c ****       *outptr++ = (JSAMPLE) ((outvalue + numpix2) / numpix);
+ 336              		.loc 1 184 0
+ 337 0149 4A8D0422 		leaq	(%rdx,%r12), %rax
+ 338 014d 4883C701 		addq	$1, %rdi
+ 339              	.LVL40:
+ 176:fltk-1.3.4-1/jpeg/jcsample.c ****       outvalue = 0;
+ 340              		.loc 1 176 0
+ 341 0151 4401C3   		addl	%r8d, %ebx
+ 342              	.LVL41:
+ 343              		.loc 1 184 0
+ 344 0154 4899     		cqto
+ 345 0156 48F7FD   		idivq	%rbp
+ 175:fltk-1.3.4-1/jpeg/jcsample.c **** 	 outcol++, outcol_h += h_expand) {
+ 346              		.loc 1 175 0
+ 347 0159 4939FD   		cmpq	%rdi, %r13
+ 348              		.loc 1 184 0
+ 349 015c 8847FF   		movb	%al, -1(%rdi)
+ 350              	.LVL42:
+ 175:fltk-1.3.4-1/jpeg/jcsample.c **** 	 outcol++, outcol_h += h_expand) {
+ 351              		.loc 1 175 0
+ 352 015f 75AF     		jne	.L17
+ 353 0161 488B6C24 		movq	-8(%rsp), %rbp
+ 353      F8
+ 354              	.LVL43:
+ 355              	.L16:
+ 185:fltk-1.3.4-1/jpeg/jcsample.c ****     }
+ 186:fltk-1.3.4-1/jpeg/jcsample.c ****     inrow += v_expand;
+ 356              		.loc 1 186 0
+ 357 0166 44014C24 		addl	%r9d, -48(%rsp)
+ 357      D0
+ 358              	.LVL44:
+ 359 016b 48834424 		addq	$8, -40(%rsp)
+ 359      D808
+ 360 0171 8B4424D0 		movl	-48(%rsp), %eax
+ 361              	.LVL45:
+ 362 0175 4C035424 		addq	-32(%rsp), %r10
+ 362      E0
+ 173:fltk-1.3.4-1/jpeg/jcsample.c ****     outptr = output_data[outrow];
+ 363              		.loc 1 173 0
+ 364 017a 39856401 		cmpl	%eax, 356(%rbp)
+ 364      0000
+ 365 0180 0F8F65FF 		jg	.L22
+ 365      FFFF
+ 366              	.LVL46:
+ 367              	.L10:
+ 187:fltk-1.3.4-1/jpeg/jcsample.c ****     outrow++;
+ 188:fltk-1.3.4-1/jpeg/jcsample.c ****   }
+ 189:fltk-1.3.4-1/jpeg/jcsample.c **** }
+ 368              		.loc 1 189 0
+ 369 0186 5B       		popq	%rbx
+ 370              		.cfi_remember_state
+ 371              		.cfi_def_cfa_offset 48
+ 372 0187 5D       		popq	%rbp
+ 373              		.cfi_def_cfa_offset 40
+ 374 0188 415C     		popq	%r12
+ 375              		.cfi_def_cfa_offset 32
+ 376 018a 415D     		popq	%r13
+ 377              		.cfi_def_cfa_offset 24
+ 378 018c 415E     		popq	%r14
+ 379              		.cfi_def_cfa_offset 16
+ 380 018e 415F     		popq	%r15
+ 381              		.cfi_def_cfa_offset 8
+ 382 0190 C3       		ret
+ 383              	.LVL47:
+ 384              	.L23:
+ 385              		.cfi_restore_state
+ 178:fltk-1.3.4-1/jpeg/jcsample.c **** 	inptr = input_data[inrow+v] + outcol_h;
+ 386              		.loc 1 178 0
+ 387 0191 31D2     		xorl	%edx, %edx
+ 388 0193 EBB4     		jmp	.L21
+ 389              		.cfi_endproc
+ 390              	.LFE64:
+ 392              		.section	.text.unlikely.int_downsample
+ 393              	.LCOLDE2:
+ 394              		.section	.text.int_downsample
+ 395              	.LHOTE2:
+ 396              		.section	.text.unlikely.h2v1_downsample,"ax",@progbits
+ 397              	.LCOLDB3:
+ 398              		.section	.text.h2v1_downsample,"ax",@progbits
+ 399              	.LHOTB3:
+ 400              		.p2align 4,,15
+ 402              	h2v1_downsample:
+ 403              	.LFB66:
+ 190:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 191:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 192:fltk-1.3.4-1/jpeg/jcsample.c **** /*
+ 193:fltk-1.3.4-1/jpeg/jcsample.c ****  * Downsample pixel values of a single component.
+ 194:fltk-1.3.4-1/jpeg/jcsample.c ****  * This version handles the special case of a full-size component,
+ 195:fltk-1.3.4-1/jpeg/jcsample.c ****  * without smoothing.
+ 196:fltk-1.3.4-1/jpeg/jcsample.c ****  */
+ 197:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 198:fltk-1.3.4-1/jpeg/jcsample.c **** METHODDEF(void)
+ 199:fltk-1.3.4-1/jpeg/jcsample.c **** fullsize_downsample (j_compress_ptr cinfo, jpeg_component_info * compptr,
+ 200:fltk-1.3.4-1/jpeg/jcsample.c **** 		     JSAMPARRAY input_data, JSAMPARRAY output_data)
+ 201:fltk-1.3.4-1/jpeg/jcsample.c **** {
+ 202:fltk-1.3.4-1/jpeg/jcsample.c ****   /* Copy the data */
+ 203:fltk-1.3.4-1/jpeg/jcsample.c ****   jcopy_sample_rows(input_data, 0, output_data, 0,
+ 204:fltk-1.3.4-1/jpeg/jcsample.c **** 		    cinfo->max_v_samp_factor, cinfo->image_width);
+ 205:fltk-1.3.4-1/jpeg/jcsample.c ****   /* Edge-expand */
+ 206:fltk-1.3.4-1/jpeg/jcsample.c ****   expand_right_edge(output_data, cinfo->max_v_samp_factor, cinfo->image_width,
+ 207:fltk-1.3.4-1/jpeg/jcsample.c **** 		    compptr->width_in_blocks * compptr->DCT_h_scaled_size);
+ 208:fltk-1.3.4-1/jpeg/jcsample.c **** }
+ 209:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 210:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 211:fltk-1.3.4-1/jpeg/jcsample.c **** /*
+ 212:fltk-1.3.4-1/jpeg/jcsample.c ****  * Downsample pixel values of a single component.
+ 213:fltk-1.3.4-1/jpeg/jcsample.c ****  * This version handles the common case of 2:1 horizontal and 1:1 vertical,
+ 214:fltk-1.3.4-1/jpeg/jcsample.c ****  * without smoothing.
+ 215:fltk-1.3.4-1/jpeg/jcsample.c ****  *
+ 216:fltk-1.3.4-1/jpeg/jcsample.c ****  * A note about the "bias" calculations: when rounding fractional values to
+ 217:fltk-1.3.4-1/jpeg/jcsample.c ****  * integer, we do not want to always round 0.5 up to the next integer.
+ 218:fltk-1.3.4-1/jpeg/jcsample.c ****  * If we did that, we'd introduce a noticeable bias towards larger values.
+ 219:fltk-1.3.4-1/jpeg/jcsample.c ****  * Instead, this code is arranged so that 0.5 will be rounded up or down at
+ 220:fltk-1.3.4-1/jpeg/jcsample.c ****  * alternate pixel locations (a simple ordered dither pattern).
+ 221:fltk-1.3.4-1/jpeg/jcsample.c ****  */
+ 222:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 223:fltk-1.3.4-1/jpeg/jcsample.c **** METHODDEF(void)
+ 224:fltk-1.3.4-1/jpeg/jcsample.c **** h2v1_downsample (j_compress_ptr cinfo, jpeg_component_info * compptr,
+ 225:fltk-1.3.4-1/jpeg/jcsample.c **** 		 JSAMPARRAY input_data, JSAMPARRAY output_data)
+ 226:fltk-1.3.4-1/jpeg/jcsample.c **** {
+ 404              		.loc 1 226 0
+ 405              		.cfi_startproc
+ 406              	.LVL48:
+ 407 0000 4155     		pushq	%r13
+ 408              		.cfi_def_cfa_offset 16
+ 409              		.cfi_offset 13, -16
+ 410 0002 4154     		pushq	%r12
+ 411              		.cfi_def_cfa_offset 24
+ 412              		.cfi_offset 12, -24
+ 413 0004 55       		pushq	%rbp
+ 414              		.cfi_def_cfa_offset 32
+ 415              		.cfi_offset 6, -32
+ 416 0005 53       		pushq	%rbx
+ 417              		.cfi_def_cfa_offset 40
+ 418              		.cfi_offset 3, -40
+ 227:fltk-1.3.4-1/jpeg/jcsample.c ****   int inrow;
+ 228:fltk-1.3.4-1/jpeg/jcsample.c ****   JDIMENSION outcol;
+ 229:fltk-1.3.4-1/jpeg/jcsample.c ****   JDIMENSION output_cols = compptr->width_in_blocks * compptr->DCT_h_scaled_size;
+ 419              		.loc 1 229 0
+ 420 0006 8B6E1C   		movl	28(%rsi), %ebp
+ 230:fltk-1.3.4-1/jpeg/jcsample.c ****   register JSAMPROW inptr, outptr;
+ 231:fltk-1.3.4-1/jpeg/jcsample.c ****   register int bias;
+ 232:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 233:fltk-1.3.4-1/jpeg/jcsample.c ****   /* Expand input data enough to let all the output samples be generated
+ 234:fltk-1.3.4-1/jpeg/jcsample.c ****    * by the standard loop.  Special-casing padded output would be more
+ 235:fltk-1.3.4-1/jpeg/jcsample.c ****    * efficient.
+ 236:fltk-1.3.4-1/jpeg/jcsample.c ****    */
+ 237:fltk-1.3.4-1/jpeg/jcsample.c ****   expand_right_edge(input_data, cinfo->max_v_samp_factor,
+ 421              		.loc 1 237 0
+ 422 0009 448B5730 		movl	48(%rdi), %r10d
+ 229:fltk-1.3.4-1/jpeg/jcsample.c ****   register JSAMPROW inptr, outptr;
+ 423              		.loc 1 229 0
+ 424 000d 0FAF6E24 		imull	36(%rsi), %ebp
+ 425              	.LVL49:
+ 426              		.loc 1 237 0
+ 427 0011 8BB76401 		movl	356(%rdi), %esi
+ 427      0000
+ 428              	.LVL50:
+ 429              	.LBB22:
+ 430              	.LBB23:
+ 103:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 431              		.loc 1 103 0
+ 432 0017 8D442D00 		leal	(%rbp,%rbp), %eax
+ 433 001b 4429D0   		subl	%r10d, %eax
+ 434              	.LVL51:
+ 105:fltk-1.3.4-1/jpeg/jcsample.c ****     for (row = 0; row < num_rows; row++) {
+ 435              		.loc 1 105 0
+ 436 001e 85C0     		testl	%eax, %eax
+ 437 0020 7E4A     		jle	.L38
+ 438              	.LVL52:
+ 106:fltk-1.3.4-1/jpeg/jcsample.c ****       ptr = image_data[row] + input_cols;
+ 439              		.loc 1 106 0
+ 440 0022 85F6     		testl	%esi, %esi
+ 441 0024 0F8EA200 		jle	.L37
+ 441      0000
+ 442 002a 83EE01   		subl	$1, %esi
+ 443              	.LVL53:
+ 444 002d 448D58FF 		leal	-1(%rax), %r11d
+ 445 0031 4989D1   		movq	%rdx, %r9
+ 446 0034 488D5CF2 		leaq	8(%rdx,%rsi,8), %rbx
+ 446      08
+ 447 0039 4983C301 		addq	$1, %r11
+ 448              	.LVL54:
+ 449 003d 0F1F00   		.p2align 4,,10
+ 450              		.p2align 3
+ 451              	.L41:
+ 107:fltk-1.3.4-1/jpeg/jcsample.c ****       pixval = ptr[-1];		/* don't need GETJSAMPLE() here */
+ 452              		.loc 1 107 0
+ 453 0040 4C89D0   		movq	%r10, %rax
+ 454 0043 490301   		addq	(%r9), %rax
+ 455              	.LVL55:
+ 108:fltk-1.3.4-1/jpeg/jcsample.c ****       for (count = numcols; count > 0; count--)
+ 456              		.loc 1 108 0
+ 457 0046 440FB640 		movzbl	-1(%rax), %r8d
+ 457      FF
+ 458              	.LVL56:
+ 459 004b 4A8D3418 		leaq	(%rax,%r11), %rsi
+ 460              	.LVL57:
+ 461 004f 90       		.p2align 4,,10
+ 462              		.p2align 3
+ 463              	.L40:
+ 110:fltk-1.3.4-1/jpeg/jcsample.c ****     }
+ 464              		.loc 1 110 0
+ 465 0050 4883C001 		addq	$1, %rax
+ 466              	.LVL58:
+ 467 0054 448840FF 		movb	%r8b, -1(%rax)
+ 109:fltk-1.3.4-1/jpeg/jcsample.c **** 	*ptr++ = pixval;
+ 468              		.loc 1 109 0
+ 469 0058 4839C6   		cmpq	%rax, %rsi
+ 470 005b 75F3     		jne	.L40
+ 471 005d 4983C108 		addq	$8, %r9
+ 106:fltk-1.3.4-1/jpeg/jcsample.c ****       ptr = image_data[row] + input_cols;
+ 472              		.loc 1 106 0
+ 473 0061 4939D9   		cmpq	%rbx, %r9
+ 474 0064 75DA     		jne	.L41
+ 475 0066 8BB76401 		movl	356(%rdi), %esi
+ 475      0000
+ 476              	.LVL59:
+ 477              	.L38:
+ 478              	.LBE23:
+ 479              	.LBE22:
+ 238:fltk-1.3.4-1/jpeg/jcsample.c **** 		    cinfo->image_width, output_cols * 2);
+ 239:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 240:fltk-1.3.4-1/jpeg/jcsample.c ****   for (inrow = 0; inrow < cinfo->max_v_samp_factor; inrow++) {
+ 480              		.loc 1 240 0 discriminator 1
+ 481 006c 85F6     		testl	%esi, %esi
+ 482 006e 7E5C     		jle	.L37
+ 483 0070 8D45FF   		leal	-1(%rbp), %eax
+ 484              		.loc 1 240 0 is_stmt 0
+ 485 0073 4531DB   		xorl	%r11d, %r11d
+ 486 0076 31DB     		xorl	%ebx, %ebx
+ 487 0078 4C8D6400 		leaq	2(%rax,%rax), %r12
+ 487      02
+ 488              	.LVL60:
+ 489 007d 0F1F00   		.p2align 4,,10
+ 490              		.p2align 3
+ 491              	.L44:
+ 241:fltk-1.3.4-1/jpeg/jcsample.c ****     outptr = output_data[inrow];
+ 242:fltk-1.3.4-1/jpeg/jcsample.c ****     inptr = input_data[inrow];
+ 492              		.loc 1 242 0 is_stmt 1
+ 493 0080 4A8B341A 		movq	(%rdx,%r11), %rsi
+ 243:fltk-1.3.4-1/jpeg/jcsample.c ****     bias = 0;			/* bias = 0,1,0,1,... for successive samples */
+ 244:fltk-1.3.4-1/jpeg/jcsample.c ****     for (outcol = 0; outcol < output_cols; outcol++) {
+ 494              		.loc 1 244 0
+ 495 0084 4531C0   		xorl	%r8d, %r8d
+ 496 0087 85ED     		testl	%ebp, %ebp
+ 241:fltk-1.3.4-1/jpeg/jcsample.c ****     outptr = output_data[inrow];
+ 497              		.loc 1 241 0
+ 498 0089 4E8B0C19 		movq	(%rcx,%r11), %r9
+ 499              	.LVL61:
+ 500 008d 4E8D1426 		leaq	(%rsi,%r12), %r10
+ 501              		.loc 1 244 0
+ 502 0091 742A     		je	.L46
+ 503              	.LVL62:
+ 504              		.p2align 4,,10
+ 505 0093 0F1F4400 		.p2align 3
+ 505      00
+ 506              	.L47:
+ 245:fltk-1.3.4-1/jpeg/jcsample.c ****       *outptr++ = (JSAMPLE) ((GETJSAMPLE(*inptr) + GETJSAMPLE(inptr[1])
+ 507              		.loc 1 245 0 discriminator 3
+ 508 0098 440FB62E 		movzbl	(%rsi), %r13d
+ 509 009c 0FB64601 		movzbl	1(%rsi), %eax
+ 246:fltk-1.3.4-1/jpeg/jcsample.c **** 			      + bias) >> 1);
+ 247:fltk-1.3.4-1/jpeg/jcsample.c ****       bias ^= 1;		/* 0=>1, 1=>0 */
+ 248:fltk-1.3.4-1/jpeg/jcsample.c ****       inptr += 2;
+ 510              		.loc 1 248 0 discriminator 3
+ 511 00a0 4883C602 		addq	$2, %rsi
+ 512              	.LVL63:
+ 245:fltk-1.3.4-1/jpeg/jcsample.c ****       *outptr++ = (JSAMPLE) ((GETJSAMPLE(*inptr) + GETJSAMPLE(inptr[1])
+ 513              		.loc 1 245 0 discriminator 3
+ 514 00a4 4983C101 		addq	$1, %r9
+ 515              	.LVL64:
+ 516 00a8 4401E8   		addl	%r13d, %eax
+ 517 00ab 4401C0   		addl	%r8d, %eax
+ 247:fltk-1.3.4-1/jpeg/jcsample.c ****       inptr += 2;
+ 518              		.loc 1 247 0 discriminator 3
+ 519 00ae 4183F001 		xorl	$1, %r8d
+ 520              	.LVL65:
+ 245:fltk-1.3.4-1/jpeg/jcsample.c ****       *outptr++ = (JSAMPLE) ((GETJSAMPLE(*inptr) + GETJSAMPLE(inptr[1])
+ 521              		.loc 1 245 0 discriminator 3
+ 522 00b2 D1F8     		sarl	%eax
+ 244:fltk-1.3.4-1/jpeg/jcsample.c ****       *outptr++ = (JSAMPLE) ((GETJSAMPLE(*inptr) + GETJSAMPLE(inptr[1])
+ 523              		.loc 1 244 0 discriminator 3
+ 524 00b4 4C39D6   		cmpq	%r10, %rsi
+ 245:fltk-1.3.4-1/jpeg/jcsample.c **** 			      + bias) >> 1);
+ 525              		.loc 1 245 0 discriminator 3
+ 526 00b7 418841FF 		movb	%al, -1(%r9)
+ 244:fltk-1.3.4-1/jpeg/jcsample.c ****       *outptr++ = (JSAMPLE) ((GETJSAMPLE(*inptr) + GETJSAMPLE(inptr[1])
+ 527              		.loc 1 244 0 discriminator 3
+ 528 00bb 75DB     		jne	.L47
+ 529              	.LVL66:
+ 530              	.L46:
+ 240:fltk-1.3.4-1/jpeg/jcsample.c ****     outptr = output_data[inrow];
+ 531              		.loc 1 240 0
+ 532 00bd 83C301   		addl	$1, %ebx
+ 533              	.LVL67:
+ 534 00c0 4983C308 		addq	$8, %r11
+ 535 00c4 399F6401 		cmpl	%ebx, 356(%rdi)
+ 535      0000
+ 536 00ca 7FB4     		jg	.L44
+ 537              	.LVL68:
+ 538              	.L37:
+ 249:fltk-1.3.4-1/jpeg/jcsample.c ****     }
+ 250:fltk-1.3.4-1/jpeg/jcsample.c ****   }
+ 251:fltk-1.3.4-1/jpeg/jcsample.c **** }
+ 539              		.loc 1 251 0
+ 540 00cc 5B       		popq	%rbx
+ 541              		.cfi_def_cfa_offset 32
+ 542 00cd 5D       		popq	%rbp
+ 543              		.cfi_def_cfa_offset 24
+ 544              	.LVL69:
+ 545 00ce 415C     		popq	%r12
+ 546              		.cfi_def_cfa_offset 16
+ 547 00d0 415D     		popq	%r13
+ 548              		.cfi_def_cfa_offset 8
+ 549 00d2 C3       		ret
+ 550              		.cfi_endproc
+ 551              	.LFE66:
+ 553              		.section	.text.unlikely.h2v1_downsample
+ 554              	.LCOLDE3:
+ 555              		.section	.text.h2v1_downsample
+ 556              	.LHOTE3:
+ 557              		.section	.text.unlikely.h2v2_downsample,"ax",@progbits
+ 558              	.LCOLDB4:
+ 559              		.section	.text.h2v2_downsample,"ax",@progbits
+ 560              	.LHOTB4:
+ 561              		.p2align 4,,15
+ 563              	h2v2_downsample:
+ 564              	.LFB67:
+ 252:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 253:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 254:fltk-1.3.4-1/jpeg/jcsample.c **** /*
+ 255:fltk-1.3.4-1/jpeg/jcsample.c ****  * Downsample pixel values of a single component.
+ 256:fltk-1.3.4-1/jpeg/jcsample.c ****  * This version handles the standard case of 2:1 horizontal and 2:1 vertical,
+ 257:fltk-1.3.4-1/jpeg/jcsample.c ****  * without smoothing.
+ 258:fltk-1.3.4-1/jpeg/jcsample.c ****  */
+ 259:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 260:fltk-1.3.4-1/jpeg/jcsample.c **** METHODDEF(void)
+ 261:fltk-1.3.4-1/jpeg/jcsample.c **** h2v2_downsample (j_compress_ptr cinfo, jpeg_component_info * compptr,
+ 262:fltk-1.3.4-1/jpeg/jcsample.c **** 		 JSAMPARRAY input_data, JSAMPARRAY output_data)
+ 263:fltk-1.3.4-1/jpeg/jcsample.c **** {
+ 565              		.loc 1 263 0
+ 566              		.cfi_startproc
+ 567              	.LVL70:
+ 568 0000 4154     		pushq	%r12
+ 569              		.cfi_def_cfa_offset 16
+ 570              		.cfi_offset 12, -16
+ 571 0002 55       		pushq	%rbp
+ 572              		.cfi_def_cfa_offset 24
+ 573              		.cfi_offset 6, -24
+ 574 0003 53       		pushq	%rbx
+ 575              		.cfi_def_cfa_offset 32
+ 576              		.cfi_offset 3, -32
+ 264:fltk-1.3.4-1/jpeg/jcsample.c ****   int inrow, outrow;
+ 265:fltk-1.3.4-1/jpeg/jcsample.c ****   JDIMENSION outcol;
+ 266:fltk-1.3.4-1/jpeg/jcsample.c ****   JDIMENSION output_cols = compptr->width_in_blocks * compptr->DCT_h_scaled_size;
+ 577              		.loc 1 266 0
+ 578 0004 448B5E1C 		movl	28(%rsi), %r11d
+ 579 0008 440FAF5E 		imull	36(%rsi), %r11d
+ 579      24
+ 580              	.LVL71:
+ 267:fltk-1.3.4-1/jpeg/jcsample.c ****   register JSAMPROW inptr0, inptr1, outptr;
+ 268:fltk-1.3.4-1/jpeg/jcsample.c ****   register int bias;
+ 269:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 270:fltk-1.3.4-1/jpeg/jcsample.c ****   /* Expand input data enough to let all the output samples be generated
+ 271:fltk-1.3.4-1/jpeg/jcsample.c ****    * by the standard loop.  Special-casing padded output would be more
+ 272:fltk-1.3.4-1/jpeg/jcsample.c ****    * efficient.
+ 273:fltk-1.3.4-1/jpeg/jcsample.c ****    */
+ 274:fltk-1.3.4-1/jpeg/jcsample.c ****   expand_right_edge(input_data, cinfo->max_v_samp_factor,
+ 581              		.loc 1 274 0
+ 582 000d 448B5730 		movl	48(%rdi), %r10d
+ 583 0011 8BB76401 		movl	356(%rdi), %esi
+ 583      0000
+ 584              	.LVL72:
+ 585              	.LBB24:
+ 586              	.LBB25:
+ 103:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 587              		.loc 1 103 0
+ 588 0017 438D041B 		leal	(%r11,%r11), %eax
+ 589 001b 4429D0   		subl	%r10d, %eax
+ 590              	.LVL73:
+ 105:fltk-1.3.4-1/jpeg/jcsample.c ****     for (row = 0; row < num_rows; row++) {
+ 591              		.loc 1 105 0
+ 592 001e 85C0     		testl	%eax, %eax
+ 593 0020 7E4A     		jle	.L54
+ 594              	.LVL74:
+ 106:fltk-1.3.4-1/jpeg/jcsample.c ****       ptr = image_data[row] + input_cols;
+ 595              		.loc 1 106 0
+ 596 0022 85F6     		testl	%esi, %esi
+ 597 0024 0F8EBD00 		jle	.L53
+ 597      0000
+ 598 002a 83EE01   		subl	$1, %esi
+ 599              	.LVL75:
+ 600 002d 8D58FF   		leal	-1(%rax), %ebx
+ 601 0030 4989D1   		movq	%rdx, %r9
+ 602 0033 4C8D64F2 		leaq	8(%rdx,%rsi,8), %r12
+ 602      08
+ 603 0038 4883C301 		addq	$1, %rbx
+ 604              	.LVL76:
+ 605 003c 0F1F4000 		.p2align 4,,10
+ 606              		.p2align 3
+ 607              	.L57:
+ 107:fltk-1.3.4-1/jpeg/jcsample.c ****       pixval = ptr[-1];		/* don't need GETJSAMPLE() here */
+ 608              		.loc 1 107 0
+ 609 0040 4C89D0   		movq	%r10, %rax
+ 610 0043 490301   		addq	(%r9), %rax
+ 611              	.LVL77:
+ 108:fltk-1.3.4-1/jpeg/jcsample.c ****       for (count = numcols; count > 0; count--)
+ 612              		.loc 1 108 0
+ 613 0046 440FB640 		movzbl	-1(%rax), %r8d
+ 613      FF
+ 614              	.LVL78:
+ 615 004b 488D3418 		leaq	(%rax,%rbx), %rsi
+ 616              	.LVL79:
+ 617 004f 90       		.p2align 4,,10
+ 618              		.p2align 3
+ 619              	.L56:
+ 110:fltk-1.3.4-1/jpeg/jcsample.c ****     }
+ 620              		.loc 1 110 0
+ 621 0050 4883C001 		addq	$1, %rax
+ 622              	.LVL80:
+ 623 0054 448840FF 		movb	%r8b, -1(%rax)
+ 109:fltk-1.3.4-1/jpeg/jcsample.c **** 	*ptr++ = pixval;
+ 624              		.loc 1 109 0
+ 625 0058 4839C6   		cmpq	%rax, %rsi
+ 626 005b 75F3     		jne	.L56
+ 627 005d 4983C108 		addq	$8, %r9
+ 106:fltk-1.3.4-1/jpeg/jcsample.c ****       ptr = image_data[row] + input_cols;
+ 628              		.loc 1 106 0
+ 629 0061 4D39E1   		cmpq	%r12, %r9
+ 630 0064 75DA     		jne	.L57
+ 631 0066 8BB76401 		movl	356(%rdi), %esi
+ 631      0000
+ 632              	.LVL81:
+ 633              	.L54:
+ 634              	.LBE25:
+ 635              	.LBE24:
+ 275:fltk-1.3.4-1/jpeg/jcsample.c **** 		    cinfo->image_width, output_cols * 2);
+ 276:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 277:fltk-1.3.4-1/jpeg/jcsample.c ****   inrow = outrow = 0;
+ 278:fltk-1.3.4-1/jpeg/jcsample.c ****   while (inrow < cinfo->max_v_samp_factor) {
+ 636              		.loc 1 278 0
+ 637 006c 85F6     		testl	%esi, %esi
+ 638 006e 7E77     		jle	.L53
+ 639 0070 488D6A08 		leaq	8(%rdx), %rbp
+ 640 0074 4531E4   		xorl	%r12d, %r12d
+ 641              	.LVL82:
+ 642 0077 660F1F84 		.p2align 4,,10
+ 642      00000000 
+ 642      00
+ 643              		.p2align 3
+ 644              	.L60:
+ 279:fltk-1.3.4-1/jpeg/jcsample.c ****     outptr = output_data[outrow];
+ 280:fltk-1.3.4-1/jpeg/jcsample.c ****     inptr0 = input_data[inrow];
+ 281:fltk-1.3.4-1/jpeg/jcsample.c ****     inptr1 = input_data[inrow+1];
+ 282:fltk-1.3.4-1/jpeg/jcsample.c ****     bias = 1;			/* bias = 1,2,1,2,... for successive samples */
+ 283:fltk-1.3.4-1/jpeg/jcsample.c ****     for (outcol = 0; outcol < output_cols; outcol++) {
+ 645              		.loc 1 283 0
+ 646 0080 31C0     		xorl	%eax, %eax
+ 647 0082 4585DB   		testl	%r11d, %r11d
+ 279:fltk-1.3.4-1/jpeg/jcsample.c ****     outptr = output_data[outrow];
+ 648              		.loc 1 279 0
+ 649 0085 488B19   		movq	(%rcx), %rbx
+ 650              	.LVL83:
+ 280:fltk-1.3.4-1/jpeg/jcsample.c ****     inptr1 = input_data[inrow+1];
+ 651              		.loc 1 280 0
+ 652 0088 4C8B55F8 		movq	-8(%rbp), %r10
+ 653              	.LVL84:
+ 281:fltk-1.3.4-1/jpeg/jcsample.c ****     bias = 1;			/* bias = 1,2,1,2,... for successive samples */
+ 654              		.loc 1 281 0
+ 655 008c 4C8B4D00 		movq	0(%rbp), %r9
+ 656              	.LVL85:
+ 657              		.loc 1 283 0
+ 658 0090 41B80100 		movl	$1, %r8d
+ 658      0000
+ 659 0096 743A     		je	.L62
+ 660              	.LVL86:
+ 661 0098 0F1F8400 		.p2align 4,,10
+ 661      00000000 
+ 662              		.p2align 3
+ 663              	.L63:
+ 284:fltk-1.3.4-1/jpeg/jcsample.c ****       *outptr++ = (JSAMPLE) ((GETJSAMPLE(*inptr0) + GETJSAMPLE(inptr0[1]) +
+ 664              		.loc 1 284 0 discriminator 3
+ 665 00a0 410FB634 		movzbl	(%r10,%rax,2), %esi
+ 665      42
+ 666 00a5 410FB654 		movzbl	1(%r10,%rax,2), %edx
+ 666      4201
+ 667 00ab 01F2     		addl	%esi, %edx
+ 668 00ad 410FB634 		movzbl	(%r9,%rax,2), %esi
+ 668      41
+ 669 00b2 01F2     		addl	%esi, %edx
+ 670 00b4 410FB674 		movzbl	1(%r9,%rax,2), %esi
+ 670      4101
+ 671 00ba 01F2     		addl	%esi, %edx
+ 672 00bc 4401C2   		addl	%r8d, %edx
+ 285:fltk-1.3.4-1/jpeg/jcsample.c **** 			      GETJSAMPLE(*inptr1) + GETJSAMPLE(inptr1[1])
+ 286:fltk-1.3.4-1/jpeg/jcsample.c **** 			      + bias) >> 2);
+ 287:fltk-1.3.4-1/jpeg/jcsample.c ****       bias ^= 3;		/* 1=>2, 2=>1 */
+ 673              		.loc 1 287 0 discriminator 3
+ 674 00bf 4183F003 		xorl	$3, %r8d
+ 675              	.LVL87:
+ 284:fltk-1.3.4-1/jpeg/jcsample.c ****       *outptr++ = (JSAMPLE) ((GETJSAMPLE(*inptr0) + GETJSAMPLE(inptr0[1]) +
+ 676              		.loc 1 284 0 discriminator 3
+ 677 00c3 C1FA02   		sarl	$2, %edx
+ 678 00c6 881403   		movb	%dl, (%rbx,%rax)
+ 679 00c9 4883C001 		addq	$1, %rax
+ 680              	.LVL88:
+ 283:fltk-1.3.4-1/jpeg/jcsample.c ****       *outptr++ = (JSAMPLE) ((GETJSAMPLE(*inptr0) + GETJSAMPLE(inptr0[1]) +
+ 681              		.loc 1 283 0 discriminator 3
+ 682 00cd 4139C3   		cmpl	%eax, %r11d
+ 683 00d0 77CE     		ja	.L63
+ 684              	.LVL89:
+ 685              	.L62:
+ 288:fltk-1.3.4-1/jpeg/jcsample.c ****       inptr0 += 2; inptr1 += 2;
+ 289:fltk-1.3.4-1/jpeg/jcsample.c ****     }
+ 290:fltk-1.3.4-1/jpeg/jcsample.c ****     inrow += 2;
+ 686              		.loc 1 290 0
+ 687 00d2 4183C402 		addl	$2, %r12d
+ 688              	.LVL90:
+ 689 00d6 4883C108 		addq	$8, %rcx
+ 690 00da 4883C510 		addq	$16, %rbp
+ 278:fltk-1.3.4-1/jpeg/jcsample.c ****     outptr = output_data[outrow];
+ 691              		.loc 1 278 0
+ 692 00de 4439A764 		cmpl	%r12d, 356(%rdi)
+ 692      010000
+ 693 00e5 7F99     		jg	.L60
+ 694              	.LVL91:
+ 695              	.L53:
+ 291:fltk-1.3.4-1/jpeg/jcsample.c ****     outrow++;
+ 292:fltk-1.3.4-1/jpeg/jcsample.c ****   }
+ 293:fltk-1.3.4-1/jpeg/jcsample.c **** }
+ 696              		.loc 1 293 0
+ 697 00e7 5B       		popq	%rbx
+ 698              		.cfi_def_cfa_offset 24
+ 699 00e8 5D       		popq	%rbp
+ 700              		.cfi_def_cfa_offset 16
+ 701 00e9 415C     		popq	%r12
+ 702              		.cfi_def_cfa_offset 8
+ 703 00eb C3       		ret
+ 704              		.cfi_endproc
+ 705              	.LFE67:
+ 707              		.section	.text.unlikely.h2v2_downsample
+ 708              	.LCOLDE4:
+ 709              		.section	.text.h2v2_downsample
+ 710              	.LHOTE4:
+ 711              		.section	.text.unlikely.h2v2_smooth_downsample,"ax",@progbits
+ 712              	.LCOLDB5:
+ 713              		.section	.text.h2v2_smooth_downsample,"ax",@progbits
+ 714              	.LHOTB5:
+ 715              		.p2align 4,,15
+ 717              	h2v2_smooth_downsample:
+ 718              	.LFB68:
+ 294:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 295:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 296:fltk-1.3.4-1/jpeg/jcsample.c **** #ifdef INPUT_SMOOTHING_SUPPORTED
+ 297:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 298:fltk-1.3.4-1/jpeg/jcsample.c **** /*
+ 299:fltk-1.3.4-1/jpeg/jcsample.c ****  * Downsample pixel values of a single component.
+ 300:fltk-1.3.4-1/jpeg/jcsample.c ****  * This version handles the standard case of 2:1 horizontal and 2:1 vertical,
+ 301:fltk-1.3.4-1/jpeg/jcsample.c ****  * with smoothing.  One row of context is required.
+ 302:fltk-1.3.4-1/jpeg/jcsample.c ****  */
+ 303:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 304:fltk-1.3.4-1/jpeg/jcsample.c **** METHODDEF(void)
+ 305:fltk-1.3.4-1/jpeg/jcsample.c **** h2v2_smooth_downsample (j_compress_ptr cinfo, jpeg_component_info * compptr,
+ 306:fltk-1.3.4-1/jpeg/jcsample.c **** 			JSAMPARRAY input_data, JSAMPARRAY output_data)
+ 307:fltk-1.3.4-1/jpeg/jcsample.c **** {
+ 719              		.loc 1 307 0
+ 720              		.cfi_startproc
+ 721              	.LVL92:
+ 722 0000 4157     		pushq	%r15
+ 723              		.cfi_def_cfa_offset 16
+ 724              		.cfi_offset 15, -16
+ 725 0002 4156     		pushq	%r14
+ 726              		.cfi_def_cfa_offset 24
+ 727              		.cfi_offset 14, -24
+ 728 0004 4155     		pushq	%r13
+ 729              		.cfi_def_cfa_offset 32
+ 730              		.cfi_offset 13, -32
+ 731 0006 4154     		pushq	%r12
+ 732              		.cfi_def_cfa_offset 40
+ 733              		.cfi_offset 12, -40
+ 734 0008 55       		pushq	%rbp
+ 735              		.cfi_def_cfa_offset 48
+ 736              		.cfi_offset 6, -48
+ 737 0009 53       		pushq	%rbx
+ 738              		.cfi_def_cfa_offset 56
+ 739              		.cfi_offset 3, -56
+ 308:fltk-1.3.4-1/jpeg/jcsample.c ****   int inrow, outrow;
+ 309:fltk-1.3.4-1/jpeg/jcsample.c ****   JDIMENSION colctr;
+ 310:fltk-1.3.4-1/jpeg/jcsample.c ****   JDIMENSION output_cols = compptr->width_in_blocks * compptr->DCT_h_scaled_size;
+ 740              		.loc 1 310 0
+ 741 000a 8B461C   		movl	28(%rsi), %eax
+ 311:fltk-1.3.4-1/jpeg/jcsample.c ****   register JSAMPROW inptr0, inptr1, above_ptr, below_ptr, outptr;
+ 312:fltk-1.3.4-1/jpeg/jcsample.c ****   INT32 membersum, neighsum, memberscale, neighscale;
+ 313:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 314:fltk-1.3.4-1/jpeg/jcsample.c ****   /* Expand input data enough to let all the output samples be generated
+ 315:fltk-1.3.4-1/jpeg/jcsample.c ****    * by the standard loop.  Special-casing padded output would be more
+ 316:fltk-1.3.4-1/jpeg/jcsample.c ****    * efficient.
+ 317:fltk-1.3.4-1/jpeg/jcsample.c ****    */
+ 318:fltk-1.3.4-1/jpeg/jcsample.c ****   expand_right_edge(input_data - 1, cinfo->max_v_samp_factor + 2,
+ 742              		.loc 1 318 0
+ 743 000d 448B4F30 		movl	48(%rdi), %r9d
+ 310:fltk-1.3.4-1/jpeg/jcsample.c ****   register JSAMPROW inptr0, inptr1, above_ptr, below_ptr, outptr;
+ 744              		.loc 1 310 0
+ 745 0011 0FAF4624 		imull	36(%rsi), %eax
+ 307:fltk-1.3.4-1/jpeg/jcsample.c ****   int inrow, outrow;
+ 746              		.loc 1 307 0
+ 747 0015 48897C24 		movq	%rdi, -40(%rsp)
+ 747      D8
+ 748              		.loc 1 318 0
+ 749 001a 8BBF6401 		movl	356(%rdi), %edi
+ 749      0000
+ 750              	.LVL93:
+ 310:fltk-1.3.4-1/jpeg/jcsample.c ****   register JSAMPROW inptr0, inptr1, above_ptr, below_ptr, outptr;
+ 751              		.loc 1 310 0
+ 752 0020 894424E4 		movl	%eax, -28(%rsp)
+ 753              	.LVL94:
+ 754              	.LBB26:
+ 755              	.LBB27:
+ 103:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 756              		.loc 1 103 0
+ 757 0024 01C0     		addl	%eax, %eax
+ 758              	.LVL95:
+ 759 0026 4429C8   		subl	%r9d, %eax
+ 760              	.LVL96:
+ 105:fltk-1.3.4-1/jpeg/jcsample.c ****     for (row = 0; row < num_rows; row++) {
+ 761              		.loc 1 105 0
+ 762 0029 85C0     		testl	%eax, %eax
+ 763 002b 7E54     		jle	.L70
+ 764              	.LVL97:
+ 106:fltk-1.3.4-1/jpeg/jcsample.c ****       ptr = image_data[row] + input_cols;
+ 765              		.loc 1 106 0
+ 766 002d 83FFFF   		cmpl	$-1, %edi
+ 767 0030 7C4F     		jl	.L70
+ 768 0032 8D7701   		leal	1(%rdi), %esi
+ 769              	.LVL98:
+ 770 0035 448D50FF 		leal	-1(%rax), %r10d
+ 771 0039 4C8D42F8 		leaq	-8(%rdx), %r8
+ 772              	.LVL99:
+ 773 003d 4C8D1CF2 		leaq	(%rdx,%rsi,8), %r11
+ 774 0041 4983C201 		addq	$1, %r10
+ 775              	.LVL100:
+ 776              		.p2align 4,,10
+ 777 0045 0F1F00   		.p2align 3
+ 778              	.L72:
+ 107:fltk-1.3.4-1/jpeg/jcsample.c ****       pixval = ptr[-1];		/* don't need GETJSAMPLE() here */
+ 779              		.loc 1 107 0
+ 780 0048 4C89C8   		movq	%r9, %rax
+ 781 004b 490300   		addq	(%r8), %rax
+ 782              	.LVL101:
+ 108:fltk-1.3.4-1/jpeg/jcsample.c ****       for (count = numcols; count > 0; count--)
+ 783              		.loc 1 108 0
+ 784 004e 0FB678FF 		movzbl	-1(%rax), %edi
+ 785              	.LVL102:
+ 786 0052 4A8D3410 		leaq	(%rax,%r10), %rsi
+ 787              	.LVL103:
+ 788 0056 662E0F1F 		.p2align 4,,10
+ 788      84000000 
+ 788      0000
+ 789              		.p2align 3
+ 790              	.L71:
+ 110:fltk-1.3.4-1/jpeg/jcsample.c ****     }
+ 791              		.loc 1 110 0
+ 792 0060 4883C001 		addq	$1, %rax
+ 793              	.LVL104:
+ 794 0064 408878FF 		movb	%dil, -1(%rax)
+ 109:fltk-1.3.4-1/jpeg/jcsample.c **** 	*ptr++ = pixval;
+ 795              		.loc 1 109 0
+ 796 0068 4839C6   		cmpq	%rax, %rsi
+ 797 006b 75F3     		jne	.L71
+ 798 006d 4983C008 		addq	$8, %r8
+ 106:fltk-1.3.4-1/jpeg/jcsample.c ****       ptr = image_data[row] + input_cols;
+ 799              		.loc 1 106 0
+ 800 0071 4D39C3   		cmpq	%r8, %r11
+ 801 0074 75D2     		jne	.L72
+ 802 0076 488B4424 		movq	-40(%rsp), %rax
+ 802      D8
+ 803              	.LVL105:
+ 804 007b 8BB86401 		movl	356(%rax), %edi
+ 804      0000
+ 805              	.LVL106:
+ 806              	.L70:
+ 807              	.LBE27:
+ 808              	.LBE26:
+ 319:fltk-1.3.4-1/jpeg/jcsample.c **** 		    cinfo->image_width, output_cols * 2);
+ 320:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 321:fltk-1.3.4-1/jpeg/jcsample.c ****   /* We don't bother to form the individual "smoothed" input pixel values;
+ 322:fltk-1.3.4-1/jpeg/jcsample.c ****    * we can directly compute the output which is the average of the four
+ 323:fltk-1.3.4-1/jpeg/jcsample.c ****    * smoothed values.  Each of the four member pixels contributes a fraction
+ 324:fltk-1.3.4-1/jpeg/jcsample.c ****    * (1-8*SF) to its own smoothed image and a fraction SF to each of the three
+ 325:fltk-1.3.4-1/jpeg/jcsample.c ****    * other smoothed pixels, therefore a total fraction (1-5*SF)/4 to the final
+ 326:fltk-1.3.4-1/jpeg/jcsample.c ****    * output.  The four corner-adjacent neighbor pixels contribute a fraction
+ 327:fltk-1.3.4-1/jpeg/jcsample.c ****    * SF to just one smoothed pixel, or SF/4 to the final output; while the
+ 328:fltk-1.3.4-1/jpeg/jcsample.c ****    * eight edge-adjacent neighbors contribute SF to each of two smoothed
+ 329:fltk-1.3.4-1/jpeg/jcsample.c ****    * pixels, or SF/2 overall.  In order to use integer arithmetic, these
+ 330:fltk-1.3.4-1/jpeg/jcsample.c ****    * factors are scaled by 2^16 = 65536.
+ 331:fltk-1.3.4-1/jpeg/jcsample.c ****    * Also recall that SF = smoothing_factor / 1024.
+ 332:fltk-1.3.4-1/jpeg/jcsample.c ****    */
+ 333:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 334:fltk-1.3.4-1/jpeg/jcsample.c ****   memberscale = 16384 - cinfo->smoothing_factor * 80; /* scaled (1-5*SF)/4 */
+ 809              		.loc 1 334 0
+ 810 0081 488B4424 		movq	-40(%rsp), %rax
+ 810      D8
+ 811 0086 8BB03401 		movl	308(%rax), %esi
+ 811      0000
+ 812 008c 8D04B6   		leal	(%rsi,%rsi,4), %eax
+ 335:fltk-1.3.4-1/jpeg/jcsample.c ****   neighscale = cinfo->smoothing_factor * 16; /* scaled SF/4 */
+ 813              		.loc 1 335 0
+ 814 008f C1E604   		sall	$4, %esi
+ 334:fltk-1.3.4-1/jpeg/jcsample.c ****   neighscale = cinfo->smoothing_factor * 16; /* scaled SF/4 */
+ 815              		.loc 1 334 0
+ 816 0092 C1E004   		sall	$4, %eax
+ 817 0095 F7D8     		negl	%eax
+ 818 0097 05004000 		addl	$16384, %eax
+ 818      00
+ 336:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 337:fltk-1.3.4-1/jpeg/jcsample.c ****   inrow = outrow = 0;
+ 338:fltk-1.3.4-1/jpeg/jcsample.c ****   while (inrow < cinfo->max_v_samp_factor) {
+ 819              		.loc 1 338 0
+ 820 009c 85FF     		testl	%edi, %edi
+ 334:fltk-1.3.4-1/jpeg/jcsample.c ****   neighscale = cinfo->smoothing_factor * 16; /* scaled SF/4 */
+ 821              		.loc 1 334 0
+ 822 009e 4C63F8   		movslq	%eax, %r15
+ 823              	.LVL107:
+ 335:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 824              		.loc 1 335 0
+ 825 00a1 4863C6   		movslq	%esi, %rax
+ 826 00a4 4889C5   		movq	%rax, %rbp
+ 827              	.LVL108:
+ 828              		.loc 1 338 0
+ 829 00a7 0F8E7C02 		jle	.L69
+ 829      0000
+ 830 00ad 8B4424E4 		movl	-28(%rsp), %eax
+ 831              	.LVL109:
+ 832 00b1 48894C24 		movq	%rcx, -56(%rsp)
+ 832      C8
+ 833 00b6 48895424 		movq	%rdx, -48(%rsp)
+ 833      D0
+ 834 00bb C74424E0 		movl	$0, -32(%rsp)
+ 834      00000000 
+ 835 00c3 83E803   		subl	$3, %eax
+ 836 00c6 488D5801 		leaq	1(%rax), %rbx
+ 837 00ca 4883C002 		addq	$2, %rax
+ 838 00ce 48894424 		movq	%rax, -8(%rsp)
+ 838      F8
+ 839 00d3 48895C24 		movq	%rbx, -16(%rsp)
+ 839      F0
+ 840 00d8 4801DB   		addq	%rbx, %rbx
+ 841 00db 48895C24 		movq	%rbx, -24(%rsp)
+ 841      E8
+ 842              	.LVL110:
+ 843              		.p2align 4,,10
+ 844              		.p2align 3
+ 845              	.L76:
+ 339:fltk-1.3.4-1/jpeg/jcsample.c ****     outptr = output_data[outrow];
+ 846              		.loc 1 339 0
+ 847 00e0 488B4424 		movq	-56(%rsp), %rax
+ 847      C8
+ 848 00e5 488B18   		movq	(%rax), %rbx
+ 849              	.LVL111:
+ 340:fltk-1.3.4-1/jpeg/jcsample.c ****     inptr0 = input_data[inrow];
+ 850              		.loc 1 340 0
+ 851 00e8 488B4424 		movq	-48(%rsp), %rax
+ 851      D0
+ 341:fltk-1.3.4-1/jpeg/jcsample.c ****     inptr1 = input_data[inrow+1];
+ 342:fltk-1.3.4-1/jpeg/jcsample.c ****     above_ptr = input_data[inrow-1];
+ 852              		.loc 1 342 0
+ 853 00ed 4C8B60F8 		movq	-8(%rax), %r12
+ 343:fltk-1.3.4-1/jpeg/jcsample.c ****     below_ptr = input_data[inrow+2];
+ 854              		.loc 1 343 0
+ 855 00f1 488B7010 		movq	16(%rax), %rsi
+ 344:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 345:fltk-1.3.4-1/jpeg/jcsample.c ****     /* Special case for first column: pretend column -1 is same as column 0 */
+ 346:fltk-1.3.4-1/jpeg/jcsample.c ****     membersum = GETJSAMPLE(*inptr0) + GETJSAMPLE(inptr0[1]) +
+ 347:fltk-1.3.4-1/jpeg/jcsample.c **** 		GETJSAMPLE(*inptr1) + GETJSAMPLE(inptr1[1]);
+ 348:fltk-1.3.4-1/jpeg/jcsample.c ****     neighsum = GETJSAMPLE(*above_ptr) + GETJSAMPLE(above_ptr[1]) +
+ 349:fltk-1.3.4-1/jpeg/jcsample.c **** 	       GETJSAMPLE(*below_ptr) + GETJSAMPLE(below_ptr[1]) +
+ 350:fltk-1.3.4-1/jpeg/jcsample.c **** 	       GETJSAMPLE(*inptr0) + GETJSAMPLE(inptr0[2]) +
+ 351:fltk-1.3.4-1/jpeg/jcsample.c **** 	       GETJSAMPLE(*inptr1) + GETJSAMPLE(inptr1[2]);
+ 352:fltk-1.3.4-1/jpeg/jcsample.c ****     neighsum += neighsum;
+ 353:fltk-1.3.4-1/jpeg/jcsample.c ****     neighsum += GETJSAMPLE(*above_ptr) + GETJSAMPLE(above_ptr[2]) +
+ 354:fltk-1.3.4-1/jpeg/jcsample.c **** 		GETJSAMPLE(*below_ptr) + GETJSAMPLE(below_ptr[2]);
+ 355:fltk-1.3.4-1/jpeg/jcsample.c ****     membersum = membersum * memberscale + neighsum * neighscale;
+ 356:fltk-1.3.4-1/jpeg/jcsample.c ****     *outptr++ = (JSAMPLE) ((membersum + 32768) >> 16);
+ 856              		.loc 1 356 0
+ 857 00f5 4C8D5B01 		leaq	1(%rbx), %r11
+ 340:fltk-1.3.4-1/jpeg/jcsample.c ****     inptr1 = input_data[inrow+1];
+ 858              		.loc 1 340 0
+ 859 00f9 4C8B30   		movq	(%rax), %r14
+ 860              	.LVL112:
+ 341:fltk-1.3.4-1/jpeg/jcsample.c ****     above_ptr = input_data[inrow-1];
+ 861              		.loc 1 341 0
+ 862 00fc 4C8B6808 		movq	8(%rax), %r13
+ 863              	.LVL113:
+ 864              		.loc 1 356 0
+ 865 0100 4C895C24 		movq	%r11, -72(%rsp)
+ 865      B8
+ 348:fltk-1.3.4-1/jpeg/jcsample.c **** 	       GETJSAMPLE(*below_ptr) + GETJSAMPLE(below_ptr[1]) +
+ 866              		.loc 1 348 0
+ 867 0105 410FB614 		movzbl	(%r12), %edx
+ 867      24
+ 868 010a 450FB64C 		movzbl	1(%r12), %r9d
+ 868      2401
+ 357:fltk-1.3.4-1/jpeg/jcsample.c ****     inptr0 += 2; inptr1 += 2; above_ptr += 2; below_ptr += 2;
+ 869              		.loc 1 357 0
+ 870 0110 4983C402 		addq	$2, %r12
+ 871              	.LVL114:
+ 349:fltk-1.3.4-1/jpeg/jcsample.c **** 	       GETJSAMPLE(*inptr0) + GETJSAMPLE(inptr0[2]) +
+ 872              		.loc 1 349 0
+ 873 0114 0FB63E   		movzbl	(%rsi), %edi
+ 348:fltk-1.3.4-1/jpeg/jcsample.c **** 	       GETJSAMPLE(*below_ptr) + GETJSAMPLE(below_ptr[1]) +
+ 874              		.loc 1 348 0
+ 875 0117 0FB64E01 		movzbl	1(%rsi), %ecx
+ 876              		.loc 1 357 0
+ 877 011b 4983C602 		addq	$2, %r14
+ 878              	.LVL115:
+ 346:fltk-1.3.4-1/jpeg/jcsample.c **** 		GETJSAMPLE(*inptr1) + GETJSAMPLE(inptr1[1]);
+ 879              		.loc 1 346 0
+ 880 011f 410FB646 		movzbl	-2(%r14), %eax
+ 880      FE
+ 881              	.LVL116:
+ 347:fltk-1.3.4-1/jpeg/jcsample.c ****     neighsum = GETJSAMPLE(*above_ptr) + GETJSAMPLE(above_ptr[1]) +
+ 882              		.loc 1 347 0
+ 883 0124 450FB645 		movzbl	0(%r13), %r8d
+ 883      00
+ 884              	.LVL117:
+ 885              		.loc 1 357 0
+ 886 0129 4983C502 		addq	$2, %r13
+ 887              	.LVL118:
+ 348:fltk-1.3.4-1/jpeg/jcsample.c **** 	       GETJSAMPLE(*below_ptr) + GETJSAMPLE(below_ptr[1]) +
+ 888              		.loc 1 348 0
+ 889 012d 4101D1   		addl	%edx, %r9d
+ 890 0130 4101F9   		addl	%edi, %r9d
+ 891 0133 4101C9   		addl	%ecx, %r9d
+ 892 0136 410FB60E 		movzbl	(%r14), %ecx
+ 893 013a 4101C1   		addl	%eax, %r9d
+ 894 013d 4401C9   		addl	%r9d, %ecx
+ 895 0140 450FB64D 		movzbl	0(%r13), %r9d
+ 895      00
+ 896 0145 4401C1   		addl	%r8d, %ecx
+ 897 0148 4401C9   		addl	%r9d, %ecx
+ 355:fltk-1.3.4-1/jpeg/jcsample.c ****     *outptr++ = (JSAMPLE) ((membersum + 32768) >> 16);
+ 898              		.loc 1 355 0
+ 899 014b 450FB64E 		movzbl	-1(%r14), %r9d
+ 899      FF
+ 348:fltk-1.3.4-1/jpeg/jcsample.c **** 	       GETJSAMPLE(*below_ptr) + GETJSAMPLE(below_ptr[1]) +
+ 900              		.loc 1 348 0
+ 901 0150 4863C9   		movslq	%ecx, %rcx
+ 902              	.LVL119:
+ 355:fltk-1.3.4-1/jpeg/jcsample.c ****     *outptr++ = (JSAMPLE) ((membersum + 32768) >> 16);
+ 903              		.loc 1 355 0
+ 904 0153 4401C8   		addl	%r9d, %eax
+ 905 0156 4101C0   		addl	%eax, %r8d
+ 906 0159 410FB645 		movzbl	-1(%r13), %eax
+ 906      FF
+ 907 015e 4401C0   		addl	%r8d, %eax
+ 356:fltk-1.3.4-1/jpeg/jcsample.c ****     inptr0 += 2; inptr1 += 2; above_ptr += 2; below_ptr += 2;
+ 908              		.loc 1 356 0
+ 909 0161 450FB604 		movzbl	(%r12), %r8d
+ 909      24
+ 355:fltk-1.3.4-1/jpeg/jcsample.c ****     *outptr++ = (JSAMPLE) ((membersum + 32768) >> 16);
+ 910              		.loc 1 355 0
+ 911 0166 4898     		cltq
+ 912 0168 490FAFC7 		imulq	%r15, %rax
+ 913              	.LVL120:
+ 356:fltk-1.3.4-1/jpeg/jcsample.c ****     inptr0 += 2; inptr1 += 2; above_ptr += 2; below_ptr += 2;
+ 914              		.loc 1 356 0
+ 915 016c 4401C2   		addl	%r8d, %edx
+ 916 016f 440FB646 		movzbl	2(%rsi), %r8d
+ 916      02
+ 917 0174 01D7     		addl	%edx, %edi
+ 918 0176 4401C7   		addl	%r8d, %edi
+ 919 0179 4863FF   		movslq	%edi, %rdi
+ 920 017c 488D144F 		leaq	(%rdi,%rcx,2), %rdx
+ 921 0180 480FAFD5 		imulq	%rbp, %rdx
+ 922 0184 488D8410 		leaq	32768(%rax,%rdx), %rax
+ 922      00800000 
+ 923 018c 48C1F810 		sarq	$16, %rax
+ 358:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 359:fltk-1.3.4-1/jpeg/jcsample.c ****     for (colctr = output_cols - 2; colctr > 0; colctr--) {
+ 924              		.loc 1 359 0
+ 925 0190 837C24E4 		cmpl	$2, -28(%rsp)
+ 925      02
+ 356:fltk-1.3.4-1/jpeg/jcsample.c ****     inptr0 += 2; inptr1 += 2; above_ptr += 2; below_ptr += 2;
+ 926              		.loc 1 356 0
+ 927 0195 8803     		movb	%al, (%rbx)
+ 357:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 928              		.loc 1 357 0
+ 929 0197 488D4602 		leaq	2(%rsi), %rax
+ 930 019b 48894424 		movq	%rax, -64(%rsp)
+ 930      C0
+ 931              	.LVL121:
+ 932              		.loc 1 359 0
+ 933 01a0 0F84D800 		je	.L74
+ 933      0000
+ 934 01a6 48035C24 		addq	-8(%rsp), %rbx
+ 934      F8
+ 935              		.loc 1 359 0 is_stmt 0 discriminator 3
+ 936 01ab 4989C2   		movq	%rax, %r10
+ 937 01ae 4D89E1   		movq	%r12, %r9
+ 938 01b1 4D89E8   		movq	%r13, %r8
+ 939 01b4 4C89F7   		movq	%r14, %rdi
+ 940              	.LVL122:
+ 941 01b7 660F1F84 		.p2align 4,,10
+ 941      00000000 
+ 941      00
+ 942              		.p2align 3
+ 943              	.L75:
+ 360:fltk-1.3.4-1/jpeg/jcsample.c ****       /* sum of pixels directly mapped to this output element */
+ 361:fltk-1.3.4-1/jpeg/jcsample.c ****       membersum = GETJSAMPLE(*inptr0) + GETJSAMPLE(inptr0[1]) +
+ 362:fltk-1.3.4-1/jpeg/jcsample.c **** 		  GETJSAMPLE(*inptr1) + GETJSAMPLE(inptr1[1]);
+ 363:fltk-1.3.4-1/jpeg/jcsample.c ****       /* sum of edge-neighbor pixels */
+ 364:fltk-1.3.4-1/jpeg/jcsample.c ****       neighsum = GETJSAMPLE(*above_ptr) + GETJSAMPLE(above_ptr[1]) +
+ 944              		.loc 1 364 0 is_stmt 1 discriminator 3
+ 945 01c0 410FB641 		movzbl	1(%r9), %eax
+ 945      01
+ 946 01c5 410FB609 		movzbl	(%r9), %ecx
+ 365:fltk-1.3.4-1/jpeg/jcsample.c **** 		 GETJSAMPLE(*below_ptr) + GETJSAMPLE(below_ptr[1]) +
+ 366:fltk-1.3.4-1/jpeg/jcsample.c **** 		 GETJSAMPLE(inptr0[-1]) + GETJSAMPLE(inptr0[2]) +
+ 367:fltk-1.3.4-1/jpeg/jcsample.c **** 		 GETJSAMPLE(inptr1[-1]) + GETJSAMPLE(inptr1[2]);
+ 368:fltk-1.3.4-1/jpeg/jcsample.c ****       /* The edge-neighbors count twice as much as corner-neighbors */
+ 369:fltk-1.3.4-1/jpeg/jcsample.c ****       neighsum += neighsum;
+ 370:fltk-1.3.4-1/jpeg/jcsample.c ****       /* Add in the corner-neighbors */
+ 371:fltk-1.3.4-1/jpeg/jcsample.c ****       neighsum += GETJSAMPLE(above_ptr[-1]) + GETJSAMPLE(above_ptr[2]) +
+ 372:fltk-1.3.4-1/jpeg/jcsample.c **** 		  GETJSAMPLE(below_ptr[-1]) + GETJSAMPLE(below_ptr[2]);
+ 373:fltk-1.3.4-1/jpeg/jcsample.c ****       /* form final output scaled up by 2^16 */
+ 374:fltk-1.3.4-1/jpeg/jcsample.c ****       membersum = membersum * memberscale + neighsum * neighscale;
+ 375:fltk-1.3.4-1/jpeg/jcsample.c ****       /* round, descale and output it */
+ 376:fltk-1.3.4-1/jpeg/jcsample.c ****       *outptr++ = (JSAMPLE) ((membersum + 32768) >> 16);
+ 947              		.loc 1 376 0 discriminator 3
+ 948 01c9 4983C301 		addq	$1, %r11
+ 949              	.LVL123:
+ 374:fltk-1.3.4-1/jpeg/jcsample.c ****       /* round, descale and output it */
+ 950              		.loc 1 374 0 discriminator 3
+ 951 01cd 0FB617   		movzbl	(%rdi), %edx
+ 952              	.LVL124:
+ 953              		.loc 1 376 0 discriminator 3
+ 954 01d0 410FB671 		movzbl	-1(%r9), %esi
+ 954      FF
+ 377:fltk-1.3.4-1/jpeg/jcsample.c ****       inptr0 += 2; inptr1 += 2; above_ptr += 2; below_ptr += 2;
+ 955              		.loc 1 377 0 discriminator 3
+ 956 01d5 4883C702 		addq	$2, %rdi
+ 957              	.LVL125:
+ 958 01d9 4983C002 		addq	$2, %r8
+ 959              	.LVL126:
+ 960 01dd 4983C102 		addq	$2, %r9
+ 961              	.LVL127:
+ 962 01e1 4983C202 		addq	$2, %r10
+ 963              	.LVL128:
+ 364:fltk-1.3.4-1/jpeg/jcsample.c **** 		 GETJSAMPLE(*below_ptr) + GETJSAMPLE(below_ptr[1]) +
+ 964              		.loc 1 364 0 discriminator 3
+ 965 01e5 01C1     		addl	%eax, %ecx
+ 966 01e7 410FB642 		movzbl	-2(%r10), %eax
+ 966      FE
+ 967 01ec 01C1     		addl	%eax, %ecx
+ 968 01ee 410FB642 		movzbl	-1(%r10), %eax
+ 968      FF
+ 969 01f3 01C1     		addl	%eax, %ecx
+ 970 01f5 0FB647FD 		movzbl	-3(%rdi), %eax
+ 971 01f9 01C1     		addl	%eax, %ecx
+ 972 01fb 0FB607   		movzbl	(%rdi), %eax
+ 973 01fe 01C1     		addl	%eax, %ecx
+ 974 0200 410FB640 		movzbl	-3(%r8), %eax
+ 974      FD
+ 975 0205 01C1     		addl	%eax, %ecx
+ 976 0207 410FB600 		movzbl	(%r8), %eax
+ 977 020b 01C1     		addl	%eax, %ecx
+ 374:fltk-1.3.4-1/jpeg/jcsample.c ****       /* round, descale and output it */
+ 978              		.loc 1 374 0 discriminator 3
+ 979 020d 0FB647FF 		movzbl	-1(%rdi), %eax
+ 364:fltk-1.3.4-1/jpeg/jcsample.c **** 		 GETJSAMPLE(*below_ptr) + GETJSAMPLE(below_ptr[1]) +
+ 980              		.loc 1 364 0 discriminator 3
+ 981 0211 4863C9   		movslq	%ecx, %rcx
+ 982              	.LVL129:
+ 374:fltk-1.3.4-1/jpeg/jcsample.c ****       /* round, descale and output it */
+ 983              		.loc 1 374 0 discriminator 3
+ 984 0214 01D0     		addl	%edx, %eax
+ 985 0216 410FB650 		movzbl	-2(%r8), %edx
+ 985      FE
+ 986              	.LVL130:
+ 987 021b 01D0     		addl	%edx, %eax
+ 988 021d 410FB650 		movzbl	-1(%r8), %edx
+ 988      FF
+ 989 0222 01D0     		addl	%edx, %eax
+ 376:fltk-1.3.4-1/jpeg/jcsample.c ****       inptr0 += 2; inptr1 += 2; above_ptr += 2; below_ptr += 2;
+ 990              		.loc 1 376 0 discriminator 3
+ 991 0224 410FB611 		movzbl	(%r9), %edx
+ 992              	.LVL131:
+ 374:fltk-1.3.4-1/jpeg/jcsample.c ****       /* round, descale and output it */
+ 993              		.loc 1 374 0 discriminator 3
+ 994 0228 4898     		cltq
+ 995 022a 490FAFC7 		imulq	%r15, %rax
+ 996              	.LVL132:
+ 376:fltk-1.3.4-1/jpeg/jcsample.c ****       inptr0 += 2; inptr1 += 2; above_ptr += 2; below_ptr += 2;
+ 997              		.loc 1 376 0 discriminator 3
+ 998 022e 01F2     		addl	%esi, %edx
+ 999              	.LVL133:
+ 1000 0230 410FB672 		movzbl	-3(%r10), %esi
+ 1000      FD
+ 1001              	.LVL134:
+ 1002 0235 01F2     		addl	%esi, %edx
+ 1003 0237 410FB632 		movzbl	(%r10), %esi
+ 1004              	.LVL135:
+ 1005 023b 01F2     		addl	%esi, %edx
+ 1006 023d 4863D2   		movslq	%edx, %rdx
+ 1007 0240 488D144A 		leaq	(%rdx,%rcx,2), %rdx
+ 1008 0244 480FAFD5 		imulq	%rbp, %rdx
+ 1009 0248 488D8410 		leaq	32768(%rax,%rdx), %rax
+ 1009      00800000 
+ 1010 0250 48C1F810 		sarq	$16, %rax
+ 359:fltk-1.3.4-1/jpeg/jcsample.c ****       /* sum of pixels directly mapped to this output element */
+ 1011              		.loc 1 359 0 discriminator 3
+ 1012 0254 4939DB   		cmpq	%rbx, %r11
+ 376:fltk-1.3.4-1/jpeg/jcsample.c ****       inptr0 += 2; inptr1 += 2; above_ptr += 2; below_ptr += 2;
+ 1013              		.loc 1 376 0 discriminator 3
+ 1014 0257 418843FF 		movb	%al, -1(%r11)
+ 1015              	.LVL136:
+ 359:fltk-1.3.4-1/jpeg/jcsample.c ****       /* sum of pixels directly mapped to this output element */
+ 1016              		.loc 1 359 0 discriminator 3
+ 1017 025b 0F855FFF 		jne	.L75
+ 1017      FFFF
+ 1018 0261 488B4424 		movq	-24(%rsp), %rax
+ 1018      E8
+ 1019 0266 488B5C24 		movq	-16(%rsp), %rbx
+ 1019      F0
+ 1020 026b 48014424 		addq	%rax, -64(%rsp)
+ 1020      C0
+ 1021 0270 48015C24 		addq	%rbx, -72(%rsp)
+ 1021      B8
+ 1022 0275 4901C6   		addq	%rax, %r14
+ 1023 0278 4901C5   		addq	%rax, %r13
+ 1024 027b 4901C4   		addq	%rax, %r12
+ 1025              	.LVL137:
+ 1026              	.L74:
+ 378:fltk-1.3.4-1/jpeg/jcsample.c ****     }
+ 379:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 380:fltk-1.3.4-1/jpeg/jcsample.c ****     /* Special case for last column */
+ 381:fltk-1.3.4-1/jpeg/jcsample.c ****     membersum = GETJSAMPLE(*inptr0) + GETJSAMPLE(inptr0[1]) +
+ 382:fltk-1.3.4-1/jpeg/jcsample.c **** 		GETJSAMPLE(*inptr1) + GETJSAMPLE(inptr1[1]);
+ 383:fltk-1.3.4-1/jpeg/jcsample.c ****     neighsum = GETJSAMPLE(*above_ptr) + GETJSAMPLE(above_ptr[1]) +
+ 384:fltk-1.3.4-1/jpeg/jcsample.c **** 	       GETJSAMPLE(*below_ptr) + GETJSAMPLE(below_ptr[1]) +
+ 1027              		.loc 1 384 0
+ 1028 027e 488B5C24 		movq	-64(%rsp), %rbx
+ 1028      C0
+ 383:fltk-1.3.4-1/jpeg/jcsample.c **** 	       GETJSAMPLE(*below_ptr) + GETJSAMPLE(below_ptr[1]) +
+ 1029              		.loc 1 383 0
+ 1030 0283 410FB67C 		movzbl	1(%r12), %edi
+ 1030      2401
+ 1031 0289 410FB634 		movzbl	(%r12), %esi
+ 1031      24
+ 381:fltk-1.3.4-1/jpeg/jcsample.c **** 		GETJSAMPLE(*inptr1) + GETJSAMPLE(inptr1[1]);
+ 1032              		.loc 1 381 0
+ 1033 028e 450FB646 		movzbl	1(%r14), %r8d
+ 1033      01
+ 382:fltk-1.3.4-1/jpeg/jcsample.c ****     neighsum = GETJSAMPLE(*above_ptr) + GETJSAMPLE(above_ptr[1]) +
+ 1034              		.loc 1 382 0
+ 1035 0293 410FB645 		movzbl	1(%r13), %eax
+ 1035      01
+ 1036              	.LVL138:
+ 385:fltk-1.3.4-1/jpeg/jcsample.c **** 	       GETJSAMPLE(inptr0[-1]) + GETJSAMPLE(inptr0[1]) +
+ 386:fltk-1.3.4-1/jpeg/jcsample.c **** 	       GETJSAMPLE(inptr1[-1]) + GETJSAMPLE(inptr1[1]);
+ 387:fltk-1.3.4-1/jpeg/jcsample.c ****     neighsum += neighsum;
+ 388:fltk-1.3.4-1/jpeg/jcsample.c ****     neighsum += GETJSAMPLE(above_ptr[-1]) + GETJSAMPLE(above_ptr[1]) +
+ 389:fltk-1.3.4-1/jpeg/jcsample.c **** 		GETJSAMPLE(below_ptr[-1]) + GETJSAMPLE(below_ptr[1]);
+ 390:fltk-1.3.4-1/jpeg/jcsample.c ****     membersum = membersum * memberscale + neighsum * neighscale;
+ 391:fltk-1.3.4-1/jpeg/jcsample.c ****     *outptr = (JSAMPLE) ((membersum + 32768) >> 16);
+ 392:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 393:fltk-1.3.4-1/jpeg/jcsample.c ****     inrow += 2;
+ 1037              		.loc 1 393 0
+ 1038 0298 834424E0 		addl	$2, -32(%rsp)
+ 1038      02
+ 1039              	.LVL139:
+ 383:fltk-1.3.4-1/jpeg/jcsample.c **** 	       GETJSAMPLE(*below_ptr) + GETJSAMPLE(below_ptr[1]) +
+ 1040              		.loc 1 383 0
+ 1041 029d 0FB613   		movzbl	(%rbx), %edx
+ 384:fltk-1.3.4-1/jpeg/jcsample.c **** 	       GETJSAMPLE(inptr0[-1]) + GETJSAMPLE(inptr0[1]) +
+ 1042              		.loc 1 384 0
+ 1043 02a0 0FB64B01 		movzbl	1(%rbx), %ecx
+ 1044 02a4 48834424 		addq	$8, -56(%rsp)
+ 1044      C808
+ 1045 02aa 48834424 		addq	$16, -48(%rsp)
+ 1045      D010
+ 383:fltk-1.3.4-1/jpeg/jcsample.c **** 	       GETJSAMPLE(*below_ptr) + GETJSAMPLE(below_ptr[1]) +
+ 1046              		.loc 1 383 0
+ 1047 02b0 01FE     		addl	%edi, %esi
+ 1048 02b2 01D6     		addl	%edx, %esi
+ 1049 02b4 01CE     		addl	%ecx, %esi
+ 1050 02b6 410FB656 		movzbl	-1(%r14), %edx
+ 1050      FF
+ 1051 02bb 01D6     		addl	%edx, %esi
+ 1052 02bd 410FB655 		movzbl	-1(%r13), %edx
+ 1052      FF
+ 1053 02c2 4401C6   		addl	%r8d, %esi
+ 1054 02c5 01F2     		addl	%esi, %edx
+ 390:fltk-1.3.4-1/jpeg/jcsample.c ****     *outptr = (JSAMPLE) ((membersum + 32768) >> 16);
+ 1055              		.loc 1 390 0
+ 1056 02c7 410FB636 		movzbl	(%r14), %esi
+ 1057              	.LVL140:
+ 383:fltk-1.3.4-1/jpeg/jcsample.c **** 	       GETJSAMPLE(*below_ptr) + GETJSAMPLE(below_ptr[1]) +
+ 1058              		.loc 1 383 0
+ 1059 02cb 01C2     		addl	%eax, %edx
+ 1060 02cd 4863D2   		movslq	%edx, %rdx
+ 1061              	.LVL141:
+ 390:fltk-1.3.4-1/jpeg/jcsample.c ****     *outptr = (JSAMPLE) ((membersum + 32768) >> 16);
+ 1062              		.loc 1 390 0
+ 1063 02d0 4101F0   		addl	%esi, %r8d
+ 1064              	.LVL142:
+ 1065 02d3 410FB675 		movzbl	0(%r13), %esi
+ 1065      00
+ 1066              	.LVL143:
+ 1067 02d8 4101F0   		addl	%esi, %r8d
+ 1068 02db 418D3400 		leal	(%r8,%rax), %esi
+ 1069              	.LVL144:
+ 391:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 1070              		.loc 1 391 0
+ 1071 02df 410FB644 		movzbl	-1(%r12), %eax
+ 1071      24FF
+ 1072              	.LVL145:
+ 390:fltk-1.3.4-1/jpeg/jcsample.c ****     *outptr = (JSAMPLE) ((membersum + 32768) >> 16);
+ 1073              		.loc 1 390 0
+ 1074 02e5 4863F6   		movslq	%esi, %rsi
+ 1075 02e8 490FAFF7 		imulq	%r15, %rsi
+ 1076              	.LVL146:
+ 391:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 1077              		.loc 1 391 0
+ 1078 02ec 01C7     		addl	%eax, %edi
+ 1079              	.LVL147:
+ 1080 02ee 0FB643FF 		movzbl	-1(%rbx), %eax
+ 1081              	.LVL148:
+ 1082 02f2 488B5C24 		movq	-72(%rsp), %rbx
+ 1082      B8
+ 1083              	.LVL149:
+ 1084 02f7 01C7     		addl	%eax, %edi
+ 1085 02f9 01F9     		addl	%edi, %ecx
+ 1086              	.LVL150:
+ 1087 02fb 4863C9   		movslq	%ecx, %rcx
+ 1088 02fe 488D0451 		leaq	(%rcx,%rdx,2), %rax
+ 1089 0302 480FAFC5 		imulq	%rbp, %rax
+ 1090 0306 488D8406 		leaq	32768(%rsi,%rax), %rax
+ 1090      00800000 
+ 1091 030e 48C1F810 		sarq	$16, %rax
+ 1092 0312 8803     		movb	%al, (%rbx)
+ 1093              	.LVL151:
+ 338:fltk-1.3.4-1/jpeg/jcsample.c ****     outptr = output_data[outrow];
+ 1094              		.loc 1 338 0
+ 1095 0314 488B5C24 		movq	-40(%rsp), %rbx
+ 1095      D8
+ 1096              		.loc 1 393 0
+ 1097 0319 8B4424E0 		movl	-32(%rsp), %eax
+ 1098              	.LVL152:
+ 338:fltk-1.3.4-1/jpeg/jcsample.c ****     outptr = output_data[outrow];
+ 1099              		.loc 1 338 0
+ 1100 031d 39836401 		cmpl	%eax, 356(%rbx)
+ 1100      0000
+ 1101 0323 0F8FB7FD 		jg	.L76
+ 1101      FFFF
+ 1102              	.LVL153:
+ 1103              	.L69:
+ 394:fltk-1.3.4-1/jpeg/jcsample.c ****     outrow++;
+ 395:fltk-1.3.4-1/jpeg/jcsample.c ****   }
+ 396:fltk-1.3.4-1/jpeg/jcsample.c **** }
+ 1104              		.loc 1 396 0
+ 1105 0329 5B       		popq	%rbx
+ 1106              		.cfi_def_cfa_offset 48
+ 1107 032a 5D       		popq	%rbp
+ 1108              		.cfi_def_cfa_offset 40
+ 1109              	.LVL154:
+ 1110 032b 415C     		popq	%r12
+ 1111              		.cfi_def_cfa_offset 32
+ 1112 032d 415D     		popq	%r13
+ 1113              		.cfi_def_cfa_offset 24
+ 1114 032f 415E     		popq	%r14
+ 1115              		.cfi_def_cfa_offset 16
+ 1116 0331 415F     		popq	%r15
+ 1117              		.cfi_def_cfa_offset 8
+ 1118              	.LVL155:
+ 1119 0333 C3       		ret
+ 1120              		.cfi_endproc
+ 1121              	.LFE68:
+ 1123              		.section	.text.unlikely.h2v2_smooth_downsample
+ 1124              	.LCOLDE5:
+ 1125              		.section	.text.h2v2_smooth_downsample
+ 1126              	.LHOTE5:
+ 1127              		.section	.text.unlikely.fullsize_smooth_downsample,"ax",@progbits
+ 1128              	.LCOLDB6:
+ 1129              		.section	.text.fullsize_smooth_downsample,"ax",@progbits
+ 1130              	.LHOTB6:
+ 1131              		.p2align 4,,15
+ 1133              	fullsize_smooth_downsample:
+ 1134              	.LFB69:
+ 397:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 398:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 399:fltk-1.3.4-1/jpeg/jcsample.c **** /*
+ 400:fltk-1.3.4-1/jpeg/jcsample.c ****  * Downsample pixel values of a single component.
+ 401:fltk-1.3.4-1/jpeg/jcsample.c ****  * This version handles the special case of a full-size component,
+ 402:fltk-1.3.4-1/jpeg/jcsample.c ****  * with smoothing.  One row of context is required.
+ 403:fltk-1.3.4-1/jpeg/jcsample.c ****  */
+ 404:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 405:fltk-1.3.4-1/jpeg/jcsample.c **** METHODDEF(void)
+ 406:fltk-1.3.4-1/jpeg/jcsample.c **** fullsize_smooth_downsample (j_compress_ptr cinfo, jpeg_component_info *compptr,
+ 407:fltk-1.3.4-1/jpeg/jcsample.c **** 			    JSAMPARRAY input_data, JSAMPARRAY output_data)
+ 408:fltk-1.3.4-1/jpeg/jcsample.c **** {
+ 1135              		.loc 1 408 0
+ 1136              		.cfi_startproc
+ 1137              	.LVL156:
+ 1138 0000 4157     		pushq	%r15
+ 1139              		.cfi_def_cfa_offset 16
+ 1140              		.cfi_offset 15, -16
+ 1141 0002 4156     		pushq	%r14
+ 1142              		.cfi_def_cfa_offset 24
+ 1143              		.cfi_offset 14, -24
+ 1144 0004 4155     		pushq	%r13
+ 1145              		.cfi_def_cfa_offset 32
+ 1146              		.cfi_offset 13, -32
+ 1147 0006 4154     		pushq	%r12
+ 1148              		.cfi_def_cfa_offset 40
+ 1149              		.cfi_offset 12, -40
+ 1150 0008 55       		pushq	%rbp
+ 1151              		.cfi_def_cfa_offset 48
+ 1152              		.cfi_offset 6, -48
+ 1153 0009 53       		pushq	%rbx
+ 1154              		.cfi_def_cfa_offset 56
+ 1155              		.cfi_offset 3, -56
+ 409:fltk-1.3.4-1/jpeg/jcsample.c ****   int inrow;
+ 410:fltk-1.3.4-1/jpeg/jcsample.c ****   JDIMENSION colctr;
+ 411:fltk-1.3.4-1/jpeg/jcsample.c ****   JDIMENSION output_cols = compptr->width_in_blocks * compptr->DCT_h_scaled_size;
+ 1156              		.loc 1 411 0
+ 1157 000a 8B461C   		movl	28(%rsi), %eax
+ 412:fltk-1.3.4-1/jpeg/jcsample.c ****   register JSAMPROW inptr, above_ptr, below_ptr, outptr;
+ 413:fltk-1.3.4-1/jpeg/jcsample.c ****   INT32 membersum, neighsum, memberscale, neighscale;
+ 414:fltk-1.3.4-1/jpeg/jcsample.c ****   int colsum, lastcolsum, nextcolsum;
+ 415:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 416:fltk-1.3.4-1/jpeg/jcsample.c ****   /* Expand input data enough to let all the output samples be generated
+ 417:fltk-1.3.4-1/jpeg/jcsample.c ****    * by the standard loop.  Special-casing padded output would be more
+ 418:fltk-1.3.4-1/jpeg/jcsample.c ****    * efficient.
+ 419:fltk-1.3.4-1/jpeg/jcsample.c ****    */
+ 420:fltk-1.3.4-1/jpeg/jcsample.c ****   expand_right_edge(input_data - 1, cinfo->max_v_samp_factor + 2,
+ 1158              		.loc 1 420 0
+ 1159 000d 448B4F30 		movl	48(%rdi), %r9d
+ 411:fltk-1.3.4-1/jpeg/jcsample.c ****   register JSAMPROW inptr, above_ptr, below_ptr, outptr;
+ 1160              		.loc 1 411 0
+ 1161 0011 0FAF4624 		imull	36(%rsi), %eax
+ 408:fltk-1.3.4-1/jpeg/jcsample.c ****   int inrow;
+ 1162              		.loc 1 408 0
+ 1163 0015 48897C24 		movq	%rdi, -16(%rsp)
+ 1163      F0
+ 411:fltk-1.3.4-1/jpeg/jcsample.c ****   register JSAMPROW inptr, above_ptr, below_ptr, outptr;
+ 1164              		.loc 1 411 0
+ 1165 001a 89C6     		movl	%eax, %esi
+ 1166              	.LVL157:
+ 1167 001c 894424FC 		movl	%eax, -4(%rsp)
+ 1168              	.LVL158:
+ 1169              		.loc 1 420 0
+ 1170 0020 8B876401 		movl	356(%rdi), %eax
+ 1170      0000
+ 1171              	.LVL159:
+ 1172              	.LBB28:
+ 1173              	.LBB29:
+ 103:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 1174              		.loc 1 103 0
+ 1175 0026 4429CE   		subl	%r9d, %esi
+ 1176              	.LVL160:
+ 105:fltk-1.3.4-1/jpeg/jcsample.c ****     for (row = 0; row < num_rows; row++) {
+ 1177              		.loc 1 105 0
+ 1178 0029 85F6     		testl	%esi, %esi
+ 1179 002b 7E54     		jle	.L87
+ 1180              	.LVL161:
+ 106:fltk-1.3.4-1/jpeg/jcsample.c ****       ptr = image_data[row] + input_cols;
+ 1181              		.loc 1 106 0
+ 1182 002d 83F8FF   		cmpl	$-1, %eax
+ 1183 0030 7C4F     		jl	.L87
+ 1184 0032 83C001   		addl	$1, %eax
+ 1185              	.LVL162:
+ 1186 0035 448D56FF 		leal	-1(%rsi), %r10d
+ 1187 0039 4C8D42F8 		leaq	-8(%rdx), %r8
+ 1188              	.LVL163:
+ 1189 003d 4C8D1CC2 		leaq	(%rdx,%rax,8), %r11
+ 1190 0041 4983C201 		addq	$1, %r10
+ 1191              	.LVL164:
+ 1192              		.p2align 4,,10
+ 1193 0045 0F1F00   		.p2align 3
+ 1194              	.L89:
+ 107:fltk-1.3.4-1/jpeg/jcsample.c ****       pixval = ptr[-1];		/* don't need GETJSAMPLE() here */
+ 1195              		.loc 1 107 0
+ 1196 0048 4C89C8   		movq	%r9, %rax
+ 1197 004b 490300   		addq	(%r8), %rax
+ 1198              	.LVL165:
+ 108:fltk-1.3.4-1/jpeg/jcsample.c ****       for (count = numcols; count > 0; count--)
+ 1199              		.loc 1 108 0
+ 1200 004e 0FB678FF 		movzbl	-1(%rax), %edi
+ 1201              	.LVL166:
+ 1202 0052 4A8D3410 		leaq	(%rax,%r10), %rsi
+ 1203              	.LVL167:
+ 1204 0056 662E0F1F 		.p2align 4,,10
+ 1204      84000000 
+ 1204      0000
+ 1205              		.p2align 3
+ 1206              	.L88:
+ 110:fltk-1.3.4-1/jpeg/jcsample.c ****     }
+ 1207              		.loc 1 110 0
+ 1208 0060 4883C001 		addq	$1, %rax
+ 1209              	.LVL168:
+ 1210 0064 408878FF 		movb	%dil, -1(%rax)
+ 109:fltk-1.3.4-1/jpeg/jcsample.c **** 	*ptr++ = pixval;
+ 1211              		.loc 1 109 0
+ 1212 0068 4839C6   		cmpq	%rax, %rsi
+ 1213 006b 75F3     		jne	.L88
+ 1214 006d 4983C008 		addq	$8, %r8
+ 106:fltk-1.3.4-1/jpeg/jcsample.c ****       ptr = image_data[row] + input_cols;
+ 1215              		.loc 1 106 0
+ 1216 0071 4D39D8   		cmpq	%r11, %r8
+ 1217 0074 75D2     		jne	.L89
+ 1218 0076 488B4424 		movq	-16(%rsp), %rax
+ 1218      F0
+ 1219              	.LVL169:
+ 1220 007b 8B806401 		movl	356(%rax), %eax
+ 1220      0000
+ 1221              	.LVL170:
+ 1222              	.L87:
+ 1223              	.LBE29:
+ 1224              	.LBE28:
+ 421:fltk-1.3.4-1/jpeg/jcsample.c **** 		    cinfo->image_width, output_cols);
+ 422:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 423:fltk-1.3.4-1/jpeg/jcsample.c ****   /* Each of the eight neighbor pixels contributes a fraction SF to the
+ 424:fltk-1.3.4-1/jpeg/jcsample.c ****    * smoothed pixel, while the main pixel contributes (1-8*SF).  In order
+ 425:fltk-1.3.4-1/jpeg/jcsample.c ****    * to use integer arithmetic, these factors are multiplied by 2^16 = 65536.
+ 426:fltk-1.3.4-1/jpeg/jcsample.c ****    * Also recall that SF = smoothing_factor / 1024.
+ 427:fltk-1.3.4-1/jpeg/jcsample.c ****    */
+ 428:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 429:fltk-1.3.4-1/jpeg/jcsample.c ****   memberscale = 65536L - cinfo->smoothing_factor * 512L; /* scaled 1-8*SF */
+ 1225              		.loc 1 429 0
+ 1226 0081 488B5C24 		movq	-16(%rsp), %rbx
+ 1226      F0
+ 1227 0086 BE800000 		movl	$128, %esi
+ 1227      00
+ 1228 008b 48895424 		movq	%rdx, -32(%rsp)
+ 1228      E0
+ 1229 0090 48894C24 		movq	%rcx, -24(%rsp)
+ 1229      E8
+ 430:fltk-1.3.4-1/jpeg/jcsample.c ****   neighscale = cinfo->smoothing_factor * 64; /* scaled SF */
+ 431:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 432:fltk-1.3.4-1/jpeg/jcsample.c ****   for (inrow = 0; inrow < cinfo->max_v_samp_factor; inrow++) {
+ 1230              		.loc 1 432 0
+ 1231 0095 C74424F8 		movl	$0, -8(%rsp)
+ 1231      00000000 
+ 429:fltk-1.3.4-1/jpeg/jcsample.c ****   neighscale = cinfo->smoothing_factor * 64; /* scaled SF */
+ 1232              		.loc 1 429 0
+ 1233 009d 4863BB34 		movslq	308(%rbx), %rdi
+ 1233      010000
+ 1234 00a4 8B5C24FC 		movl	-4(%rsp), %ebx
+ 1235 00a8 8D53FD   		leal	-3(%rbx), %edx
+ 1236              	.LVL171:
+ 1237 00ab 4829FE   		subq	%rdi, %rsi
+ 1238 00ae 4989FD   		movq	%rdi, %r13
+ 1239 00b1 48C1E609 		salq	$9, %rsi
+ 430:fltk-1.3.4-1/jpeg/jcsample.c ****   neighscale = cinfo->smoothing_factor * 64; /* scaled SF */
+ 1240              		.loc 1 430 0
+ 1241 00b5 41C1E506 		sall	$6, %r13d
+ 1242              		.loc 1 432 0
+ 1243 00b9 85C0     		testl	%eax, %eax
+ 429:fltk-1.3.4-1/jpeg/jcsample.c ****   neighscale = cinfo->smoothing_factor * 64; /* scaled SF */
+ 1244              		.loc 1 429 0
+ 1245 00bb 4989F7   		movq	%rsi, %r15
+ 1246              	.LVL172:
+ 430:fltk-1.3.4-1/jpeg/jcsample.c ****   neighscale = cinfo->smoothing_factor * 64; /* scaled SF */
+ 1247              		.loc 1 430 0
+ 1248 00be 4D63ED   		movslq	%r13d, %r13
+ 1249              	.LVL173:
+ 1250 00c1 4C8D7201 		leaq	1(%rdx), %r14
+ 1251              		.loc 1 432 0
+ 1252 00c5 0F8E5E01 		jle	.L86
+ 1252      0000
+ 1253              	.LVL174:
+ 1254 00cb 0F1F4400 		.p2align 4,,10
+ 1254      00
+ 1255              		.p2align 3
+ 1256              	.L98:
+ 433:fltk-1.3.4-1/jpeg/jcsample.c ****     outptr = output_data[inrow];
+ 1257              		.loc 1 433 0
+ 1258 00d0 488B4424 		movq	-24(%rsp), %rax
+ 1258      E8
+ 1259 00d5 488B18   		movq	(%rax), %rbx
+ 1260              	.LVL175:
+ 434:fltk-1.3.4-1/jpeg/jcsample.c ****     inptr = input_data[inrow];
+ 1261              		.loc 1 434 0
+ 1262 00d8 488B4424 		movq	-32(%rsp), %rax
+ 1262      E0
+ 1263 00dd 4C8B00   		movq	(%rax), %r8
+ 1264              	.LVL176:
+ 435:fltk-1.3.4-1/jpeg/jcsample.c ****     above_ptr = input_data[inrow-1];
+ 1265              		.loc 1 435 0
+ 1266 00e0 488B68F8 		movq	-8(%rax), %rbp
+ 1267              	.LVL177:
+ 436:fltk-1.3.4-1/jpeg/jcsample.c ****     below_ptr = input_data[inrow+1];
+ 1268              		.loc 1 436 0
+ 1269 00e4 4C8B6008 		movq	8(%rax), %r12
+ 1270              	.LVL178:
+ 437:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 438:fltk-1.3.4-1/jpeg/jcsample.c ****     /* Special case for first column */
+ 439:fltk-1.3.4-1/jpeg/jcsample.c ****     colsum = GETJSAMPLE(*above_ptr++) + GETJSAMPLE(*below_ptr++) +
+ 440:fltk-1.3.4-1/jpeg/jcsample.c **** 	     GETJSAMPLE(*inptr);
+ 1271              		.loc 1 440 0
+ 1272 00e8 410FB610 		movzbl	(%r8), %edx
+ 439:fltk-1.3.4-1/jpeg/jcsample.c **** 	     GETJSAMPLE(*inptr);
+ 1273              		.loc 1 439 0
+ 1274 00ec 0FB64D00 		movzbl	0(%rbp), %ecx
+ 441:fltk-1.3.4-1/jpeg/jcsample.c ****     membersum = GETJSAMPLE(*inptr++);
+ 1275              		.loc 1 441 0
+ 1276 00f0 498D7801 		leaq	1(%r8), %rdi
+ 439:fltk-1.3.4-1/jpeg/jcsample.c **** 	     GETJSAMPLE(*inptr);
+ 1277              		.loc 1 439 0
+ 1278 00f4 410FB604 		movzbl	(%r12), %eax
+ 1278      24
+ 442:fltk-1.3.4-1/jpeg/jcsample.c ****     nextcolsum = GETJSAMPLE(*above_ptr) + GETJSAMPLE(*below_ptr) +
+ 1279              		.loc 1 442 0
+ 1280 00f9 440FB64D 		movzbl	1(%rbp), %r9d
+ 1280      01
+ 441:fltk-1.3.4-1/jpeg/jcsample.c ****     membersum = GETJSAMPLE(*inptr++);
+ 1281              		.loc 1 441 0
+ 1282 00fe 48897C24 		movq	%rdi, -48(%rsp)
+ 1282      D0
+ 439:fltk-1.3.4-1/jpeg/jcsample.c **** 	     GETJSAMPLE(*inptr);
+ 1283              		.loc 1 439 0
+ 1284 0103 01C8     		addl	%ecx, %eax
+ 1285 0105 0FB6CA   		movzbl	%dl, %ecx
+ 1286 0108 01C8     		addl	%ecx, %eax
+ 1287              	.LVL179:
+ 1288              		.loc 1 442 0
+ 1289 010a 410FB64C 		movzbl	1(%r12), %ecx
+ 1289      2401
+ 443:fltk-1.3.4-1/jpeg/jcsample.c **** 		 GETJSAMPLE(*inptr);
+ 444:fltk-1.3.4-1/jpeg/jcsample.c ****     neighsum = colsum + (colsum - membersum) + nextcolsum;
+ 1290              		.loc 1 444 0
+ 1291 0110 4898     		cltq
+ 445:fltk-1.3.4-1/jpeg/jcsample.c ****     membersum = membersum * memberscale + neighsum * neighscale;
+ 1292              		.loc 1 445 0
+ 1293 0112 4889C6   		movq	%rax, %rsi
+ 444:fltk-1.3.4-1/jpeg/jcsample.c ****     membersum = membersum * memberscale + neighsum * neighscale;
+ 1294              		.loc 1 444 0
+ 1295 0115 4989C2   		movq	%rax, %r10
+ 1296              		.loc 1 445 0
+ 1297 0118 4829D6   		subq	%rdx, %rsi
+ 442:fltk-1.3.4-1/jpeg/jcsample.c **** 		 GETJSAMPLE(*inptr);
+ 1298              		.loc 1 442 0
+ 1299 011b 4401C9   		addl	%r9d, %ecx
+ 1300 011e 450FB648 		movzbl	1(%r8), %r9d
+ 1300      01
+ 1301 0123 4101C9   		addl	%ecx, %r9d
+ 1302              	.LVL180:
+ 1303              		.loc 1 445 0
+ 1304 0126 4C89F9   		movq	%r15, %rcx
+ 1305 0129 480FAFCA 		imulq	%rdx, %rcx
+ 1306 012d 4889F2   		movq	%rsi, %rdx
+ 1307              	.LVL181:
+ 444:fltk-1.3.4-1/jpeg/jcsample.c ****     membersum = membersum * memberscale + neighsum * neighscale;
+ 1308              		.loc 1 444 0
+ 1309 0130 4D63D9   		movslq	%r9d, %r11
+ 1310              		.loc 1 445 0
+ 1311 0133 4801C2   		addq	%rax, %rdx
+ 446:fltk-1.3.4-1/jpeg/jcsample.c ****     *outptr++ = (JSAMPLE) ((membersum + 32768) >> 16);
+ 1312              		.loc 1 446 0
+ 1313 0136 488D7301 		leaq	1(%rbx), %rsi
+ 444:fltk-1.3.4-1/jpeg/jcsample.c ****     membersum = membersum * memberscale + neighsum * neighscale;
+ 1314              		.loc 1 444 0
+ 1315 013a 4C89DF   		movq	%r11, %rdi
+ 1316              	.LVL182:
+ 445:fltk-1.3.4-1/jpeg/jcsample.c ****     *outptr++ = (JSAMPLE) ((membersum + 32768) >> 16);
+ 1317              		.loc 1 445 0
+ 1318 013d 4C01DA   		addq	%r11, %rdx
+ 1319              		.loc 1 446 0
+ 1320 0140 48897424 		movq	%rsi, -40(%rsp)
+ 1320      D8
+ 445:fltk-1.3.4-1/jpeg/jcsample.c ****     *outptr++ = (JSAMPLE) ((membersum + 32768) >> 16);
+ 1321              		.loc 1 445 0
+ 1322 0145 490FAFD5 		imulq	%r13, %rdx
+ 1323              	.LVL183:
+ 1324              		.loc 1 446 0
+ 1325 0149 488D9411 		leaq	32768(%rcx,%rdx), %rdx
+ 1325      00800000 
+ 1326              	.LVL184:
+ 1327 0151 48C1FA10 		sarq	$16, %rdx
+ 447:fltk-1.3.4-1/jpeg/jcsample.c ****     lastcolsum = colsum; colsum = nextcolsum;
+ 448:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 449:fltk-1.3.4-1/jpeg/jcsample.c ****     for (colctr = output_cols - 2; colctr > 0; colctr--) {
+ 1328              		.loc 1 449 0
+ 1329 0155 837C24FC 		cmpl	$2, -4(%rsp)
+ 1329      02
+ 446:fltk-1.3.4-1/jpeg/jcsample.c ****     lastcolsum = colsum; colsum = nextcolsum;
+ 1330              		.loc 1 446 0
+ 1331 015a 8813     		movb	%dl, (%rbx)
+ 1332              	.LVL185:
+ 1333              		.loc 1 449 0
+ 1334 015c 7478     		je	.L91
+ 1335              		.loc 1 449 0 is_stmt 0 discriminator 3
+ 1336 015e 31D2     		xorl	%edx, %edx
+ 1337 0160 48895C24 		movq	%rbx, -56(%rsp)
+ 1337      C8
+ 1338 0165 EB0C     		jmp	.L92
+ 1339              	.LVL186:
+ 1340 0167 660F1F84 		.p2align 4,,10
+ 1340      00000000 
+ 1340      00
+ 1341              		.p2align 3
+ 1342              	.L95:
+ 450:fltk-1.3.4-1/jpeg/jcsample.c ****       membersum = GETJSAMPLE(*inptr++);
+ 451:fltk-1.3.4-1/jpeg/jcsample.c ****       above_ptr++; below_ptr++;
+ 452:fltk-1.3.4-1/jpeg/jcsample.c ****       nextcolsum = GETJSAMPLE(*above_ptr) + GETJSAMPLE(*below_ptr) +
+ 1343              		.loc 1 452 0 is_stmt 1
+ 1344 0170 4189C9   		movl	%ecx, %r9d
+ 1345              	.LVL187:
+ 1346              	.L92:
+ 1347              		.loc 1 452 0 is_stmt 0 discriminator 3
+ 1348 0173 0FB67415 		movzbl	2(%rbp,%rdx), %esi
+ 1348      02
+ 1349 0178 410FB64C 		movzbl	2(%r12,%rdx), %ecx
+ 1349      1402
+ 453:fltk-1.3.4-1/jpeg/jcsample.c **** 		   GETJSAMPLE(*inptr);
+ 454:fltk-1.3.4-1/jpeg/jcsample.c ****       neighsum = lastcolsum + (colsum - membersum) + nextcolsum;
+ 1350              		.loc 1 454 0 is_stmt 1 discriminator 3
+ 1351 017e 4989FA   		movq	%rdi, %r10
+ 450:fltk-1.3.4-1/jpeg/jcsample.c ****       membersum = GETJSAMPLE(*inptr++);
+ 1352              		.loc 1 450 0 discriminator 3
+ 1353 0181 450FB65C 		movzbl	1(%r8,%rdx), %r11d
+ 1353      1001
+ 1354              	.LVL188:
+ 455:fltk-1.3.4-1/jpeg/jcsample.c ****       membersum = membersum * memberscale + neighsum * neighscale;
+ 1355              		.loc 1 455 0 discriminator 3
+ 1356 0187 4C89D3   		movq	%r10, %rbx
+ 452:fltk-1.3.4-1/jpeg/jcsample.c **** 		   GETJSAMPLE(*inptr);
+ 1357              		.loc 1 452 0 discriminator 3
+ 1358 018a 01F1     		addl	%esi, %ecx
+ 1359 018c 410FB674 		movzbl	2(%r8,%rdx), %esi
+ 1359      1002
+ 1360              		.loc 1 455 0 discriminator 3
+ 1361 0192 4C29DB   		subq	%r11, %rbx
+ 1362 0195 4801D8   		addq	%rbx, %rax
+ 456:fltk-1.3.4-1/jpeg/jcsample.c ****       *outptr++ = (JSAMPLE) ((membersum + 32768) >> 16);
+ 1363              		.loc 1 456 0 discriminator 3
+ 1364 0198 488B5C24 		movq	-56(%rsp), %rbx
+ 1364      C8
+ 452:fltk-1.3.4-1/jpeg/jcsample.c **** 		   GETJSAMPLE(*inptr);
+ 1365              		.loc 1 452 0 discriminator 3
+ 1366 019d 01F1     		addl	%esi, %ecx
+ 1367              	.LVL189:
+ 455:fltk-1.3.4-1/jpeg/jcsample.c ****       membersum = membersum * memberscale + neighsum * neighscale;
+ 1368              		.loc 1 455 0 discriminator 3
+ 1369 019f 4C89FE   		movq	%r15, %rsi
+ 454:fltk-1.3.4-1/jpeg/jcsample.c ****       membersum = membersum * memberscale + neighsum * neighscale;
+ 1370              		.loc 1 454 0 discriminator 3
+ 1371 01a2 4863F9   		movslq	%ecx, %rdi
+ 455:fltk-1.3.4-1/jpeg/jcsample.c ****       *outptr++ = (JSAMPLE) ((membersum + 32768) >> 16);
+ 1372              		.loc 1 455 0 discriminator 3
+ 1373 01a5 4801F8   		addq	%rdi, %rax
+ 1374 01a8 490FAFF3 		imulq	%r11, %rsi
+ 1375 01ac 490FAFC5 		imulq	%r13, %rax
+ 1376              	.LVL190:
+ 1377              		.loc 1 456 0 discriminator 3
+ 1378 01b0 488D8406 		leaq	32768(%rsi,%rax), %rax
+ 1378      00800000 
+ 1379              	.LVL191:
+ 1380 01b8 48C1F810 		sarq	$16, %rax
+ 1381 01bc 88441301 		movb	%al, 1(%rbx,%rdx)
+ 1382              	.LVL192:
+ 1383 01c0 4883C201 		addq	$1, %rdx
+ 1384              	.LVL193:
+ 1385 01c4 4963C1   		movslq	%r9d, %rax
+ 449:fltk-1.3.4-1/jpeg/jcsample.c ****       membersum = GETJSAMPLE(*inptr++);
+ 1386              		.loc 1 449 0 discriminator 3
+ 1387 01c7 4939D6   		cmpq	%rdx, %r14
+ 1388 01ca 75A4     		jne	.L95
+ 1389 01cc 4C017424 		addq	%r14, -48(%rsp)
+ 1389      D0
+ 1390 01d1 4C017424 		addq	%r14, -40(%rsp)
+ 1390      D8
+ 1391              	.LVL194:
+ 1392              	.L91:
+ 457:fltk-1.3.4-1/jpeg/jcsample.c ****       lastcolsum = colsum; colsum = nextcolsum;
+ 458:fltk-1.3.4-1/jpeg/jcsample.c ****     }
+ 459:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 460:fltk-1.3.4-1/jpeg/jcsample.c ****     /* Special case for last column */
+ 461:fltk-1.3.4-1/jpeg/jcsample.c ****     membersum = GETJSAMPLE(*inptr);
+ 1393              		.loc 1 461 0 discriminator 2
+ 1394 01d6 488B4424 		movq	-48(%rsp), %rax
+ 1394      D0
+ 462:fltk-1.3.4-1/jpeg/jcsample.c ****     neighsum = lastcolsum + (colsum - membersum) + colsum;
+ 463:fltk-1.3.4-1/jpeg/jcsample.c ****     membersum = membersum * memberscale + neighsum * neighscale;
+ 1395              		.loc 1 463 0 discriminator 2
+ 1396 01db 4C89FA   		movq	%r15, %rdx
+ 464:fltk-1.3.4-1/jpeg/jcsample.c ****     *outptr = (JSAMPLE) ((membersum + 32768) >> 16);
+ 1397              		.loc 1 464 0 discriminator 2
+ 1398 01de 488B5C24 		movq	-40(%rsp), %rbx
+ 1398      D8
+ 432:fltk-1.3.4-1/jpeg/jcsample.c ****     outptr = output_data[inrow];
+ 1399              		.loc 1 432 0 discriminator 2
+ 1400 01e3 834424F8 		addl	$1, -8(%rsp)
+ 1400      01
+ 1401              	.LVL195:
+ 1402 01e8 48834424 		addq	$8, -24(%rsp)
+ 1402      E808
+ 461:fltk-1.3.4-1/jpeg/jcsample.c ****     neighsum = lastcolsum + (colsum - membersum) + colsum;
+ 1403              		.loc 1 461 0 discriminator 2
+ 1404 01ee 0FB608   		movzbl	(%rax), %ecx
+ 1405              	.LVL196:
+ 463:fltk-1.3.4-1/jpeg/jcsample.c ****     *outptr = (JSAMPLE) ((membersum + 32768) >> 16);
+ 1406              		.loc 1 463 0 discriminator 2
+ 1407 01f1 498D047A 		leaq	(%r10,%rdi,2), %rax
+ 1408 01f5 48834424 		addq	$8, -32(%rsp)
+ 1408      E008
+ 1409 01fb 4829C8   		subq	%rcx, %rax
+ 1410 01fe 480FAFD1 		imulq	%rcx, %rdx
+ 1411 0202 490FAFC5 		imulq	%r13, %rax
+ 1412              	.LVL197:
+ 1413              		.loc 1 464 0 discriminator 2
+ 1414 0206 488D8402 		leaq	32768(%rdx,%rax), %rax
+ 1414      00800000 
+ 1415              	.LVL198:
+ 1416 020e 48C1F810 		sarq	$16, %rax
+ 1417 0212 8803     		movb	%al, (%rbx)
+ 432:fltk-1.3.4-1/jpeg/jcsample.c ****     outptr = output_data[inrow];
+ 1418              		.loc 1 432 0 discriminator 2
+ 1419 0214 488B5C24 		movq	-16(%rsp), %rbx
+ 1419      F0
+ 1420 0219 8B4424F8 		movl	-8(%rsp), %eax
+ 1421              	.LVL199:
+ 1422 021d 39836401 		cmpl	%eax, 356(%rbx)
+ 1422      0000
+ 1423 0223 0F8FA7FE 		jg	.L98
+ 1423      FFFF
+ 1424              	.LVL200:
+ 1425              	.L86:
+ 465:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 466:fltk-1.3.4-1/jpeg/jcsample.c ****   }
+ 467:fltk-1.3.4-1/jpeg/jcsample.c **** }
+ 1426              		.loc 1 467 0
+ 1427 0229 5B       		popq	%rbx
+ 1428              		.cfi_def_cfa_offset 48
+ 1429 022a 5D       		popq	%rbp
+ 1430              		.cfi_def_cfa_offset 40
+ 1431 022b 415C     		popq	%r12
+ 1432              		.cfi_def_cfa_offset 32
+ 1433 022d 415D     		popq	%r13
+ 1434              		.cfi_def_cfa_offset 24
+ 1435              	.LVL201:
+ 1436 022f 415E     		popq	%r14
+ 1437              		.cfi_def_cfa_offset 16
+ 1438 0231 415F     		popq	%r15
+ 1439              		.cfi_def_cfa_offset 8
+ 1440              	.LVL202:
+ 1441 0233 C3       		ret
+ 1442              		.cfi_endproc
+ 1443              	.LFE69:
+ 1445              		.section	.text.unlikely.fullsize_smooth_downsample
+ 1446              	.LCOLDE6:
+ 1447              		.section	.text.fullsize_smooth_downsample
+ 1448              	.LHOTE6:
+ 1449              		.section	.text.unlikely.fullsize_downsample,"ax",@progbits
+ 1450              	.LCOLDB7:
+ 1451              		.section	.text.fullsize_downsample,"ax",@progbits
+ 1452              	.LHOTB7:
+ 1453              		.p2align 4,,15
+ 1455              	fullsize_downsample:
+ 1456              	.LFB65:
+ 201:fltk-1.3.4-1/jpeg/jcsample.c ****   /* Copy the data */
+ 1457              		.loc 1 201 0
+ 1458              		.cfi_startproc
+ 1459              	.LVL203:
+ 1460 0000 4154     		pushq	%r12
+ 1461              		.cfi_def_cfa_offset 16
+ 1462              		.cfi_offset 12, -16
+ 1463 0002 55       		pushq	%rbp
+ 1464              		.cfi_def_cfa_offset 24
+ 1465              		.cfi_offset 6, -24
+ 1466 0003 4889FD   		movq	%rdi, %rbp
+ 1467 0006 53       		pushq	%rbx
+ 1468              		.cfi_def_cfa_offset 32
+ 1469              		.cfi_offset 3, -32
+ 203:fltk-1.3.4-1/jpeg/jcsample.c **** 		    cinfo->max_v_samp_factor, cinfo->image_width);
+ 1470              		.loc 1 203 0
+ 1471 0007 448B4D30 		movl	48(%rbp), %r9d
+ 201:fltk-1.3.4-1/jpeg/jcsample.c ****   /* Copy the data */
+ 1472              		.loc 1 201 0
+ 1473 000b 4889CB   		movq	%rcx, %rbx
+ 203:fltk-1.3.4-1/jpeg/jcsample.c **** 		    cinfo->max_v_samp_factor, cinfo->image_width);
+ 1474              		.loc 1 203 0
+ 1475 000e 448B8564 		movl	356(%rbp), %r8d
+ 1475      010000
+ 201:fltk-1.3.4-1/jpeg/jcsample.c ****   /* Copy the data */
+ 1476              		.loc 1 201 0
+ 1477 0015 4989F4   		movq	%rsi, %r12
+ 1478 0018 4889D7   		movq	%rdx, %rdi
+ 1479              	.LVL204:
+ 203:fltk-1.3.4-1/jpeg/jcsample.c **** 		    cinfo->max_v_samp_factor, cinfo->image_width);
+ 1480              		.loc 1 203 0
+ 1481 001b 31C9     		xorl	%ecx, %ecx
+ 1482              	.LVL205:
+ 1483 001d 4889DA   		movq	%rbx, %rdx
+ 1484              	.LVL206:
+ 1485 0020 31F6     		xorl	%esi, %esi
+ 1486              	.LVL207:
+ 1487 0022 E8000000 		call	jcopy_sample_rows
+ 1487      00
+ 1488              	.LVL208:
+ 1489              	.LBB30:
+ 1490              	.LBB31:
+ 103:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 1491              		.loc 1 103 0
+ 1492 0027 418B4424 		movl	28(%r12), %eax
+ 1492      1C
+ 1493              	.LBE31:
+ 1494              	.LBE30:
+ 206:fltk-1.3.4-1/jpeg/jcsample.c **** 		    compptr->width_in_blocks * compptr->DCT_h_scaled_size);
+ 1495              		.loc 1 206 0
+ 1496 002c 8B5530   		movl	48(%rbp), %edx
+ 1497              	.LVL209:
+ 1498              	.LBB34:
+ 1499              	.LBB32:
+ 103:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 1500              		.loc 1 103 0
+ 1501 002f 410FAF44 		imull	36(%r12), %eax
+ 1501      2424
+ 1502              	.LVL210:
+ 1503 0035 29D0     		subl	%edx, %eax
+ 1504              	.LVL211:
+ 105:fltk-1.3.4-1/jpeg/jcsample.c ****     for (row = 0; row < num_rows; row++) {
+ 1505              		.loc 1 105 0
+ 1506 0037 85C0     		testl	%eax, %eax
+ 1507 0039 7E4B     		jle	.L104
+ 1508              	.LBE32:
+ 1509              	.LBE34:
+ 206:fltk-1.3.4-1/jpeg/jcsample.c **** 		    compptr->width_in_blocks * compptr->DCT_h_scaled_size);
+ 1510              		.loc 1 206 0
+ 1511 003b 8BB56401 		movl	356(%rbp), %esi
+ 1511      0000
+ 1512              	.LVL212:
+ 1513              	.LBB35:
+ 1514              	.LBB33:
+ 106:fltk-1.3.4-1/jpeg/jcsample.c ****       ptr = image_data[row] + input_cols;
+ 1515              		.loc 1 106 0
+ 1516 0041 85F6     		testl	%esi, %esi
+ 1517 0043 7E41     		jle	.L104
+ 1518 0045 83EE01   		subl	$1, %esi
+ 1519 0048 448D40FF 		leal	-1(%rax), %r8d
+ 1520 004c 4889D9   		movq	%rbx, %rcx
+ 1521 004f 4C8D4CF3 		leaq	8(%rbx,%rsi,8), %r9
+ 1521      08
+ 1522 0054 4983C001 		addq	$1, %r8
+ 1523              	.LVL213:
+ 1524 0058 0F1F8400 		.p2align 4,,10
+ 1524      00000000 
+ 1525              		.p2align 3
+ 1526              	.L108:
+ 107:fltk-1.3.4-1/jpeg/jcsample.c ****       pixval = ptr[-1];		/* don't need GETJSAMPLE() here */
+ 1527              		.loc 1 107 0
+ 1528 0060 4889D0   		movq	%rdx, %rax
+ 1529 0063 480301   		addq	(%rcx), %rax
+ 1530              	.LVL214:
+ 108:fltk-1.3.4-1/jpeg/jcsample.c ****       for (count = numcols; count > 0; count--)
+ 1531              		.loc 1 108 0
+ 1532 0066 0FB678FF 		movzbl	-1(%rax), %edi
+ 1533              	.LVL215:
+ 1534 006a 4A8D3400 		leaq	(%rax,%r8), %rsi
+ 1535 006e 6690     		.p2align 4,,10
+ 1536              		.p2align 3
+ 1537              	.L107:
+ 110:fltk-1.3.4-1/jpeg/jcsample.c ****     }
+ 1538              		.loc 1 110 0
+ 1539 0070 4883C001 		addq	$1, %rax
+ 1540              	.LVL216:
+ 1541 0074 408878FF 		movb	%dil, -1(%rax)
+ 109:fltk-1.3.4-1/jpeg/jcsample.c **** 	*ptr++ = pixval;
+ 1542              		.loc 1 109 0
+ 1543 0078 4839F0   		cmpq	%rsi, %rax
+ 1544 007b 75F3     		jne	.L107
+ 1545 007d 4883C108 		addq	$8, %rcx
+ 106:fltk-1.3.4-1/jpeg/jcsample.c ****       ptr = image_data[row] + input_cols;
+ 1546              		.loc 1 106 0
+ 1547 0081 4C39C9   		cmpq	%r9, %rcx
+ 1548 0084 75DA     		jne	.L108
+ 1549              	.LVL217:
+ 1550              	.L104:
+ 1551              	.LBE33:
+ 1552              	.LBE35:
+ 208:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 1553              		.loc 1 208 0
+ 1554 0086 5B       		popq	%rbx
+ 1555              		.cfi_def_cfa_offset 24
+ 1556              	.LVL218:
+ 1557 0087 5D       		popq	%rbp
+ 1558              		.cfi_def_cfa_offset 16
+ 1559              	.LVL219:
+ 1560 0088 415C     		popq	%r12
+ 1561              		.cfi_def_cfa_offset 8
+ 1562              	.LVL220:
+ 1563 008a C3       		ret
+ 1564              		.cfi_endproc
+ 1565              	.LFE65:
+ 1567              		.section	.text.unlikely.fullsize_downsample
+ 1568              	.LCOLDE7:
+ 1569              		.section	.text.fullsize_downsample
+ 1570              	.LHOTE7:
+ 1571              		.section	.text.unlikely.jinit_downsampler,"ax",@progbits
+ 1572              	.LCOLDB8:
+ 1573              		.section	.text.jinit_downsampler,"ax",@progbits
+ 1574              	.LHOTB8:
+ 1575              		.p2align 4,,15
+ 1576              		.globl	jinit_downsampler
+ 1578              	jinit_downsampler:
+ 1579              	.LFB70:
+ 468:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 469:fltk-1.3.4-1/jpeg/jcsample.c **** #endif /* INPUT_SMOOTHING_SUPPORTED */
+ 470:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 471:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 472:fltk-1.3.4-1/jpeg/jcsample.c **** /*
+ 473:fltk-1.3.4-1/jpeg/jcsample.c ****  * Module initialization routine for downsampling.
+ 474:fltk-1.3.4-1/jpeg/jcsample.c ****  * Note that we must select a routine for each component.
+ 475:fltk-1.3.4-1/jpeg/jcsample.c ****  */
+ 476:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 477:fltk-1.3.4-1/jpeg/jcsample.c **** GLOBAL(void)
+ 478:fltk-1.3.4-1/jpeg/jcsample.c **** jinit_downsampler (j_compress_ptr cinfo)
+ 479:fltk-1.3.4-1/jpeg/jcsample.c **** {
+ 1580              		.loc 1 479 0
+ 1581              		.cfi_startproc
+ 1582              	.LVL221:
+ 1583 0000 4157     		pushq	%r15
+ 1584              		.cfi_def_cfa_offset 16
+ 1585              		.cfi_offset 15, -16
+ 1586 0002 4156     		pushq	%r14
+ 1587              		.cfi_def_cfa_offset 24
+ 1588              		.cfi_offset 14, -24
+ 480:fltk-1.3.4-1/jpeg/jcsample.c ****   my_downsample_ptr downsample;
+ 481:fltk-1.3.4-1/jpeg/jcsample.c ****   int ci;
+ 482:fltk-1.3.4-1/jpeg/jcsample.c ****   jpeg_component_info * compptr;
+ 483:fltk-1.3.4-1/jpeg/jcsample.c ****   boolean smoothok = TRUE;
+ 484:fltk-1.3.4-1/jpeg/jcsample.c ****   int h_in_group, v_in_group, h_out_group, v_out_group;
+ 485:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 486:fltk-1.3.4-1/jpeg/jcsample.c ****   downsample = (my_downsample_ptr)
+ 1589              		.loc 1 486 0
+ 1590 0004 BE010000 		movl	$1, %esi
+ 1590      00
+ 479:fltk-1.3.4-1/jpeg/jcsample.c ****   my_downsample_ptr downsample;
+ 1591              		.loc 1 479 0
+ 1592 0009 4155     		pushq	%r13
+ 1593              		.cfi_def_cfa_offset 32
+ 1594              		.cfi_offset 13, -32
+ 1595 000b 4154     		pushq	%r12
+ 1596              		.cfi_def_cfa_offset 40
+ 1597              		.cfi_offset 12, -40
+ 1598              		.loc 1 486 0
+ 1599 000d BAA80000 		movl	$168, %edx
+ 1599      00
+ 479:fltk-1.3.4-1/jpeg/jcsample.c ****   my_downsample_ptr downsample;
+ 1600              		.loc 1 479 0
+ 1601 0012 55       		pushq	%rbp
+ 1602              		.cfi_def_cfa_offset 48
+ 1603              		.cfi_offset 6, -48
+ 1604 0013 53       		pushq	%rbx
+ 1605              		.cfi_def_cfa_offset 56
+ 1606              		.cfi_offset 3, -56
+ 1607 0014 4889FB   		movq	%rdi, %rbx
+ 1608 0017 4883EC18 		subq	$24, %rsp
+ 1609              		.cfi_def_cfa_offset 80
+ 487:fltk-1.3.4-1/jpeg/jcsample.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 1610              		.loc 1 487 0
+ 1611 001b 488B4708 		movq	8(%rdi), %rax
+ 486:fltk-1.3.4-1/jpeg/jcsample.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 1612              		.loc 1 486 0
+ 1613 001f FF10     		call	*(%rax)
+ 1614              	.LVL222:
+ 488:fltk-1.3.4-1/jpeg/jcsample.c **** 				SIZEOF(my_downsampler));
+ 489:fltk-1.3.4-1/jpeg/jcsample.c ****   cinfo->downsample = (struct jpeg_downsampler *) downsample;
+ 1615              		.loc 1 489 0
+ 1616 0021 48898320 		movq	%rax, 544(%rbx)
+ 1616      020000
+ 490:fltk-1.3.4-1/jpeg/jcsample.c ****   downsample->pub.start_pass = start_pass_downsample;
+ 1617              		.loc 1 490 0
+ 1618 0028 48C70000 		movq	$start_pass_downsample, (%rax)
+ 1618      000000
+ 486:fltk-1.3.4-1/jpeg/jcsample.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 1619              		.loc 1 486 0
+ 1620 002f 4889C6   		movq	%rax, %rsi
+ 1621              	.LVL223:
+ 491:fltk-1.3.4-1/jpeg/jcsample.c ****   downsample->pub.downsample = sep_downsample;
+ 1622              		.loc 1 491 0
+ 1623 0032 48C74008 		movq	$sep_downsample, 8(%rax)
+ 1623      00000000 
+ 492:fltk-1.3.4-1/jpeg/jcsample.c ****   downsample->pub.need_context_rows = FALSE;
+ 1624              		.loc 1 492 0
+ 1625 003a C7401000 		movl	$0, 16(%rax)
+ 1625      000000
+ 493:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 494:fltk-1.3.4-1/jpeg/jcsample.c ****   if (cinfo->CCIR601_sampling)
+ 1626              		.loc 1 494 0
+ 1627 0041 448B8B2C 		movl	300(%rbx), %r9d
+ 1627      010000
+ 1628 0048 4585C9   		testl	%r9d, %r9d
+ 1629 004b 0F85A701 		jne	.L139
+ 1629      0000
+ 1630              	.LVL224:
+ 1631              	.L113:
+ 495:fltk-1.3.4-1/jpeg/jcsample.c ****     ERREXIT(cinfo, JERR_CCIR601_NOTIMPL);
+ 496:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 497:fltk-1.3.4-1/jpeg/jcsample.c ****   /* Verify we can handle the sampling factors, and set up method pointers */
+ 498:fltk-1.3.4-1/jpeg/jcsample.c ****   for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
+ 1632              		.loc 1 498 0
+ 1633 0051 448B435C 		movl	92(%rbx), %r8d
+ 1634 0055 488B6B68 		movq	104(%rbx), %rbp
+ 1635              	.LVL225:
+ 1636 0059 4585C0   		testl	%r8d, %r8d
+ 1637 005c 0F8E6E01 		jle	.L112
+ 1637      0000
+ 1638 0062 4C8D7668 		leaq	104(%rsi), %r14
+ 1639 0066 4C8D7E18 		leaq	24(%rsi), %r15
+ 1640 006a 4C8DA690 		leaq	144(%rsi), %r12
+ 1640      000000
+ 1641 0071 C744240C 		movl	$1, 12(%rsp)
+ 1641      01000000 
+ 1642 0079 4531ED   		xorl	%r13d, %r13d
+ 1643 007c EB41     		jmp	.L123
+ 1644              	.LVL226:
+ 1645 007e 6690     		.p2align 4,,10
+ 1646              		.p2align 3
+ 1647              	.L141:
+ 499:fltk-1.3.4-1/jpeg/jcsample.c ****        ci++, compptr++) {
+ 500:fltk-1.3.4-1/jpeg/jcsample.c ****     /* Compute size of an "output group" for DCT scaling.  This many samples
+ 501:fltk-1.3.4-1/jpeg/jcsample.c ****      * are to be converted from max_h_samp_factor * max_v_samp_factor pixels.
+ 502:fltk-1.3.4-1/jpeg/jcsample.c ****      */
+ 503:fltk-1.3.4-1/jpeg/jcsample.c ****     h_out_group = (compptr->h_samp_factor * compptr->DCT_h_scaled_size) /
+ 504:fltk-1.3.4-1/jpeg/jcsample.c **** 		  cinfo->min_DCT_h_scaled_size;
+ 505:fltk-1.3.4-1/jpeg/jcsample.c ****     v_out_group = (compptr->v_samp_factor * compptr->DCT_v_scaled_size) /
+ 506:fltk-1.3.4-1/jpeg/jcsample.c **** 		  cinfo->min_DCT_v_scaled_size;
+ 507:fltk-1.3.4-1/jpeg/jcsample.c ****     h_in_group = cinfo->max_h_samp_factor;
+ 508:fltk-1.3.4-1/jpeg/jcsample.c ****     v_in_group = cinfo->max_v_samp_factor;
+ 509:fltk-1.3.4-1/jpeg/jcsample.c ****     downsample->rowgroup_height[ci] = v_out_group; /* save for use later */
+ 510:fltk-1.3.4-1/jpeg/jcsample.c ****     if (h_in_group == h_out_group && v_in_group == v_out_group) {
+ 1648              		.loc 1 510 0
+ 1649 0080 4539C8   		cmpl	%r9d, %r8d
+ 1650 0083 756F     		jne	.L116
+ 511:fltk-1.3.4-1/jpeg/jcsample.c **** #ifdef INPUT_SMOOTHING_SUPPORTED
+ 512:fltk-1.3.4-1/jpeg/jcsample.c ****       if (cinfo->smoothing_factor) {
+ 1651              		.loc 1 512 0
+ 1652 0085 8BBB3401 		movl	308(%rbx), %edi
+ 1652      0000
+ 1653              	.LVL227:
+ 1654 008b 85FF     		testl	%edi, %edi
+ 1655 008d 0F84BD00 		je	.L117
+ 1655      0000
+ 513:fltk-1.3.4-1/jpeg/jcsample.c **** 	downsample->methods[ci] = fullsize_smooth_downsample;
+ 1656              		.loc 1 513 0
+ 1657 0093 49C70700 		movq	$fullsize_smooth_downsample, (%r15)
+ 1657      000000
+ 514:fltk-1.3.4-1/jpeg/jcsample.c **** 	downsample->pub.need_context_rows = TRUE;
+ 1658              		.loc 1 514 0
+ 1659 009a C7461001 		movl	$1, 16(%rsi)
+ 1659      000000
+ 1660              	.LVL228:
+ 1661              	.L118:
+ 499:fltk-1.3.4-1/jpeg/jcsample.c ****     /* Compute size of an "output group" for DCT scaling.  This many samples
+ 1662              		.loc 1 499 0
+ 1663 00a1 4183C501 		addl	$1, %r13d
+ 1664              	.LVL229:
+ 1665 00a5 4883C560 		addq	$96, %rbp
+ 1666              	.LVL230:
+ 1667 00a9 4983C604 		addq	$4, %r14
+ 1668 00ad 4983C708 		addq	$8, %r15
+ 1669 00b1 4983C401 		addq	$1, %r12
+ 498:fltk-1.3.4-1/jpeg/jcsample.c ****        ci++, compptr++) {
+ 1670              		.loc 1 498 0
+ 1671 00b5 44396B5C 		cmpl	%r13d, 92(%rbx)
+ 1672 00b9 0F8ED100 		jle	.L140
+ 1672      0000
+ 1673              	.LVL231:
+ 1674              	.L123:
+ 503:fltk-1.3.4-1/jpeg/jcsample.c **** 		  cinfo->min_DCT_h_scaled_size;
+ 1675              		.loc 1 503 0
+ 1676 00bf 8B4508   		movl	8(%rbp), %eax
+ 508:fltk-1.3.4-1/jpeg/jcsample.c ****     downsample->rowgroup_height[ci] = v_out_group; /* save for use later */
+ 1677              		.loc 1 508 0
+ 1678 00c2 448B8B64 		movl	356(%rbx), %r9d
+ 1678      010000
+ 503:fltk-1.3.4-1/jpeg/jcsample.c **** 		  cinfo->min_DCT_h_scaled_size;
+ 1679              		.loc 1 503 0
+ 1680 00c9 0FAF4524 		imull	36(%rbp), %eax
+ 1681 00cd 99       		cltd
+ 1682 00ce F7BB6801 		idivl	360(%rbx)
+ 1682      0000
+ 1683 00d4 89C7     		movl	%eax, %edi
+ 1684              	.LVL232:
+ 505:fltk-1.3.4-1/jpeg/jcsample.c **** 		  cinfo->min_DCT_v_scaled_size;
+ 1685              		.loc 1 505 0
+ 1686 00d6 8B450C   		movl	12(%rbp), %eax
+ 1687              	.LVL233:
+ 1688 00d9 0FAF4528 		imull	40(%rbp), %eax
+ 1689 00dd 99       		cltd
+ 1690 00de F7BB6C01 		idivl	364(%rbx)
+ 1690      0000
+ 1691 00e4 4189C0   		movl	%eax, %r8d
+ 1692              	.LVL234:
+ 507:fltk-1.3.4-1/jpeg/jcsample.c ****     v_in_group = cinfo->max_v_samp_factor;
+ 1693              		.loc 1 507 0
+ 1694 00e7 8B836001 		movl	352(%rbx), %eax
+ 1694      0000
+ 1695              	.LVL235:
+ 509:fltk-1.3.4-1/jpeg/jcsample.c ****     if (h_in_group == h_out_group && v_in_group == v_out_group) {
+ 1696              		.loc 1 509 0
+ 1697 00ed 458906   		movl	%r8d, (%r14)
+ 510:fltk-1.3.4-1/jpeg/jcsample.c **** #ifdef INPUT_SMOOTHING_SUPPORTED
+ 1698              		.loc 1 510 0
+ 1699 00f0 39C7     		cmpl	%eax, %edi
+ 1700 00f2 748C     		je	.L141
+ 1701              	.L116:
+ 515:fltk-1.3.4-1/jpeg/jcsample.c ****       } else
+ 516:fltk-1.3.4-1/jpeg/jcsample.c **** #endif
+ 517:fltk-1.3.4-1/jpeg/jcsample.c **** 	downsample->methods[ci] = fullsize_downsample;
+ 518:fltk-1.3.4-1/jpeg/jcsample.c ****     } else if (h_in_group == h_out_group * 2 &&
+ 1702              		.loc 1 518 0
+ 1703 00f4 8D143F   		leal	(%rdi,%rdi), %edx
+ 1704 00f7 39D0     		cmpl	%edx, %eax
+ 1705 00f9 7465     		je	.L142
+ 1706              	.L119:
+ 519:fltk-1.3.4-1/jpeg/jcsample.c **** 	       v_in_group == v_out_group) {
+ 520:fltk-1.3.4-1/jpeg/jcsample.c ****       smoothok = FALSE;
+ 521:fltk-1.3.4-1/jpeg/jcsample.c ****       downsample->methods[ci] = h2v1_downsample;
+ 522:fltk-1.3.4-1/jpeg/jcsample.c ****     } else if (h_in_group == h_out_group * 2 &&
+ 523:fltk-1.3.4-1/jpeg/jcsample.c **** 	       v_in_group == v_out_group * 2) {
+ 524:fltk-1.3.4-1/jpeg/jcsample.c **** #ifdef INPUT_SMOOTHING_SUPPORTED
+ 525:fltk-1.3.4-1/jpeg/jcsample.c ****       if (cinfo->smoothing_factor) {
+ 526:fltk-1.3.4-1/jpeg/jcsample.c **** 	downsample->methods[ci] = h2v2_smooth_downsample;
+ 527:fltk-1.3.4-1/jpeg/jcsample.c **** 	downsample->pub.need_context_rows = TRUE;
+ 528:fltk-1.3.4-1/jpeg/jcsample.c ****       } else
+ 529:fltk-1.3.4-1/jpeg/jcsample.c **** #endif
+ 530:fltk-1.3.4-1/jpeg/jcsample.c **** 	downsample->methods[ci] = h2v2_downsample;
+ 531:fltk-1.3.4-1/jpeg/jcsample.c ****     } else if ((h_in_group % h_out_group) == 0 &&
+ 1707              		.loc 1 531 0
+ 1708 00fb 99       		cltd
+ 1709 00fc F7FF     		idivl	%edi
+ 1710              	.LVL236:
+ 1711 00fe 85D2     		testl	%edx, %edx
+ 1712 0100 89C7     		movl	%eax, %edi
+ 1713              	.LVL237:
+ 1714 0102 752C     		jne	.L122
+ 1715              		.loc 1 531 0 is_stmt 0 discriminator 1
+ 1716 0104 4489C8   		movl	%r9d, %eax
+ 1717 0107 99       		cltd
+ 1718 0108 41F7F8   		idivl	%r8d
+ 1719 010b 85D2     		testl	%edx, %edx
+ 1720 010d 7521     		jne	.L122
+ 1721              	.LVL238:
+ 532:fltk-1.3.4-1/jpeg/jcsample.c **** 	       (v_in_group % v_out_group) == 0) {
+ 533:fltk-1.3.4-1/jpeg/jcsample.c ****       smoothok = FALSE;
+ 534:fltk-1.3.4-1/jpeg/jcsample.c ****       downsample->methods[ci] = int_downsample;
+ 1722              		.loc 1 534 0 is_stmt 1
+ 1723 010f 49C70700 		movq	$int_downsample, (%r15)
+ 1723      000000
+ 533:fltk-1.3.4-1/jpeg/jcsample.c ****       downsample->methods[ci] = int_downsample;
+ 1724              		.loc 1 533 0
+ 1725 0116 C744240C 		movl	$0, 12(%rsp)
+ 1725      00000000 
+ 535:fltk-1.3.4-1/jpeg/jcsample.c ****       downsample->h_expand[ci] = (UINT8) (h_in_group / h_out_group);
+ 1726              		.loc 1 535 0
+ 1727 011e 41883C24 		movb	%dil, (%r12)
+ 536:fltk-1.3.4-1/jpeg/jcsample.c ****       downsample->v_expand[ci] = (UINT8) (v_in_group / v_out_group);
+ 1728              		.loc 1 536 0
+ 1729 0122 41884424 		movb	%al, 10(%r12)
+ 1729      0A
+ 1730 0127 E975FFFF 		jmp	.L118
+ 1730      FF
+ 1731              	.LVL239:
+ 1732 012c 0F1F4000 		.p2align 4,,10
+ 1733              		.p2align 3
+ 1734              	.L122:
+ 537:fltk-1.3.4-1/jpeg/jcsample.c ****     } else
+ 538:fltk-1.3.4-1/jpeg/jcsample.c ****       ERREXIT(cinfo, JERR_FRACT_SAMPLE_NOTIMPL);
+ 1735              		.loc 1 538 0
+ 1736 0130 488B03   		movq	(%rbx), %rax
+ 1737 0133 48893424 		movq	%rsi, (%rsp)
+ 1738 0137 4889DF   		movq	%rbx, %rdi
+ 1739 013a C7402827 		movl	$39, 40(%rax)
+ 1739      000000
+ 1740 0141 488B03   		movq	(%rbx), %rax
+ 1741 0144 FF10     		call	*(%rax)
+ 1742              	.LVL240:
+ 1743 0146 488B3424 		movq	(%rsp), %rsi
+ 1744 014a E952FFFF 		jmp	.L118
+ 1744      FF
+ 1745              	.LVL241:
+ 1746 014f 90       		.p2align 4,,10
+ 1747              		.p2align 3
+ 1748              	.L117:
+ 517:fltk-1.3.4-1/jpeg/jcsample.c ****     } else if (h_in_group == h_out_group * 2 &&
+ 1749              		.loc 1 517 0
+ 1750 0150 49C70700 		movq	$fullsize_downsample, (%r15)
+ 1750      000000
+ 1751 0157 E945FFFF 		jmp	.L118
+ 1751      FF
+ 1752              	.LVL242:
+ 1753 015c 0F1F4000 		.p2align 4,,10
+ 1754              		.p2align 3
+ 1755              	.L142:
+ 518:fltk-1.3.4-1/jpeg/jcsample.c **** 	       v_in_group == v_out_group) {
+ 1756              		.loc 1 518 0 discriminator 1
+ 1757 0160 4539C8   		cmpl	%r9d, %r8d
+ 1758 0163 747B     		je	.L143
+ 522:fltk-1.3.4-1/jpeg/jcsample.c **** 	       v_in_group == v_out_group * 2) {
+ 1759              		.loc 1 522 0 discriminator 1
+ 1760 0165 438D1400 		leal	(%r8,%r8), %edx
+ 1761 0169 4139D1   		cmpl	%edx, %r9d
+ 1762 016c 758D     		jne	.L119
+ 525:fltk-1.3.4-1/jpeg/jcsample.c **** 	downsample->methods[ci] = h2v2_smooth_downsample;
+ 1763              		.loc 1 525 0
+ 1764 016e 8B8B3401 		movl	308(%rbx), %ecx
+ 1764      0000
+ 1765 0174 85C9     		testl	%ecx, %ecx
+ 1766 0176 0F84A400 		je	.L121
+ 1766      0000
+ 526:fltk-1.3.4-1/jpeg/jcsample.c **** 	downsample->pub.need_context_rows = TRUE;
+ 1767              		.loc 1 526 0
+ 1768 017c 49C70700 		movq	$h2v2_smooth_downsample, (%r15)
+ 1768      000000
+ 527:fltk-1.3.4-1/jpeg/jcsample.c ****       } else
+ 1769              		.loc 1 527 0
+ 1770 0183 C7461001 		movl	$1, 16(%rsi)
+ 1770      000000
+ 1771 018a E912FFFF 		jmp	.L118
+ 1771      FF
+ 1772              	.LVL243:
+ 1773 018f 90       		.p2align 4,,10
+ 1774              		.p2align 3
+ 1775              	.L140:
+ 539:fltk-1.3.4-1/jpeg/jcsample.c ****   }
+ 540:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 541:fltk-1.3.4-1/jpeg/jcsample.c **** #ifdef INPUT_SMOOTHING_SUPPORTED
+ 542:fltk-1.3.4-1/jpeg/jcsample.c ****   if (cinfo->smoothing_factor && !smoothok)
+ 1776              		.loc 1 542 0
+ 1777 0190 8B933401 		movl	308(%rbx), %edx
+ 1777      0000
+ 1778 0196 85D2     		testl	%edx, %edx
+ 1779 0198 7436     		je	.L112
+ 1780 019a 8B44240C 		movl	12(%rsp), %eax
+ 1781 019e 85C0     		testl	%eax, %eax
+ 1782 01a0 752E     		jne	.L112
+ 543:fltk-1.3.4-1/jpeg/jcsample.c ****     TRACEMS(cinfo, 0, JTRC_SMOOTH_NOTIMPL);
+ 1783              		.loc 1 543 0
+ 1784 01a2 488B03   		movq	(%rbx), %rax
+ 1785 01a5 4889DF   		movq	%rbx, %rdi
+ 1786 01a8 31F6     		xorl	%esi, %esi
+ 1787 01aa C7402865 		movl	$101, 40(%rax)
+ 1787      000000
+ 1788 01b1 488B03   		movq	(%rbx), %rax
+ 1789 01b4 488B4008 		movq	8(%rax), %rax
+ 544:fltk-1.3.4-1/jpeg/jcsample.c **** #endif
+ 545:fltk-1.3.4-1/jpeg/jcsample.c **** }
+ 1790              		.loc 1 545 0
+ 1791 01b8 4883C418 		addq	$24, %rsp
+ 1792              		.cfi_remember_state
+ 1793              		.cfi_def_cfa_offset 56
+ 1794 01bc 5B       		popq	%rbx
+ 1795              		.cfi_def_cfa_offset 48
+ 1796              	.LVL244:
+ 1797 01bd 5D       		popq	%rbp
+ 1798              		.cfi_def_cfa_offset 40
+ 1799              	.LVL245:
+ 1800 01be 415C     		popq	%r12
+ 1801              		.cfi_def_cfa_offset 32
+ 1802 01c0 415D     		popq	%r13
+ 1803              		.cfi_def_cfa_offset 24
+ 1804              	.LVL246:
+ 1805 01c2 415E     		popq	%r14
+ 1806              		.cfi_def_cfa_offset 16
+ 1807 01c4 415F     		popq	%r15
+ 1808              		.cfi_def_cfa_offset 8
+ 543:fltk-1.3.4-1/jpeg/jcsample.c ****     TRACEMS(cinfo, 0, JTRC_SMOOTH_NOTIMPL);
+ 1809              		.loc 1 543 0
+ 1810 01c6 FFE0     		jmp	*%rax
+ 1811              	.LVL247:
+ 1812 01c8 0F1F8400 		.p2align 4,,10
+ 1812      00000000 
+ 1813              		.p2align 3
+ 1814              	.L112:
+ 1815              		.cfi_restore_state
+ 1816              		.loc 1 545 0
+ 1817 01d0 4883C418 		addq	$24, %rsp
+ 1818              		.cfi_remember_state
+ 1819              		.cfi_def_cfa_offset 56
+ 1820 01d4 5B       		popq	%rbx
+ 1821              		.cfi_def_cfa_offset 48
+ 1822              	.LVL248:
+ 1823 01d5 5D       		popq	%rbp
+ 1824              		.cfi_def_cfa_offset 40
+ 1825              	.LVL249:
+ 1826 01d6 415C     		popq	%r12
+ 1827              		.cfi_def_cfa_offset 32
+ 1828 01d8 415D     		popq	%r13
+ 1829              		.cfi_def_cfa_offset 24
+ 1830 01da 415E     		popq	%r14
+ 1831              		.cfi_def_cfa_offset 16
+ 1832 01dc 415F     		popq	%r15
+ 1833              		.cfi_def_cfa_offset 8
+ 1834 01de C3       		ret
+ 1835              	.LVL250:
+ 1836 01df 90       		.p2align 4,,10
+ 1837              		.p2align 3
+ 1838              	.L143:
+ 1839              		.cfi_restore_state
+ 521:fltk-1.3.4-1/jpeg/jcsample.c ****     } else if (h_in_group == h_out_group * 2 &&
+ 1840              		.loc 1 521 0
+ 1841 01e0 49C70700 		movq	$h2v1_downsample, (%r15)
+ 1841      000000
+ 520:fltk-1.3.4-1/jpeg/jcsample.c ****       downsample->methods[ci] = h2v1_downsample;
+ 1842              		.loc 1 520 0
+ 1843 01e7 C744240C 		movl	$0, 12(%rsp)
+ 1843      00000000 
+ 521:fltk-1.3.4-1/jpeg/jcsample.c ****     } else if (h_in_group == h_out_group * 2 &&
+ 1844              		.loc 1 521 0
+ 1845 01ef E9ADFEFF 		jmp	.L118
+ 1845      FF
+ 1846              	.LVL251:
+ 1847              		.p2align 4,,10
+ 1848 01f4 0F1F4000 		.p2align 3
+ 1849              	.L139:
+ 1850 01f8 48890424 		movq	%rax, (%rsp)
+ 495:fltk-1.3.4-1/jpeg/jcsample.c **** 
+ 1851              		.loc 1 495 0
+ 1852 01fc 488B03   		movq	(%rbx), %rax
+ 1853              	.LVL252:
+ 1854 01ff 4889DF   		movq	%rbx, %rdi
+ 1855 0202 C740281A 		movl	$26, 40(%rax)
+ 1855      000000
+ 1856 0209 488B03   		movq	(%rbx), %rax
+ 1857 020c FF10     		call	*(%rax)
+ 1858              	.LVL253:
+ 1859 020e 488B3424 		movq	(%rsp), %rsi
+ 1860 0212 E93AFEFF 		jmp	.L113
+ 1860      FF
+ 1861              	.LVL254:
+ 1862 0217 660F1F84 		.p2align 4,,10
+ 1862      00000000 
+ 1862      00
+ 1863              		.p2align 3
+ 1864              	.L121:
+ 530:fltk-1.3.4-1/jpeg/jcsample.c ****     } else if ((h_in_group % h_out_group) == 0 &&
+ 1865              		.loc 1 530 0
+ 1866 0220 49C70700 		movq	$h2v2_downsample, (%r15)
+ 1866      000000
+ 1867 0227 E975FEFF 		jmp	.L118
+ 1867      FF
+ 1868              		.cfi_endproc
+ 1869              	.LFE70:
+ 1871              		.section	.text.unlikely.jinit_downsampler
+ 1872              	.LCOLDE8:
+ 1873              		.section	.text.jinit_downsampler
+ 1874              	.LHOTE8:
+ 1875              		.text
+ 1876              	.Letext0:
+ 1877              		.section	.text.unlikely.start_pass_downsample
+ 1878              	.Letext_cold0:
+ 1879              		.file 2 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
+ 1880              		.file 3 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 1881              		.file 4 "/usr/include/libio.h"
+ 1882              		.file 5 "fltk-1.3.4-1/jpeg/jmorecfg.h"
+ 1883              		.file 6 "fltk-1.3.4-1/jpeg/jpeglib.h"
+ 1884              		.file 7 "fltk-1.3.4-1/jpeg/jpegint.h"
+ 1885              		.file 8 "fltk-1.3.4-1/jpeg/jerror.h"
+ 1886              		.file 9 "/usr/include/stdio.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 jcsample.c
+     /tmp/cck8rLGQ.s:13     .text.start_pass_downsample:0000000000000000 start_pass_downsample
+     /tmp/cck8rLGQ.s:33     .text.sep_downsample:0000000000000000 sep_downsample
+     /tmp/cck8rLGQ.s:137    .text.int_downsample:0000000000000000 int_downsample
+     /tmp/cck8rLGQ.s:402    .text.h2v1_downsample:0000000000000000 h2v1_downsample
+     /tmp/cck8rLGQ.s:563    .text.h2v2_downsample:0000000000000000 h2v2_downsample
+     /tmp/cck8rLGQ.s:717    .text.h2v2_smooth_downsample:0000000000000000 h2v2_smooth_downsample
+     /tmp/cck8rLGQ.s:1133   .text.fullsize_smooth_downsample:0000000000000000 fullsize_smooth_downsample
+     /tmp/cck8rLGQ.s:1455   .text.fullsize_downsample:0000000000000000 fullsize_downsample
+     /tmp/cck8rLGQ.s:1578   .text.jinit_downsampler:0000000000000000 jinit_downsampler
+                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
+                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+                           .group:0000000000000000 wm4.jconfig.h.10.247fc3ff67998f3074970b1373c70333
+                           .group:0000000000000000 wm4.features.h.19.24da27e0a4d0d521fd057013d982b8b5
+                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
+                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
+                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
+                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
+                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
+                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
+                           .group:0000000000000000 wm4.waitflags.h.25.e401b8bcfee800b540b27abd7cc78de9
+                           .group:0000000000000000 wm4.waitstatus.h.28.93f167f49d64e2b9b99f98d1162a93bf
+                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
+                           .group:0000000000000000 wm4.endian.h.41.24cced64aef71195a51d4daa8e4f4a95
+                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
+                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
+                           .group:0000000000000000 wm4.byteswap.h.38.11ee5fdc0f6cc53a16c505b9233cecef
+                           .group:0000000000000000 wm4.endian.h.63.97272d7c64d5db8020003b32e9289502
+                           .group:0000000000000000 wm4.waitstatus.h.99.408b6270fa6eb71377201a241ef15f79
+                           .group:0000000000000000 wm4.stdlib.h.50.84aeca2ac6f37d40e1e9b3cef757ba2d
+                           .group:0000000000000000 wm4.types.h.23.f6dcbaa72f8f71361acef09804d45a5e
+                           .group:0000000000000000 wm4.time.h.53.beb46e650cd406cb917b6b96b45e640a
+                           .group:0000000000000000 wm4.stddef.h.238.847b6907dabda77be90a9ab7ad789e2e
+                           .group:0000000000000000 wm4.types.h.187.bd5a05039b505b3620e6973f1b2ffeb1
+                           .group:0000000000000000 wm4.select.h.28.eb2f3debdbcffd1442ebddaebc4fb6ff
+                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
+                           .group:0000000000000000 wm4.select.h.36.f76c3b9e55c871743863013cc4cc14c9
+                           .group:0000000000000000 wm4.time.h.66.e70ce69790c975f0efb369340c432e0b
+                           .group:0000000000000000 wm4.time.h.25.ae5284cdff565e87a9198d819340325d
+                           .group:0000000000000000 wm4.select.h.49.e9d2041e5035cc68ebd1a20f7dbc8514
+                           .group:0000000000000000 wm4.select2.h.27.f95f2ab0ffee66dc1b6575014894b21a
+                           .group:0000000000000000 wm4.sysmacros.h.20.8a0c33ff175cd9b434a86c0aaa36f0a2
+                           .group:0000000000000000 wm4.types.h.229.67b3f66bd74b06b451caec392a72a945
+                           .group:0000000000000000 wm4.pthreadtypes.h.25.6892b1493314fcf446bbc76e7362acba
+                           .group:0000000000000000 wm4.alloca.h.19.edefa922a76c1cbaaf1e416903ba2d1c
+                           .group:0000000000000000 wm4.alloca.h.29.156e12058824cc23d961c4d3b13031f6
+                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
+                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
+                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
+                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
+                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
+                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
+                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
+                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
+                           .group:0000000000000000 wm4.stdio.h.80.17b7dd1ca72d8a61987532cb1d80194a
+                           .group:0000000000000000 wm4.stdio_lim.h.23.557290a6cddeba0587f574f29e3a5fb9
+                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
+                           .group:0000000000000000 wm4.stdio.h.26.cae64f7ada9bb8327a89dba6a5e93655
+                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
+                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
+                           .group:0000000000000000 wm4.string2.h.45.00535b99420fc3014c2da41d6645330d
+                           .group:0000000000000000 wm4.string3.h.31.0c4b9301b754a2db05eaafef869657d2
+                           .group:0000000000000000 wm4.jinclude.h.67.b19f941ec97c4845fa4609292c7e2db4
+                           .group:0000000000000000 wm4.jmorecfg.h.33.3b4c5f9cc07b3737823b06caf24d5b05
+                           .group:0000000000000000 wm4.jpeglib.h.40.4f111c27252a38df39328d65454e82f4
+                           .group:0000000000000000 wm4.jpegint.h.26.5219ef5d4e4921371d38e77b6091fd20
+                           .group:0000000000000000 wm4.jerror.h.25.1dbd8674e70ab5215bc0037320e5c2a2
+
+UNDEFINED SYMBOLS
+jcopy_sample_rows

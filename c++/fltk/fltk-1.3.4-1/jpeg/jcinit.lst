@@ -1,0 +1,382 @@
+   1              		.file	"jcinit.c"
+   2              		.text
+   3              	.Ltext0:
+   4              		.section	.text.unlikely.jinit_compress_master,"ax",@progbits
+   5              	.LCOLDB0:
+   6              		.section	.text.jinit_compress_master,"ax",@progbits
+   7              	.LHOTB0:
+   8              		.p2align 4,,15
+   9              		.section	.text.unlikely.jinit_compress_master
+  10              	.Ltext_cold0:
+  11              		.section	.text.jinit_compress_master
+  12              		.globl	jinit_compress_master
+  14              	jinit_compress_master:
+  15              	.LFB61:
+  16              		.file 1 "fltk-1.3.4-1/jpeg/jcinit.c"
+   1:fltk-1.3.4-1/jpeg/jcinit.c **** /*
+   2:fltk-1.3.4-1/jpeg/jcinit.c ****  * jcinit.c
+   3:fltk-1.3.4-1/jpeg/jcinit.c ****  *
+   4:fltk-1.3.4-1/jpeg/jcinit.c ****  * Copyright (C) 1991-1997, Thomas G. Lane.
+   5:fltk-1.3.4-1/jpeg/jcinit.c ****  * Modified 2003-2013 by Guido Vollbeding.
+   6:fltk-1.3.4-1/jpeg/jcinit.c ****  * This file is part of the Independent JPEG Group's software.
+   7:fltk-1.3.4-1/jpeg/jcinit.c ****  * For conditions of distribution and use, see the accompanying README file.
+   8:fltk-1.3.4-1/jpeg/jcinit.c ****  *
+   9:fltk-1.3.4-1/jpeg/jcinit.c ****  * This file contains initialization logic for the JPEG compressor.
+  10:fltk-1.3.4-1/jpeg/jcinit.c ****  * This routine is in charge of selecting the modules to be executed and
+  11:fltk-1.3.4-1/jpeg/jcinit.c ****  * making an initialization call to each one.
+  12:fltk-1.3.4-1/jpeg/jcinit.c ****  *
+  13:fltk-1.3.4-1/jpeg/jcinit.c ****  * Logically, this code belongs in jcmaster.c.  It's split out because
+  14:fltk-1.3.4-1/jpeg/jcinit.c ****  * linking this routine implies linking the entire compression library.
+  15:fltk-1.3.4-1/jpeg/jcinit.c ****  * For a transcoding-only application, we want to be able to use jcmaster.c
+  16:fltk-1.3.4-1/jpeg/jcinit.c ****  * without linking in the whole library.
+  17:fltk-1.3.4-1/jpeg/jcinit.c ****  */
+  18:fltk-1.3.4-1/jpeg/jcinit.c **** 
+  19:fltk-1.3.4-1/jpeg/jcinit.c **** #define JPEG_INTERNALS
+  20:fltk-1.3.4-1/jpeg/jcinit.c **** #include "jinclude.h"
+  21:fltk-1.3.4-1/jpeg/jcinit.c **** #include "jpeglib.h"
+  22:fltk-1.3.4-1/jpeg/jcinit.c **** 
+  23:fltk-1.3.4-1/jpeg/jcinit.c **** 
+  24:fltk-1.3.4-1/jpeg/jcinit.c **** /*
+  25:fltk-1.3.4-1/jpeg/jcinit.c ****  * Master selection of compression modules.
+  26:fltk-1.3.4-1/jpeg/jcinit.c ****  * This is done once at the start of processing an image.  We determine
+  27:fltk-1.3.4-1/jpeg/jcinit.c ****  * which modules will be used and give them appropriate initialization calls.
+  28:fltk-1.3.4-1/jpeg/jcinit.c ****  */
+  29:fltk-1.3.4-1/jpeg/jcinit.c **** 
+  30:fltk-1.3.4-1/jpeg/jcinit.c **** GLOBAL(void)
+  31:fltk-1.3.4-1/jpeg/jcinit.c **** jinit_compress_master (j_compress_ptr cinfo)
+  32:fltk-1.3.4-1/jpeg/jcinit.c **** {
+  17              		.loc 1 32 0
+  18              		.cfi_startproc
+  19              	.LVL0:
+  20 0000 53       		pushq	%rbx
+  21              		.cfi_def_cfa_offset 16
+  22              		.cfi_offset 3, -16
+  33:fltk-1.3.4-1/jpeg/jcinit.c ****   long samplesperrow;
+  34:fltk-1.3.4-1/jpeg/jcinit.c ****   JDIMENSION jd_samplesperrow;
+  35:fltk-1.3.4-1/jpeg/jcinit.c **** 
+  36:fltk-1.3.4-1/jpeg/jcinit.c ****   /* For now, precision must match compiled-in value... */
+  37:fltk-1.3.4-1/jpeg/jcinit.c ****   if (cinfo->data_precision != BITS_IN_JSAMPLE)
+  23              		.loc 1 37 0
+  24 0001 837F5808 		cmpl	$8, 88(%rdi)
+  32:fltk-1.3.4-1/jpeg/jcinit.c ****   long samplesperrow;
+  25              		.loc 1 32 0
+  26 0005 4889FB   		movq	%rdi, %rbx
+  27              		.loc 1 37 0
+  28 0008 7418     		je	.L2
+  38:fltk-1.3.4-1/jpeg/jcinit.c ****     ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
+  29              		.loc 1 38 0
+  30 000a 488B07   		movq	(%rdi), %rax
+  31 000d C7402810 		movl	$16, 40(%rax)
+  31      000000
+  32 0014 488B07   		movq	(%rdi), %rax
+  33 0017 8B5758   		movl	88(%rdi), %edx
+  34 001a 89502C   		movl	%edx, 44(%rax)
+  35 001d 488B07   		movq	(%rdi), %rax
+  36 0020 FF10     		call	*(%rax)
+  37              	.LVL1:
+  38              	.L2:
+  39:fltk-1.3.4-1/jpeg/jcinit.c **** 
+  40:fltk-1.3.4-1/jpeg/jcinit.c ****   /* Sanity check on image dimensions */
+  41:fltk-1.3.4-1/jpeg/jcinit.c ****   if (cinfo->image_height <= 0 || cinfo->image_width <= 0 ||
+  39              		.loc 1 41 0
+  40 0022 8B7334   		movl	52(%rbx), %esi
+  41 0025 85F6     		testl	%esi, %esi
+  42 0027 740B     		je	.L3
+  43              		.loc 1 41 0 is_stmt 0 discriminator 1
+  44 0029 8B4330   		movl	48(%rbx), %eax
+  45 002c 85C0     		testl	%eax, %eax
+  46 002e 0F85CC00 		jne	.L16
+  46      0000
+  47              	.L3:
+  42:fltk-1.3.4-1/jpeg/jcinit.c ****       cinfo->input_components <= 0)
+  43:fltk-1.3.4-1/jpeg/jcinit.c ****     ERREXIT(cinfo, JERR_EMPTY_IMAGE);
+  48              		.loc 1 43 0 is_stmt 1
+  49 0034 488B03   		movq	(%rbx), %rax
+  50 0037 4889DF   		movq	%rbx, %rdi
+  51 003a C7402821 		movl	$33, 40(%rax)
+  51      000000
+  52 0041 488B03   		movq	(%rbx), %rax
+  53 0044 FF10     		call	*(%rax)
+  54              	.LVL2:
+  55 0046 8B4330   		movl	48(%rbx), %eax
+  56 0049 48635338 		movslq	56(%rbx), %rdx
+  57              	.L4:
+  44:fltk-1.3.4-1/jpeg/jcinit.c **** 
+  45:fltk-1.3.4-1/jpeg/jcinit.c ****   /* Width of an input scanline must be representable as JDIMENSION. */
+  46:fltk-1.3.4-1/jpeg/jcinit.c ****   samplesperrow = (long) cinfo->image_width * (long) cinfo->input_components;
+  58              		.loc 1 46 0
+  59 004d 480FAFC2 		imulq	%rdx, %rax
+  60              	.LVL3:
+  47:fltk-1.3.4-1/jpeg/jcinit.c ****   jd_samplesperrow = (JDIMENSION) samplesperrow;
+  48:fltk-1.3.4-1/jpeg/jcinit.c ****   if ((long) jd_samplesperrow != samplesperrow)
+  61              		.loc 1 48 0
+  62 0051 89C2     		movl	%eax, %edx
+  63 0053 4839D0   		cmpq	%rdx, %rax
+  64 0056 7412     		je	.L5
+  49:fltk-1.3.4-1/jpeg/jcinit.c ****     ERREXIT(cinfo, JERR_WIDTH_OVERFLOW);
+  65              		.loc 1 49 0
+  66 0058 488B03   		movq	(%rbx), %rax
+  67              	.LVL4:
+  68 005b 4889DF   		movq	%rbx, %rdi
+  69 005e C7402848 		movl	$72, 40(%rax)
+  69      000000
+  70 0065 488B03   		movq	(%rbx), %rax
+  71 0068 FF10     		call	*(%rax)
+  72              	.LVL5:
+  73              	.L5:
+  50:fltk-1.3.4-1/jpeg/jcinit.c **** 
+  51:fltk-1.3.4-1/jpeg/jcinit.c ****   /* Initialize master control (includes parameter checking/processing) */
+  52:fltk-1.3.4-1/jpeg/jcinit.c ****   jinit_c_master_control(cinfo, FALSE /* full compression */);
+  74              		.loc 1 52 0
+  75 006a 31F6     		xorl	%esi, %esi
+  76 006c 4889DF   		movq	%rbx, %rdi
+  77 006f E8000000 		call	jinit_c_master_control
+  77      00
+  78              	.LVL6:
+  53:fltk-1.3.4-1/jpeg/jcinit.c **** 
+  54:fltk-1.3.4-1/jpeg/jcinit.c ****   /* Preprocessing */
+  55:fltk-1.3.4-1/jpeg/jcinit.c ****   if (! cinfo->raw_data_in) {
+  79              		.loc 1 55 0
+  80 0074 8B8B2001 		movl	288(%rbx), %ecx
+  80      0000
+  81 007a 85C9     		testl	%ecx, %ecx
+  82 007c 0F849600 		je	.L17
+  82      0000
+  83              	.L6:
+  56:fltk-1.3.4-1/jpeg/jcinit.c ****     jinit_color_converter(cinfo);
+  57:fltk-1.3.4-1/jpeg/jcinit.c ****     jinit_downsampler(cinfo);
+  58:fltk-1.3.4-1/jpeg/jcinit.c ****     jinit_c_prep_controller(cinfo, FALSE /* never need full buffer here */);
+  59:fltk-1.3.4-1/jpeg/jcinit.c ****   }
+  60:fltk-1.3.4-1/jpeg/jcinit.c ****   /* Forward DCT */
+  61:fltk-1.3.4-1/jpeg/jcinit.c ****   jinit_forward_dct(cinfo);
+  84              		.loc 1 61 0
+  85 0082 4889DF   		movq	%rbx, %rdi
+  86 0085 E8000000 		call	jinit_forward_dct
+  86      00
+  87              	.LVL7:
+  62:fltk-1.3.4-1/jpeg/jcinit.c ****   /* Entropy encoding: either Huffman or arithmetic coding. */
+  63:fltk-1.3.4-1/jpeg/jcinit.c ****   if (cinfo->arith_code)
+  88              		.loc 1 63 0
+  89 008a 8B932401 		movl	292(%rbx), %edx
+  89      0000
+  64:fltk-1.3.4-1/jpeg/jcinit.c ****     jinit_arith_encoder(cinfo);
+  90              		.loc 1 64 0
+  91 0090 4889DF   		movq	%rbx, %rdi
+  63:fltk-1.3.4-1/jpeg/jcinit.c ****     jinit_arith_encoder(cinfo);
+  92              		.loc 1 63 0
+  93 0093 85D2     		testl	%edx, %edx
+  94 0095 7459     		je	.L7
+  95              		.loc 1 64 0
+  96 0097 E8000000 		call	jinit_arith_encoder
+  96      00
+  97              	.LVL8:
+  98              	.L8:
+  65:fltk-1.3.4-1/jpeg/jcinit.c ****   else {
+  66:fltk-1.3.4-1/jpeg/jcinit.c ****     jinit_huff_encoder(cinfo);
+  67:fltk-1.3.4-1/jpeg/jcinit.c ****   }
+  68:fltk-1.3.4-1/jpeg/jcinit.c **** 
+  69:fltk-1.3.4-1/jpeg/jcinit.c ****   /* Need a full-image coefficient buffer in any multi-pass mode. */
+  70:fltk-1.3.4-1/jpeg/jcinit.c ****   jinit_c_coef_controller(cinfo,
+  71:fltk-1.3.4-1/jpeg/jcinit.c **** 		(boolean) (cinfo->num_scans > 1 || cinfo->optimize_coding));
+  99              		.loc 1 71 0
+ 100 009c 83BB1001 		cmpl	$1, 272(%rbx)
+ 100      000001
+ 101 00a3 BE010000 		movl	$1, %esi
+ 101      00
+ 102 00a8 7F0E     		jg	.L9
+ 103 00aa 8B832801 		movl	296(%rbx), %eax
+ 103      0000
+ 104 00b0 31F6     		xorl	%esi, %esi
+ 105 00b2 85C0     		testl	%eax, %eax
+ 106 00b4 400F95C6 		setne	%sil
+ 107              	.L9:
+  70:fltk-1.3.4-1/jpeg/jcinit.c **** 		(boolean) (cinfo->num_scans > 1 || cinfo->optimize_coding));
+ 108              		.loc 1 70 0
+ 109 00b8 4889DF   		movq	%rbx, %rdi
+ 110 00bb E8000000 		call	jinit_c_coef_controller
+ 110      00
+ 111              	.LVL9:
+  72:fltk-1.3.4-1/jpeg/jcinit.c ****   jinit_c_main_controller(cinfo, FALSE /* never need full buffer here */);
+ 112              		.loc 1 72 0
+ 113 00c0 31F6     		xorl	%esi, %esi
+ 114 00c2 4889DF   		movq	%rbx, %rdi
+ 115 00c5 E8000000 		call	jinit_c_main_controller
+ 115      00
+ 116              	.LVL10:
+  73:fltk-1.3.4-1/jpeg/jcinit.c **** 
+  74:fltk-1.3.4-1/jpeg/jcinit.c ****   jinit_marker_writer(cinfo);
+ 117              		.loc 1 74 0
+ 118 00ca 4889DF   		movq	%rbx, %rdi
+ 119 00cd E8000000 		call	jinit_marker_writer
+ 119      00
+ 120              	.LVL11:
+  75:fltk-1.3.4-1/jpeg/jcinit.c **** 
+  76:fltk-1.3.4-1/jpeg/jcinit.c ****   /* We can now tell the memory manager to allocate virtual arrays. */
+  77:fltk-1.3.4-1/jpeg/jcinit.c ****   (*cinfo->mem->realize_virt_arrays) ((j_common_ptr) cinfo);
+ 121              		.loc 1 77 0
+ 122 00d2 488B4308 		movq	8(%rbx), %rax
+ 123 00d6 4889DF   		movq	%rbx, %rdi
+ 124 00d9 FF5030   		call	*48(%rax)
+ 125              	.LVL12:
+  78:fltk-1.3.4-1/jpeg/jcinit.c **** 
+  79:fltk-1.3.4-1/jpeg/jcinit.c ****   /* Write the datastream header (SOI) immediately.
+  80:fltk-1.3.4-1/jpeg/jcinit.c ****    * Frame and scan headers are postponed till later.
+  81:fltk-1.3.4-1/jpeg/jcinit.c ****    * This lets application insert special markers after the SOI.
+  82:fltk-1.3.4-1/jpeg/jcinit.c ****    */
+  83:fltk-1.3.4-1/jpeg/jcinit.c ****   (*cinfo->marker->write_file_header) (cinfo);
+ 126              		.loc 1 83 0
+ 127 00dc 488B8310 		movq	528(%rbx), %rax
+ 127      020000
+ 128 00e3 4889DF   		movq	%rbx, %rdi
+  84:fltk-1.3.4-1/jpeg/jcinit.c **** }
+ 129              		.loc 1 84 0
+ 130 00e6 5B       		popq	%rbx
+ 131              		.cfi_remember_state
+ 132              		.cfi_def_cfa_offset 8
+ 133              	.LVL13:
+  83:fltk-1.3.4-1/jpeg/jcinit.c **** }
+ 134              		.loc 1 83 0
+ 135 00e7 488B00   		movq	(%rax), %rax
+ 136 00ea FFE0     		jmp	*%rax
+ 137              	.LVL14:
+ 138 00ec 0F1F4000 		.p2align 4,,10
+ 139              		.p2align 3
+ 140              	.L7:
+ 141              		.cfi_restore_state
+  66:fltk-1.3.4-1/jpeg/jcinit.c ****   }
+ 142              		.loc 1 66 0
+ 143 00f0 E8000000 		call	jinit_huff_encoder
+ 143      00
+ 144              	.LVL15:
+ 145 00f5 EBA5     		jmp	.L8
+ 146 00f7 660F1F84 		.p2align 4,,10
+ 146      00000000 
+ 146      00
+ 147              		.p2align 3
+ 148              	.L16:
+  42:fltk-1.3.4-1/jpeg/jcinit.c ****     ERREXIT(cinfo, JERR_EMPTY_IMAGE);
+ 149              		.loc 1 42 0 discriminator 2
+ 150 0100 48635338 		movslq	56(%rbx), %rdx
+  41:fltk-1.3.4-1/jpeg/jcinit.c ****       cinfo->input_components <= 0)
+ 151              		.loc 1 41 0 discriminator 2
+ 152 0104 85D2     		testl	%edx, %edx
+ 153 0106 0F8F41FF 		jg	.L4
+ 153      FFFF
+ 154 010c E923FFFF 		jmp	.L3
+ 154      FF
+ 155              		.p2align 4,,10
+ 156 0111 0F1F8000 		.p2align 3
+ 156      000000
+ 157              	.L17:
+  56:fltk-1.3.4-1/jpeg/jcinit.c ****     jinit_downsampler(cinfo);
+ 158              		.loc 1 56 0
+ 159 0118 4889DF   		movq	%rbx, %rdi
+ 160 011b E8000000 		call	jinit_color_converter
+ 160      00
+ 161              	.LVL16:
+  57:fltk-1.3.4-1/jpeg/jcinit.c ****     jinit_c_prep_controller(cinfo, FALSE /* never need full buffer here */);
+ 162              		.loc 1 57 0
+ 163 0120 4889DF   		movq	%rbx, %rdi
+ 164 0123 E8000000 		call	jinit_downsampler
+ 164      00
+ 165              	.LVL17:
+  58:fltk-1.3.4-1/jpeg/jcinit.c ****   }
+ 166              		.loc 1 58 0
+ 167 0128 31F6     		xorl	%esi, %esi
+ 168 012a 4889DF   		movq	%rbx, %rdi
+ 169 012d E8000000 		call	jinit_c_prep_controller
+ 169      00
+ 170              	.LVL18:
+ 171 0132 E94BFFFF 		jmp	.L6
+ 171      FF
+ 172              		.cfi_endproc
+ 173              	.LFE61:
+ 175              		.section	.text.unlikely.jinit_compress_master
+ 176              	.LCOLDE0:
+ 177              		.section	.text.jinit_compress_master
+ 178              	.LHOTE0:
+ 179              		.text
+ 180              	.Letext0:
+ 181              		.section	.text.unlikely.jinit_compress_master
+ 182              	.Letext_cold0:
+ 183              		.file 2 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
+ 184              		.file 3 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 185              		.file 4 "/usr/include/libio.h"
+ 186              		.file 5 "fltk-1.3.4-1/jpeg/jmorecfg.h"
+ 187              		.file 6 "fltk-1.3.4-1/jpeg/jpeglib.h"
+ 188              		.file 7 "fltk-1.3.4-1/jpeg/jpegint.h"
+ 189              		.file 8 "fltk-1.3.4-1/jpeg/jerror.h"
+ 190              		.file 9 "/usr/include/stdio.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 jcinit.c
+     /tmp/cc6akBra.s:14     .text.jinit_compress_master:0000000000000000 jinit_compress_master
+                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
+                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+                           .group:0000000000000000 wm4.jconfig.h.10.247fc3ff67998f3074970b1373c70333
+                           .group:0000000000000000 wm4.features.h.19.24da27e0a4d0d521fd057013d982b8b5
+                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
+                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
+                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
+                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
+                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
+                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
+                           .group:0000000000000000 wm4.waitflags.h.25.e401b8bcfee800b540b27abd7cc78de9
+                           .group:0000000000000000 wm4.waitstatus.h.28.93f167f49d64e2b9b99f98d1162a93bf
+                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
+                           .group:0000000000000000 wm4.endian.h.41.24cced64aef71195a51d4daa8e4f4a95
+                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
+                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
+                           .group:0000000000000000 wm4.byteswap.h.38.11ee5fdc0f6cc53a16c505b9233cecef
+                           .group:0000000000000000 wm4.endian.h.63.97272d7c64d5db8020003b32e9289502
+                           .group:0000000000000000 wm4.waitstatus.h.99.408b6270fa6eb71377201a241ef15f79
+                           .group:0000000000000000 wm4.stdlib.h.50.84aeca2ac6f37d40e1e9b3cef757ba2d
+                           .group:0000000000000000 wm4.types.h.23.f6dcbaa72f8f71361acef09804d45a5e
+                           .group:0000000000000000 wm4.time.h.53.beb46e650cd406cb917b6b96b45e640a
+                           .group:0000000000000000 wm4.stddef.h.238.847b6907dabda77be90a9ab7ad789e2e
+                           .group:0000000000000000 wm4.types.h.187.bd5a05039b505b3620e6973f1b2ffeb1
+                           .group:0000000000000000 wm4.select.h.28.eb2f3debdbcffd1442ebddaebc4fb6ff
+                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
+                           .group:0000000000000000 wm4.select.h.36.f76c3b9e55c871743863013cc4cc14c9
+                           .group:0000000000000000 wm4.time.h.66.e70ce69790c975f0efb369340c432e0b
+                           .group:0000000000000000 wm4.time.h.25.ae5284cdff565e87a9198d819340325d
+                           .group:0000000000000000 wm4.select.h.49.e9d2041e5035cc68ebd1a20f7dbc8514
+                           .group:0000000000000000 wm4.select2.h.27.f95f2ab0ffee66dc1b6575014894b21a
+                           .group:0000000000000000 wm4.sysmacros.h.20.8a0c33ff175cd9b434a86c0aaa36f0a2
+                           .group:0000000000000000 wm4.types.h.229.67b3f66bd74b06b451caec392a72a945
+                           .group:0000000000000000 wm4.pthreadtypes.h.25.6892b1493314fcf446bbc76e7362acba
+                           .group:0000000000000000 wm4.alloca.h.19.edefa922a76c1cbaaf1e416903ba2d1c
+                           .group:0000000000000000 wm4.alloca.h.29.156e12058824cc23d961c4d3b13031f6
+                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
+                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
+                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
+                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
+                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
+                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
+                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
+                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
+                           .group:0000000000000000 wm4.stdio.h.80.17b7dd1ca72d8a61987532cb1d80194a
+                           .group:0000000000000000 wm4.stdio_lim.h.23.557290a6cddeba0587f574f29e3a5fb9
+                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
+                           .group:0000000000000000 wm4.stdio.h.26.cae64f7ada9bb8327a89dba6a5e93655
+                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
+                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
+                           .group:0000000000000000 wm4.string2.h.45.00535b99420fc3014c2da41d6645330d
+                           .group:0000000000000000 wm4.string3.h.31.0c4b9301b754a2db05eaafef869657d2
+                           .group:0000000000000000 wm4.jinclude.h.67.b19f941ec97c4845fa4609292c7e2db4
+                           .group:0000000000000000 wm4.jmorecfg.h.33.3b4c5f9cc07b3737823b06caf24d5b05
+                           .group:0000000000000000 wm4.jpeglib.h.40.4f111c27252a38df39328d65454e82f4
+                           .group:0000000000000000 wm4.jpegint.h.26.5219ef5d4e4921371d38e77b6091fd20
+                           .group:0000000000000000 wm4.jerror.h.25.1dbd8674e70ab5215bc0037320e5c2a2
+
+UNDEFINED SYMBOLS
+jinit_c_master_control
+jinit_forward_dct
+jinit_arith_encoder
+jinit_c_coef_controller
+jinit_c_main_controller
+jinit_marker_writer
+jinit_huff_encoder
+jinit_color_converter
+jinit_downsampler
+jinit_c_prep_controller

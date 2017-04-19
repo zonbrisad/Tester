@@ -1,0 +1,2600 @@
+   1              		.file	"jccoefct.c"
+   2              		.text
+   3              	.Ltext0:
+   4              		.section	.text.unlikely.start_pass_coef,"ax",@progbits
+   5              	.LCOLDB0:
+   6              		.section	.text.start_pass_coef,"ax",@progbits
+   7              	.LHOTB0:
+   8              		.p2align 4,,15
+   9              		.section	.text.unlikely.start_pass_coef
+  10              	.Ltext_cold0:
+  11              		.section	.text.start_pass_coef
+  13              	start_pass_coef:
+  14              	.LFB62:
+  15              		.file 1 "fltk-1.3.4-1/jpeg/jccoefct.c"
+   1:fltk-1.3.4-1/jpeg/jccoefct.c **** /*
+   2:fltk-1.3.4-1/jpeg/jccoefct.c ****  * jccoefct.c
+   3:fltk-1.3.4-1/jpeg/jccoefct.c ****  *
+   4:fltk-1.3.4-1/jpeg/jccoefct.c ****  * Copyright (C) 1994-1997, Thomas G. Lane.
+   5:fltk-1.3.4-1/jpeg/jccoefct.c ****  * Modified 2003-2011 by Guido Vollbeding.
+   6:fltk-1.3.4-1/jpeg/jccoefct.c ****  * This file is part of the Independent JPEG Group's software.
+   7:fltk-1.3.4-1/jpeg/jccoefct.c ****  * For conditions of distribution and use, see the accompanying README file.
+   8:fltk-1.3.4-1/jpeg/jccoefct.c ****  *
+   9:fltk-1.3.4-1/jpeg/jccoefct.c ****  * This file contains the coefficient buffer controller for compression.
+  10:fltk-1.3.4-1/jpeg/jccoefct.c ****  * This controller is the top level of the JPEG compressor proper.
+  11:fltk-1.3.4-1/jpeg/jccoefct.c ****  * The coefficient buffer lies between forward-DCT and entropy encoding steps.
+  12:fltk-1.3.4-1/jpeg/jccoefct.c ****  */
+  13:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+  14:fltk-1.3.4-1/jpeg/jccoefct.c **** #define JPEG_INTERNALS
+  15:fltk-1.3.4-1/jpeg/jccoefct.c **** #include "jinclude.h"
+  16:fltk-1.3.4-1/jpeg/jccoefct.c **** #include "jpeglib.h"
+  17:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+  18:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+  19:fltk-1.3.4-1/jpeg/jccoefct.c **** /* We use a full-image coefficient buffer when doing Huffman optimization,
+  20:fltk-1.3.4-1/jpeg/jccoefct.c ****  * and also for writing multiple-scan JPEG files.  In all cases, the DCT
+  21:fltk-1.3.4-1/jpeg/jccoefct.c ****  * step is run during the first pass, and subsequent passes need only read
+  22:fltk-1.3.4-1/jpeg/jccoefct.c ****  * the buffered coefficients.
+  23:fltk-1.3.4-1/jpeg/jccoefct.c ****  */
+  24:fltk-1.3.4-1/jpeg/jccoefct.c **** #ifdef ENTROPY_OPT_SUPPORTED
+  25:fltk-1.3.4-1/jpeg/jccoefct.c **** #define FULL_COEF_BUFFER_SUPPORTED
+  26:fltk-1.3.4-1/jpeg/jccoefct.c **** #else
+  27:fltk-1.3.4-1/jpeg/jccoefct.c **** #ifdef C_MULTISCAN_FILES_SUPPORTED
+  28:fltk-1.3.4-1/jpeg/jccoefct.c **** #define FULL_COEF_BUFFER_SUPPORTED
+  29:fltk-1.3.4-1/jpeg/jccoefct.c **** #endif
+  30:fltk-1.3.4-1/jpeg/jccoefct.c **** #endif
+  31:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+  32:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+  33:fltk-1.3.4-1/jpeg/jccoefct.c **** /* Private buffer controller object */
+  34:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+  35:fltk-1.3.4-1/jpeg/jccoefct.c **** typedef struct {
+  36:fltk-1.3.4-1/jpeg/jccoefct.c ****   struct jpeg_c_coef_controller pub; /* public fields */
+  37:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+  38:fltk-1.3.4-1/jpeg/jccoefct.c ****   JDIMENSION iMCU_row_num;	/* iMCU row # within image */
+  39:fltk-1.3.4-1/jpeg/jccoefct.c ****   JDIMENSION mcu_ctr;		/* counts MCUs processed in current row */
+  40:fltk-1.3.4-1/jpeg/jccoefct.c ****   int MCU_vert_offset;		/* counts MCU rows within iMCU row */
+  41:fltk-1.3.4-1/jpeg/jccoefct.c ****   int MCU_rows_per_iMCU_row;	/* number of such rows needed */
+  42:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+  43:fltk-1.3.4-1/jpeg/jccoefct.c ****   /* For single-pass compression, it's sufficient to buffer just one MCU
+  44:fltk-1.3.4-1/jpeg/jccoefct.c ****    * (although this may prove a bit slow in practice).  We allocate a
+  45:fltk-1.3.4-1/jpeg/jccoefct.c ****    * workspace of C_MAX_BLOCKS_IN_MCU coefficient blocks, and reuse it for each
+  46:fltk-1.3.4-1/jpeg/jccoefct.c ****    * MCU constructed and sent.  (On 80x86, the workspace is FAR even though
+  47:fltk-1.3.4-1/jpeg/jccoefct.c ****    * it's not really very big; this is to keep the module interfaces unchanged
+  48:fltk-1.3.4-1/jpeg/jccoefct.c ****    * when a large coefficient buffer is necessary.)
+  49:fltk-1.3.4-1/jpeg/jccoefct.c ****    * In multi-pass modes, this array points to the current MCU's blocks
+  50:fltk-1.3.4-1/jpeg/jccoefct.c ****    * within the virtual arrays.
+  51:fltk-1.3.4-1/jpeg/jccoefct.c ****    */
+  52:fltk-1.3.4-1/jpeg/jccoefct.c ****   JBLOCKROW MCU_buffer[C_MAX_BLOCKS_IN_MCU];
+  53:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+  54:fltk-1.3.4-1/jpeg/jccoefct.c ****   /* In multi-pass modes, we need a virtual block array for each component. */
+  55:fltk-1.3.4-1/jpeg/jccoefct.c ****   jvirt_barray_ptr whole_image[MAX_COMPONENTS];
+  56:fltk-1.3.4-1/jpeg/jccoefct.c **** } my_coef_controller;
+  57:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+  58:fltk-1.3.4-1/jpeg/jccoefct.c **** typedef my_coef_controller * my_coef_ptr;
+  59:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+  60:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+  61:fltk-1.3.4-1/jpeg/jccoefct.c **** /* Forward declarations */
+  62:fltk-1.3.4-1/jpeg/jccoefct.c **** METHODDEF(boolean) compress_data
+  63:fltk-1.3.4-1/jpeg/jccoefct.c ****     JPP((j_compress_ptr cinfo, JSAMPIMAGE input_buf));
+  64:fltk-1.3.4-1/jpeg/jccoefct.c **** #ifdef FULL_COEF_BUFFER_SUPPORTED
+  65:fltk-1.3.4-1/jpeg/jccoefct.c **** METHODDEF(boolean) compress_first_pass
+  66:fltk-1.3.4-1/jpeg/jccoefct.c ****     JPP((j_compress_ptr cinfo, JSAMPIMAGE input_buf));
+  67:fltk-1.3.4-1/jpeg/jccoefct.c **** METHODDEF(boolean) compress_output
+  68:fltk-1.3.4-1/jpeg/jccoefct.c ****     JPP((j_compress_ptr cinfo, JSAMPIMAGE input_buf));
+  69:fltk-1.3.4-1/jpeg/jccoefct.c **** #endif
+  70:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+  71:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+  72:fltk-1.3.4-1/jpeg/jccoefct.c **** LOCAL(void)
+  73:fltk-1.3.4-1/jpeg/jccoefct.c **** start_iMCU_row (j_compress_ptr cinfo)
+  74:fltk-1.3.4-1/jpeg/jccoefct.c **** /* Reset within-iMCU-row counters for a new row */
+  75:fltk-1.3.4-1/jpeg/jccoefct.c **** {
+  76:fltk-1.3.4-1/jpeg/jccoefct.c ****   my_coef_ptr coef = (my_coef_ptr) cinfo->coef;
+  77:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+  78:fltk-1.3.4-1/jpeg/jccoefct.c ****   /* In an interleaved scan, an MCU row is the same as an iMCU row.
+  79:fltk-1.3.4-1/jpeg/jccoefct.c ****    * In a noninterleaved scan, an iMCU row has v_samp_factor MCU rows.
+  80:fltk-1.3.4-1/jpeg/jccoefct.c ****    * But at the bottom of the image, process only what's left.
+  81:fltk-1.3.4-1/jpeg/jccoefct.c ****    */
+  82:fltk-1.3.4-1/jpeg/jccoefct.c ****   if (cinfo->comps_in_scan > 1) {
+  83:fltk-1.3.4-1/jpeg/jccoefct.c ****     coef->MCU_rows_per_iMCU_row = 1;
+  84:fltk-1.3.4-1/jpeg/jccoefct.c ****   } else {
+  85:fltk-1.3.4-1/jpeg/jccoefct.c ****     if (coef->iMCU_row_num < (cinfo->total_iMCU_rows-1))
+  86:fltk-1.3.4-1/jpeg/jccoefct.c ****       coef->MCU_rows_per_iMCU_row = cinfo->cur_comp_info[0]->v_samp_factor;
+  87:fltk-1.3.4-1/jpeg/jccoefct.c ****     else
+  88:fltk-1.3.4-1/jpeg/jccoefct.c ****       coef->MCU_rows_per_iMCU_row = cinfo->cur_comp_info[0]->last_row_height;
+  89:fltk-1.3.4-1/jpeg/jccoefct.c ****   }
+  90:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+  91:fltk-1.3.4-1/jpeg/jccoefct.c ****   coef->mcu_ctr = 0;
+  92:fltk-1.3.4-1/jpeg/jccoefct.c ****   coef->MCU_vert_offset = 0;
+  93:fltk-1.3.4-1/jpeg/jccoefct.c **** }
+  94:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+  95:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+  96:fltk-1.3.4-1/jpeg/jccoefct.c **** /*
+  97:fltk-1.3.4-1/jpeg/jccoefct.c ****  * Initialize for a processing pass.
+  98:fltk-1.3.4-1/jpeg/jccoefct.c ****  */
+  99:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 100:fltk-1.3.4-1/jpeg/jccoefct.c **** METHODDEF(void)
+ 101:fltk-1.3.4-1/jpeg/jccoefct.c **** start_pass_coef (j_compress_ptr cinfo, J_BUF_MODE pass_mode)
+ 102:fltk-1.3.4-1/jpeg/jccoefct.c **** {
+  16              		.loc 1 102 0
+  17              		.cfi_startproc
+  18              	.LVL0:
+  19 0000 53       		pushq	%rbx
+  20              		.cfi_def_cfa_offset 16
+  21              		.cfi_offset 3, -16
+ 103:fltk-1.3.4-1/jpeg/jccoefct.c ****   my_coef_ptr coef = (my_coef_ptr) cinfo->coef;
+  22              		.loc 1 103 0
+  23 0001 488B9F08 		movq	520(%rdi), %rbx
+  23      020000
+  24              	.LVL1:
+ 104:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 105:fltk-1.3.4-1/jpeg/jccoefct.c ****   coef->iMCU_row_num = 0;
+  25              		.loc 1 105 0
+  26 0008 C7431000 		movl	$0, 16(%rbx)
+  26      000000
+  27              	.LVL2:
+  28              	.LBB20:
+  29              	.LBB21:
+  82:fltk-1.3.4-1/jpeg/jccoefct.c ****     coef->MCU_rows_per_iMCU_row = 1;
+  30              		.loc 1 82 0
+  31 000f 83BF7401 		cmpl	$1, 372(%rdi)
+  31      000001
+  76:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+  32              		.loc 1 76 0
+  33 0016 488B8708 		movq	520(%rdi), %rax
+  33      020000
+  34              	.LVL3:
+  82:fltk-1.3.4-1/jpeg/jccoefct.c ****     coef->MCU_rows_per_iMCU_row = 1;
+  35              		.loc 1 82 0
+  36 001d 7E61     		jle	.L2
+  83:fltk-1.3.4-1/jpeg/jccoefct.c ****   } else {
+  37              		.loc 1 83 0
+  38 001f C7401C01 		movl	$1, 28(%rax)
+  38      000000
+  39              	.L3:
+  40              	.LBE21:
+  41              	.LBE20:
+ 106:fltk-1.3.4-1/jpeg/jccoefct.c ****   start_iMCU_row(cinfo);
+ 107:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 108:fltk-1.3.4-1/jpeg/jccoefct.c ****   switch (pass_mode) {
+  42              		.loc 1 108 0
+  43 0026 83FE02   		cmpl	$2, %esi
+  44              	.LBB25:
+  45              	.LBB22:
+  91:fltk-1.3.4-1/jpeg/jccoefct.c ****   coef->MCU_vert_offset = 0;
+  46              		.loc 1 91 0
+  47 0029 C7401400 		movl	$0, 20(%rax)
+  47      000000
+  92:fltk-1.3.4-1/jpeg/jccoefct.c **** }
+  48              		.loc 1 92 0
+  49 0030 C7401800 		movl	$0, 24(%rax)
+  49      000000
+  50              	.LVL4:
+  51              	.LBE22:
+  52              	.LBE25:
+  53              		.loc 1 108 0
+  54 0037 747F     		je	.L6
+  55 0039 83FE03   		cmpl	$3, %esi
+  56 003c 7462     		je	.L7
+  57 003e 85F6     		testl	%esi, %esi
+  58 0040 7416     		je	.L16
+ 109:fltk-1.3.4-1/jpeg/jccoefct.c ****   case JBUF_PASS_THRU:
+ 110:fltk-1.3.4-1/jpeg/jccoefct.c ****     if (coef->whole_image[0] != NULL)
+ 111:fltk-1.3.4-1/jpeg/jccoefct.c ****       ERREXIT(cinfo, JERR_BAD_BUFFER_MODE);
+ 112:fltk-1.3.4-1/jpeg/jccoefct.c ****     coef->pub.compress_data = compress_data;
+ 113:fltk-1.3.4-1/jpeg/jccoefct.c ****     break;
+ 114:fltk-1.3.4-1/jpeg/jccoefct.c **** #ifdef FULL_COEF_BUFFER_SUPPORTED
+ 115:fltk-1.3.4-1/jpeg/jccoefct.c ****   case JBUF_SAVE_AND_PASS:
+ 116:fltk-1.3.4-1/jpeg/jccoefct.c ****     if (coef->whole_image[0] == NULL)
+ 117:fltk-1.3.4-1/jpeg/jccoefct.c ****       ERREXIT(cinfo, JERR_BAD_BUFFER_MODE);
+ 118:fltk-1.3.4-1/jpeg/jccoefct.c ****     coef->pub.compress_data = compress_first_pass;
+ 119:fltk-1.3.4-1/jpeg/jccoefct.c ****     break;
+ 120:fltk-1.3.4-1/jpeg/jccoefct.c ****   case JBUF_CRANK_DEST:
+ 121:fltk-1.3.4-1/jpeg/jccoefct.c ****     if (coef->whole_image[0] == NULL)
+ 122:fltk-1.3.4-1/jpeg/jccoefct.c ****       ERREXIT(cinfo, JERR_BAD_BUFFER_MODE);
+ 123:fltk-1.3.4-1/jpeg/jccoefct.c ****     coef->pub.compress_data = compress_output;
+ 124:fltk-1.3.4-1/jpeg/jccoefct.c ****     break;
+ 125:fltk-1.3.4-1/jpeg/jccoefct.c **** #endif
+ 126:fltk-1.3.4-1/jpeg/jccoefct.c ****   default:
+ 127:fltk-1.3.4-1/jpeg/jccoefct.c ****     ERREXIT(cinfo, JERR_BAD_BUFFER_MODE);
+  59              		.loc 1 127 0
+  60 0042 488B07   		movq	(%rdi), %rax
+  61 0045 C7402803 		movl	$3, 40(%rax)
+  61      000000
+  62 004c 488B07   		movq	(%rdi), %rax
+ 128:fltk-1.3.4-1/jpeg/jccoefct.c ****     break;
+ 129:fltk-1.3.4-1/jpeg/jccoefct.c ****   }
+ 130:fltk-1.3.4-1/jpeg/jccoefct.c **** }
+  63              		.loc 1 130 0
+  64 004f 5B       		popq	%rbx
+  65              		.cfi_remember_state
+  66              		.cfi_def_cfa_offset 8
+  67              	.LVL5:
+ 127:fltk-1.3.4-1/jpeg/jccoefct.c ****     break;
+  68              		.loc 1 127 0
+  69 0050 488B00   		movq	(%rax), %rax
+  70 0053 FFE0     		jmp	*%rax
+  71              	.LVL6:
+  72              		.p2align 4,,10
+  73 0055 0F1F00   		.p2align 3
+  74              	.L16:
+  75              		.cfi_restore_state
+ 110:fltk-1.3.4-1/jpeg/jccoefct.c ****       ERREXIT(cinfo, JERR_BAD_BUFFER_MODE);
+  76              		.loc 1 110 0
+  77 0058 48837B70 		cmpq	$0, 112(%rbx)
+  77      00
+  78 005d 740F     		je	.L9
+ 111:fltk-1.3.4-1/jpeg/jccoefct.c ****     coef->pub.compress_data = compress_data;
+  79              		.loc 1 111 0
+  80 005f 488B07   		movq	(%rdi), %rax
+  81 0062 C7402803 		movl	$3, 40(%rax)
+  81      000000
+  82 0069 488B07   		movq	(%rdi), %rax
+  83 006c FF10     		call	*(%rax)
+  84              	.LVL7:
+  85              	.L9:
+ 112:fltk-1.3.4-1/jpeg/jccoefct.c ****     break;
+  86              		.loc 1 112 0
+  87 006e 48C74308 		movq	$compress_data, 8(%rbx)
+  87      00000000 
+  88              		.loc 1 130 0
+  89 0076 5B       		popq	%rbx
+  90              		.cfi_remember_state
+  91              		.cfi_def_cfa_offset 8
+  92              	.LVL8:
+  93 0077 C3       		ret
+  94              	.LVL9:
+  95 0078 0F1F8400 		.p2align 4,,10
+  95      00000000 
+  96              		.p2align 3
+  97              	.L2:
+  98              		.cfi_restore_state
+  99              	.LBB26:
+ 100              	.LBB23:
+  85:fltk-1.3.4-1/jpeg/jccoefct.c ****       coef->MCU_rows_per_iMCU_row = cinfo->cur_comp_info[0]->v_samp_factor;
+ 101              		.loc 1 85 0
+ 102 0080 8B8F7001 		movl	368(%rdi), %ecx
+ 102      0000
+ 103 0086 8D51FF   		leal	-1(%rcx), %edx
+ 104 0089 395010   		cmpl	%edx, 16(%rax)
+  86:fltk-1.3.4-1/jpeg/jccoefct.c ****     else
+ 105              		.loc 1 86 0
+ 106 008c 488B9778 		movq	376(%rdi), %rdx
+ 106      010000
+  85:fltk-1.3.4-1/jpeg/jccoefct.c ****       coef->MCU_rows_per_iMCU_row = cinfo->cur_comp_info[0]->v_samp_factor;
+ 107              		.loc 1 85 0
+ 108 0093 733B     		jnb	.L4
+  86:fltk-1.3.4-1/jpeg/jccoefct.c ****     else
+ 109              		.loc 1 86 0
+ 110 0095 8B520C   		movl	12(%rdx), %edx
+ 111 0098 89501C   		movl	%edx, 28(%rax)
+ 112 009b EB89     		jmp	.L3
+ 113              	.LVL10:
+ 114 009d 0F1F00   		.p2align 4,,10
+ 115              		.p2align 3
+ 116              	.L7:
+ 117              	.LBE23:
+ 118              	.LBE26:
+ 116:fltk-1.3.4-1/jpeg/jccoefct.c ****       ERREXIT(cinfo, JERR_BAD_BUFFER_MODE);
+ 119              		.loc 1 116 0
+ 120 00a0 48837B70 		cmpq	$0, 112(%rbx)
+ 120      00
+ 121 00a5 7451     		je	.L17
+ 122              	.LVL11:
+ 123              	.L11:
+ 118:fltk-1.3.4-1/jpeg/jccoefct.c ****     break;
+ 124              		.loc 1 118 0
+ 125 00a7 48C74308 		movq	$compress_first_pass, 8(%rbx)
+ 125      00000000 
+ 126              		.loc 1 130 0
+ 127 00af 5B       		popq	%rbx
+ 128              		.cfi_remember_state
+ 129              		.cfi_def_cfa_offset 8
+ 130              	.LVL12:
+ 131 00b0 C3       		ret
+ 132              	.LVL13:
+ 133              		.p2align 4,,10
+ 134 00b1 0F1F8000 		.p2align 3
+ 134      000000
+ 135              	.L6:
+ 136              		.cfi_restore_state
+ 121:fltk-1.3.4-1/jpeg/jccoefct.c ****       ERREXIT(cinfo, JERR_BAD_BUFFER_MODE);
+ 137              		.loc 1 121 0
+ 138 00b8 48837B70 		cmpq	$0, 112(%rbx)
+ 138      00
+ 139 00bd 7421     		je	.L18
+ 140              	.LVL14:
+ 141              	.L12:
+ 123:fltk-1.3.4-1/jpeg/jccoefct.c ****     break;
+ 142              		.loc 1 123 0
+ 143 00bf 48C74308 		movq	$compress_output, 8(%rbx)
+ 143      00000000 
+ 144              		.loc 1 130 0
+ 145 00c7 5B       		popq	%rbx
+ 146              		.cfi_remember_state
+ 147              		.cfi_def_cfa_offset 8
+ 148              	.LVL15:
+ 149 00c8 C3       		ret
+ 150              	.LVL16:
+ 151 00c9 0F1F8000 		.p2align 4,,10
+ 151      000000
+ 152              		.p2align 3
+ 153              	.L4:
+ 154              		.cfi_restore_state
+ 155              	.LBB27:
+ 156              	.LBB24:
+  88:fltk-1.3.4-1/jpeg/jccoefct.c ****   }
+ 157              		.loc 1 88 0
+ 158 00d0 8B524C   		movl	76(%rdx), %edx
+ 159 00d3 89501C   		movl	%edx, 28(%rax)
+ 160 00d6 E94BFFFF 		jmp	.L3
+ 160      FF
+ 161              	.LVL17:
+ 162 00db 0F1F4400 		.p2align 4,,10
+ 162      00
+ 163              		.p2align 3
+ 164              	.L18:
+ 165              	.LBE24:
+ 166              	.LBE27:
+ 122:fltk-1.3.4-1/jpeg/jccoefct.c ****     coef->pub.compress_data = compress_output;
+ 167              		.loc 1 122 0
+ 168 00e0 488B07   		movq	(%rdi), %rax
+ 169 00e3 C7402803 		movl	$3, 40(%rax)
+ 169      000000
+ 170 00ea 488B07   		movq	(%rdi), %rax
+ 171 00ed FF10     		call	*(%rax)
+ 172              	.LVL18:
+ 173 00ef EBCE     		jmp	.L12
+ 174              	.LVL19:
+ 175              		.p2align 4,,10
+ 176 00f1 0F1F8000 		.p2align 3
+ 176      000000
+ 177              	.L17:
+ 117:fltk-1.3.4-1/jpeg/jccoefct.c ****     coef->pub.compress_data = compress_first_pass;
+ 178              		.loc 1 117 0
+ 179 00f8 488B07   		movq	(%rdi), %rax
+ 180 00fb C7402803 		movl	$3, 40(%rax)
+ 180      000000
+ 181 0102 488B07   		movq	(%rdi), %rax
+ 182 0105 FF10     		call	*(%rax)
+ 183              	.LVL20:
+ 184 0107 EB9E     		jmp	.L11
+ 185              		.cfi_endproc
+ 186              	.LFE62:
+ 188              		.section	.text.unlikely.start_pass_coef
+ 189              	.LCOLDE0:
+ 190              		.section	.text.start_pass_coef
+ 191              	.LHOTE0:
+ 192              		.section	.text.unlikely.compress_output,"ax",@progbits
+ 193              	.LCOLDB1:
+ 194              		.section	.text.compress_output,"ax",@progbits
+ 195              	.LHOTB1:
+ 196              		.p2align 4,,15
+ 198              	compress_output:
+ 199              	.LFB65:
+ 131:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 132:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 133:fltk-1.3.4-1/jpeg/jccoefct.c **** /*
+ 134:fltk-1.3.4-1/jpeg/jccoefct.c ****  * Process some data in the single-pass case.
+ 135:fltk-1.3.4-1/jpeg/jccoefct.c ****  * We process the equivalent of one fully interleaved MCU row ("iMCU" row)
+ 136:fltk-1.3.4-1/jpeg/jccoefct.c ****  * per call, ie, v_samp_factor block rows for each component in the image.
+ 137:fltk-1.3.4-1/jpeg/jccoefct.c ****  * Returns TRUE if the iMCU row is completed, FALSE if suspended.
+ 138:fltk-1.3.4-1/jpeg/jccoefct.c ****  *
+ 139:fltk-1.3.4-1/jpeg/jccoefct.c ****  * NB: input_buf contains a plane for each component in image,
+ 140:fltk-1.3.4-1/jpeg/jccoefct.c ****  * which we index according to the component's SOF position.
+ 141:fltk-1.3.4-1/jpeg/jccoefct.c ****  */
+ 142:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 143:fltk-1.3.4-1/jpeg/jccoefct.c **** METHODDEF(boolean)
+ 144:fltk-1.3.4-1/jpeg/jccoefct.c **** compress_data (j_compress_ptr cinfo, JSAMPIMAGE input_buf)
+ 145:fltk-1.3.4-1/jpeg/jccoefct.c **** {
+ 146:fltk-1.3.4-1/jpeg/jccoefct.c ****   my_coef_ptr coef = (my_coef_ptr) cinfo->coef;
+ 147:fltk-1.3.4-1/jpeg/jccoefct.c ****   JDIMENSION MCU_col_num;	/* index of current MCU within row */
+ 148:fltk-1.3.4-1/jpeg/jccoefct.c ****   JDIMENSION last_MCU_col = cinfo->MCUs_per_row - 1;
+ 149:fltk-1.3.4-1/jpeg/jccoefct.c ****   JDIMENSION last_iMCU_row = cinfo->total_iMCU_rows - 1;
+ 150:fltk-1.3.4-1/jpeg/jccoefct.c ****   int blkn, bi, ci, yindex, yoffset, blockcnt;
+ 151:fltk-1.3.4-1/jpeg/jccoefct.c ****   JDIMENSION ypos, xpos;
+ 152:fltk-1.3.4-1/jpeg/jccoefct.c ****   jpeg_component_info *compptr;
+ 153:fltk-1.3.4-1/jpeg/jccoefct.c ****   forward_DCT_ptr forward_DCT;
+ 154:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 155:fltk-1.3.4-1/jpeg/jccoefct.c ****   /* Loop to write as much as one whole iMCU row */
+ 156:fltk-1.3.4-1/jpeg/jccoefct.c ****   for (yoffset = coef->MCU_vert_offset; yoffset < coef->MCU_rows_per_iMCU_row;
+ 157:fltk-1.3.4-1/jpeg/jccoefct.c ****        yoffset++) {
+ 158:fltk-1.3.4-1/jpeg/jccoefct.c ****     for (MCU_col_num = coef->mcu_ctr; MCU_col_num <= last_MCU_col;
+ 159:fltk-1.3.4-1/jpeg/jccoefct.c **** 	 MCU_col_num++) {
+ 160:fltk-1.3.4-1/jpeg/jccoefct.c ****       /* Determine where data comes from in input_buf and do the DCT thing.
+ 161:fltk-1.3.4-1/jpeg/jccoefct.c ****        * Each call on forward_DCT processes a horizontal row of DCT blocks
+ 162:fltk-1.3.4-1/jpeg/jccoefct.c ****        * as wide as an MCU; we rely on having allocated the MCU_buffer[] blocks
+ 163:fltk-1.3.4-1/jpeg/jccoefct.c ****        * sequentially.  Dummy blocks at the right or bottom edge are filled in
+ 164:fltk-1.3.4-1/jpeg/jccoefct.c ****        * specially.  The data in them does not matter for image reconstruction,
+ 165:fltk-1.3.4-1/jpeg/jccoefct.c ****        * so we fill them with values that will encode to the smallest amount of
+ 166:fltk-1.3.4-1/jpeg/jccoefct.c ****        * data, viz: all zeroes in the AC entries, DC entries equal to previous
+ 167:fltk-1.3.4-1/jpeg/jccoefct.c ****        * block's DC value.  (Thanks to Thomas Kinsman for this idea.)
+ 168:fltk-1.3.4-1/jpeg/jccoefct.c ****        */
+ 169:fltk-1.3.4-1/jpeg/jccoefct.c ****       blkn = 0;
+ 170:fltk-1.3.4-1/jpeg/jccoefct.c ****       for (ci = 0; ci < cinfo->comps_in_scan; ci++) {
+ 171:fltk-1.3.4-1/jpeg/jccoefct.c **** 	compptr = cinfo->cur_comp_info[ci];
+ 172:fltk-1.3.4-1/jpeg/jccoefct.c **** 	forward_DCT = cinfo->fdct->forward_DCT[compptr->component_index];
+ 173:fltk-1.3.4-1/jpeg/jccoefct.c **** 	blockcnt = (MCU_col_num < last_MCU_col) ? compptr->MCU_width
+ 174:fltk-1.3.4-1/jpeg/jccoefct.c **** 						: compptr->last_col_width;
+ 175:fltk-1.3.4-1/jpeg/jccoefct.c **** 	xpos = MCU_col_num * compptr->MCU_sample_width;
+ 176:fltk-1.3.4-1/jpeg/jccoefct.c **** 	ypos = yoffset * compptr->DCT_v_scaled_size;
+ 177:fltk-1.3.4-1/jpeg/jccoefct.c **** 	/* ypos == (yoffset+yindex) * DCTSIZE */
+ 178:fltk-1.3.4-1/jpeg/jccoefct.c **** 	for (yindex = 0; yindex < compptr->MCU_height; yindex++) {
+ 179:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  if (coef->iMCU_row_num < last_iMCU_row ||
+ 180:fltk-1.3.4-1/jpeg/jccoefct.c **** 	      yoffset+yindex < compptr->last_row_height) {
+ 181:fltk-1.3.4-1/jpeg/jccoefct.c **** 	    (*forward_DCT) (cinfo, compptr,
+ 182:fltk-1.3.4-1/jpeg/jccoefct.c **** 			    input_buf[compptr->component_index],
+ 183:fltk-1.3.4-1/jpeg/jccoefct.c **** 			    coef->MCU_buffer[blkn],
+ 184:fltk-1.3.4-1/jpeg/jccoefct.c **** 			    ypos, xpos, (JDIMENSION) blockcnt);
+ 185:fltk-1.3.4-1/jpeg/jccoefct.c **** 	    if (blockcnt < compptr->MCU_width) {
+ 186:fltk-1.3.4-1/jpeg/jccoefct.c **** 	      /* Create some dummy blocks at the right edge of the image. */
+ 187:fltk-1.3.4-1/jpeg/jccoefct.c **** 	      FMEMZERO((void FAR *) coef->MCU_buffer[blkn + blockcnt],
+ 188:fltk-1.3.4-1/jpeg/jccoefct.c **** 		       (compptr->MCU_width - blockcnt) * SIZEOF(JBLOCK));
+ 189:fltk-1.3.4-1/jpeg/jccoefct.c **** 	      for (bi = blockcnt; bi < compptr->MCU_width; bi++) {
+ 190:fltk-1.3.4-1/jpeg/jccoefct.c **** 		coef->MCU_buffer[blkn+bi][0][0] = coef->MCU_buffer[blkn+bi-1][0][0];
+ 191:fltk-1.3.4-1/jpeg/jccoefct.c **** 	      }
+ 192:fltk-1.3.4-1/jpeg/jccoefct.c **** 	    }
+ 193:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  } else {
+ 194:fltk-1.3.4-1/jpeg/jccoefct.c **** 	    /* Create a row of dummy blocks at the bottom of the image. */
+ 195:fltk-1.3.4-1/jpeg/jccoefct.c **** 	    FMEMZERO((void FAR *) coef->MCU_buffer[blkn],
+ 196:fltk-1.3.4-1/jpeg/jccoefct.c **** 		     compptr->MCU_width * SIZEOF(JBLOCK));
+ 197:fltk-1.3.4-1/jpeg/jccoefct.c **** 	    for (bi = 0; bi < compptr->MCU_width; bi++) {
+ 198:fltk-1.3.4-1/jpeg/jccoefct.c **** 	      coef->MCU_buffer[blkn+bi][0][0] = coef->MCU_buffer[blkn-1][0][0];
+ 199:fltk-1.3.4-1/jpeg/jccoefct.c **** 	    }
+ 200:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  }
+ 201:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  blkn += compptr->MCU_width;
+ 202:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  ypos += compptr->DCT_v_scaled_size;
+ 203:fltk-1.3.4-1/jpeg/jccoefct.c **** 	}
+ 204:fltk-1.3.4-1/jpeg/jccoefct.c ****       }
+ 205:fltk-1.3.4-1/jpeg/jccoefct.c ****       /* Try to write the MCU.  In event of a suspension failure, we will
+ 206:fltk-1.3.4-1/jpeg/jccoefct.c ****        * re-DCT the MCU on restart (a bit inefficient, could be fixed...)
+ 207:fltk-1.3.4-1/jpeg/jccoefct.c ****        */
+ 208:fltk-1.3.4-1/jpeg/jccoefct.c ****       if (! (*cinfo->entropy->encode_mcu) (cinfo, coef->MCU_buffer)) {
+ 209:fltk-1.3.4-1/jpeg/jccoefct.c **** 	/* Suspension forced; update state counters and exit */
+ 210:fltk-1.3.4-1/jpeg/jccoefct.c **** 	coef->MCU_vert_offset = yoffset;
+ 211:fltk-1.3.4-1/jpeg/jccoefct.c **** 	coef->mcu_ctr = MCU_col_num;
+ 212:fltk-1.3.4-1/jpeg/jccoefct.c **** 	return FALSE;
+ 213:fltk-1.3.4-1/jpeg/jccoefct.c ****       }
+ 214:fltk-1.3.4-1/jpeg/jccoefct.c ****     }
+ 215:fltk-1.3.4-1/jpeg/jccoefct.c ****     /* Completed an MCU row, but perhaps not an iMCU row */
+ 216:fltk-1.3.4-1/jpeg/jccoefct.c ****     coef->mcu_ctr = 0;
+ 217:fltk-1.3.4-1/jpeg/jccoefct.c ****   }
+ 218:fltk-1.3.4-1/jpeg/jccoefct.c ****   /* Completed the iMCU row, advance counters for next one */
+ 219:fltk-1.3.4-1/jpeg/jccoefct.c ****   coef->iMCU_row_num++;
+ 220:fltk-1.3.4-1/jpeg/jccoefct.c ****   start_iMCU_row(cinfo);
+ 221:fltk-1.3.4-1/jpeg/jccoefct.c ****   return TRUE;
+ 222:fltk-1.3.4-1/jpeg/jccoefct.c **** }
+ 223:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 224:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 225:fltk-1.3.4-1/jpeg/jccoefct.c **** #ifdef FULL_COEF_BUFFER_SUPPORTED
+ 226:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 227:fltk-1.3.4-1/jpeg/jccoefct.c **** /*
+ 228:fltk-1.3.4-1/jpeg/jccoefct.c ****  * Process some data in the first pass of a multi-pass case.
+ 229:fltk-1.3.4-1/jpeg/jccoefct.c ****  * We process the equivalent of one fully interleaved MCU row ("iMCU" row)
+ 230:fltk-1.3.4-1/jpeg/jccoefct.c ****  * per call, ie, v_samp_factor block rows for each component in the image.
+ 231:fltk-1.3.4-1/jpeg/jccoefct.c ****  * This amount of data is read from the source buffer, DCT'd and quantized,
+ 232:fltk-1.3.4-1/jpeg/jccoefct.c ****  * and saved into the virtual arrays.  We also generate suitable dummy blocks
+ 233:fltk-1.3.4-1/jpeg/jccoefct.c ****  * as needed at the right and lower edges.  (The dummy blocks are constructed
+ 234:fltk-1.3.4-1/jpeg/jccoefct.c ****  * in the virtual arrays, which have been padded appropriately.)  This makes
+ 235:fltk-1.3.4-1/jpeg/jccoefct.c ****  * it possible for subsequent passes not to worry about real vs. dummy blocks.
+ 236:fltk-1.3.4-1/jpeg/jccoefct.c ****  *
+ 237:fltk-1.3.4-1/jpeg/jccoefct.c ****  * We must also emit the data to the entropy encoder.  This is conveniently
+ 238:fltk-1.3.4-1/jpeg/jccoefct.c ****  * done by calling compress_output() after we've loaded the current strip
+ 239:fltk-1.3.4-1/jpeg/jccoefct.c ****  * of the virtual arrays.
+ 240:fltk-1.3.4-1/jpeg/jccoefct.c ****  *
+ 241:fltk-1.3.4-1/jpeg/jccoefct.c ****  * NB: input_buf contains a plane for each component in image.  All
+ 242:fltk-1.3.4-1/jpeg/jccoefct.c ****  * components are DCT'd and loaded into the virtual arrays in this pass.
+ 243:fltk-1.3.4-1/jpeg/jccoefct.c ****  * However, it may be that only a subset of the components are emitted to
+ 244:fltk-1.3.4-1/jpeg/jccoefct.c ****  * the entropy encoder during this first pass; be careful about looking
+ 245:fltk-1.3.4-1/jpeg/jccoefct.c ****  * at the scan-dependent variables (MCU dimensions, etc).
+ 246:fltk-1.3.4-1/jpeg/jccoefct.c ****  */
+ 247:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 248:fltk-1.3.4-1/jpeg/jccoefct.c **** METHODDEF(boolean)
+ 249:fltk-1.3.4-1/jpeg/jccoefct.c **** compress_first_pass (j_compress_ptr cinfo, JSAMPIMAGE input_buf)
+ 250:fltk-1.3.4-1/jpeg/jccoefct.c **** {
+ 251:fltk-1.3.4-1/jpeg/jccoefct.c ****   my_coef_ptr coef = (my_coef_ptr) cinfo->coef;
+ 252:fltk-1.3.4-1/jpeg/jccoefct.c ****   JDIMENSION last_iMCU_row = cinfo->total_iMCU_rows - 1;
+ 253:fltk-1.3.4-1/jpeg/jccoefct.c ****   JDIMENSION blocks_across, MCUs_across, MCUindex;
+ 254:fltk-1.3.4-1/jpeg/jccoefct.c ****   int bi, ci, h_samp_factor, block_row, block_rows, ndummy;
+ 255:fltk-1.3.4-1/jpeg/jccoefct.c ****   JCOEF lastDC;
+ 256:fltk-1.3.4-1/jpeg/jccoefct.c ****   jpeg_component_info *compptr;
+ 257:fltk-1.3.4-1/jpeg/jccoefct.c ****   JBLOCKARRAY buffer;
+ 258:fltk-1.3.4-1/jpeg/jccoefct.c ****   JBLOCKROW thisblockrow, lastblockrow;
+ 259:fltk-1.3.4-1/jpeg/jccoefct.c ****   forward_DCT_ptr forward_DCT;
+ 260:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 261:fltk-1.3.4-1/jpeg/jccoefct.c ****   for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
+ 262:fltk-1.3.4-1/jpeg/jccoefct.c ****        ci++, compptr++) {
+ 263:fltk-1.3.4-1/jpeg/jccoefct.c ****     /* Align the virtual buffer for this component. */
+ 264:fltk-1.3.4-1/jpeg/jccoefct.c ****     buffer = (*cinfo->mem->access_virt_barray)
+ 265:fltk-1.3.4-1/jpeg/jccoefct.c ****       ((j_common_ptr) cinfo, coef->whole_image[ci],
+ 266:fltk-1.3.4-1/jpeg/jccoefct.c ****        coef->iMCU_row_num * compptr->v_samp_factor,
+ 267:fltk-1.3.4-1/jpeg/jccoefct.c ****        (JDIMENSION) compptr->v_samp_factor, TRUE);
+ 268:fltk-1.3.4-1/jpeg/jccoefct.c ****     /* Count non-dummy DCT block rows in this iMCU row. */
+ 269:fltk-1.3.4-1/jpeg/jccoefct.c ****     if (coef->iMCU_row_num < last_iMCU_row)
+ 270:fltk-1.3.4-1/jpeg/jccoefct.c ****       block_rows = compptr->v_samp_factor;
+ 271:fltk-1.3.4-1/jpeg/jccoefct.c ****     else {
+ 272:fltk-1.3.4-1/jpeg/jccoefct.c ****       /* NB: can't use last_row_height here, since may not be set! */
+ 273:fltk-1.3.4-1/jpeg/jccoefct.c ****       block_rows = (int) (compptr->height_in_blocks % compptr->v_samp_factor);
+ 274:fltk-1.3.4-1/jpeg/jccoefct.c ****       if (block_rows == 0) block_rows = compptr->v_samp_factor;
+ 275:fltk-1.3.4-1/jpeg/jccoefct.c ****     }
+ 276:fltk-1.3.4-1/jpeg/jccoefct.c ****     blocks_across = compptr->width_in_blocks;
+ 277:fltk-1.3.4-1/jpeg/jccoefct.c ****     h_samp_factor = compptr->h_samp_factor;
+ 278:fltk-1.3.4-1/jpeg/jccoefct.c ****     /* Count number of dummy blocks to be added at the right margin. */
+ 279:fltk-1.3.4-1/jpeg/jccoefct.c ****     ndummy = (int) (blocks_across % h_samp_factor);
+ 280:fltk-1.3.4-1/jpeg/jccoefct.c ****     if (ndummy > 0)
+ 281:fltk-1.3.4-1/jpeg/jccoefct.c ****       ndummy = h_samp_factor - ndummy;
+ 282:fltk-1.3.4-1/jpeg/jccoefct.c ****     forward_DCT = cinfo->fdct->forward_DCT[ci];
+ 283:fltk-1.3.4-1/jpeg/jccoefct.c ****     /* Perform DCT for all non-dummy blocks in this iMCU row.  Each call
+ 284:fltk-1.3.4-1/jpeg/jccoefct.c ****      * on forward_DCT processes a complete horizontal row of DCT blocks.
+ 285:fltk-1.3.4-1/jpeg/jccoefct.c ****      */
+ 286:fltk-1.3.4-1/jpeg/jccoefct.c ****     for (block_row = 0; block_row < block_rows; block_row++) {
+ 287:fltk-1.3.4-1/jpeg/jccoefct.c ****       thisblockrow = buffer[block_row];
+ 288:fltk-1.3.4-1/jpeg/jccoefct.c ****       (*forward_DCT) (cinfo, compptr, input_buf[ci], thisblockrow,
+ 289:fltk-1.3.4-1/jpeg/jccoefct.c **** 		      (JDIMENSION) (block_row * compptr->DCT_v_scaled_size),
+ 290:fltk-1.3.4-1/jpeg/jccoefct.c **** 		      (JDIMENSION) 0, blocks_across);
+ 291:fltk-1.3.4-1/jpeg/jccoefct.c ****       if (ndummy > 0) {
+ 292:fltk-1.3.4-1/jpeg/jccoefct.c **** 	/* Create dummy blocks at the right edge of the image. */
+ 293:fltk-1.3.4-1/jpeg/jccoefct.c **** 	thisblockrow += blocks_across; /* => first dummy block */
+ 294:fltk-1.3.4-1/jpeg/jccoefct.c **** 	FMEMZERO((void FAR *) thisblockrow, ndummy * SIZEOF(JBLOCK));
+ 295:fltk-1.3.4-1/jpeg/jccoefct.c **** 	lastDC = thisblockrow[-1][0];
+ 296:fltk-1.3.4-1/jpeg/jccoefct.c **** 	for (bi = 0; bi < ndummy; bi++) {
+ 297:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  thisblockrow[bi][0] = lastDC;
+ 298:fltk-1.3.4-1/jpeg/jccoefct.c **** 	}
+ 299:fltk-1.3.4-1/jpeg/jccoefct.c ****       }
+ 300:fltk-1.3.4-1/jpeg/jccoefct.c ****     }
+ 301:fltk-1.3.4-1/jpeg/jccoefct.c ****     /* If at end of image, create dummy block rows as needed.
+ 302:fltk-1.3.4-1/jpeg/jccoefct.c ****      * The tricky part here is that within each MCU, we want the DC values
+ 303:fltk-1.3.4-1/jpeg/jccoefct.c ****      * of the dummy blocks to match the last real block's DC value.
+ 304:fltk-1.3.4-1/jpeg/jccoefct.c ****      * This squeezes a few more bytes out of the resulting file...
+ 305:fltk-1.3.4-1/jpeg/jccoefct.c ****      */
+ 306:fltk-1.3.4-1/jpeg/jccoefct.c ****     if (coef->iMCU_row_num == last_iMCU_row) {
+ 307:fltk-1.3.4-1/jpeg/jccoefct.c ****       blocks_across += ndummy;	/* include lower right corner */
+ 308:fltk-1.3.4-1/jpeg/jccoefct.c ****       MCUs_across = blocks_across / h_samp_factor;
+ 309:fltk-1.3.4-1/jpeg/jccoefct.c ****       for (block_row = block_rows; block_row < compptr->v_samp_factor;
+ 310:fltk-1.3.4-1/jpeg/jccoefct.c **** 	   block_row++) {
+ 311:fltk-1.3.4-1/jpeg/jccoefct.c **** 	thisblockrow = buffer[block_row];
+ 312:fltk-1.3.4-1/jpeg/jccoefct.c **** 	lastblockrow = buffer[block_row-1];
+ 313:fltk-1.3.4-1/jpeg/jccoefct.c **** 	FMEMZERO((void FAR *) thisblockrow,
+ 314:fltk-1.3.4-1/jpeg/jccoefct.c **** 		 (size_t) (blocks_across * SIZEOF(JBLOCK)));
+ 315:fltk-1.3.4-1/jpeg/jccoefct.c **** 	for (MCUindex = 0; MCUindex < MCUs_across; MCUindex++) {
+ 316:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  lastDC = lastblockrow[h_samp_factor-1][0];
+ 317:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  for (bi = 0; bi < h_samp_factor; bi++) {
+ 318:fltk-1.3.4-1/jpeg/jccoefct.c **** 	    thisblockrow[bi][0] = lastDC;
+ 319:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  }
+ 320:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  thisblockrow += h_samp_factor; /* advance to next MCU in row */
+ 321:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  lastblockrow += h_samp_factor;
+ 322:fltk-1.3.4-1/jpeg/jccoefct.c **** 	}
+ 323:fltk-1.3.4-1/jpeg/jccoefct.c ****       }
+ 324:fltk-1.3.4-1/jpeg/jccoefct.c ****     }
+ 325:fltk-1.3.4-1/jpeg/jccoefct.c ****   }
+ 326:fltk-1.3.4-1/jpeg/jccoefct.c ****   /* NB: compress_output will increment iMCU_row_num if successful.
+ 327:fltk-1.3.4-1/jpeg/jccoefct.c ****    * A suspension return will result in redoing all the work above next time.
+ 328:fltk-1.3.4-1/jpeg/jccoefct.c ****    */
+ 329:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 330:fltk-1.3.4-1/jpeg/jccoefct.c ****   /* Emit data to the entropy encoder, sharing code with subsequent passes */
+ 331:fltk-1.3.4-1/jpeg/jccoefct.c ****   return compress_output(cinfo, input_buf);
+ 332:fltk-1.3.4-1/jpeg/jccoefct.c **** }
+ 333:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 334:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 335:fltk-1.3.4-1/jpeg/jccoefct.c **** /*
+ 336:fltk-1.3.4-1/jpeg/jccoefct.c ****  * Process some data in subsequent passes of a multi-pass case.
+ 337:fltk-1.3.4-1/jpeg/jccoefct.c ****  * We process the equivalent of one fully interleaved MCU row ("iMCU" row)
+ 338:fltk-1.3.4-1/jpeg/jccoefct.c ****  * per call, ie, v_samp_factor block rows for each component in the scan.
+ 339:fltk-1.3.4-1/jpeg/jccoefct.c ****  * The data is obtained from the virtual arrays and fed to the entropy coder.
+ 340:fltk-1.3.4-1/jpeg/jccoefct.c ****  * Returns TRUE if the iMCU row is completed, FALSE if suspended.
+ 341:fltk-1.3.4-1/jpeg/jccoefct.c ****  *
+ 342:fltk-1.3.4-1/jpeg/jccoefct.c ****  * NB: input_buf is ignored; it is likely to be a NULL pointer.
+ 343:fltk-1.3.4-1/jpeg/jccoefct.c ****  */
+ 344:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 345:fltk-1.3.4-1/jpeg/jccoefct.c **** METHODDEF(boolean)
+ 346:fltk-1.3.4-1/jpeg/jccoefct.c **** compress_output (j_compress_ptr cinfo, JSAMPIMAGE input_buf)
+ 347:fltk-1.3.4-1/jpeg/jccoefct.c **** {
+ 200              		.loc 1 347 0
+ 201              		.cfi_startproc
+ 202              	.LVL21:
+ 203 0000 4157     		pushq	%r15
+ 204              		.cfi_def_cfa_offset 16
+ 205              		.cfi_offset 15, -16
+ 206 0002 4156     		pushq	%r14
+ 207              		.cfi_def_cfa_offset 24
+ 208              		.cfi_offset 14, -24
+ 209 0004 4155     		pushq	%r13
+ 210              		.cfi_def_cfa_offset 32
+ 211              		.cfi_offset 13, -32
+ 212 0006 4154     		pushq	%r12
+ 213              		.cfi_def_cfa_offset 40
+ 214              		.cfi_offset 12, -40
+ 348:fltk-1.3.4-1/jpeg/jccoefct.c ****   my_coef_ptr coef = (my_coef_ptr) cinfo->coef;
+ 349:fltk-1.3.4-1/jpeg/jccoefct.c ****   JDIMENSION MCU_col_num;	/* index of current MCU within row */
+ 350:fltk-1.3.4-1/jpeg/jccoefct.c ****   int blkn, ci, xindex, yindex, yoffset;
+ 351:fltk-1.3.4-1/jpeg/jccoefct.c ****   JDIMENSION start_col;
+ 352:fltk-1.3.4-1/jpeg/jccoefct.c ****   JBLOCKARRAY buffer[MAX_COMPS_IN_SCAN];
+ 353:fltk-1.3.4-1/jpeg/jccoefct.c ****   JBLOCKROW buffer_ptr;
+ 354:fltk-1.3.4-1/jpeg/jccoefct.c ****   jpeg_component_info *compptr;
+ 355:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 356:fltk-1.3.4-1/jpeg/jccoefct.c ****   /* Align the virtual buffers for the components used in this scan.
+ 357:fltk-1.3.4-1/jpeg/jccoefct.c ****    * NB: during first pass, this is safe only because the buffers will
+ 358:fltk-1.3.4-1/jpeg/jccoefct.c ****    * already be aligned properly, so jmemmgr.c won't need to do any I/O.
+ 359:fltk-1.3.4-1/jpeg/jccoefct.c ****    */
+ 360:fltk-1.3.4-1/jpeg/jccoefct.c ****   for (ci = 0; ci < cinfo->comps_in_scan; ci++) {
+ 215              		.loc 1 360 0
+ 216 0008 4531ED   		xorl	%r13d, %r13d
+ 347:fltk-1.3.4-1/jpeg/jccoefct.c ****   my_coef_ptr coef = (my_coef_ptr) cinfo->coef;
+ 217              		.loc 1 347 0
+ 218 000b 55       		pushq	%rbp
+ 219              		.cfi_def_cfa_offset 48
+ 220              		.cfi_offset 6, -48
+ 221 000c 53       		pushq	%rbx
+ 222              		.cfi_def_cfa_offset 56
+ 223              		.cfi_offset 3, -56
+ 224              		.loc 1 360 0
+ 225 000d 4531E4   		xorl	%r12d, %r12d
+ 347:fltk-1.3.4-1/jpeg/jccoefct.c ****   my_coef_ptr coef = (my_coef_ptr) cinfo->coef;
+ 226              		.loc 1 347 0
+ 227 0010 4889FD   		movq	%rdi, %rbp
+ 228 0013 4883EC48 		subq	$72, %rsp
+ 229              		.cfi_def_cfa_offset 128
+ 230              		.loc 1 360 0
+ 231 0017 448B8774 		movl	372(%rdi), %r8d
+ 231      010000
+ 348:fltk-1.3.4-1/jpeg/jccoefct.c ****   my_coef_ptr coef = (my_coef_ptr) cinfo->coef;
+ 232              		.loc 1 348 0
+ 233 001e 488B9F08 		movq	520(%rdi), %rbx
+ 233      020000
+ 234              	.LVL22:
+ 347:fltk-1.3.4-1/jpeg/jccoefct.c ****   my_coef_ptr coef = (my_coef_ptr) cinfo->coef;
+ 235              		.loc 1 347 0
+ 236 0025 64488B04 		movq	%fs:40, %rax
+ 236      25280000 
+ 236      00
+ 237 002e 48894424 		movq	%rax, 56(%rsp)
+ 237      38
+ 238 0033 31C0     		xorl	%eax, %eax
+ 239              		.loc 1 360 0
+ 240 0035 4585C0   		testl	%r8d, %r8d
+ 241 0038 7E3D     		jle	.L24
+ 242              	.LVL23:
+ 243              	.L23:
+ 361:fltk-1.3.4-1/jpeg/jccoefct.c ****     compptr = cinfo->cur_comp_info[ci];
+ 244              		.loc 1 361 0 discriminator 3
+ 245 003a 4A8B8425 		movq	376(%rbp,%r12), %rax
+ 245      78010000 
+ 246              	.LVL24:
+ 362:fltk-1.3.4-1/jpeg/jccoefct.c ****     buffer[ci] = (*cinfo->mem->access_virt_barray)
+ 247              		.loc 1 362 0 discriminator 3
+ 248 0042 8B5310   		movl	16(%rbx), %edx
+ 249 0045 4531C0   		xorl	%r8d, %r8d
+ 250 0048 4889EF   		movq	%rbp, %rdi
+ 360:fltk-1.3.4-1/jpeg/jccoefct.c ****     compptr = cinfo->cur_comp_info[ci];
+ 251              		.loc 1 360 0 discriminator 3
+ 252 004b 4183C501 		addl	$1, %r13d
+ 253              	.LVL25:
+ 254              		.loc 1 362 0 discriminator 3
+ 255 004f 8B480C   		movl	12(%rax), %ecx
+ 256 0052 48634004 		movslq	4(%rax), %rax
+ 257              	.LVL26:
+ 258 0056 0FAFD1   		imull	%ecx, %edx
+ 259 0059 488B74C3 		movq	112(%rbx,%rax,8), %rsi
+ 259      70
+ 260 005e 488B4508 		movq	8(%rbp), %rax
+ 261 0062 FF5040   		call	*64(%rax)
+ 262              	.LVL27:
+ 263 0065 4A894424 		movq	%rax, 16(%rsp,%r12)
+ 263      10
+ 264 006a 4983C408 		addq	$8, %r12
+ 360:fltk-1.3.4-1/jpeg/jccoefct.c ****     compptr = cinfo->cur_comp_info[ci];
+ 265              		.loc 1 360 0 discriminator 3
+ 266 006e 4439AD74 		cmpl	%r13d, 372(%rbp)
+ 266      010000
+ 267 0075 7FC3     		jg	.L23
+ 268              	.LVL28:
+ 269              	.L24:
+ 363:fltk-1.3.4-1/jpeg/jccoefct.c ****       ((j_common_ptr) cinfo, coef->whole_image[compptr->component_index],
+ 364:fltk-1.3.4-1/jpeg/jccoefct.c ****        coef->iMCU_row_num * compptr->v_samp_factor,
+ 365:fltk-1.3.4-1/jpeg/jccoefct.c ****        (JDIMENSION) compptr->v_samp_factor, FALSE);
+ 366:fltk-1.3.4-1/jpeg/jccoefct.c ****   }
+ 367:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 368:fltk-1.3.4-1/jpeg/jccoefct.c ****   /* Loop to process one whole iMCU row */
+ 369:fltk-1.3.4-1/jpeg/jccoefct.c ****   for (yoffset = coef->MCU_vert_offset; yoffset < coef->MCU_rows_per_iMCU_row;
+ 270              		.loc 1 369 0
+ 271 0077 8B4318   		movl	24(%rbx), %eax
+ 272 007a 3B431C   		cmpl	28(%rbx), %eax
+ 273 007d 89442404 		movl	%eax, 4(%rsp)
+ 274              	.LVL29:
+ 275 0081 0F8D0501 		jge	.L22
+ 275      0000
+ 276 0087 4C636C24 		movslq	4(%rsp), %r13
+ 276      04
+ 277 008c 488D4320 		leaq	32(%rbx), %rax
+ 278              	.LVL30:
+ 279 0090 448B6314 		movl	20(%rbx), %r12d
+ 280 0094 48894424 		movq	%rax, 8(%rsp)
+ 280      08
+ 281              	.LVL31:
+ 282 0099 49C1E503 		salq	$3, %r13
+ 283              	.LVL32:
+ 284              	.L52:
+ 370:fltk-1.3.4-1/jpeg/jccoefct.c ****        yoffset++) {
+ 371:fltk-1.3.4-1/jpeg/jccoefct.c ****     for (MCU_col_num = coef->mcu_ctr; MCU_col_num < cinfo->MCUs_per_row;
+ 285              		.loc 1 371 0
+ 286 009d 4439A598 		cmpl	%r12d, 408(%rbp)
+ 286      010000
+ 287 00a4 0F86C200 		jbe	.L27
+ 287      0000
+ 288              	.L55:
+ 289              	.LVL33:
+ 372:fltk-1.3.4-1/jpeg/jccoefct.c **** 	 MCU_col_num++) {
+ 373:fltk-1.3.4-1/jpeg/jccoefct.c ****       /* Construct list of pointers to DCT blocks belonging to this MCU */
+ 374:fltk-1.3.4-1/jpeg/jccoefct.c ****       blkn = 0;			/* index of current DCT block within MCU */
+ 375:fltk-1.3.4-1/jpeg/jccoefct.c ****       for (ci = 0; ci < cinfo->comps_in_scan; ci++) {
+ 290              		.loc 1 375 0 discriminator 1
+ 291 00aa 8B857401 		movl	372(%rbp), %eax
+ 291      0000
+ 292 00b0 85C0     		testl	%eax, %eax
+ 293 00b2 0F8E8D00 		jle	.L37
+ 293      0000
+ 294              		.loc 1 375 0 is_stmt 0
+ 295 00b8 4531DB   		xorl	%r11d, %r11d
+ 296 00bb 4531F6   		xorl	%r14d, %r14d
+ 297 00be 31C0     		xorl	%eax, %eax
+ 298              	.LVL34:
+ 299              	.L33:
+ 376:fltk-1.3.4-1/jpeg/jccoefct.c **** 	compptr = cinfo->cur_comp_info[ci];
+ 300              		.loc 1 376 0 is_stmt 1
+ 301 00c0 4A8BB41D 		movq	376(%rbp,%r11), %rsi
+ 301      78010000 
+ 302              	.LVL35:
+ 377:fltk-1.3.4-1/jpeg/jccoefct.c **** 	start_col = MCU_col_num * compptr->MCU_width;
+ 303              		.loc 1 377 0
+ 304 00c8 8B5638   		movl	56(%rsi), %edx
+ 378:fltk-1.3.4-1/jpeg/jccoefct.c **** 	for (yindex = 0; yindex < compptr->MCU_height; yindex++) {
+ 305              		.loc 1 378 0
+ 306 00cb 8B7E3C   		movl	60(%rsi), %edi
+ 377:fltk-1.3.4-1/jpeg/jccoefct.c **** 	start_col = MCU_col_num * compptr->MCU_width;
+ 307              		.loc 1 377 0
+ 308 00ce 89D1     		movl	%edx, %ecx
+ 309 00d0 410FAFCC 		imull	%r12d, %ecx
+ 310              	.LVL36:
+ 311              		.loc 1 378 0
+ 312 00d4 85FF     		testl	%edi, %edi
+ 313 00d6 7E58     		jle	.L29
+ 314 00d8 4D89E8   		movq	%r13, %r8
+ 315 00db 4E03441C 		addq	16(%rsp,%r11), %r8
+ 315      10
+ 316 00e0 4189CA   		movl	%ecx, %r10d
+ 317 00e3 49C1E207 		salq	$7, %r10
+ 318 00e7 89C7     		movl	%eax, %edi
+ 319 00e9 4531C9   		xorl	%r9d, %r9d
+ 320              	.LVL37:
+ 321 00ec 0F1F4000 		.p2align 4,,10
+ 322              		.p2align 3
+ 323              	.L32:
+ 379:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  buffer_ptr = buffer[ci][yindex+yoffset] + start_col;
+ 324              		.loc 1 379 0
+ 325 00f0 4C89D1   		movq	%r10, %rcx
+ 326 00f3 490308   		addq	(%r8), %rcx
+ 327              	.LVL38:
+ 380:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  for (xindex = 0; xindex < compptr->MCU_width; xindex++) {
+ 328              		.loc 1 380 0
+ 329 00f6 85D2     		testl	%edx, %edx
+ 330 00f8 7E21     		jle	.L30
+ 331              		.loc 1 380 0 is_stmt 0 discriminator 3
+ 332 00fa 4863D0   		movslq	%eax, %rdx
+ 333              	.LVL39:
+ 334 00fd 0F1F00   		.p2align 4,,10
+ 335              		.p2align 3
+ 336              	.L31:
+ 381:fltk-1.3.4-1/jpeg/jccoefct.c **** 	    coef->MCU_buffer[blkn++] = buffer_ptr++;
+ 337              		.loc 1 381 0 is_stmt 1 discriminator 3
+ 338 0100 83C001   		addl	$1, %eax
+ 339              	.LVL40:
+ 340 0103 48894CD3 		movq	%rcx, 32(%rbx,%rdx,8)
+ 340      20
+ 341              	.LVL41:
+ 342 0108 4883E980 		subq	$-128, %rcx
+ 343              	.LVL42:
+ 380:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  for (xindex = 0; xindex < compptr->MCU_width; xindex++) {
+ 344              		.loc 1 380 0 discriminator 3
+ 345 010c 4189C7   		movl	%eax, %r15d
+ 346              		.loc 1 381 0 discriminator 3
+ 347 010f 4863D0   		movslq	%eax, %rdx
+ 380:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  for (xindex = 0; xindex < compptr->MCU_width; xindex++) {
+ 348              		.loc 1 380 0 discriminator 3
+ 349 0112 4129FF   		subl	%edi, %r15d
+ 350              	.LVL43:
+ 351 0115 44397E38 		cmpl	%r15d, 56(%rsi)
+ 352 0119 7FE5     		jg	.L31
+ 353              	.LVL44:
+ 354              	.L30:
+ 378:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  buffer_ptr = buffer[ci][yindex+yoffset] + start_col;
+ 355              		.loc 1 378 0 discriminator 2
+ 356 011b 4183C101 		addl	$1, %r9d
+ 357              	.LVL45:
+ 358 011f 4983C008 		addq	$8, %r8
+ 359 0123 44394E3C 		cmpl	%r9d, 60(%rsi)
+ 360 0127 7E07     		jle	.L29
+ 361 0129 8B5638   		movl	56(%rsi), %edx
+ 378:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  buffer_ptr = buffer[ci][yindex+yoffset] + start_col;
+ 362              		.loc 1 378 0 is_stmt 0
+ 363 012c 89C7     		movl	%eax, %edi
+ 364 012e EBC0     		jmp	.L32
+ 365              	.LVL46:
+ 366              	.L29:
+ 375:fltk-1.3.4-1/jpeg/jccoefct.c **** 	compptr = cinfo->cur_comp_info[ci];
+ 367              		.loc 1 375 0 is_stmt 1 discriminator 2
+ 368 0130 4183C601 		addl	$1, %r14d
+ 369              	.LVL47:
+ 370 0134 4983C308 		addq	$8, %r11
+ 371 0138 4439B574 		cmpl	%r14d, 372(%rbp)
+ 371      010000
+ 372 013f 0F8F7BFF 		jg	.L33
+ 372      FFFF
+ 373              	.LVL48:
+ 374              	.L37:
+ 382:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  }
+ 383:fltk-1.3.4-1/jpeg/jccoefct.c **** 	}
+ 384:fltk-1.3.4-1/jpeg/jccoefct.c ****       }
+ 385:fltk-1.3.4-1/jpeg/jccoefct.c ****       /* Try to write the MCU. */
+ 386:fltk-1.3.4-1/jpeg/jccoefct.c ****       if (! (*cinfo->entropy->encode_mcu) (cinfo, coef->MCU_buffer)) {
+ 375              		.loc 1 386 0
+ 376 0145 488B8530 		movq	560(%rbp), %rax
+ 376      020000
+ 377 014c 488B7424 		movq	8(%rsp), %rsi
+ 377      08
+ 378 0151 4889EF   		movq	%rbp, %rdi
+ 379 0154 FF5008   		call	*8(%rax)
+ 380              	.LVL49:
+ 381 0157 85C0     		testl	%eax, %eax
+ 382 0159 7465     		je	.L54
+ 372:fltk-1.3.4-1/jpeg/jccoefct.c ****       /* Construct list of pointers to DCT blocks belonging to this MCU */
+ 383              		.loc 1 372 0
+ 384 015b 4183C401 		addl	$1, %r12d
+ 385              	.LVL50:
+ 371:fltk-1.3.4-1/jpeg/jccoefct.c **** 	 MCU_col_num++) {
+ 386              		.loc 1 371 0
+ 387 015f 4439A598 		cmpl	%r12d, 408(%rbp)
+ 387      010000
+ 388 0166 0F873EFF 		ja	.L55
+ 388      FFFF
+ 389              	.L27:
+ 370:fltk-1.3.4-1/jpeg/jccoefct.c ****     for (MCU_col_num = coef->mcu_ctr; MCU_col_num < cinfo->MCUs_per_row;
+ 390              		.loc 1 370 0
+ 391 016c 83442404 		addl	$1, 4(%rsp)
+ 391      01
+ 392 0171 4983C508 		addq	$8, %r13
+ 393 0175 4531E4   		xorl	%r12d, %r12d
+ 394              	.LVL51:
+ 395 0178 8B442404 		movl	4(%rsp), %eax
+ 396              	.LVL52:
+ 369:fltk-1.3.4-1/jpeg/jccoefct.c ****        yoffset++) {
+ 397              		.loc 1 369 0
+ 398 017c 39431C   		cmpl	%eax, 28(%rbx)
+ 387:fltk-1.3.4-1/jpeg/jccoefct.c **** 	/* Suspension forced; update state counters and exit */
+ 388:fltk-1.3.4-1/jpeg/jccoefct.c **** 	coef->MCU_vert_offset = yoffset;
+ 389:fltk-1.3.4-1/jpeg/jccoefct.c **** 	coef->mcu_ctr = MCU_col_num;
+ 390:fltk-1.3.4-1/jpeg/jccoefct.c **** 	return FALSE;
+ 391:fltk-1.3.4-1/jpeg/jccoefct.c ****       }
+ 392:fltk-1.3.4-1/jpeg/jccoefct.c ****     }
+ 393:fltk-1.3.4-1/jpeg/jccoefct.c ****     /* Completed an MCU row, but perhaps not an iMCU row */
+ 394:fltk-1.3.4-1/jpeg/jccoefct.c ****     coef->mcu_ctr = 0;
+ 399              		.loc 1 394 0
+ 400 017f C7431400 		movl	$0, 20(%rbx)
+ 400      000000
+ 369:fltk-1.3.4-1/jpeg/jccoefct.c ****        yoffset++) {
+ 401              		.loc 1 369 0
+ 402 0186 0F8F11FF 		jg	.L52
+ 402      FFFF
+ 403              	.L22:
+ 395:fltk-1.3.4-1/jpeg/jccoefct.c ****   }
+ 396:fltk-1.3.4-1/jpeg/jccoefct.c ****   /* Completed the iMCU row, advance counters for next one */
+ 397:fltk-1.3.4-1/jpeg/jccoefct.c ****   coef->iMCU_row_num++;
+ 404              		.loc 1 397 0
+ 405 018c 83431001 		addl	$1, 16(%rbx)
+ 406              	.LVL53:
+ 407              	.LBB28:
+ 408              	.LBB29:
+  82:fltk-1.3.4-1/jpeg/jccoefct.c ****     coef->MCU_rows_per_iMCU_row = 1;
+ 409              		.loc 1 82 0
+ 410 0190 83BD7401 		cmpl	$1, 372(%rbp)
+ 410      000001
+  76:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 411              		.loc 1 76 0
+ 412 0197 488B8508 		movq	520(%rbp), %rax
+ 412      020000
+ 413              	.LVL54:
+  82:fltk-1.3.4-1/jpeg/jccoefct.c ****     coef->MCU_rows_per_iMCU_row = 1;
+ 414              		.loc 1 82 0
+ 415 019e 7E4F     		jle	.L56
+  83:fltk-1.3.4-1/jpeg/jccoefct.c ****   } else {
+ 416              		.loc 1 83 0
+ 417 01a0 C7401C01 		movl	$1, 28(%rax)
+ 417      000000
+ 418              	.L39:
+  91:fltk-1.3.4-1/jpeg/jccoefct.c ****   coef->MCU_vert_offset = 0;
+ 419              		.loc 1 91 0
+ 420 01a7 C7401400 		movl	$0, 20(%rax)
+ 420      000000
+  92:fltk-1.3.4-1/jpeg/jccoefct.c **** }
+ 421              		.loc 1 92 0
+ 422 01ae C7401800 		movl	$0, 24(%rax)
+ 422      000000
+ 423              	.LVL55:
+ 424              	.LBE29:
+ 425              	.LBE28:
+ 398:fltk-1.3.4-1/jpeg/jccoefct.c ****   start_iMCU_row(cinfo);
+ 399:fltk-1.3.4-1/jpeg/jccoefct.c ****   return TRUE;
+ 426              		.loc 1 399 0
+ 427 01b5 B8010000 		movl	$1, %eax
+ 427      00
+ 428 01ba EB0F     		jmp	.L35
+ 429              	.LVL56:
+ 430 01bc 0F1F4000 		.p2align 4,,10
+ 431              		.p2align 3
+ 432              	.L54:
+ 388:fltk-1.3.4-1/jpeg/jccoefct.c **** 	coef->mcu_ctr = MCU_col_num;
+ 433              		.loc 1 388 0
+ 434 01c0 8B7C2404 		movl	4(%rsp), %edi
+ 389:fltk-1.3.4-1/jpeg/jccoefct.c **** 	return FALSE;
+ 435              		.loc 1 389 0
+ 436 01c4 44896314 		movl	%r12d, 20(%rbx)
+ 388:fltk-1.3.4-1/jpeg/jccoefct.c **** 	coef->mcu_ctr = MCU_col_num;
+ 437              		.loc 1 388 0
+ 438 01c8 897B18   		movl	%edi, 24(%rbx)
+ 439              	.LVL57:
+ 440              	.L35:
+ 400:fltk-1.3.4-1/jpeg/jccoefct.c **** }
+ 441              		.loc 1 400 0
+ 442 01cb 488B7C24 		movq	56(%rsp), %rdi
+ 442      38
+ 443 01d0 6448333C 		xorq	%fs:40, %rdi
+ 443      25280000 
+ 443      00
+ 444 01d9 750F     		jne	.L57
+ 445 01db 4883C448 		addq	$72, %rsp
+ 446              		.cfi_remember_state
+ 447              		.cfi_def_cfa_offset 56
+ 448 01df 5B       		popq	%rbx
+ 449              		.cfi_def_cfa_offset 48
+ 450              	.LVL58:
+ 451 01e0 5D       		popq	%rbp
+ 452              		.cfi_def_cfa_offset 40
+ 453              	.LVL59:
+ 454 01e1 415C     		popq	%r12
+ 455              		.cfi_def_cfa_offset 32
+ 456 01e3 415D     		popq	%r13
+ 457              		.cfi_def_cfa_offset 24
+ 458 01e5 415E     		popq	%r14
+ 459              		.cfi_def_cfa_offset 16
+ 460 01e7 415F     		popq	%r15
+ 461              		.cfi_def_cfa_offset 8
+ 462 01e9 C3       		ret
+ 463              	.LVL60:
+ 464              	.L57:
+ 465              		.cfi_restore_state
+ 466 01ea E8000000 		call	__stack_chk_fail
+ 466      00
+ 467              	.LVL61:
+ 468              	.L56:
+ 469              	.LBB31:
+ 470              	.LBB30:
+  85:fltk-1.3.4-1/jpeg/jccoefct.c ****       coef->MCU_rows_per_iMCU_row = cinfo->cur_comp_info[0]->v_samp_factor;
+ 471              		.loc 1 85 0
+ 472 01ef 8BBD7001 		movl	368(%rbp), %edi
+ 472      0000
+ 473 01f5 8D57FF   		leal	-1(%rdi), %edx
+ 474 01f8 395010   		cmpl	%edx, 16(%rax)
+  86:fltk-1.3.4-1/jpeg/jccoefct.c ****     else
+ 475              		.loc 1 86 0
+ 476 01fb 488B9578 		movq	376(%rbp), %rdx
+ 476      010000
+  85:fltk-1.3.4-1/jpeg/jccoefct.c ****       coef->MCU_rows_per_iMCU_row = cinfo->cur_comp_info[0]->v_samp_factor;
+ 477              		.loc 1 85 0
+ 478 0202 7308     		jnb	.L40
+  86:fltk-1.3.4-1/jpeg/jccoefct.c ****     else
+ 479              		.loc 1 86 0
+ 480 0204 8B520C   		movl	12(%rdx), %edx
+ 481 0207 89501C   		movl	%edx, 28(%rax)
+ 482 020a EB9B     		jmp	.L39
+ 483              	.L40:
+  88:fltk-1.3.4-1/jpeg/jccoefct.c ****   }
+ 484              		.loc 1 88 0
+ 485 020c 8B524C   		movl	76(%rdx), %edx
+ 486 020f 89501C   		movl	%edx, 28(%rax)
+ 487 0212 EB93     		jmp	.L39
+ 488              	.LBE30:
+ 489              	.LBE31:
+ 490              		.cfi_endproc
+ 491              	.LFE65:
+ 493              		.section	.text.unlikely.compress_output
+ 494              	.LCOLDE1:
+ 495              		.section	.text.compress_output
+ 496              	.LHOTE1:
+ 497              		.section	.text.unlikely.compress_data,"ax",@progbits
+ 498              	.LCOLDB2:
+ 499              		.section	.text.compress_data,"ax",@progbits
+ 500              	.LHOTB2:
+ 501              		.p2align 4,,15
+ 503              	compress_data:
+ 504              	.LFB63:
+ 145:fltk-1.3.4-1/jpeg/jccoefct.c ****   my_coef_ptr coef = (my_coef_ptr) cinfo->coef;
+ 505              		.loc 1 145 0
+ 506              		.cfi_startproc
+ 507              	.LVL62:
+ 508 0000 4157     		pushq	%r15
+ 509              		.cfi_def_cfa_offset 16
+ 510              		.cfi_offset 15, -16
+ 511 0002 4156     		pushq	%r14
+ 512              		.cfi_def_cfa_offset 24
+ 513              		.cfi_offset 14, -24
+ 514 0004 4889F8   		movq	%rdi, %rax
+ 515 0007 4155     		pushq	%r13
+ 516              		.cfi_def_cfa_offset 32
+ 517              		.cfi_offset 13, -32
+ 518 0009 4154     		pushq	%r12
+ 519              		.cfi_def_cfa_offset 40
+ 520              		.cfi_offset 12, -40
+ 521 000b 55       		pushq	%rbp
+ 522              		.cfi_def_cfa_offset 48
+ 523              		.cfi_offset 6, -48
+ 524 000c 53       		pushq	%rbx
+ 525              		.cfi_def_cfa_offset 56
+ 526              		.cfi_offset 3, -56
+ 527 000d 4883EC58 		subq	$88, %rsp
+ 528              		.cfi_def_cfa_offset 144
+ 149:fltk-1.3.4-1/jpeg/jccoefct.c ****   int blkn, bi, ci, yindex, yoffset, blockcnt;
+ 529              		.loc 1 149 0
+ 530 0011 8B807001 		movl	368(%rax), %eax
+ 530      0000
+ 146:fltk-1.3.4-1/jpeg/jccoefct.c ****   JDIMENSION MCU_col_num;	/* index of current MCU within row */
+ 531              		.loc 1 146 0
+ 532 0017 4C8BB708 		movq	520(%rdi), %r14
+ 532      020000
+ 533              	.LVL63:
+ 145:fltk-1.3.4-1/jpeg/jccoefct.c ****   my_coef_ptr coef = (my_coef_ptr) cinfo->coef;
+ 534              		.loc 1 145 0
+ 535 001e 48897C24 		movq	%rdi, 8(%rsp)
+ 535      08
+ 148:fltk-1.3.4-1/jpeg/jccoefct.c ****   JDIMENSION last_iMCU_row = cinfo->total_iMCU_rows - 1;
+ 536              		.loc 1 148 0
+ 537 0023 8BBF9801 		movl	408(%rdi), %edi
+ 537      0000
+ 538              	.LVL64:
+ 145:fltk-1.3.4-1/jpeg/jccoefct.c ****   my_coef_ptr coef = (my_coef_ptr) cinfo->coef;
+ 539              		.loc 1 145 0
+ 540 0029 48897424 		movq	%rsi, 32(%rsp)
+ 540      20
+ 149:fltk-1.3.4-1/jpeg/jccoefct.c ****   int blkn, bi, ci, yindex, yoffset, blockcnt;
+ 541              		.loc 1 149 0
+ 542 002e 83E801   		subl	$1, %eax
+ 148:fltk-1.3.4-1/jpeg/jccoefct.c ****   JDIMENSION last_iMCU_row = cinfo->total_iMCU_rows - 1;
+ 543              		.loc 1 148 0
+ 544 0031 83EF01   		subl	$1, %edi
+ 149:fltk-1.3.4-1/jpeg/jccoefct.c ****   int blkn, bi, ci, yindex, yoffset, blockcnt;
+ 545              		.loc 1 149 0
+ 546 0034 89442418 		movl	%eax, 24(%rsp)
+ 156:fltk-1.3.4-1/jpeg/jccoefct.c ****        yoffset++) {
+ 547              		.loc 1 156 0
+ 548 0038 418B4618 		movl	24(%r14), %eax
+ 549 003c 413B461C 		cmpl	28(%r14), %eax
+ 148:fltk-1.3.4-1/jpeg/jccoefct.c ****   JDIMENSION last_iMCU_row = cinfo->total_iMCU_rows - 1;
+ 550              		.loc 1 148 0
+ 551 0040 897C2444 		movl	%edi, 68(%rsp)
+ 552              	.LVL65:
+ 156:fltk-1.3.4-1/jpeg/jccoefct.c ****        yoffset++) {
+ 553              		.loc 1 156 0
+ 554 0044 89442430 		movl	%eax, 48(%rsp)
+ 555              	.LVL66:
+ 556 0048 0F8D0402 		jge	.L79
+ 556      0000
+ 557 004e 418B4614 		movl	20(%r14), %eax
+ 558              	.LVL67:
+ 158:fltk-1.3.4-1/jpeg/jccoefct.c **** 	 MCU_col_num++) {
+ 559              		.loc 1 158 0
+ 560 0052 39442444 		cmpl	%eax, 68(%rsp)
+ 561 0056 498D7E20 		leaq	32(%r14), %rdi
+ 562              	.LVL68:
+ 563 005a 48897C24 		movq	%rdi, 72(%rsp)
+ 563      48
+ 564              	.LVL69:
+ 565 005f 89442440 		movl	%eax, 64(%rsp)
+ 566 0063 0F82C601 		jb	.L62
+ 566      0000
+ 567              	.LVL70:
+ 568 0069 0F1F8000 		.p2align 4,,10
+ 568      000000
+ 569              		.p2align 3
+ 570              	.L63:
+ 170:fltk-1.3.4-1/jpeg/jccoefct.c **** 	compptr = cinfo->cur_comp_info[ci];
+ 571              		.loc 1 170 0 discriminator 1
+ 572 0070 488B4424 		movq	8(%rsp), %rax
+ 572      08
+ 573 0075 8B807401 		movl	372(%rax), %eax
+ 573      0000
+ 574 007b 85C0     		testl	%eax, %eax
+ 575 007d 0F8E7D01 		jle	.L77
+ 575      0000
+ 576 0083 488B4424 		movq	8(%rsp), %rax
+ 576      08
+ 170:fltk-1.3.4-1/jpeg/jccoefct.c **** 	compptr = cinfo->cur_comp_info[ci];
+ 577              		.loc 1 170 0 is_stmt 0
+ 578 0088 C7442434 		movl	$0, 52(%rsp)
+ 578      00000000 
+ 579 0090 31ED     		xorl	%ebp, %ebp
+ 580 0092 48057801 		addq	$376, %rax
+ 580      0000
+ 581 0098 48894424 		movq	%rax, 56(%rsp)
+ 581      38
+ 582              	.LVL71:
+ 583 009d 0F1F00   		.p2align 4,,10
+ 584              		.p2align 3
+ 585              	.L73:
+ 171:fltk-1.3.4-1/jpeg/jccoefct.c **** 	forward_DCT = cinfo->fdct->forward_DCT[compptr->component_index];
+ 586              		.loc 1 171 0 is_stmt 1
+ 587 00a0 488B4424 		movq	56(%rsp), %rax
+ 587      38
+ 174:fltk-1.3.4-1/jpeg/jccoefct.c **** 	xpos = MCU_col_num * compptr->MCU_sample_width;
+ 588              		.loc 1 174 0
+ 589 00a5 8B7C2440 		movl	64(%rsp), %edi
+ 590 00a9 397C2444 		cmpl	%edi, 68(%rsp)
+ 171:fltk-1.3.4-1/jpeg/jccoefct.c **** 	forward_DCT = cinfo->fdct->forward_DCT[compptr->component_index];
+ 591              		.loc 1 171 0
+ 592 00ad 488B18   		movq	(%rax), %rbx
+ 593              	.LVL72:
+ 172:fltk-1.3.4-1/jpeg/jccoefct.c **** 	blockcnt = (MCU_col_num < last_MCU_col) ? compptr->MCU_width
+ 594              		.loc 1 172 0
+ 595 00b0 488B4424 		movq	8(%rsp), %rax
+ 595      08
+ 596 00b5 48635304 		movslq	4(%rbx), %rdx
+ 597 00b9 488B8028 		movq	552(%rax), %rax
+ 597      020000
+ 598 00c0 488B44D0 		movq	8(%rax,%rdx,8), %rax
+ 598      08
+ 599 00c5 48894424 		movq	%rax, 16(%rsp)
+ 599      10
+ 600              	.LVL73:
+ 174:fltk-1.3.4-1/jpeg/jccoefct.c **** 	xpos = MCU_col_num * compptr->MCU_sample_width;
+ 601              		.loc 1 174 0
+ 602 00ca 0F864B02 		jbe	.L64
+ 602      0000
+ 174:fltk-1.3.4-1/jpeg/jccoefct.c **** 	xpos = MCU_col_num * compptr->MCU_sample_width;
+ 603              		.loc 1 174 0 is_stmt 0 discriminator 1
+ 604 00d0 448B6338 		movl	56(%rbx), %r12d
+ 605              	.L65:
+ 606              	.LVL74:
+ 175:fltk-1.3.4-1/jpeg/jccoefct.c **** 	ypos = yoffset * compptr->DCT_v_scaled_size;
+ 607              		.loc 1 175 0 is_stmt 1
+ 608 00d4 8B442440 		movl	64(%rsp), %eax
+ 609              	.LVL75:
+ 178:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  if (coef->iMCU_row_num < last_iMCU_row ||
+ 610              		.loc 1 178 0
+ 611 00d8 8B7B3C   		movl	60(%rbx), %edi
+ 175:fltk-1.3.4-1/jpeg/jccoefct.c **** 	ypos = yoffset * compptr->DCT_v_scaled_size;
+ 612              		.loc 1 175 0
+ 613 00db 0FAF4344 		imull	68(%rbx), %eax
+ 176:fltk-1.3.4-1/jpeg/jccoefct.c **** 	/* ypos == (yoffset+yindex) * DCTSIZE */
+ 614              		.loc 1 176 0
+ 615 00df 448B6C24 		movl	48(%rsp), %r13d
+ 615      30
+ 616 00e4 440FAF6B 		imull	40(%rbx), %r13d
+ 616      28
+ 178:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  if (coef->iMCU_row_num < last_iMCU_row ||
+ 617              		.loc 1 178 0
+ 618 00e9 85FF     		testl	%edi, %edi
+ 175:fltk-1.3.4-1/jpeg/jccoefct.c **** 	ypos = yoffset * compptr->DCT_v_scaled_size;
+ 619              		.loc 1 175 0
+ 620 00eb 8944241C 		movl	%eax, 28(%rsp)
+ 621              	.LVL76:
+ 178:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  if (coef->iMCU_row_num < last_iMCU_row ||
+ 622              		.loc 1 178 0
+ 623 00ef 0F8EEB00 		jle	.L66
+ 623      0000
+ 624 00f5 4531FF   		xorl	%r15d, %r15d
+ 625 00f8 4489F8   		movl	%r15d, %eax
+ 626              	.LVL77:
+ 627 00fb 4589EF   		movl	%r13d, %r15d
+ 628 00fe 4189C5   		movl	%eax, %r13d
+ 629              	.LVL78:
+ 630 0101 EB19     		jmp	.L72
+ 631              	.LVL79:
+ 632              		.p2align 4,,10
+ 633 0103 0F1F4400 		.p2align 3
+ 633      00
+ 634              	.L69:
+ 201:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  ypos += compptr->DCT_v_scaled_size;
+ 635              		.loc 1 201 0 discriminator 2
+ 636 0108 01D5     		addl	%edx, %ebp
+ 637              	.LVL80:
+ 202:fltk-1.3.4-1/jpeg/jccoefct.c **** 	}
+ 638              		.loc 1 202 0 discriminator 2
+ 639 010a 44037B28 		addl	40(%rbx), %r15d
+ 640              	.LVL81:
+ 178:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  if (coef->iMCU_row_num < last_iMCU_row ||
+ 641              		.loc 1 178 0 discriminator 2
+ 642 010e 4183C501 		addl	$1, %r13d
+ 643              	.LVL82:
+ 644 0112 44396B3C 		cmpl	%r13d, 60(%rbx)
+ 645 0116 0F8EC400 		jle	.L66
+ 645      0000
+ 646              	.LVL83:
+ 647              	.L72:
+ 179:fltk-1.3.4-1/jpeg/jccoefct.c **** 	      yoffset+yindex < compptr->last_row_height) {
+ 648              		.loc 1 179 0
+ 649 011c 8B442418 		movl	24(%rsp), %eax
+ 650 0120 413B4610 		cmpl	16(%r14), %eax
+ 651 0124 7710     		ja	.L67
+ 179:fltk-1.3.4-1/jpeg/jccoefct.c **** 	      yoffset+yindex < compptr->last_row_height) {
+ 652              		.loc 1 179 0 is_stmt 0 discriminator 1
+ 653 0126 8B442430 		movl	48(%rsp), %eax
+ 654 012a 4401E8   		addl	%r13d, %eax
+ 655 012d 39434C   		cmpl	%eax, 76(%rbx)
+ 656 0130 0F8E6A01 		jle	.L68
+ 656      0000
+ 657              	.L67:
+ 181:fltk-1.3.4-1/jpeg/jccoefct.c **** 			    input_buf[compptr->component_index],
+ 658              		.loc 1 181 0 is_stmt 1
+ 659 0136 4863C5   		movslq	%ebp, %rax
+ 660 0139 488B7C24 		movq	32(%rsp), %rdi
+ 660      20
+ 661 013e 4883EC08 		subq	$8, %rsp
+ 662              		.cfi_def_cfa_offset 152
+ 663 0142 498B4CC6 		movq	32(%r14,%rax,8), %rcx
+ 663      20
+ 664 0147 48634304 		movslq	4(%rbx), %rax
+ 665 014b 4889DE   		movq	%rbx, %rsi
+ 666 014e 4589F8   		movl	%r15d, %r8d
+ 667 0151 488B14C7 		movq	(%rdi,%rax,8), %rdx
+ 668 0155 4154     		pushq	%r12
+ 669              		.cfi_def_cfa_offset 160
+ 670 0157 448B4C24 		movl	44(%rsp), %r9d
+ 670      2C
+ 671 015c 488B7C24 		movq	24(%rsp), %rdi
+ 671      18
+ 672 0161 488B4424 		movq	32(%rsp), %rax
+ 672      20
+ 673 0166 FFD0     		call	*%rax
+ 674              	.LVL84:
+ 185:fltk-1.3.4-1/jpeg/jccoefct.c **** 	      /* Create some dummy blocks at the right edge of the image. */
+ 675              		.loc 1 185 0
+ 676 0168 8B5338   		movl	56(%rbx), %edx
+ 677 016b 59       		popq	%rcx
+ 678              		.cfi_def_cfa_offset 152
+ 679 016c 5E       		popq	%rsi
+ 680              		.cfi_def_cfa_offset 144
+ 681 016d 4139D4   		cmpl	%edx, %r12d
+ 682 0170 7D96     		jge	.L69
+ 683              	.LVL85:
+ 187:fltk-1.3.4-1/jpeg/jccoefct.c **** 		       (compptr->MCU_width - blockcnt) * SIZEOF(JBLOCK));
+ 684              		.loc 1 187 0
+ 685 0172 418D042C 		leal	(%r12,%rbp), %eax
+ 686              	.LBB32:
+ 687              	.LBB33:
+ 688              		.file 2 "/usr/include/x86_64-linux-gnu/bits/string3.h"
+   1:/usr/include/x86_64-linux-gnu/bits/string3.h **** /* Copyright (C) 2004-2016 Free Software Foundation, Inc.
+   2:/usr/include/x86_64-linux-gnu/bits/string3.h ****    This file is part of the GNU C Library.
+   3:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+   4:/usr/include/x86_64-linux-gnu/bits/string3.h ****    The GNU C Library is free software; you can redistribute it and/or
+   5:/usr/include/x86_64-linux-gnu/bits/string3.h ****    modify it under the terms of the GNU Lesser General Public
+   6:/usr/include/x86_64-linux-gnu/bits/string3.h ****    License as published by the Free Software Foundation; either
+   7:/usr/include/x86_64-linux-gnu/bits/string3.h ****    version 2.1 of the License, or (at your option) any later version.
+   8:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+   9:/usr/include/x86_64-linux-gnu/bits/string3.h ****    The GNU C Library is distributed in the hope that it will be useful,
+  10:/usr/include/x86_64-linux-gnu/bits/string3.h ****    but WITHOUT ANY WARRANTY; without even the implied warranty of
+  11:/usr/include/x86_64-linux-gnu/bits/string3.h ****    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  12:/usr/include/x86_64-linux-gnu/bits/string3.h ****    Lesser General Public License for more details.
+  13:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  14:/usr/include/x86_64-linux-gnu/bits/string3.h ****    You should have received a copy of the GNU Lesser General Public
+  15:/usr/include/x86_64-linux-gnu/bits/string3.h ****    License along with the GNU C Library; if not, see
+  16:/usr/include/x86_64-linux-gnu/bits/string3.h ****    <http://www.gnu.org/licenses/>.  */
+  17:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  18:/usr/include/x86_64-linux-gnu/bits/string3.h **** #ifndef _STRING_H
+  19:/usr/include/x86_64-linux-gnu/bits/string3.h **** # error "Never use <bits/string3.h> directly; include <string.h> instead."
+  20:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  21:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  22:/usr/include/x86_64-linux-gnu/bits/string3.h **** #if !__GNUC_PREREQ (5,0)
+  23:/usr/include/x86_64-linux-gnu/bits/string3.h **** __warndecl (__warn_memset_zero_len,
+  24:/usr/include/x86_64-linux-gnu/bits/string3.h **** 	    "memset used with constant zero length parameter; this could be due to transposed parameters")
+  25:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  26:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  27:/usr/include/x86_64-linux-gnu/bits/string3.h **** #ifndef __cplusplus
+  28:/usr/include/x86_64-linux-gnu/bits/string3.h **** /* XXX This is temporarily.  We should not redefine any of the symbols
+  29:/usr/include/x86_64-linux-gnu/bits/string3.h ****    and instead integrate the error checking into the original
+  30:/usr/include/x86_64-linux-gnu/bits/string3.h ****    definitions.  */
+  31:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memcpy
+  32:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memmove
+  33:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memset
+  34:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strcat
+  35:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strcpy
+  36:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strncat
+  37:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strncpy
+  38:/usr/include/x86_64-linux-gnu/bits/string3.h **** # ifdef __USE_GNU
+  39:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef mempcpy
+  40:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef stpcpy
+  41:/usr/include/x86_64-linux-gnu/bits/string3.h **** # endif
+  42:/usr/include/x86_64-linux-gnu/bits/string3.h **** # ifdef __USE_MISC
+  43:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef bcopy
+  44:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef bzero
+  45:/usr/include/x86_64-linux-gnu/bits/string3.h **** # endif
+  46:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  47:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  48:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  49:/usr/include/x86_64-linux-gnu/bits/string3.h **** __fortify_function void *
+  50:/usr/include/x86_64-linux-gnu/bits/string3.h **** __NTH (memcpy (void *__restrict __dest, const void *__restrict __src,
+  51:/usr/include/x86_64-linux-gnu/bits/string3.h **** 	       size_t __len))
+  52:/usr/include/x86_64-linux-gnu/bits/string3.h **** {
+  53:/usr/include/x86_64-linux-gnu/bits/string3.h ****   return __builtin___memcpy_chk (__dest, __src, __len, __bos0 (__dest));
+  54:/usr/include/x86_64-linux-gnu/bits/string3.h **** }
+  55:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  56:/usr/include/x86_64-linux-gnu/bits/string3.h **** __fortify_function void *
+  57:/usr/include/x86_64-linux-gnu/bits/string3.h **** __NTH (memmove (void *__dest, const void *__src, size_t __len))
+  58:/usr/include/x86_64-linux-gnu/bits/string3.h **** {
+  59:/usr/include/x86_64-linux-gnu/bits/string3.h ****   return __builtin___memmove_chk (__dest, __src, __len, __bos0 (__dest));
+  60:/usr/include/x86_64-linux-gnu/bits/string3.h **** }
+  61:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  62:/usr/include/x86_64-linux-gnu/bits/string3.h **** #ifdef __USE_GNU
+  63:/usr/include/x86_64-linux-gnu/bits/string3.h **** __fortify_function void *
+  64:/usr/include/x86_64-linux-gnu/bits/string3.h **** __NTH (mempcpy (void *__restrict __dest, const void *__restrict __src,
+  65:/usr/include/x86_64-linux-gnu/bits/string3.h **** 		size_t __len))
+  66:/usr/include/x86_64-linux-gnu/bits/string3.h **** {
+  67:/usr/include/x86_64-linux-gnu/bits/string3.h ****   return __builtin___mempcpy_chk (__dest, __src, __len, __bos0 (__dest));
+  68:/usr/include/x86_64-linux-gnu/bits/string3.h **** }
+  69:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  70:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  71:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  72:/usr/include/x86_64-linux-gnu/bits/string3.h **** /* The first two tests here help to catch a somewhat common problem
+  73:/usr/include/x86_64-linux-gnu/bits/string3.h ****    where the second and third parameter are transposed.  This is
+  74:/usr/include/x86_64-linux-gnu/bits/string3.h ****    especially problematic if the intended fill value is zero.  In this
+  75:/usr/include/x86_64-linux-gnu/bits/string3.h ****    case no work is done at all.  We detect these problems by referring
+  76:/usr/include/x86_64-linux-gnu/bits/string3.h ****    non-existing functions.  */
+  77:/usr/include/x86_64-linux-gnu/bits/string3.h **** __fortify_function void *
+  78:/usr/include/x86_64-linux-gnu/bits/string3.h **** __NTH (memset (void *__dest, int __ch, size_t __len))
+  79:/usr/include/x86_64-linux-gnu/bits/string3.h **** {
+  80:/usr/include/x86_64-linux-gnu/bits/string3.h ****   /* GCC-5.0 and newer implements these checks in the compiler, so we don't
+  81:/usr/include/x86_64-linux-gnu/bits/string3.h ****      need them here.  */
+  82:/usr/include/x86_64-linux-gnu/bits/string3.h **** #if !__GNUC_PREREQ (5,0)
+  83:/usr/include/x86_64-linux-gnu/bits/string3.h ****   if (__builtin_constant_p (__len) && __len == 0
+  84:/usr/include/x86_64-linux-gnu/bits/string3.h ****       && (!__builtin_constant_p (__ch) || __ch != 0))
+  85:/usr/include/x86_64-linux-gnu/bits/string3.h ****     {
+  86:/usr/include/x86_64-linux-gnu/bits/string3.h ****       __warn_memset_zero_len ();
+  87:/usr/include/x86_64-linux-gnu/bits/string3.h ****       return __dest;
+  88:/usr/include/x86_64-linux-gnu/bits/string3.h ****     }
+  89:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  90:/usr/include/x86_64-linux-gnu/bits/string3.h ****   return __builtin___memset_chk (__dest, __ch, __len, __bos0 (__dest));
+ 689              		.loc 2 90 0
+ 690 0176 4429E2   		subl	%r12d, %edx
+ 691              	.LVL86:
+ 692 0179 31F6     		xorl	%esi, %esi
+ 693 017b 4863D2   		movslq	%edx, %rdx
+ 694              	.LBE33:
+ 695              	.LBE32:
+ 187:fltk-1.3.4-1/jpeg/jccoefct.c **** 		       (compptr->MCU_width - blockcnt) * SIZEOF(JBLOCK));
+ 696              		.loc 1 187 0
+ 697 017e 4898     		cltq
+ 698              	.LVL87:
+ 699              	.LBB35:
+ 700              	.LBB34:
+ 701              		.loc 2 90 0
+ 702 0180 48C1E207 		salq	$7, %rdx
+ 703              	.LVL88:
+ 704 0184 498B7CC6 		movq	32(%r14,%rax,8), %rdi
+ 704      20
+ 705 0189 E8000000 		call	memset
+ 705      00
+ 706              	.LVL89:
+ 707              	.LBE34:
+ 708              	.LBE35:
+ 189:fltk-1.3.4-1/jpeg/jccoefct.c **** 		coef->MCU_buffer[blkn+bi][0][0] = coef->MCU_buffer[blkn+bi-1][0][0];
+ 709              		.loc 1 189 0
+ 710 018e 8B5338   		movl	56(%rbx), %edx
+ 711 0191 4139D4   		cmpl	%edx, %r12d
+ 712 0194 0F8D6EFF 		jge	.L69
+ 712      FFFF
+ 713 019a 8D4DFF   		leal	-1(%rbp), %ecx
+ 189:fltk-1.3.4-1/jpeg/jccoefct.c **** 		coef->MCU_buffer[blkn+bi][0][0] = coef->MCU_buffer[blkn+bi-1][0][0];
+ 714              		.loc 1 189 0 is_stmt 0 discriminator 3
+ 715 019d 4489E0   		movl	%r12d, %eax
+ 716              	.LVL90:
+ 717              		.p2align 4,,10
+ 718              		.p2align 3
+ 719              	.L70:
+ 190:fltk-1.3.4-1/jpeg/jccoefct.c **** 	      }
+ 720              		.loc 1 190 0 is_stmt 1 discriminator 3
+ 721 01a0 8D1428   		leal	(%rax,%rbp), %edx
+ 722 01a3 4863D2   		movslq	%edx, %rdx
+ 723 01a6 498B74D6 		movq	32(%r14,%rdx,8), %rsi
+ 723      20
+ 724 01ab 8D1401   		leal	(%rcx,%rax), %edx
+ 189:fltk-1.3.4-1/jpeg/jccoefct.c **** 		coef->MCU_buffer[blkn+bi][0][0] = coef->MCU_buffer[blkn+bi-1][0][0];
+ 725              		.loc 1 189 0 discriminator 3
+ 726 01ae 83C001   		addl	$1, %eax
+ 727              	.LVL91:
+ 190:fltk-1.3.4-1/jpeg/jccoefct.c **** 	      }
+ 728              		.loc 1 190 0 discriminator 3
+ 729 01b1 4863D2   		movslq	%edx, %rdx
+ 730 01b4 498B54D6 		movq	32(%r14,%rdx,8), %rdx
+ 730      20
+ 731 01b9 0FB712   		movzwl	(%rdx), %edx
+ 732 01bc 668916   		movw	%dx, (%rsi)
+ 189:fltk-1.3.4-1/jpeg/jccoefct.c **** 		coef->MCU_buffer[blkn+bi][0][0] = coef->MCU_buffer[blkn+bi-1][0][0];
+ 733              		.loc 1 189 0 discriminator 3
+ 734 01bf 8B5338   		movl	56(%rbx), %edx
+ 735 01c2 39C2     		cmpl	%eax, %edx
+ 736 01c4 7FDA     		jg	.L70
+ 201:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  ypos += compptr->DCT_v_scaled_size;
+ 737              		.loc 1 201 0
+ 738 01c6 01D5     		addl	%edx, %ebp
+ 739              	.LVL92:
+ 202:fltk-1.3.4-1/jpeg/jccoefct.c **** 	}
+ 740              		.loc 1 202 0
+ 741 01c8 44037B28 		addl	40(%rbx), %r15d
+ 742              	.LVL93:
+ 178:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  if (coef->iMCU_row_num < last_iMCU_row ||
+ 743              		.loc 1 178 0
+ 744 01cc 4183C501 		addl	$1, %r13d
+ 745              	.LVL94:
+ 746 01d0 44396B3C 		cmpl	%r13d, 60(%rbx)
+ 747 01d4 0F8F42FF 		jg	.L72
+ 747      FFFF
+ 748              	.LVL95:
+ 749 01da 660F1F44 		.p2align 4,,10
+ 749      0000
+ 750              		.p2align 3
+ 751              	.L66:
+ 170:fltk-1.3.4-1/jpeg/jccoefct.c **** 	compptr = cinfo->cur_comp_info[ci];
+ 752              		.loc 1 170 0 discriminator 2
+ 753 01e0 488B7C24 		movq	8(%rsp), %rdi
+ 753      08
+ 754 01e5 83442434 		addl	$1, 52(%rsp)
+ 754      01
+ 755              	.LVL96:
+ 756 01ea 8B442434 		movl	52(%rsp), %eax
+ 757              	.LVL97:
+ 758 01ee 48834424 		addq	$8, 56(%rsp)
+ 758      3808
+ 759 01f4 39877401 		cmpl	%eax, 372(%rdi)
+ 759      0000
+ 760 01fa 0F8FA0FE 		jg	.L73
+ 760      FFFF
+ 761              	.LVL98:
+ 762              	.L77:
+ 208:fltk-1.3.4-1/jpeg/jccoefct.c **** 	/* Suspension forced; update state counters and exit */
+ 763              		.loc 1 208 0
+ 764 0200 488B7C24 		movq	8(%rsp), %rdi
+ 764      08
+ 765 0205 488B7424 		movq	72(%rsp), %rsi
+ 765      48
+ 766 020a 488B8730 		movq	560(%rdi), %rax
+ 766      020000
+ 767 0211 FF5008   		call	*8(%rax)
+ 768              	.LVL99:
+ 769 0214 85C0     		testl	%eax, %eax
+ 770 0216 0F84E000 		je	.L95
+ 770      0000
+ 159:fltk-1.3.4-1/jpeg/jccoefct.c ****       /* Determine where data comes from in input_buf and do the DCT thing.
+ 771              		.loc 1 159 0
+ 772 021c 83442440 		addl	$1, 64(%rsp)
+ 772      01
+ 773              	.LVL100:
+ 774 0221 8B442440 		movl	64(%rsp), %eax
+ 775              	.LVL101:
+ 158:fltk-1.3.4-1/jpeg/jccoefct.c **** 	 MCU_col_num++) {
+ 776              		.loc 1 158 0
+ 777 0225 39442444 		cmpl	%eax, 68(%rsp)
+ 778 0229 0F8341FE 		jnb	.L63
+ 778      FFFF
+ 779              	.LVL102:
+ 780              	.L62:
+ 157:fltk-1.3.4-1/jpeg/jccoefct.c ****     for (MCU_col_num = coef->mcu_ctr; MCU_col_num <= last_MCU_col;
+ 781              		.loc 1 157 0
+ 782 022f 83442430 		addl	$1, 48(%rsp)
+ 782      01
+ 216:fltk-1.3.4-1/jpeg/jccoefct.c ****   }
+ 783              		.loc 1 216 0
+ 784 0234 41C74614 		movl	$0, 20(%r14)
+ 784      00000000 
+ 157:fltk-1.3.4-1/jpeg/jccoefct.c ****     for (MCU_col_num = coef->mcu_ctr; MCU_col_num <= last_MCU_col;
+ 785              		.loc 1 157 0
+ 786 023c 8B442430 		movl	48(%rsp), %eax
+ 787              	.LVL103:
+ 156:fltk-1.3.4-1/jpeg/jccoefct.c ****        yoffset++) {
+ 788              		.loc 1 156 0
+ 789 0240 4139461C 		cmpl	%eax, 28(%r14)
+ 790 0244 C7442440 		movl	$0, 64(%rsp)
+ 790      00000000 
+ 791 024c 0F8F1EFE 		jg	.L63
+ 791      FFFF
+ 792              	.L79:
+ 793              	.LBB36:
+ 794              	.LBB37:
+  76:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 795              		.loc 1 76 0
+ 796 0252 488B7C24 		movq	8(%rsp), %rdi
+ 796      08
+ 797              	.LBE37:
+ 798              	.LBE36:
+ 219:fltk-1.3.4-1/jpeg/jccoefct.c ****   start_iMCU_row(cinfo);
+ 799              		.loc 1 219 0
+ 800 0257 41834610 		addl	$1, 16(%r14)
+ 800      01
+ 801              	.LVL104:
+ 802              	.LBB40:
+ 803              	.LBB38:
+  82:fltk-1.3.4-1/jpeg/jccoefct.c ****     coef->MCU_rows_per_iMCU_row = 1;
+ 804              		.loc 1 82 0
+ 805 025c 83BF7401 		cmpl	$1, 372(%rdi)
+ 805      000001
+  76:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 806              		.loc 1 76 0
+ 807 0263 488B8708 		movq	520(%rdi), %rax
+ 807      020000
+ 808              	.LVL105:
+  82:fltk-1.3.4-1/jpeg/jccoefct.c ****     coef->MCU_rows_per_iMCU_row = 1;
+ 809              		.loc 1 82 0
+ 810 026a 0F8EB400 		jle	.L96
+ 810      0000
+  83:fltk-1.3.4-1/jpeg/jccoefct.c ****   } else {
+ 811              		.loc 1 83 0
+ 812 0270 C7401C01 		movl	$1, 28(%rax)
+ 812      000000
+ 813              	.LVL106:
+ 814              	.L80:
+  91:fltk-1.3.4-1/jpeg/jccoefct.c ****   coef->MCU_vert_offset = 0;
+ 815              		.loc 1 91 0
+ 816 0277 C7401400 		movl	$0, 20(%rax)
+ 816      000000
+  92:fltk-1.3.4-1/jpeg/jccoefct.c **** }
+ 817              		.loc 1 92 0
+ 818 027e C7401800 		movl	$0, 24(%rax)
+ 818      000000
+ 819              	.LVL107:
+ 820              	.LBE38:
+ 821              	.LBE40:
+ 222:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 822              		.loc 1 222 0
+ 823 0285 4883C458 		addq	$88, %rsp
+ 824              		.cfi_remember_state
+ 825              		.cfi_def_cfa_offset 56
+ 826 0289 5B       		popq	%rbx
+ 827              		.cfi_def_cfa_offset 48
+ 221:fltk-1.3.4-1/jpeg/jccoefct.c **** }
+ 828              		.loc 1 221 0
+ 829 028a B8010000 		movl	$1, %eax
+ 829      00
+ 222:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 830              		.loc 1 222 0
+ 831 028f 5D       		popq	%rbp
+ 832              		.cfi_def_cfa_offset 40
+ 833 0290 415C     		popq	%r12
+ 834              		.cfi_def_cfa_offset 32
+ 835 0292 415D     		popq	%r13
+ 836              		.cfi_def_cfa_offset 24
+ 837 0294 415E     		popq	%r14
+ 838              		.cfi_def_cfa_offset 16
+ 839              	.LVL108:
+ 840 0296 415F     		popq	%r15
+ 841              		.cfi_def_cfa_offset 8
+ 842 0298 C3       		ret
+ 843              	.LVL109:
+ 844 0299 0F1F8000 		.p2align 4,,10
+ 844      000000
+ 845              		.p2align 3
+ 846              	.L68:
+ 847              		.cfi_restore_state
+ 848 02a0 4863C5   		movslq	%ebp, %rax
+ 849              	.LBB41:
+ 850              	.LBB42:
+ 851              		.loc 2 90 0
+ 852 02a3 48635338 		movslq	56(%rbx), %rdx
+ 853 02a7 31F6     		xorl	%esi, %esi
+ 854 02a9 498D0CC6 		leaq	(%r14,%rax,8), %rcx
+ 855              	.LVL110:
+ 856 02ad 488B7920 		movq	32(%rcx), %rdi
+ 857 02b1 48894C24 		movq	%rcx, 40(%rsp)
+ 857      28
+ 858 02b6 48C1E207 		salq	$7, %rdx
+ 859              	.LVL111:
+ 860 02ba E8000000 		call	memset
+ 860      00
+ 861              	.LVL112:
+ 862              	.LBE42:
+ 863              	.LBE41:
+ 197:fltk-1.3.4-1/jpeg/jccoefct.c **** 	      coef->MCU_buffer[blkn+bi][0][0] = coef->MCU_buffer[blkn-1][0][0];
+ 864              		.loc 1 197 0
+ 865 02bf 8B5338   		movl	56(%rbx), %edx
+ 866 02c2 85D2     		testl	%edx, %edx
+ 867 02c4 0F8E3EFE 		jle	.L69
+ 867      FFFF
+ 868 02ca 488B4C24 		movq	40(%rsp), %rcx
+ 868      28
+ 869 02cf 31C0     		xorl	%eax, %eax
+ 870              	.LVL113:
+ 871              		.p2align 4,,10
+ 872 02d1 0F1F8000 		.p2align 3
+ 872      000000
+ 873              	.L71:
+ 198:fltk-1.3.4-1/jpeg/jccoefct.c **** 	    }
+ 874              		.loc 1 198 0 discriminator 3
+ 875 02d8 488B7118 		movq	24(%rcx), %rsi
+ 876 02dc 8D1428   		leal	(%rax,%rbp), %edx
+ 197:fltk-1.3.4-1/jpeg/jccoefct.c **** 	      coef->MCU_buffer[blkn+bi][0][0] = coef->MCU_buffer[blkn-1][0][0];
+ 877              		.loc 1 197 0 discriminator 3
+ 878 02df 83C001   		addl	$1, %eax
+ 879              	.LVL114:
+ 198:fltk-1.3.4-1/jpeg/jccoefct.c **** 	    }
+ 880              		.loc 1 198 0 discriminator 3
+ 881 02e2 4863D2   		movslq	%edx, %rdx
+ 882 02e5 0FB736   		movzwl	(%rsi), %esi
+ 883 02e8 498B54D6 		movq	32(%r14,%rdx,8), %rdx
+ 883      20
+ 884 02ed 668932   		movw	%si, (%rdx)
+ 197:fltk-1.3.4-1/jpeg/jccoefct.c **** 	      coef->MCU_buffer[blkn+bi][0][0] = coef->MCU_buffer[blkn-1][0][0];
+ 885              		.loc 1 197 0 discriminator 3
+ 886 02f0 8B5338   		movl	56(%rbx), %edx
+ 887 02f3 39C2     		cmpl	%eax, %edx
+ 888 02f5 7FE1     		jg	.L71
+ 889 02f7 E90CFEFF 		jmp	.L69
+ 889      FF
+ 890              	.LVL115:
+ 891              	.L95:
+ 210:fltk-1.3.4-1/jpeg/jccoefct.c **** 	coef->mcu_ctr = MCU_col_num;
+ 892              		.loc 1 210 0
+ 893 02fc 8B7C2430 		movl	48(%rsp), %edi
+ 894 0300 41897E18 		movl	%edi, 24(%r14)
+ 211:fltk-1.3.4-1/jpeg/jccoefct.c **** 	return FALSE;
+ 895              		.loc 1 211 0
+ 896 0304 8B7C2440 		movl	64(%rsp), %edi
+ 897 0308 41897E14 		movl	%edi, 20(%r14)
+ 222:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 898              		.loc 1 222 0
+ 899 030c 4883C458 		addq	$88, %rsp
+ 900              		.cfi_remember_state
+ 901              		.cfi_def_cfa_offset 56
+ 902 0310 5B       		popq	%rbx
+ 903              		.cfi_def_cfa_offset 48
+ 904 0311 5D       		popq	%rbp
+ 905              		.cfi_def_cfa_offset 40
+ 906 0312 415C     		popq	%r12
+ 907              		.cfi_def_cfa_offset 32
+ 908 0314 415D     		popq	%r13
+ 909              		.cfi_def_cfa_offset 24
+ 910 0316 415E     		popq	%r14
+ 911              		.cfi_def_cfa_offset 16
+ 912              	.LVL116:
+ 913 0318 415F     		popq	%r15
+ 914              		.cfi_def_cfa_offset 8
+ 915 031a C3       		ret
+ 916              	.LVL117:
+ 917              	.L64:
+ 918              		.cfi_restore_state
+ 174:fltk-1.3.4-1/jpeg/jccoefct.c **** 	xpos = MCU_col_num * compptr->MCU_sample_width;
+ 919              		.loc 1 174 0 discriminator 2
+ 920 031b 448B6348 		movl	72(%rbx), %r12d
+ 921 031f E9B0FDFF 		jmp	.L65
+ 921      FF
+ 922              	.LVL118:
+ 923              	.L96:
+ 924              	.LBB43:
+ 925              	.LBB39:
+  85:fltk-1.3.4-1/jpeg/jccoefct.c ****       coef->MCU_rows_per_iMCU_row = cinfo->cur_comp_info[0]->v_samp_factor;
+ 926              		.loc 1 85 0
+ 927 0324 488B7C24 		movq	8(%rsp), %rdi
+ 927      08
+ 928              	.LVL119:
+ 929 0329 8B8F7001 		movl	368(%rdi), %ecx
+ 929      0000
+ 930 032f 8D51FF   		leal	-1(%rcx), %edx
+ 931 0332 395010   		cmpl	%edx, 16(%rax)
+ 932 0335 894C2418 		movl	%ecx, 24(%rsp)
+ 933              	.LVL120:
+ 934 0339 7312     		jnb	.L81
+  86:fltk-1.3.4-1/jpeg/jccoefct.c ****     else
+ 935              		.loc 1 86 0
+ 936 033b 488B9778 		movq	376(%rdi), %rdx
+ 936      010000
+ 937 0342 8B520C   		movl	12(%rdx), %edx
+ 938 0345 89501C   		movl	%edx, 28(%rax)
+ 939 0348 E92AFFFF 		jmp	.L80
+ 939      FF
+ 940              	.L81:
+  88:fltk-1.3.4-1/jpeg/jccoefct.c ****   }
+ 941              		.loc 1 88 0
+ 942 034d 488B7C24 		movq	8(%rsp), %rdi
+ 942      08
+ 943 0352 488B9778 		movq	376(%rdi), %rdx
+ 943      010000
+ 944 0359 8B524C   		movl	76(%rdx), %edx
+ 945 035c 89501C   		movl	%edx, 28(%rax)
+ 946 035f E913FFFF 		jmp	.L80
+ 946      FF
+ 947              	.LBE39:
+ 948              	.LBE43:
+ 949              		.cfi_endproc
+ 950              	.LFE63:
+ 952              		.section	.text.unlikely.compress_data
+ 953              	.LCOLDE2:
+ 954              		.section	.text.compress_data
+ 955              	.LHOTE2:
+ 956              		.section	.text.unlikely.compress_first_pass,"ax",@progbits
+ 957              	.LCOLDB3:
+ 958              		.section	.text.compress_first_pass,"ax",@progbits
+ 959              	.LHOTB3:
+ 960              		.p2align 4,,15
+ 962              	compress_first_pass:
+ 963              	.LFB64:
+ 250:fltk-1.3.4-1/jpeg/jccoefct.c ****   my_coef_ptr coef = (my_coef_ptr) cinfo->coef;
+ 964              		.loc 1 250 0
+ 965              		.cfi_startproc
+ 966              	.LVL121:
+ 967 0000 4157     		pushq	%r15
+ 968              		.cfi_def_cfa_offset 16
+ 969              		.cfi_offset 15, -16
+ 970 0002 4156     		pushq	%r14
+ 971              		.cfi_def_cfa_offset 24
+ 972              		.cfi_offset 14, -24
+ 973 0004 4155     		pushq	%r13
+ 974              		.cfi_def_cfa_offset 32
+ 975              		.cfi_offset 13, -32
+ 976 0006 4154     		pushq	%r12
+ 977              		.cfi_def_cfa_offset 40
+ 978              		.cfi_offset 12, -40
+ 979 0008 55       		pushq	%rbp
+ 980              		.cfi_def_cfa_offset 48
+ 981              		.cfi_offset 6, -48
+ 982 0009 53       		pushq	%rbx
+ 983              		.cfi_def_cfa_offset 56
+ 984              		.cfi_offset 3, -56
+ 985 000a 4883EC68 		subq	$104, %rsp
+ 986              		.cfi_def_cfa_offset 160
+ 251:fltk-1.3.4-1/jpeg/jccoefct.c ****   JDIMENSION last_iMCU_row = cinfo->total_iMCU_rows - 1;
+ 987              		.loc 1 251 0
+ 988 000e 488B9F08 		movq	520(%rdi), %rbx
+ 988      020000
+ 250:fltk-1.3.4-1/jpeg/jccoefct.c ****   my_coef_ptr coef = (my_coef_ptr) cinfo->coef;
+ 989              		.loc 1 250 0
+ 990 0015 48897424 		movq	%rsi, 88(%rsp)
+ 990      58
+ 991 001a 48897424 		movq	%rsi, 24(%rsp)
+ 991      18
+ 261:fltk-1.3.4-1/jpeg/jccoefct.c ****        ci++, compptr++) {
+ 992              		.loc 1 261 0
+ 993 001f 8B775C   		movl	92(%rdi), %esi
+ 994              	.LVL122:
+ 250:fltk-1.3.4-1/jpeg/jccoefct.c ****   my_coef_ptr coef = (my_coef_ptr) cinfo->coef;
+ 995              		.loc 1 250 0
+ 996 0022 48897C24 		movq	%rdi, 80(%rsp)
+ 996      50
+ 251:fltk-1.3.4-1/jpeg/jccoefct.c ****   JDIMENSION last_iMCU_row = cinfo->total_iMCU_rows - 1;
+ 997              		.loc 1 251 0
+ 998 0027 48895C24 		movq	%rbx, 64(%rsp)
+ 998      40
+ 999              	.LVL123:
+ 252:fltk-1.3.4-1/jpeg/jccoefct.c ****   JDIMENSION blocks_across, MCUs_across, MCUindex;
+ 1000              		.loc 1 252 0
+ 1001 002c 8B9F7001 		movl	368(%rdi), %ebx
+ 1001      0000
+ 1002              	.LVL124:
+ 261:fltk-1.3.4-1/jpeg/jccoefct.c ****        ci++, compptr++) {
+ 1003              		.loc 1 261 0
+ 1004 0032 C744243C 		movl	$0, 60(%rsp)
+ 1004      00000000 
+ 1005 003a 4C8B7C24 		movq	80(%rsp), %r15
+ 1005      50
+ 252:fltk-1.3.4-1/jpeg/jccoefct.c ****   JDIMENSION blocks_across, MCUs_across, MCUindex;
+ 1006              		.loc 1 252 0
+ 1007 003f 891C24   		movl	%ebx, (%rsp)
+ 1008 0042 83EB01   		subl	$1, %ebx
+ 261:fltk-1.3.4-1/jpeg/jccoefct.c ****        ci++, compptr++) {
+ 1009              		.loc 1 261 0
+ 1010 0045 85F6     		testl	%esi, %esi
+ 252:fltk-1.3.4-1/jpeg/jccoefct.c ****   JDIMENSION blocks_across, MCUs_across, MCUindex;
+ 1011              		.loc 1 252 0
+ 1012 0047 895C2448 		movl	%ebx, 72(%rsp)
+ 1013              	.LVL125:
+ 261:fltk-1.3.4-1/jpeg/jccoefct.c ****        ci++, compptr++) {
+ 1014              		.loc 1 261 0
+ 1015 004b 488B5F68 		movq	104(%rdi), %rbx
+ 1016              	.LVL126:
+ 1017 004f 0F8E5F01 		jle	.L110
+ 1017      0000
+ 1018              	.LVL127:
+ 1019              	.L121:
+ 264:fltk-1.3.4-1/jpeg/jccoefct.c ****       ((j_common_ptr) cinfo, coef->whole_image[ci],
+ 1020              		.loc 1 264 0
+ 1021 0055 4C8B7424 		movq	64(%rsp), %r14
+ 1021      40
+ 1022 005a 4C636C24 		movslq	60(%rsp), %r13
+ 1022      3C
+ 1023 005f 41B80100 		movl	$1, %r8d
+ 1023      0000
+ 1024 0065 8B4B0C   		movl	12(%rbx), %ecx
+ 1025 0068 498B4708 		movq	8(%r15), %rax
+ 1026 006c 4C89FF   		movq	%r15, %rdi
+ 1027 006f 418B5610 		movl	16(%r14), %edx
+ 1028 0073 4B8B74EE 		movq	112(%r14,%r13,8), %rsi
+ 1028      70
+ 1029 0078 0FAFD1   		imull	%ecx, %edx
+ 1030 007b FF5040   		call	*64(%rax)
+ 1031              	.LVL128:
+ 269:fltk-1.3.4-1/jpeg/jccoefct.c ****       block_rows = compptr->v_samp_factor;
+ 1032              		.loc 1 269 0
+ 1033 007e 418B4E10 		movl	16(%r14), %ecx
+ 1034 0082 394C2448 		cmpl	%ecx, 72(%rsp)
+ 264:fltk-1.3.4-1/jpeg/jccoefct.c ****       ((j_common_ptr) cinfo, coef->whole_image[ci],
+ 1035              		.loc 1 264 0
+ 1036 0086 48894424 		movq	%rax, 8(%rsp)
+ 1036      08
+ 1037              	.LVL129:
+ 270:fltk-1.3.4-1/jpeg/jccoefct.c ****     else {
+ 1038              		.loc 1 270 0
+ 1039 008b 448B630C 		movl	12(%rbx), %r12d
+ 269:fltk-1.3.4-1/jpeg/jccoefct.c ****       block_rows = compptr->v_samp_factor;
+ 1040              		.loc 1 269 0
+ 1041 008f 770E     		ja	.L100
+ 273:fltk-1.3.4-1/jpeg/jccoefct.c ****       if (block_rows == 0) block_rows = compptr->v_samp_factor;
+ 1042              		.loc 1 273 0
+ 1043 0091 8B4320   		movl	32(%rbx), %eax
+ 1044              	.LVL130:
+ 1045 0094 31D2     		xorl	%edx, %edx
+ 1046 0096 41F7F4   		divl	%r12d
+ 1047              	.LVL131:
+ 274:fltk-1.3.4-1/jpeg/jccoefct.c ****     }
+ 1048              		.loc 1 274 0
+ 1049 0099 85D2     		testl	%edx, %edx
+ 1050 009b 440F45E2 		cmovne	%edx, %r12d
+ 1051              	.LVL132:
+ 1052              	.L100:
+ 276:fltk-1.3.4-1/jpeg/jccoefct.c ****     h_samp_factor = compptr->h_samp_factor;
+ 1053              		.loc 1 276 0
+ 1054 009f 8B431C   		movl	28(%rbx), %eax
+ 1055              	.LVL133:
+ 277:fltk-1.3.4-1/jpeg/jccoefct.c ****     /* Count number of dummy blocks to be added at the right margin. */
+ 1056              		.loc 1 277 0
+ 1057 00a2 8B6B08   		movl	8(%rbx), %ebp
+ 1058              	.LVL134:
+ 279:fltk-1.3.4-1/jpeg/jccoefct.c ****     if (ndummy > 0)
+ 1059              		.loc 1 279 0
+ 1060 00a5 31D2     		xorl	%edx, %edx
+ 276:fltk-1.3.4-1/jpeg/jccoefct.c ****     h_samp_factor = compptr->h_samp_factor;
+ 1061              		.loc 1 276 0
+ 1062 00a7 89C7     		movl	%eax, %edi
+ 279:fltk-1.3.4-1/jpeg/jccoefct.c ****     if (ndummy > 0)
+ 1063              		.loc 1 279 0
+ 1064 00a9 89442410 		movl	%eax, 16(%rsp)
+ 281:fltk-1.3.4-1/jpeg/jccoefct.c ****     forward_DCT = cinfo->fdct->forward_DCT[ci];
+ 1065              		.loc 1 281 0
+ 1066 00ad 4189EE   		movl	%ebp, %r14d
+ 279:fltk-1.3.4-1/jpeg/jccoefct.c ****     if (ndummy > 0)
+ 1067              		.loc 1 279 0
+ 1068 00b0 F7F5     		divl	%ebp
+ 1069              	.LVL135:
+ 282:fltk-1.3.4-1/jpeg/jccoefct.c ****     /* Perform DCT for all non-dummy blocks in this iMCU row.  Each call
+ 1070              		.loc 1 282 0
+ 1071 00b2 498B8728 		movq	552(%r15), %rax
+ 1071      020000
+ 1072 00b9 4A8B74E8 		movq	8(%rax,%r13,8), %rsi
+ 1072      08
+ 281:fltk-1.3.4-1/jpeg/jccoefct.c ****     forward_DCT = cinfo->fdct->forward_DCT[ci];
+ 1073              		.loc 1 281 0
+ 1074 00be 4129D6   		subl	%edx, %r14d
+ 1075 00c1 85D2     		testl	%edx, %edx
+ 1076 00c3 410F4FD6 		cmovg	%r14d, %edx
+ 1077              	.LVL136:
+ 286:fltk-1.3.4-1/jpeg/jccoefct.c ****       thisblockrow = buffer[block_row];
+ 1078              		.loc 1 286 0
+ 1079 00c7 4585E4   		testl	%r12d, %r12d
+ 281:fltk-1.3.4-1/jpeg/jccoefct.c ****     forward_DCT = cinfo->fdct->forward_DCT[ci];
+ 1080              		.loc 1 281 0
+ 1081 00ca 891424   		movl	%edx, (%rsp)
+ 1082              	.LVL137:
+ 286:fltk-1.3.4-1/jpeg/jccoefct.c ****       thisblockrow = buffer[block_row];
+ 1083              		.loc 1 286 0
+ 1084 00cd 0F8EBE00 		jle	.L102
+ 1084      0000
+ 293:fltk-1.3.4-1/jpeg/jccoefct.c **** 	FMEMZERO((void FAR *) thisblockrow, ndummy * SIZEOF(JBLOCK));
+ 1085              		.loc 1 293 0
+ 1086 00d3 89F8     		movl	%edi, %eax
+ 294:fltk-1.3.4-1/jpeg/jccoefct.c **** 	lastDC = thisblockrow[-1][0];
+ 1087              		.loc 1 294 0
+ 1088 00d5 4531ED   		xorl	%r13d, %r13d
+ 1089 00d8 896C244C 		movl	%ebp, 76(%rsp)
+ 293:fltk-1.3.4-1/jpeg/jccoefct.c **** 	FMEMZERO((void FAR *) thisblockrow, ndummy * SIZEOF(JBLOCK));
+ 1090              		.loc 1 293 0
+ 1091 00dc 48C1E007 		salq	$7, %rax
+ 294:fltk-1.3.4-1/jpeg/jccoefct.c **** 	lastDC = thisblockrow[-1][0];
+ 1092              		.loc 1 294 0
+ 1093 00e0 4989F6   		movq	%rsi, %r14
+ 1094 00e3 4C89ED   		movq	%r13, %rbp
+ 1095              	.LVL138:
+ 293:fltk-1.3.4-1/jpeg/jccoefct.c **** 	FMEMZERO((void FAR *) thisblockrow, ndummy * SIZEOF(JBLOCK));
+ 1096              		.loc 1 293 0
+ 1097 00e6 48894424 		movq	%rax, 40(%rsp)
+ 1097      28
+ 294:fltk-1.3.4-1/jpeg/jccoefct.c **** 	lastDC = thisblockrow[-1][0];
+ 1098              		.loc 1 294 0
+ 1099 00eb 4863C2   		movslq	%edx, %rax
+ 1100 00ee 48C1E007 		salq	$7, %rax
+ 1101 00f2 48894424 		movq	%rax, 48(%rsp)
+ 1101      30
+ 1102 00f7 8D42FF   		leal	-1(%rdx), %eax
+ 1103 00fa 4883C001 		addq	$1, %rax
+ 1104 00fe 48C1E007 		salq	$7, %rax
+ 1105 0102 48894424 		movq	%rax, 32(%rsp)
+ 1105      20
+ 1106              	.LVL139:
+ 1107 0107 660F1F84 		.p2align 4,,10
+ 1107      00000000 
+ 1107      00
+ 1108              		.p2align 3
+ 1109              	.L104:
+ 287:fltk-1.3.4-1/jpeg/jccoefct.c ****       (*forward_DCT) (cinfo, compptr, input_buf[ci], thisblockrow,
+ 1110              		.loc 1 287 0
+ 1111 0110 488B4424 		movq	8(%rsp), %rax
+ 1111      08
+ 288:fltk-1.3.4-1/jpeg/jccoefct.c **** 		      (JDIMENSION) (block_row * compptr->DCT_v_scaled_size),
+ 1112              		.loc 1 288 0
+ 1113 0115 4883EC08 		subq	$8, %rsp
+ 1114              		.cfi_def_cfa_offset 168
+ 1115              	.LVL140:
+ 1116 0119 4531C9   		xorl	%r9d, %r9d
+ 1117 011c 4889DE   		movq	%rbx, %rsi
+ 1118 011f 4C89FF   		movq	%r15, %rdi
+ 287:fltk-1.3.4-1/jpeg/jccoefct.c ****       (*forward_DCT) (cinfo, compptr, input_buf[ci], thisblockrow,
+ 1119              		.loc 1 287 0
+ 1120 0122 4C8B2CE8 		movq	(%rax,%rbp,8), %r13
+ 1121              	.LVL141:
+ 288:fltk-1.3.4-1/jpeg/jccoefct.c **** 		      (JDIMENSION) (block_row * compptr->DCT_v_scaled_size),
+ 1122              		.loc 1 288 0
+ 1123 0126 8B442418 		movl	24(%rsp), %eax
+ 1124 012a 50       		pushq	%rax
+ 1125              		.cfi_def_cfa_offset 176
+ 1126 012b 488B4424 		movq	40(%rsp), %rax
+ 1126      28
+ 1127 0130 4C89E9   		movq	%r13, %rcx
+ 1128 0133 448B4328 		movl	40(%rbx), %r8d
+ 1129 0137 488B10   		movq	(%rax), %rdx
+ 1130 013a 440FAFC5 		imull	%ebp, %r8d
+ 1131 013e 41FFD6   		call	*%r14
+ 1132              	.LVL142:
+ 291:fltk-1.3.4-1/jpeg/jccoefct.c **** 	/* Create dummy blocks at the right edge of the image. */
+ 1133              		.loc 1 291 0
+ 1134 0141 58       		popq	%rax
+ 1135              		.cfi_def_cfa_offset 168
+ 1136 0142 5A       		popq	%rdx
+ 1137              		.cfi_def_cfa_offset 160
+ 1138              	.LVL143:
+ 1139 0143 8B0C24   		movl	(%rsp), %ecx
+ 1140 0146 85C9     		testl	%ecx, %ecx
+ 1141 0148 7E32     		jle	.L107
+ 293:fltk-1.3.4-1/jpeg/jccoefct.c **** 	FMEMZERO((void FAR *) thisblockrow, ndummy * SIZEOF(JBLOCK));
+ 1142              		.loc 1 293 0
+ 1143 014a 4C036C24 		addq	40(%rsp), %r13
+ 1143      28
+ 1144              	.LVL144:
+ 1145              	.LBB44:
+ 1146              	.LBB45:
+ 1147              		.loc 2 90 0
+ 1148 014f 488B5424 		movq	48(%rsp), %rdx
+ 1148      30
+ 1149 0154 31F6     		xorl	%esi, %esi
+ 1150 0156 4C89EF   		movq	%r13, %rdi
+ 1151 0159 E8000000 		call	memset
+ 1151      00
+ 1152              	.LVL145:
+ 1153 015e 488B4424 		movq	32(%rsp), %rax
+ 1153      20
+ 1154              	.LBE45:
+ 1155              	.LBE44:
+ 295:fltk-1.3.4-1/jpeg/jccoefct.c **** 	for (bi = 0; bi < ndummy; bi++) {
+ 1156              		.loc 1 295 0
+ 1157 0163 410FB755 		movzwl	-128(%r13), %edx
+ 1157      80
+ 1158              	.LVL146:
+ 1159 0168 4C89EF   		movq	%r13, %rdi
+ 1160 016b 4C01E8   		addq	%r13, %rax
+ 1161              	.LVL147:
+ 1162 016e 6690     		.p2align 4,,10
+ 1163              		.p2align 3
+ 1164              	.L106:
+ 297:fltk-1.3.4-1/jpeg/jccoefct.c **** 	}
+ 1165              		.loc 1 297 0 discriminator 3
+ 1166 0170 668917   		movw	%dx, (%rdi)
+ 1167 0173 4883EF80 		subq	$-128, %rdi
+ 296:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  thisblockrow[bi][0] = lastDC;
+ 1168              		.loc 1 296 0 discriminator 3
+ 1169 0177 4839F8   		cmpq	%rdi, %rax
+ 1170 017a 75F4     		jne	.L106
+ 1171              	.LVL148:
+ 1172              	.L107:
+ 1173 017c 4883C501 		addq	$1, %rbp
+ 1174              	.LVL149:
+ 286:fltk-1.3.4-1/jpeg/jccoefct.c ****       thisblockrow = buffer[block_row];
+ 1175              		.loc 1 286 0
+ 1176 0180 4139EC   		cmpl	%ebp, %r12d
+ 1177 0183 7F8B     		jg	.L104
+ 1178 0185 488B4424 		movq	64(%rsp), %rax
+ 1178      40
+ 1179 018a 8B6C244C 		movl	76(%rsp), %ebp
+ 1180 018e 8B4810   		movl	16(%rax), %ecx
+ 1181              	.LVL150:
+ 1182              	.L102:
+ 306:fltk-1.3.4-1/jpeg/jccoefct.c ****       blocks_across += ndummy;	/* include lower right corner */
+ 1183              		.loc 1 306 0
+ 1184 0191 394C2448 		cmpl	%ecx, 72(%rsp)
+ 1185 0195 743A     		je	.L108
+ 1186              	.LVL151:
+ 1187              	.L111:
+ 262:fltk-1.3.4-1/jpeg/jccoefct.c ****     /* Align the virtual buffer for this component. */
+ 1188              		.loc 1 262 0
+ 1189 0197 8344243C 		addl	$1, 60(%rsp)
+ 1189      01
+ 1190              	.LVL152:
+ 1191 019c 4883C360 		addq	$96, %rbx
+ 1192 01a0 48834424 		addq	$8, 24(%rsp)
+ 1192      1808
+ 1193 01a6 8B44243C 		movl	60(%rsp), %eax
+ 1194              	.LVL153:
+ 261:fltk-1.3.4-1/jpeg/jccoefct.c ****        ci++, compptr++) {
+ 1195              		.loc 1 261 0
+ 1196 01aa 4139475C 		cmpl	%eax, 92(%r15)
+ 1197 01ae 0F8FA1FE 		jg	.L121
+ 1197      FFFF
+ 1198              	.LVL154:
+ 1199              	.L110:
+ 331:fltk-1.3.4-1/jpeg/jccoefct.c **** }
+ 1200              		.loc 1 331 0
+ 1201 01b4 488B7424 		movq	88(%rsp), %rsi
+ 1201      58
+ 1202 01b9 488B7C24 		movq	80(%rsp), %rdi
+ 1202      50
+ 332:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 1203              		.loc 1 332 0
+ 1204 01be 4883C468 		addq	$104, %rsp
+ 1205              		.cfi_remember_state
+ 1206              		.cfi_def_cfa_offset 56
+ 1207 01c2 5B       		popq	%rbx
+ 1208              		.cfi_def_cfa_offset 48
+ 1209              	.LVL155:
+ 1210 01c3 5D       		popq	%rbp
+ 1211              		.cfi_def_cfa_offset 40
+ 1212 01c4 415C     		popq	%r12
+ 1213              		.cfi_def_cfa_offset 32
+ 1214 01c6 415D     		popq	%r13
+ 1215              		.cfi_def_cfa_offset 24
+ 1216 01c8 415E     		popq	%r14
+ 1217              		.cfi_def_cfa_offset 16
+ 1218 01ca 415F     		popq	%r15
+ 1219              		.cfi_def_cfa_offset 8
+ 331:fltk-1.3.4-1/jpeg/jccoefct.c **** }
+ 1220              		.loc 1 331 0
+ 1221 01cc E9000000 		jmp	compress_output
+ 1221      00
+ 1222              	.LVL156:
+ 1223              	.L108:
+ 1224              		.cfi_restore_state
+ 307:fltk-1.3.4-1/jpeg/jccoefct.c ****       MCUs_across = blocks_across / h_samp_factor;
+ 1225              		.loc 1 307 0
+ 1226 01d1 448B2C24 		movl	(%rsp), %r13d
+ 1227 01d5 44036C24 		addl	16(%rsp), %r13d
+ 1227      10
+ 1228              	.LVL157:
+ 308:fltk-1.3.4-1/jpeg/jccoefct.c ****       for (block_row = block_rows; block_row < compptr->v_samp_factor;
+ 1229              		.loc 1 308 0
+ 1230 01da 31D2     		xorl	%edx, %edx
+ 1231 01dc 4489E8   		movl	%r13d, %eax
+ 1232 01df F7F5     		divl	%ebp
+ 309:fltk-1.3.4-1/jpeg/jccoefct.c **** 	   block_row++) {
+ 1233              		.loc 1 309 0
+ 1234 01e1 443B630C 		cmpl	12(%rbx), %r12d
+ 308:fltk-1.3.4-1/jpeg/jccoefct.c ****       for (block_row = block_rows; block_row < compptr->v_samp_factor;
+ 1235              		.loc 1 308 0
+ 1236 01e5 4189C0   		movl	%eax, %r8d
+ 1237              	.LVL158:
+ 309:fltk-1.3.4-1/jpeg/jccoefct.c **** 	   block_row++) {
+ 1238              		.loc 1 309 0
+ 1239 01e8 7DAD     		jge	.L111
+ 1240 01ea 488B7424 		movq	8(%rsp), %rsi
+ 1240      08
+ 1241 01ef 4963C4   		movslq	%r12d, %rax
+ 1242              	.LVL159:
+ 1243 01f2 448D4DFF 		leal	-1(%rbp), %r9d
+ 1244 01f6 4863CD   		movslq	%ebp, %rcx
+ 1245 01f9 49C1E507 		salq	$7, %r13
+ 1246 01fd 48895C24 		movq	%rbx, 16(%rsp)
+ 1246      10
+ 1247              	.LVL160:
+ 1248 0202 48C1E107 		salq	$7, %rcx
+ 1249 0206 4983C101 		addq	$1, %r9
+ 1250 020a 4C897C24 		movq	%r15, 40(%rsp)
+ 1250      28
+ 1251 020f 4C8D14C6 		leaq	(%rsi,%rax,8), %r10
+ 1252 0213 4589E7   		movl	%r12d, %r15d
+ 1253 0216 4C896C24 		movq	%r13, 32(%rsp)
+ 1253      20
+ 1254 021b 4189EC   		movl	%ebp, %r12d
+ 1255              	.LVL161:
+ 1256 021e 49C1E107 		salq	$7, %r9
+ 1257 0222 4889CB   		movq	%rcx, %rbx
+ 1258              	.LVL162:
+ 1259 0225 4C89D5   		movq	%r10, %rbp
+ 1260              	.LVL163:
+ 1261              	.L113:
+ 311:fltk-1.3.4-1/jpeg/jccoefct.c **** 	lastblockrow = buffer[block_row-1];
+ 1262              		.loc 1 311 0
+ 1263 0228 4C8B6D00 		movq	0(%rbp), %r13
+ 1264              	.LBB46:
+ 1265              	.LBB47:
+ 1266              		.loc 2 90 0
+ 1267 022c 488B5424 		movq	32(%rsp), %rdx
+ 1267      20
+ 1268 0231 31F6     		xorl	%esi, %esi
+ 1269 0233 44894424 		movl	%r8d, 8(%rsp)
+ 1269      08
+ 1270 0238 4C890C24 		movq	%r9, (%rsp)
+ 1271              	.LVL164:
+ 1272              	.LBE47:
+ 1273              	.LBE46:
+ 312:fltk-1.3.4-1/jpeg/jccoefct.c **** 	FMEMZERO((void FAR *) thisblockrow,
+ 1274              		.loc 1 312 0
+ 1275 023c 4C8B75F8 		movq	-8(%rbp), %r14
+ 1276              	.LVL165:
+ 1277              	.LBB49:
+ 1278              	.LBB48:
+ 1279              		.loc 2 90 0
+ 1280 0240 4C89EF   		movq	%r13, %rdi
+ 1281 0243 E8000000 		call	memset
+ 1281      00
+ 1282              	.LVL166:
+ 1283              	.LBE48:
+ 1284              	.LBE49:
+ 315:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  lastDC = lastblockrow[h_samp_factor-1][0];
+ 1285              		.loc 1 315 0
+ 1286 0248 448B4424 		movl	8(%rsp), %r8d
+ 1286      08
+ 1287 024d 4901DE   		addq	%rbx, %r14
+ 1288              	.LVL167:
+ 1289 0250 31FF     		xorl	%edi, %edi
+ 1290 0252 4C8B0C24 		movq	(%rsp), %r9
+ 1291 0256 4585C0   		testl	%r8d, %r8d
+ 1292 0259 7437     		je	.L116
+ 1293              	.LVL168:
+ 1294 025b 0F1F4400 		.p2align 4,,10
+ 1294      00
+ 1295              		.p2align 3
+ 1296              	.L122:
+ 317:fltk-1.3.4-1/jpeg/jccoefct.c **** 	    thisblockrow[bi][0] = lastDC;
+ 1297              		.loc 1 317 0
+ 1298 0260 4585E4   		testl	%r12d, %r12d
+ 316:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  for (bi = 0; bi < h_samp_factor; bi++) {
+ 1299              		.loc 1 316 0
+ 1300 0263 410FB74E 		movzwl	-128(%r14), %ecx
+ 1300      80
+ 1301              	.LVL169:
+ 1302 0268 4C89E8   		movq	%r13, %rax
+ 1303 026b 4B8D540D 		leaq	0(%r13,%r9), %rdx
+ 1303      00
+ 317:fltk-1.3.4-1/jpeg/jccoefct.c **** 	    thisblockrow[bi][0] = lastDC;
+ 1304              		.loc 1 317 0
+ 1305 0270 7E12     		jle	.L118
+ 1306              	.LVL170:
+ 1307              		.p2align 4,,10
+ 1308 0272 660F1F44 		.p2align 3
+ 1308      0000
+ 1309              	.L123:
+ 318:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  }
+ 1310              		.loc 1 318 0 discriminator 3
+ 1311 0278 668908   		movw	%cx, (%rax)
+ 1312 027b 4883E880 		subq	$-128, %rax
+ 317:fltk-1.3.4-1/jpeg/jccoefct.c **** 	    thisblockrow[bi][0] = lastDC;
+ 1313              		.loc 1 317 0 discriminator 3
+ 1314 027f 4839D0   		cmpq	%rdx, %rax
+ 1315 0282 75F4     		jne	.L123
+ 1316              	.L118:
+ 315:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  lastDC = lastblockrow[h_samp_factor-1][0];
+ 1317              		.loc 1 315 0
+ 1318 0284 83C701   		addl	$1, %edi
+ 1319              	.LVL171:
+ 320:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  lastblockrow += h_samp_factor;
+ 1320              		.loc 1 320 0
+ 1321 0287 4901DD   		addq	%rbx, %r13
+ 1322              	.LVL172:
+ 1323 028a 4901DE   		addq	%rbx, %r14
+ 1324              	.LVL173:
+ 315:fltk-1.3.4-1/jpeg/jccoefct.c **** 	  lastDC = lastblockrow[h_samp_factor-1][0];
+ 1325              		.loc 1 315 0
+ 1326 028d 4139F8   		cmpl	%edi, %r8d
+ 1327 0290 75CE     		jne	.L122
+ 1328              	.LVL174:
+ 1329              	.L116:
+ 309:fltk-1.3.4-1/jpeg/jccoefct.c **** 	   block_row++) {
+ 1330              		.loc 1 309 0
+ 1331 0292 488B4424 		movq	16(%rsp), %rax
+ 1331      10
+ 310:fltk-1.3.4-1/jpeg/jccoefct.c **** 	thisblockrow = buffer[block_row];
+ 1332              		.loc 1 310 0
+ 1333 0297 4183C701 		addl	$1, %r15d
+ 1334              	.LVL175:
+ 1335 029b 4883C508 		addq	$8, %rbp
+ 309:fltk-1.3.4-1/jpeg/jccoefct.c **** 	   block_row++) {
+ 1336              		.loc 1 309 0
+ 1337 029f 4439780C 		cmpl	%r15d, 12(%rax)
+ 1338 02a3 7F83     		jg	.L113
+ 1339 02a5 4889C3   		movq	%rax, %rbx
+ 1340 02a8 4C8B7C24 		movq	40(%rsp), %r15
+ 1340      28
+ 1341              	.LVL176:
+ 1342 02ad E9E5FEFF 		jmp	.L111
+ 1342      FF
+ 1343              		.cfi_endproc
+ 1344              	.LFE64:
+ 1346              		.section	.text.unlikely.compress_first_pass
+ 1347              	.LCOLDE3:
+ 1348              		.section	.text.compress_first_pass
+ 1349              	.LHOTE3:
+ 1350              		.section	.text.unlikely.jinit_c_coef_controller,"ax",@progbits
+ 1351              	.LCOLDB4:
+ 1352              		.section	.text.jinit_c_coef_controller,"ax",@progbits
+ 1353              	.LHOTB4:
+ 1354              		.p2align 4,,15
+ 1355              		.globl	jinit_c_coef_controller
+ 1357              	jinit_c_coef_controller:
+ 1358              	.LFB66:
+ 401:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 402:fltk-1.3.4-1/jpeg/jccoefct.c **** #endif /* FULL_COEF_BUFFER_SUPPORTED */
+ 403:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 404:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 405:fltk-1.3.4-1/jpeg/jccoefct.c **** /*
+ 406:fltk-1.3.4-1/jpeg/jccoefct.c ****  * Initialize coefficient buffer controller.
+ 407:fltk-1.3.4-1/jpeg/jccoefct.c ****  */
+ 408:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 409:fltk-1.3.4-1/jpeg/jccoefct.c **** GLOBAL(void)
+ 410:fltk-1.3.4-1/jpeg/jccoefct.c **** jinit_c_coef_controller (j_compress_ptr cinfo, boolean need_full_buffer)
+ 411:fltk-1.3.4-1/jpeg/jccoefct.c **** {
+ 1359              		.loc 1 411 0
+ 1360              		.cfi_startproc
+ 1361              	.LVL177:
+ 1362 0000 4157     		pushq	%r15
+ 1363              		.cfi_def_cfa_offset 16
+ 1364              		.cfi_offset 15, -16
+ 1365 0002 4156     		pushq	%r14
+ 1366              		.cfi_def_cfa_offset 24
+ 1367              		.cfi_offset 14, -24
+ 412:fltk-1.3.4-1/jpeg/jccoefct.c ****   my_coef_ptr coef;
+ 413:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 414:fltk-1.3.4-1/jpeg/jccoefct.c ****   coef = (my_coef_ptr)
+ 1368              		.loc 1 414 0
+ 1369 0004 BAC00000 		movl	$192, %edx
+ 1369      00
+ 411:fltk-1.3.4-1/jpeg/jccoefct.c ****   my_coef_ptr coef;
+ 1370              		.loc 1 411 0
+ 1371 0009 4155     		pushq	%r13
+ 1372              		.cfi_def_cfa_offset 32
+ 1373              		.cfi_offset 13, -32
+ 1374 000b 4154     		pushq	%r12
+ 1375              		.cfi_def_cfa_offset 40
+ 1376              		.cfi_offset 12, -40
+ 1377 000d 4989FC   		movq	%rdi, %r12
+ 1378 0010 55       		pushq	%rbp
+ 1379              		.cfi_def_cfa_offset 48
+ 1380              		.cfi_offset 6, -48
+ 1381 0011 53       		pushq	%rbx
+ 1382              		.cfi_def_cfa_offset 56
+ 1383              		.cfi_offset 3, -56
+ 1384 0012 89F3     		movl	%esi, %ebx
+ 1385              		.loc 1 414 0
+ 1386 0014 BE010000 		movl	$1, %esi
+ 1386      00
+ 1387              	.LVL178:
+ 411:fltk-1.3.4-1/jpeg/jccoefct.c ****   my_coef_ptr coef;
+ 1388              		.loc 1 411 0
+ 1389 0019 4883EC18 		subq	$24, %rsp
+ 1390              		.cfi_def_cfa_offset 80
+ 415:fltk-1.3.4-1/jpeg/jccoefct.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 1391              		.loc 1 415 0
+ 1392 001d 488B4708 		movq	8(%rdi), %rax
+ 414:fltk-1.3.4-1/jpeg/jccoefct.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 1393              		.loc 1 414 0
+ 1394 0021 FF10     		call	*(%rax)
+ 1395              	.LVL179:
+ 416:fltk-1.3.4-1/jpeg/jccoefct.c **** 				SIZEOF(my_coef_controller));
+ 417:fltk-1.3.4-1/jpeg/jccoefct.c ****   cinfo->coef = (struct jpeg_c_coef_controller *) coef;
+ 418:fltk-1.3.4-1/jpeg/jccoefct.c ****   coef->pub.start_pass = start_pass_coef;
+ 419:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 420:fltk-1.3.4-1/jpeg/jccoefct.c ****   /* Create the coefficient buffer. */
+ 421:fltk-1.3.4-1/jpeg/jccoefct.c ****   if (need_full_buffer) {
+ 1396              		.loc 1 421 0
+ 1397 0023 85DB     		testl	%ebx, %ebx
+ 417:fltk-1.3.4-1/jpeg/jccoefct.c ****   coef->pub.start_pass = start_pass_coef;
+ 1398              		.loc 1 417 0
+ 1399 0025 49898424 		movq	%rax, 520(%r12)
+ 1399      08020000 
+ 414:fltk-1.3.4-1/jpeg/jccoefct.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 1400              		.loc 1 414 0
+ 1401 002d 4989C6   		movq	%rax, %r14
+ 1402              	.LVL180:
+ 418:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 1403              		.loc 1 418 0
+ 1404 0030 48C70000 		movq	$start_pass_coef, (%rax)
+ 1404      000000
+ 1405              		.loc 1 421 0
+ 1406 0037 747F     		je	.L138
+ 1407              	.LVL181:
+ 1408              	.LBB50:
+ 422:fltk-1.3.4-1/jpeg/jccoefct.c **** #ifdef FULL_COEF_BUFFER_SUPPORTED
+ 423:fltk-1.3.4-1/jpeg/jccoefct.c ****     /* Allocate a full-image virtual array for each component, */
+ 424:fltk-1.3.4-1/jpeg/jccoefct.c ****     /* padded to a multiple of samp_factor DCT blocks in each direction. */
+ 425:fltk-1.3.4-1/jpeg/jccoefct.c ****     int ci;
+ 426:fltk-1.3.4-1/jpeg/jccoefct.c ****     jpeg_component_info *compptr;
+ 427:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 428:fltk-1.3.4-1/jpeg/jccoefct.c ****     for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
+ 1409              		.loc 1 428 0
+ 1410 0039 418B4424 		movl	92(%r12), %eax
+ 1410      5C
+ 1411              	.LVL182:
+ 1412 003e 31ED     		xorl	%ebp, %ebp
+ 1413 0040 498B5C24 		movq	104(%r12), %rbx
+ 1413      68
+ 1414              	.LVL183:
+ 1415 0045 85C0     		testl	%eax, %eax
+ 1416 0047 7E5D     		jle	.L137
+ 1417              	.LVL184:
+ 1418 0049 0F1F8000 		.p2align 4,,10
+ 1418      000000
+ 1419              		.p2align 3
+ 1420              	.L144:
+ 429:fltk-1.3.4-1/jpeg/jccoefct.c **** 	 ci++, compptr++) {
+ 430:fltk-1.3.4-1/jpeg/jccoefct.c ****       coef->whole_image[ci] = (*cinfo->mem->request_virt_barray)
+ 431:fltk-1.3.4-1/jpeg/jccoefct.c **** 	((j_common_ptr) cinfo, JPOOL_IMAGE, FALSE,
+ 432:fltk-1.3.4-1/jpeg/jccoefct.c **** 	 (JDIMENSION) jround_up((long) compptr->width_in_blocks,
+ 433:fltk-1.3.4-1/jpeg/jccoefct.c **** 				(long) compptr->h_samp_factor),
+ 434:fltk-1.3.4-1/jpeg/jccoefct.c **** 	 (JDIMENSION) jround_up((long) compptr->height_in_blocks,
+ 435:fltk-1.3.4-1/jpeg/jccoefct.c **** 				(long) compptr->v_samp_factor),
+ 436:fltk-1.3.4-1/jpeg/jccoefct.c **** 	 (JDIMENSION) compptr->v_samp_factor);
+ 1421              		.loc 1 436 0
+ 1422 0050 4863730C 		movslq	12(%rbx), %rsi
+ 434:fltk-1.3.4-1/jpeg/jccoefct.c **** 				(long) compptr->v_samp_factor),
+ 1423              		.loc 1 434 0
+ 1424 0054 8B7B20   		movl	32(%rbx), %edi
+ 429:fltk-1.3.4-1/jpeg/jccoefct.c **** 	 ci++, compptr++) {
+ 1425              		.loc 1 429 0
+ 1426 0057 4883C360 		addq	$96, %rbx
+ 1427              	.LVL185:
+ 430:fltk-1.3.4-1/jpeg/jccoefct.c **** 	((j_common_ptr) cinfo, JPOOL_IMAGE, FALSE,
+ 1428              		.loc 1 430 0
+ 1429 005b 498B4424 		movq	8(%r12), %rax
+ 1429      08
+ 1430              		.loc 1 436 0
+ 1431 0060 4989F5   		movq	%rsi, %r13
+ 430:fltk-1.3.4-1/jpeg/jccoefct.c **** 	((j_common_ptr) cinfo, JPOOL_IMAGE, FALSE,
+ 1432              		.loc 1 430 0
+ 1433 0063 4C8B7828 		movq	40(%rax), %r15
+ 434:fltk-1.3.4-1/jpeg/jccoefct.c **** 				(long) compptr->v_samp_factor),
+ 1434              		.loc 1 434 0
+ 1435 0067 E8000000 		call	jround_up
+ 1435      00
+ 1436              	.LVL186:
+ 432:fltk-1.3.4-1/jpeg/jccoefct.c **** 				(long) compptr->h_samp_factor),
+ 1437              		.loc 1 432 0
+ 1438 006c 486373A8 		movslq	-88(%rbx), %rsi
+ 1439 0070 8B7BBC   		movl	-68(%rbx), %edi
+ 434:fltk-1.3.4-1/jpeg/jccoefct.c **** 				(long) compptr->v_samp_factor),
+ 1440              		.loc 1 434 0
+ 1441 0073 48894424 		movq	%rax, 8(%rsp)
+ 1441      08
+ 432:fltk-1.3.4-1/jpeg/jccoefct.c **** 				(long) compptr->h_samp_factor),
+ 1442              		.loc 1 432 0
+ 1443 0078 E8000000 		call	jround_up
+ 1443      00
+ 1444              	.LVL187:
+ 430:fltk-1.3.4-1/jpeg/jccoefct.c **** 	((j_common_ptr) cinfo, JPOOL_IMAGE, FALSE,
+ 1445              		.loc 1 430 0
+ 1446 007d 31D2     		xorl	%edx, %edx
+ 1447 007f 4589E9   		movl	%r13d, %r9d
+ 1448 0082 4C8B4424 		movq	8(%rsp), %r8
+ 1448      08
+ 1449 0087 89C1     		movl	%eax, %ecx
+ 1450 0089 BE010000 		movl	$1, %esi
+ 1450      00
+ 1451 008e 4C89E7   		movq	%r12, %rdi
+ 1452 0091 41FFD7   		call	*%r15
+ 1453              	.LVL188:
+ 1454 0094 4863D5   		movslq	%ebp, %rdx
+ 429:fltk-1.3.4-1/jpeg/jccoefct.c ****       coef->whole_image[ci] = (*cinfo->mem->request_virt_barray)
+ 1455              		.loc 1 429 0
+ 1456 0097 83C501   		addl	$1, %ebp
+ 1457              	.LVL189:
+ 430:fltk-1.3.4-1/jpeg/jccoefct.c **** 	((j_common_ptr) cinfo, JPOOL_IMAGE, FALSE,
+ 1458              		.loc 1 430 0
+ 1459 009a 498944D6 		movq	%rax, 112(%r14,%rdx,8)
+ 1459      70
+ 428:fltk-1.3.4-1/jpeg/jccoefct.c **** 	 ci++, compptr++) {
+ 1460              		.loc 1 428 0
+ 1461 009f 41396C24 		cmpl	%ebp, 92(%r12)
+ 1461      5C
+ 1462 00a4 7FAA     		jg	.L144
+ 1463              	.LVL190:
+ 1464              	.L137:
+ 1465              	.LBE50:
+ 437:fltk-1.3.4-1/jpeg/jccoefct.c ****     }
+ 438:fltk-1.3.4-1/jpeg/jccoefct.c **** #else
+ 439:fltk-1.3.4-1/jpeg/jccoefct.c ****     ERREXIT(cinfo, JERR_BAD_BUFFER_MODE);
+ 440:fltk-1.3.4-1/jpeg/jccoefct.c **** #endif
+ 441:fltk-1.3.4-1/jpeg/jccoefct.c ****   } else {
+ 442:fltk-1.3.4-1/jpeg/jccoefct.c ****     /* We only need a single-MCU buffer. */
+ 443:fltk-1.3.4-1/jpeg/jccoefct.c ****     JBLOCKROW buffer;
+ 444:fltk-1.3.4-1/jpeg/jccoefct.c ****     int i;
+ 445:fltk-1.3.4-1/jpeg/jccoefct.c **** 
+ 446:fltk-1.3.4-1/jpeg/jccoefct.c ****     buffer = (JBLOCKROW)
+ 447:fltk-1.3.4-1/jpeg/jccoefct.c ****       (*cinfo->mem->alloc_large) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 448:fltk-1.3.4-1/jpeg/jccoefct.c **** 				  C_MAX_BLOCKS_IN_MCU * SIZEOF(JBLOCK));
+ 449:fltk-1.3.4-1/jpeg/jccoefct.c ****     for (i = 0; i < C_MAX_BLOCKS_IN_MCU; i++) {
+ 450:fltk-1.3.4-1/jpeg/jccoefct.c ****       coef->MCU_buffer[i] = buffer + i;
+ 451:fltk-1.3.4-1/jpeg/jccoefct.c ****     }
+ 452:fltk-1.3.4-1/jpeg/jccoefct.c ****     coef->whole_image[0] = NULL; /* flag for no virtual arrays */
+ 453:fltk-1.3.4-1/jpeg/jccoefct.c ****   }
+ 454:fltk-1.3.4-1/jpeg/jccoefct.c **** }
+ 1466              		.loc 1 454 0
+ 1467 00a6 4883C418 		addq	$24, %rsp
+ 1468              		.cfi_remember_state
+ 1469              		.cfi_def_cfa_offset 56
+ 1470 00aa 5B       		popq	%rbx
+ 1471              		.cfi_def_cfa_offset 48
+ 1472              	.LVL191:
+ 1473 00ab 5D       		popq	%rbp
+ 1474              		.cfi_def_cfa_offset 40
+ 1475 00ac 415C     		popq	%r12
+ 1476              		.cfi_def_cfa_offset 32
+ 1477              	.LVL192:
+ 1478 00ae 415D     		popq	%r13
+ 1479              		.cfi_def_cfa_offset 24
+ 1480 00b0 415E     		popq	%r14
+ 1481              		.cfi_def_cfa_offset 16
+ 1482              	.LVL193:
+ 1483 00b2 415F     		popq	%r15
+ 1484              		.cfi_def_cfa_offset 8
+ 1485 00b4 C3       		ret
+ 1486              	.LVL194:
+ 1487              		.p2align 4,,10
+ 1488 00b5 0F1F00   		.p2align 3
+ 1489              	.L138:
+ 1490              		.cfi_restore_state
+ 1491              	.LBB51:
+ 447:fltk-1.3.4-1/jpeg/jccoefct.c **** 				  C_MAX_BLOCKS_IN_MCU * SIZEOF(JBLOCK));
+ 1492              		.loc 1 447 0
+ 1493 00b8 498B4424 		movq	8(%r12), %rax
+ 1493      08
+ 1494              	.LVL195:
+ 446:fltk-1.3.4-1/jpeg/jccoefct.c ****       (*cinfo->mem->alloc_large) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 1495              		.loc 1 446 0
+ 1496 00bd BA000500 		movl	$1280, %edx
+ 1496      00
+ 1497 00c2 BE010000 		movl	$1, %esi
+ 1497      00
+ 1498 00c7 4C89E7   		movq	%r12, %rdi
+ 1499 00ca FF5008   		call	*8(%rax)
+ 1500              	.LVL196:
+ 1501 00cd 498D5620 		leaq	32(%r14), %rdx
+ 1502 00d1 488D8800 		leaq	1280(%rax), %rcx
+ 1502      050000
+ 1503              	.LVL197:
+ 1504 00d8 0F1F8400 		.p2align 4,,10
+ 1504      00000000 
+ 1505              		.p2align 3
+ 1506              	.L143:
+ 450:fltk-1.3.4-1/jpeg/jccoefct.c ****     }
+ 1507              		.loc 1 450 0 discriminator 3
+ 1508 00e0 488902   		movq	%rax, (%rdx)
+ 1509 00e3 4883E880 		subq	$-128, %rax
+ 1510 00e7 4883C208 		addq	$8, %rdx
+ 449:fltk-1.3.4-1/jpeg/jccoefct.c ****       coef->MCU_buffer[i] = buffer + i;
+ 1511              		.loc 1 449 0 discriminator 3
+ 1512 00eb 4839C8   		cmpq	%rcx, %rax
+ 1513 00ee 75F0     		jne	.L143
+ 452:fltk-1.3.4-1/jpeg/jccoefct.c ****   }
+ 1514              		.loc 1 452 0
+ 1515 00f0 49C74670 		movq	$0, 112(%r14)
+ 1515      00000000 
+ 1516              	.LBE51:
+ 1517              		.loc 1 454 0
+ 1518 00f8 4883C418 		addq	$24, %rsp
+ 1519              		.cfi_def_cfa_offset 56
+ 1520 00fc 5B       		popq	%rbx
+ 1521              		.cfi_def_cfa_offset 48
+ 1522              	.LVL198:
+ 1523 00fd 5D       		popq	%rbp
+ 1524              		.cfi_def_cfa_offset 40
+ 1525 00fe 415C     		popq	%r12
+ 1526              		.cfi_def_cfa_offset 32
+ 1527              	.LVL199:
+ 1528 0100 415D     		popq	%r13
+ 1529              		.cfi_def_cfa_offset 24
+ 1530 0102 415E     		popq	%r14
+ 1531              		.cfi_def_cfa_offset 16
+ 1532              	.LVL200:
+ 1533 0104 415F     		popq	%r15
+ 1534              		.cfi_def_cfa_offset 8
+ 1535 0106 C3       		ret
+ 1536              		.cfi_endproc
+ 1537              	.LFE66:
+ 1539              		.section	.text.unlikely.jinit_c_coef_controller
+ 1540              	.LCOLDE4:
+ 1541              		.section	.text.jinit_c_coef_controller
+ 1542              	.LHOTE4:
+ 1543              		.text
+ 1544              	.Letext0:
+ 1545              		.section	.text.unlikely.start_pass_coef
+ 1546              	.Letext_cold0:
+ 1547              		.file 3 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
+ 1548              		.file 4 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 1549              		.file 5 "/usr/include/libio.h"
+ 1550              		.file 6 "fltk-1.3.4-1/jpeg/jmorecfg.h"
+ 1551              		.file 7 "fltk-1.3.4-1/jpeg/jpeglib.h"
+ 1552              		.file 8 "fltk-1.3.4-1/jpeg/jpegint.h"
+ 1553              		.file 9 "fltk-1.3.4-1/jpeg/jerror.h"
+ 1554              		.file 10 "/usr/include/stdio.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 jccoefct.c
+     /tmp/ccTUcncq.s:13     .text.start_pass_coef:0000000000000000 start_pass_coef
+     /tmp/ccTUcncq.s:503    .text.compress_data:0000000000000000 compress_data
+     /tmp/ccTUcncq.s:962    .text.compress_first_pass:0000000000000000 compress_first_pass
+     /tmp/ccTUcncq.s:198    .text.compress_output:0000000000000000 compress_output
+     /tmp/ccTUcncq.s:1357   .text.jinit_c_coef_controller:0000000000000000 jinit_c_coef_controller
+                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
+                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+                           .group:0000000000000000 wm4.jconfig.h.10.247fc3ff67998f3074970b1373c70333
+                           .group:0000000000000000 wm4.features.h.19.24da27e0a4d0d521fd057013d982b8b5
+                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
+                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
+                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
+                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
+                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
+                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
+                           .group:0000000000000000 wm4.waitflags.h.25.e401b8bcfee800b540b27abd7cc78de9
+                           .group:0000000000000000 wm4.waitstatus.h.28.93f167f49d64e2b9b99f98d1162a93bf
+                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
+                           .group:0000000000000000 wm4.endian.h.41.24cced64aef71195a51d4daa8e4f4a95
+                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
+                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
+                           .group:0000000000000000 wm4.byteswap.h.38.11ee5fdc0f6cc53a16c505b9233cecef
+                           .group:0000000000000000 wm4.endian.h.63.97272d7c64d5db8020003b32e9289502
+                           .group:0000000000000000 wm4.waitstatus.h.99.408b6270fa6eb71377201a241ef15f79
+                           .group:0000000000000000 wm4.stdlib.h.50.84aeca2ac6f37d40e1e9b3cef757ba2d
+                           .group:0000000000000000 wm4.types.h.23.f6dcbaa72f8f71361acef09804d45a5e
+                           .group:0000000000000000 wm4.time.h.53.beb46e650cd406cb917b6b96b45e640a
+                           .group:0000000000000000 wm4.stddef.h.238.847b6907dabda77be90a9ab7ad789e2e
+                           .group:0000000000000000 wm4.types.h.187.bd5a05039b505b3620e6973f1b2ffeb1
+                           .group:0000000000000000 wm4.select.h.28.eb2f3debdbcffd1442ebddaebc4fb6ff
+                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
+                           .group:0000000000000000 wm4.select.h.36.f76c3b9e55c871743863013cc4cc14c9
+                           .group:0000000000000000 wm4.time.h.66.e70ce69790c975f0efb369340c432e0b
+                           .group:0000000000000000 wm4.time.h.25.ae5284cdff565e87a9198d819340325d
+                           .group:0000000000000000 wm4.select.h.49.e9d2041e5035cc68ebd1a20f7dbc8514
+                           .group:0000000000000000 wm4.select2.h.27.f95f2ab0ffee66dc1b6575014894b21a
+                           .group:0000000000000000 wm4.sysmacros.h.20.8a0c33ff175cd9b434a86c0aaa36f0a2
+                           .group:0000000000000000 wm4.types.h.229.67b3f66bd74b06b451caec392a72a945
+                           .group:0000000000000000 wm4.pthreadtypes.h.25.6892b1493314fcf446bbc76e7362acba
+                           .group:0000000000000000 wm4.alloca.h.19.edefa922a76c1cbaaf1e416903ba2d1c
+                           .group:0000000000000000 wm4.alloca.h.29.156e12058824cc23d961c4d3b13031f6
+                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
+                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
+                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
+                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
+                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
+                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
+                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
+                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
+                           .group:0000000000000000 wm4.stdio.h.80.17b7dd1ca72d8a61987532cb1d80194a
+                           .group:0000000000000000 wm4.stdio_lim.h.23.557290a6cddeba0587f574f29e3a5fb9
+                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
+                           .group:0000000000000000 wm4.stdio.h.26.cae64f7ada9bb8327a89dba6a5e93655
+                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
+                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
+                           .group:0000000000000000 wm4.string2.h.45.00535b99420fc3014c2da41d6645330d
+                           .group:0000000000000000 wm4.string3.h.31.0c4b9301b754a2db05eaafef869657d2
+                           .group:0000000000000000 wm4.jinclude.h.67.b19f941ec97c4845fa4609292c7e2db4
+                           .group:0000000000000000 wm4.jmorecfg.h.33.3b4c5f9cc07b3737823b06caf24d5b05
+                           .group:0000000000000000 wm4.jpeglib.h.40.4f111c27252a38df39328d65454e82f4
+                           .group:0000000000000000 wm4.jpegint.h.26.5219ef5d4e4921371d38e77b6091fd20
+                           .group:0000000000000000 wm4.jerror.h.25.1dbd8674e70ab5215bc0037320e5c2a2
+
+UNDEFINED SYMBOLS
+__stack_chk_fail
+memset
+jround_up

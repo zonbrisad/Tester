@@ -1,0 +1,1122 @@
+   1              		.file	"jdatadst.c"
+   2              		.text
+   3              	.Ltext0:
+   4              		.section	.text.unlikely.init_destination,"ax",@progbits
+   5              	.LCOLDB0:
+   6              		.section	.text.init_destination,"ax",@progbits
+   7              	.LHOTB0:
+   8              		.p2align 4,,15
+   9              		.section	.text.unlikely.init_destination
+  10              	.Ltext_cold0:
+  11              		.section	.text.init_destination
+  13              	init_destination:
+  14              	.LFB61:
+  15              		.file 1 "fltk-1.3.4-1/jpeg/jdatadst.c"
+   1:fltk-1.3.4-1/jpeg/jdatadst.c **** /*
+   2:fltk-1.3.4-1/jpeg/jdatadst.c ****  * jdatadst.c
+   3:fltk-1.3.4-1/jpeg/jdatadst.c ****  *
+   4:fltk-1.3.4-1/jpeg/jdatadst.c ****  * Copyright (C) 1994-1996, Thomas G. Lane.
+   5:fltk-1.3.4-1/jpeg/jdatadst.c ****  * Modified 2009-2012 by Guido Vollbeding.
+   6:fltk-1.3.4-1/jpeg/jdatadst.c ****  * This file is part of the Independent JPEG Group's software.
+   7:fltk-1.3.4-1/jpeg/jdatadst.c ****  * For conditions of distribution and use, see the accompanying README file.
+   8:fltk-1.3.4-1/jpeg/jdatadst.c ****  *
+   9:fltk-1.3.4-1/jpeg/jdatadst.c ****  * This file contains compression data destination routines for the case of
+  10:fltk-1.3.4-1/jpeg/jdatadst.c ****  * emitting JPEG data to memory or to a file (or any stdio stream).
+  11:fltk-1.3.4-1/jpeg/jdatadst.c ****  * While these routines are sufficient for most applications,
+  12:fltk-1.3.4-1/jpeg/jdatadst.c ****  * some will want to use a different destination manager.
+  13:fltk-1.3.4-1/jpeg/jdatadst.c ****  * IMPORTANT: we assume that fwrite() will correctly transcribe an array of
+  14:fltk-1.3.4-1/jpeg/jdatadst.c ****  * JOCTETs into 8-bit-wide elements on external storage.  If char is wider
+  15:fltk-1.3.4-1/jpeg/jdatadst.c ****  * than 8 bits on your machine, you may need to do some tweaking.
+  16:fltk-1.3.4-1/jpeg/jdatadst.c ****  */
+  17:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+  18:fltk-1.3.4-1/jpeg/jdatadst.c **** /* this is not a core library module, so it doesn't define JPEG_INTERNALS */
+  19:fltk-1.3.4-1/jpeg/jdatadst.c **** #include "jinclude.h"
+  20:fltk-1.3.4-1/jpeg/jdatadst.c **** #include "jpeglib.h"
+  21:fltk-1.3.4-1/jpeg/jdatadst.c **** #include "jerror.h"
+  22:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+  23:fltk-1.3.4-1/jpeg/jdatadst.c **** #ifndef HAVE_STDLIB_H		/* <stdlib.h> should declare malloc(),free() */
+  24:fltk-1.3.4-1/jpeg/jdatadst.c **** extern void * malloc JPP((size_t size));
+  25:fltk-1.3.4-1/jpeg/jdatadst.c **** extern void free JPP((void *ptr));
+  26:fltk-1.3.4-1/jpeg/jdatadst.c **** #endif
+  27:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+  28:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+  29:fltk-1.3.4-1/jpeg/jdatadst.c **** /* Expanded data destination object for stdio output */
+  30:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+  31:fltk-1.3.4-1/jpeg/jdatadst.c **** typedef struct {
+  32:fltk-1.3.4-1/jpeg/jdatadst.c ****   struct jpeg_destination_mgr pub; /* public fields */
+  33:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+  34:fltk-1.3.4-1/jpeg/jdatadst.c ****   FILE * outfile;		/* target stream */
+  35:fltk-1.3.4-1/jpeg/jdatadst.c ****   JOCTET * buffer;		/* start of buffer */
+  36:fltk-1.3.4-1/jpeg/jdatadst.c **** } my_destination_mgr;
+  37:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+  38:fltk-1.3.4-1/jpeg/jdatadst.c **** typedef my_destination_mgr * my_dest_ptr;
+  39:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+  40:fltk-1.3.4-1/jpeg/jdatadst.c **** #define OUTPUT_BUF_SIZE  4096	/* choose an efficiently fwrite'able size */
+  41:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+  42:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+  43:fltk-1.3.4-1/jpeg/jdatadst.c **** /* Expanded data destination object for memory output */
+  44:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+  45:fltk-1.3.4-1/jpeg/jdatadst.c **** typedef struct {
+  46:fltk-1.3.4-1/jpeg/jdatadst.c ****   struct jpeg_destination_mgr pub; /* public fields */
+  47:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+  48:fltk-1.3.4-1/jpeg/jdatadst.c ****   unsigned char ** outbuffer;	/* target buffer */
+  49:fltk-1.3.4-1/jpeg/jdatadst.c ****   unsigned long * outsize;
+  50:fltk-1.3.4-1/jpeg/jdatadst.c ****   unsigned char * newbuffer;	/* newly allocated buffer */
+  51:fltk-1.3.4-1/jpeg/jdatadst.c ****   JOCTET * buffer;		/* start of buffer */
+  52:fltk-1.3.4-1/jpeg/jdatadst.c ****   size_t bufsize;
+  53:fltk-1.3.4-1/jpeg/jdatadst.c **** } my_mem_destination_mgr;
+  54:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+  55:fltk-1.3.4-1/jpeg/jdatadst.c **** typedef my_mem_destination_mgr * my_mem_dest_ptr;
+  56:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+  57:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+  58:fltk-1.3.4-1/jpeg/jdatadst.c **** /*
+  59:fltk-1.3.4-1/jpeg/jdatadst.c ****  * Initialize destination --- called by jpeg_start_compress
+  60:fltk-1.3.4-1/jpeg/jdatadst.c ****  * before any data is actually written.
+  61:fltk-1.3.4-1/jpeg/jdatadst.c ****  */
+  62:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+  63:fltk-1.3.4-1/jpeg/jdatadst.c **** METHODDEF(void)
+  64:fltk-1.3.4-1/jpeg/jdatadst.c **** init_destination (j_compress_ptr cinfo)
+  65:fltk-1.3.4-1/jpeg/jdatadst.c **** {
+  16              		.loc 1 65 0
+  17              		.cfi_startproc
+  18              	.LVL0:
+  19 0000 53       		pushq	%rbx
+  20              		.cfi_def_cfa_offset 16
+  21              		.cfi_offset 3, -16
+  66:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
+  67:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+  68:fltk-1.3.4-1/jpeg/jdatadst.c ****   /* Allocate the output buffer --- it will be released when done with image */
+  69:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->buffer = (JOCTET *)
+  70:fltk-1.3.4-1/jpeg/jdatadst.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+  22              		.loc 1 70 0
+  23 0001 488B4708 		movq	8(%rdi), %rax
+  24 0005 BA001000 		movl	$4096, %edx
+  24      00
+  66:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
+  25              		.loc 1 66 0
+  26 000a 488B5F28 		movq	40(%rdi), %rbx
+  27              	.LVL1:
+  28              		.loc 1 70 0
+  29 000e BE010000 		movl	$1, %esi
+  29      00
+  30 0013 FF10     		call	*(%rax)
+  31              	.LVL2:
+  71:fltk-1.3.4-1/jpeg/jdatadst.c **** 				  OUTPUT_BUF_SIZE * SIZEOF(JOCTET));
+  72:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+  73:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.next_output_byte = dest->buffer;
+  74:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.free_in_buffer = OUTPUT_BUF_SIZE;
+  32              		.loc 1 74 0
+  33 0015 48C74308 		movq	$4096, 8(%rbx)
+  33      00100000 
+  69:fltk-1.3.4-1/jpeg/jdatadst.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+  34              		.loc 1 69 0
+  35 001d 48894330 		movq	%rax, 48(%rbx)
+  73:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.free_in_buffer = OUTPUT_BUF_SIZE;
+  36              		.loc 1 73 0
+  37 0021 488903   		movq	%rax, (%rbx)
+  75:fltk-1.3.4-1/jpeg/jdatadst.c **** }
+  38              		.loc 1 75 0
+  39 0024 5B       		popq	%rbx
+  40              		.cfi_def_cfa_offset 8
+  41              	.LVL3:
+  42 0025 C3       		ret
+  43              		.cfi_endproc
+  44              	.LFE61:
+  46              		.section	.text.unlikely.init_destination
+  47              	.LCOLDE0:
+  48              		.section	.text.init_destination
+  49              	.LHOTE0:
+  50              		.section	.text.unlikely.init_mem_destination,"ax",@progbits
+  51              	.LCOLDB1:
+  52              		.section	.text.init_mem_destination,"ax",@progbits
+  53              	.LHOTB1:
+  54              		.p2align 4,,15
+  56              	init_mem_destination:
+  57              	.LFB62:
+  76:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+  77:fltk-1.3.4-1/jpeg/jdatadst.c **** METHODDEF(void)
+  78:fltk-1.3.4-1/jpeg/jdatadst.c **** init_mem_destination (j_compress_ptr cinfo)
+  79:fltk-1.3.4-1/jpeg/jdatadst.c **** {
+  58              		.loc 1 79 0
+  59              		.cfi_startproc
+  60              	.LVL4:
+  61 0000 F3C3     		rep ret
+  62              		.cfi_endproc
+  63              	.LFE62:
+  65              		.section	.text.unlikely.init_mem_destination
+  66              	.LCOLDE1:
+  67              		.section	.text.init_mem_destination
+  68              	.LHOTE1:
+  69              		.section	.text.unlikely.term_mem_destination,"ax",@progbits
+  70              	.LCOLDB2:
+  71              		.section	.text.term_mem_destination,"ax",@progbits
+  72              	.LHOTB2:
+  73              		.p2align 4,,15
+  75              	term_mem_destination:
+  76              	.LFB66:
+  80:fltk-1.3.4-1/jpeg/jdatadst.c ****   /* no work necessary here */
+  81:fltk-1.3.4-1/jpeg/jdatadst.c **** }
+  82:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+  83:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+  84:fltk-1.3.4-1/jpeg/jdatadst.c **** /*
+  85:fltk-1.3.4-1/jpeg/jdatadst.c ****  * Empty the output buffer --- called whenever buffer fills up.
+  86:fltk-1.3.4-1/jpeg/jdatadst.c ****  *
+  87:fltk-1.3.4-1/jpeg/jdatadst.c ****  * In typical applications, this should write the entire output buffer
+  88:fltk-1.3.4-1/jpeg/jdatadst.c ****  * (ignoring the current state of next_output_byte & free_in_buffer),
+  89:fltk-1.3.4-1/jpeg/jdatadst.c ****  * reset the pointer & count to the start of the buffer, and return TRUE
+  90:fltk-1.3.4-1/jpeg/jdatadst.c ****  * indicating that the buffer has been dumped.
+  91:fltk-1.3.4-1/jpeg/jdatadst.c ****  *
+  92:fltk-1.3.4-1/jpeg/jdatadst.c ****  * In applications that need to be able to suspend compression due to output
+  93:fltk-1.3.4-1/jpeg/jdatadst.c ****  * overrun, a FALSE return indicates that the buffer cannot be emptied now.
+  94:fltk-1.3.4-1/jpeg/jdatadst.c ****  * In this situation, the compressor will return to its caller (possibly with
+  95:fltk-1.3.4-1/jpeg/jdatadst.c ****  * an indication that it has not accepted all the supplied scanlines).  The
+  96:fltk-1.3.4-1/jpeg/jdatadst.c ****  * application should resume compression after it has made more room in the
+  97:fltk-1.3.4-1/jpeg/jdatadst.c ****  * output buffer.  Note that there are substantial restrictions on the use of
+  98:fltk-1.3.4-1/jpeg/jdatadst.c ****  * suspension --- see the documentation.
+  99:fltk-1.3.4-1/jpeg/jdatadst.c ****  *
+ 100:fltk-1.3.4-1/jpeg/jdatadst.c ****  * When suspending, the compressor will back up to a convenient restart point
+ 101:fltk-1.3.4-1/jpeg/jdatadst.c ****  * (typically the start of the current MCU). next_output_byte & free_in_buffer
+ 102:fltk-1.3.4-1/jpeg/jdatadst.c ****  * indicate where the restart point will be if the current call returns FALSE.
+ 103:fltk-1.3.4-1/jpeg/jdatadst.c ****  * Data beyond this point will be regenerated after resumption, so do not
+ 104:fltk-1.3.4-1/jpeg/jdatadst.c ****  * write it out when emptying the buffer externally.
+ 105:fltk-1.3.4-1/jpeg/jdatadst.c ****  */
+ 106:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 107:fltk-1.3.4-1/jpeg/jdatadst.c **** METHODDEF(boolean)
+ 108:fltk-1.3.4-1/jpeg/jdatadst.c **** empty_output_buffer (j_compress_ptr cinfo)
+ 109:fltk-1.3.4-1/jpeg/jdatadst.c **** {
+ 110:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
+ 111:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 112:fltk-1.3.4-1/jpeg/jdatadst.c ****   if (JFWRITE(dest->outfile, dest->buffer, OUTPUT_BUF_SIZE) !=
+ 113:fltk-1.3.4-1/jpeg/jdatadst.c ****       (size_t) OUTPUT_BUF_SIZE)
+ 114:fltk-1.3.4-1/jpeg/jdatadst.c ****     ERREXIT(cinfo, JERR_FILE_WRITE);
+ 115:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 116:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.next_output_byte = dest->buffer;
+ 117:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.free_in_buffer = OUTPUT_BUF_SIZE;
+ 118:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 119:fltk-1.3.4-1/jpeg/jdatadst.c ****   return TRUE;
+ 120:fltk-1.3.4-1/jpeg/jdatadst.c **** }
+ 121:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 122:fltk-1.3.4-1/jpeg/jdatadst.c **** METHODDEF(boolean)
+ 123:fltk-1.3.4-1/jpeg/jdatadst.c **** empty_mem_output_buffer (j_compress_ptr cinfo)
+ 124:fltk-1.3.4-1/jpeg/jdatadst.c **** {
+ 125:fltk-1.3.4-1/jpeg/jdatadst.c ****   size_t nextsize;
+ 126:fltk-1.3.4-1/jpeg/jdatadst.c ****   JOCTET * nextbuffer;
+ 127:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_mem_dest_ptr dest = (my_mem_dest_ptr) cinfo->dest;
+ 128:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 129:fltk-1.3.4-1/jpeg/jdatadst.c ****   /* Try to allocate new buffer with double size */
+ 130:fltk-1.3.4-1/jpeg/jdatadst.c ****   nextsize = dest->bufsize * 2;
+ 131:fltk-1.3.4-1/jpeg/jdatadst.c ****   nextbuffer = (JOCTET *) malloc(nextsize);
+ 132:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 133:fltk-1.3.4-1/jpeg/jdatadst.c ****   if (nextbuffer == NULL)
+ 134:fltk-1.3.4-1/jpeg/jdatadst.c ****     ERREXIT1(cinfo, JERR_OUT_OF_MEMORY, 10);
+ 135:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 136:fltk-1.3.4-1/jpeg/jdatadst.c ****   MEMCOPY(nextbuffer, dest->buffer, dest->bufsize);
+ 137:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 138:fltk-1.3.4-1/jpeg/jdatadst.c ****   if (dest->newbuffer != NULL)
+ 139:fltk-1.3.4-1/jpeg/jdatadst.c ****     free(dest->newbuffer);
+ 140:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 141:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->newbuffer = nextbuffer;
+ 142:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 143:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.next_output_byte = nextbuffer + dest->bufsize;
+ 144:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.free_in_buffer = dest->bufsize;
+ 145:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 146:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->buffer = nextbuffer;
+ 147:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->bufsize = nextsize;
+ 148:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 149:fltk-1.3.4-1/jpeg/jdatadst.c ****   return TRUE;
+ 150:fltk-1.3.4-1/jpeg/jdatadst.c **** }
+ 151:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 152:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 153:fltk-1.3.4-1/jpeg/jdatadst.c **** /*
+ 154:fltk-1.3.4-1/jpeg/jdatadst.c ****  * Terminate destination --- called by jpeg_finish_compress
+ 155:fltk-1.3.4-1/jpeg/jdatadst.c ****  * after all data has been written.  Usually needs to flush buffer.
+ 156:fltk-1.3.4-1/jpeg/jdatadst.c ****  *
+ 157:fltk-1.3.4-1/jpeg/jdatadst.c ****  * NB: *not* called by jpeg_abort or jpeg_destroy; surrounding
+ 158:fltk-1.3.4-1/jpeg/jdatadst.c ****  * application must deal with any cleanup that should happen even
+ 159:fltk-1.3.4-1/jpeg/jdatadst.c ****  * for error exit.
+ 160:fltk-1.3.4-1/jpeg/jdatadst.c ****  */
+ 161:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 162:fltk-1.3.4-1/jpeg/jdatadst.c **** METHODDEF(void)
+ 163:fltk-1.3.4-1/jpeg/jdatadst.c **** term_destination (j_compress_ptr cinfo)
+ 164:fltk-1.3.4-1/jpeg/jdatadst.c **** {
+ 165:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
+ 166:fltk-1.3.4-1/jpeg/jdatadst.c ****   size_t datacount = OUTPUT_BUF_SIZE - dest->pub.free_in_buffer;
+ 167:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 168:fltk-1.3.4-1/jpeg/jdatadst.c ****   /* Write any data remaining in the buffer */
+ 169:fltk-1.3.4-1/jpeg/jdatadst.c ****   if (datacount > 0) {
+ 170:fltk-1.3.4-1/jpeg/jdatadst.c ****     if (JFWRITE(dest->outfile, dest->buffer, datacount) != datacount)
+ 171:fltk-1.3.4-1/jpeg/jdatadst.c ****       ERREXIT(cinfo, JERR_FILE_WRITE);
+ 172:fltk-1.3.4-1/jpeg/jdatadst.c ****   }
+ 173:fltk-1.3.4-1/jpeg/jdatadst.c ****   fflush(dest->outfile);
+ 174:fltk-1.3.4-1/jpeg/jdatadst.c ****   /* Make sure we wrote the output file OK */
+ 175:fltk-1.3.4-1/jpeg/jdatadst.c ****   if (ferror(dest->outfile))
+ 176:fltk-1.3.4-1/jpeg/jdatadst.c ****     ERREXIT(cinfo, JERR_FILE_WRITE);
+ 177:fltk-1.3.4-1/jpeg/jdatadst.c **** }
+ 178:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 179:fltk-1.3.4-1/jpeg/jdatadst.c **** METHODDEF(void)
+ 180:fltk-1.3.4-1/jpeg/jdatadst.c **** term_mem_destination (j_compress_ptr cinfo)
+ 181:fltk-1.3.4-1/jpeg/jdatadst.c **** {
+  77              		.loc 1 181 0
+  78              		.cfi_startproc
+  79              	.LVL5:
+ 182:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_mem_dest_ptr dest = (my_mem_dest_ptr) cinfo->dest;
+  80              		.loc 1 182 0
+  81 0000 488B4728 		movq	40(%rdi), %rax
+  82              	.LVL6:
+ 183:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 184:fltk-1.3.4-1/jpeg/jdatadst.c ****   *dest->outbuffer = dest->buffer;
+  83              		.loc 1 184 0
+  84 0004 488B5028 		movq	40(%rax), %rdx
+  85 0008 488B4840 		movq	64(%rax), %rcx
+  86 000c 48890A   		movq	%rcx, (%rdx)
+ 185:fltk-1.3.4-1/jpeg/jdatadst.c ****   *dest->outsize = dest->bufsize - dest->pub.free_in_buffer;
+  87              		.loc 1 185 0
+  88 000f 488B5048 		movq	72(%rax), %rdx
+  89 0013 482B5008 		subq	8(%rax), %rdx
+  90 0017 488B4830 		movq	48(%rax), %rcx
+  91 001b 488911   		movq	%rdx, (%rcx)
+  92 001e C3       		ret
+  93              		.cfi_endproc
+  94              	.LFE66:
+  96              		.section	.text.unlikely.term_mem_destination
+  97              	.LCOLDE2:
+  98              		.section	.text.term_mem_destination
+  99              	.LHOTE2:
+ 100              		.section	.text.unlikely.empty_output_buffer,"ax",@progbits
+ 101              	.LCOLDB3:
+ 102              		.section	.text.empty_output_buffer,"ax",@progbits
+ 103              	.LHOTB3:
+ 104              		.p2align 4,,15
+ 106              	empty_output_buffer:
+ 107              	.LFB63:
+ 109:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
+ 108              		.loc 1 109 0
+ 109              		.cfi_startproc
+ 110              	.LVL7:
+ 111 0000 55       		pushq	%rbp
+ 112              		.cfi_def_cfa_offset 16
+ 113              		.cfi_offset 6, -16
+ 114 0001 53       		pushq	%rbx
+ 115              		.cfi_def_cfa_offset 24
+ 116              		.cfi_offset 3, -24
+ 117 0002 4889FD   		movq	%rdi, %rbp
+ 112:fltk-1.3.4-1/jpeg/jdatadst.c ****       (size_t) OUTPUT_BUF_SIZE)
+ 118              		.loc 1 112 0
+ 119 0005 BA001000 		movl	$4096, %edx
+ 119      00
+ 120 000a BE010000 		movl	$1, %esi
+ 120      00
+ 109:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
+ 121              		.loc 1 109 0
+ 122 000f 4883EC08 		subq	$8, %rsp
+ 123              		.cfi_def_cfa_offset 32
+ 110:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 124              		.loc 1 110 0
+ 125 0013 488B5F28 		movq	40(%rdi), %rbx
+ 126              	.LVL8:
+ 112:fltk-1.3.4-1/jpeg/jdatadst.c ****       (size_t) OUTPUT_BUF_SIZE)
+ 127              		.loc 1 112 0
+ 128 0017 488B4B28 		movq	40(%rbx), %rcx
+ 129 001b 488B7B30 		movq	48(%rbx), %rdi
+ 130              	.LVL9:
+ 131 001f E8000000 		call	fwrite
+ 131      00
+ 132              	.LVL10:
+ 133 0024 483D0010 		cmpq	$4096, %rax
+ 133      0000
+ 134 002a 7414     		je	.L6
+ 114:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 135              		.loc 1 114 0
+ 136 002c 488B4500 		movq	0(%rbp), %rax
+ 137 0030 4889EF   		movq	%rbp, %rdi
+ 138 0033 C7402826 		movl	$38, 40(%rax)
+ 138      000000
+ 139 003a 488B4500 		movq	0(%rbp), %rax
+ 140 003e FF10     		call	*(%rax)
+ 141              	.LVL11:
+ 142              	.L6:
+ 116:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.free_in_buffer = OUTPUT_BUF_SIZE;
+ 143              		.loc 1 116 0
+ 144 0040 488B4330 		movq	48(%rbx), %rax
+ 117:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 145              		.loc 1 117 0
+ 146 0044 48C74308 		movq	$4096, 8(%rbx)
+ 146      00100000 
+ 116:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.free_in_buffer = OUTPUT_BUF_SIZE;
+ 147              		.loc 1 116 0
+ 148 004c 488903   		movq	%rax, (%rbx)
+ 120:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 149              		.loc 1 120 0
+ 150 004f 4883C408 		addq	$8, %rsp
+ 151              		.cfi_def_cfa_offset 24
+ 152 0053 B8010000 		movl	$1, %eax
+ 152      00
+ 153 0058 5B       		popq	%rbx
+ 154              		.cfi_def_cfa_offset 16
+ 155              	.LVL12:
+ 156 0059 5D       		popq	%rbp
+ 157              		.cfi_def_cfa_offset 8
+ 158              	.LVL13:
+ 159 005a C3       		ret
+ 160              		.cfi_endproc
+ 161              	.LFE63:
+ 163              		.section	.text.unlikely.empty_output_buffer
+ 164              	.LCOLDE3:
+ 165              		.section	.text.empty_output_buffer
+ 166              	.LHOTE3:
+ 167              		.section	.text.unlikely.empty_mem_output_buffer,"ax",@progbits
+ 168              	.LCOLDB4:
+ 169              		.section	.text.empty_mem_output_buffer,"ax",@progbits
+ 170              	.LHOTB4:
+ 171              		.p2align 4,,15
+ 173              	empty_mem_output_buffer:
+ 174              	.LFB64:
+ 124:fltk-1.3.4-1/jpeg/jdatadst.c ****   size_t nextsize;
+ 175              		.loc 1 124 0
+ 176              		.cfi_startproc
+ 177              	.LVL14:
+ 178 0000 4156     		pushq	%r14
+ 179              		.cfi_def_cfa_offset 16
+ 180              		.cfi_offset 14, -16
+ 181 0002 4155     		pushq	%r13
+ 182              		.cfi_def_cfa_offset 24
+ 183              		.cfi_offset 13, -24
+ 184 0004 4989FE   		movq	%rdi, %r14
+ 185 0007 4154     		pushq	%r12
+ 186              		.cfi_def_cfa_offset 32
+ 187              		.cfi_offset 12, -32
+ 188 0009 55       		pushq	%rbp
+ 189              		.cfi_def_cfa_offset 40
+ 190              		.cfi_offset 6, -40
+ 191 000a 53       		pushq	%rbx
+ 192              		.cfi_def_cfa_offset 48
+ 193              		.cfi_offset 3, -48
+ 127:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 194              		.loc 1 127 0
+ 195 000b 488B5F28 		movq	40(%rdi), %rbx
+ 196              	.LVL15:
+ 130:fltk-1.3.4-1/jpeg/jdatadst.c ****   nextbuffer = (JOCTET *) malloc(nextsize);
+ 197              		.loc 1 130 0
+ 198 000f 4C8B6348 		movq	72(%rbx), %r12
+ 199 0013 4F8D2C24 		leaq	(%r12,%r12), %r13
+ 200              	.LVL16:
+ 131:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 201              		.loc 1 131 0
+ 202 0017 4C89EF   		movq	%r13, %rdi
+ 203              	.LVL17:
+ 204 001a E8000000 		call	malloc
+ 204      00
+ 205              	.LVL18:
+ 133:fltk-1.3.4-1/jpeg/jdatadst.c ****     ERREXIT1(cinfo, JERR_OUT_OF_MEMORY, 10);
+ 206              		.loc 1 133 0
+ 207 001f 4885C0   		testq	%rax, %rax
+ 131:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 208              		.loc 1 131 0
+ 209 0022 4889C5   		movq	%rax, %rbp
+ 210              	.LVL19:
+ 133:fltk-1.3.4-1/jpeg/jdatadst.c ****     ERREXIT1(cinfo, JERR_OUT_OF_MEMORY, 10);
+ 211              		.loc 1 133 0
+ 212 0025 7449     		je	.L19
+ 213              	.LVL20:
+ 214              	.L13:
+ 215              	.LBB4:
+ 216              	.LBB5:
+ 217              		.file 2 "/usr/include/x86_64-linux-gnu/bits/string3.h"
+   1:/usr/include/x86_64-linux-gnu/bits/string3.h **** /* Copyright (C) 2004-2016 Free Software Foundation, Inc.
+   2:/usr/include/x86_64-linux-gnu/bits/string3.h ****    This file is part of the GNU C Library.
+   3:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+   4:/usr/include/x86_64-linux-gnu/bits/string3.h ****    The GNU C Library is free software; you can redistribute it and/or
+   5:/usr/include/x86_64-linux-gnu/bits/string3.h ****    modify it under the terms of the GNU Lesser General Public
+   6:/usr/include/x86_64-linux-gnu/bits/string3.h ****    License as published by the Free Software Foundation; either
+   7:/usr/include/x86_64-linux-gnu/bits/string3.h ****    version 2.1 of the License, or (at your option) any later version.
+   8:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+   9:/usr/include/x86_64-linux-gnu/bits/string3.h ****    The GNU C Library is distributed in the hope that it will be useful,
+  10:/usr/include/x86_64-linux-gnu/bits/string3.h ****    but WITHOUT ANY WARRANTY; without even the implied warranty of
+  11:/usr/include/x86_64-linux-gnu/bits/string3.h ****    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  12:/usr/include/x86_64-linux-gnu/bits/string3.h ****    Lesser General Public License for more details.
+  13:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  14:/usr/include/x86_64-linux-gnu/bits/string3.h ****    You should have received a copy of the GNU Lesser General Public
+  15:/usr/include/x86_64-linux-gnu/bits/string3.h ****    License along with the GNU C Library; if not, see
+  16:/usr/include/x86_64-linux-gnu/bits/string3.h ****    <http://www.gnu.org/licenses/>.  */
+  17:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  18:/usr/include/x86_64-linux-gnu/bits/string3.h **** #ifndef _STRING_H
+  19:/usr/include/x86_64-linux-gnu/bits/string3.h **** # error "Never use <bits/string3.h> directly; include <string.h> instead."
+  20:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  21:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  22:/usr/include/x86_64-linux-gnu/bits/string3.h **** #if !__GNUC_PREREQ (5,0)
+  23:/usr/include/x86_64-linux-gnu/bits/string3.h **** __warndecl (__warn_memset_zero_len,
+  24:/usr/include/x86_64-linux-gnu/bits/string3.h **** 	    "memset used with constant zero length parameter; this could be due to transposed parameters")
+  25:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  26:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  27:/usr/include/x86_64-linux-gnu/bits/string3.h **** #ifndef __cplusplus
+  28:/usr/include/x86_64-linux-gnu/bits/string3.h **** /* XXX This is temporarily.  We should not redefine any of the symbols
+  29:/usr/include/x86_64-linux-gnu/bits/string3.h ****    and instead integrate the error checking into the original
+  30:/usr/include/x86_64-linux-gnu/bits/string3.h ****    definitions.  */
+  31:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memcpy
+  32:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memmove
+  33:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memset
+  34:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strcat
+  35:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strcpy
+  36:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strncat
+  37:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strncpy
+  38:/usr/include/x86_64-linux-gnu/bits/string3.h **** # ifdef __USE_GNU
+  39:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef mempcpy
+  40:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef stpcpy
+  41:/usr/include/x86_64-linux-gnu/bits/string3.h **** # endif
+  42:/usr/include/x86_64-linux-gnu/bits/string3.h **** # ifdef __USE_MISC
+  43:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef bcopy
+  44:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef bzero
+  45:/usr/include/x86_64-linux-gnu/bits/string3.h **** # endif
+  46:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
+  47:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  48:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
+  49:/usr/include/x86_64-linux-gnu/bits/string3.h **** __fortify_function void *
+  50:/usr/include/x86_64-linux-gnu/bits/string3.h **** __NTH (memcpy (void *__restrict __dest, const void *__restrict __src,
+  51:/usr/include/x86_64-linux-gnu/bits/string3.h **** 	       size_t __len))
+  52:/usr/include/x86_64-linux-gnu/bits/string3.h **** {
+  53:/usr/include/x86_64-linux-gnu/bits/string3.h ****   return __builtin___memcpy_chk (__dest, __src, __len, __bos0 (__dest));
+ 218              		.loc 2 53 0
+ 219 0027 488B7340 		movq	64(%rbx), %rsi
+ 220 002b 4889EF   		movq	%rbp, %rdi
+ 221 002e 4C89E2   		movq	%r12, %rdx
+ 222 0031 E8000000 		call	memcpy
+ 222      00
+ 223              	.LVL21:
+ 224              	.LBE5:
+ 225              	.LBE4:
+ 138:fltk-1.3.4-1/jpeg/jdatadst.c ****     free(dest->newbuffer);
+ 226              		.loc 1 138 0
+ 227 0036 488B7B38 		movq	56(%rbx), %rdi
+ 228 003a 4885FF   		testq	%rdi, %rdi
+ 229 003d 7405     		je	.L14
+ 139:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 230              		.loc 1 139 0
+ 231 003f E8000000 		call	free
+ 231      00
+ 232              	.LVL22:
+ 233              	.L14:
+ 143:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.free_in_buffer = dest->bufsize;
+ 234              		.loc 1 143 0
+ 235 0044 488B4348 		movq	72(%rbx), %rax
+ 141:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 236              		.loc 1 141 0
+ 237 0048 48896B38 		movq	%rbp, 56(%rbx)
+ 146:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->bufsize = nextsize;
+ 238              		.loc 1 146 0
+ 239 004c 48896B40 		movq	%rbp, 64(%rbx)
+ 147:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 240              		.loc 1 147 0
+ 241 0050 4C896B48 		movq	%r13, 72(%rbx)
+ 143:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.free_in_buffer = dest->bufsize;
+ 242              		.loc 1 143 0
+ 243 0054 488D5405 		leaq	0(%rbp,%rax), %rdx
+ 243      00
+ 144:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 244              		.loc 1 144 0
+ 245 0059 48894308 		movq	%rax, 8(%rbx)
+ 150:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 246              		.loc 1 150 0
+ 247 005d B8010000 		movl	$1, %eax
+ 247      00
+ 143:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.free_in_buffer = dest->bufsize;
+ 248              		.loc 1 143 0
+ 249 0062 488913   		movq	%rdx, (%rbx)
+ 150:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 250              		.loc 1 150 0
+ 251 0065 5B       		popq	%rbx
+ 252              		.cfi_remember_state
+ 253              		.cfi_def_cfa_offset 40
+ 254              	.LVL23:
+ 255 0066 5D       		popq	%rbp
+ 256              		.cfi_def_cfa_offset 32
+ 257              	.LVL24:
+ 258 0067 415C     		popq	%r12
+ 259              		.cfi_def_cfa_offset 24
+ 260 0069 415D     		popq	%r13
+ 261              		.cfi_def_cfa_offset 16
+ 262              	.LVL25:
+ 263 006b 415E     		popq	%r14
+ 264              		.cfi_def_cfa_offset 8
+ 265              	.LVL26:
+ 266 006d C3       		ret
+ 267              	.LVL27:
+ 268 006e 6690     		.p2align 4,,10
+ 269              		.p2align 3
+ 270              	.L19:
+ 271              		.cfi_restore_state
+ 134:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 272              		.loc 1 134 0
+ 273 0070 498B06   		movq	(%r14), %rax
+ 274              	.LVL28:
+ 275 0073 4C89F7   		movq	%r14, %rdi
+ 276 0076 C7402838 		movl	$56, 40(%rax)
+ 276      000000
+ 277 007d 498B06   		movq	(%r14), %rax
+ 278 0080 C7402C0A 		movl	$10, 44(%rax)
+ 278      000000
+ 279 0087 498B06   		movq	(%r14), %rax
+ 280 008a FF10     		call	*(%rax)
+ 281              	.LVL29:
+ 282 008c 4C8B6348 		movq	72(%rbx), %r12
+ 283 0090 EB95     		jmp	.L13
+ 284              		.cfi_endproc
+ 285              	.LFE64:
+ 287              		.section	.text.unlikely.empty_mem_output_buffer
+ 288              	.LCOLDE4:
+ 289              		.section	.text.empty_mem_output_buffer
+ 290              	.LHOTE4:
+ 291              		.section	.text.unlikely.term_destination,"ax",@progbits
+ 292              	.LCOLDB5:
+ 293              		.section	.text.term_destination,"ax",@progbits
+ 294              	.LHOTB5:
+ 295              		.p2align 4,,15
+ 297              	term_destination:
+ 298              	.LFB65:
+ 164:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
+ 299              		.loc 1 164 0
+ 300              		.cfi_startproc
+ 301              	.LVL30:
+ 302 0000 4154     		pushq	%r12
+ 303              		.cfi_def_cfa_offset 16
+ 304              		.cfi_offset 12, -16
+ 305 0002 55       		pushq	%rbp
+ 306              		.cfi_def_cfa_offset 24
+ 307              		.cfi_offset 6, -24
+ 166:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 308              		.loc 1 166 0
+ 309 0003 BA001000 		movl	$4096, %edx
+ 309      00
+ 164:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
+ 310              		.loc 1 164 0
+ 311 0008 53       		pushq	%rbx
+ 312              		.cfi_def_cfa_offset 32
+ 313              		.cfi_offset 3, -32
+ 165:fltk-1.3.4-1/jpeg/jdatadst.c ****   size_t datacount = OUTPUT_BUF_SIZE - dest->pub.free_in_buffer;
+ 314              		.loc 1 165 0
+ 315 0009 488B5F28 		movq	40(%rdi), %rbx
+ 316              	.LVL31:
+ 164:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
+ 317              		.loc 1 164 0
+ 318 000d 4989FC   		movq	%rdi, %r12
+ 169:fltk-1.3.4-1/jpeg/jdatadst.c ****     if (JFWRITE(dest->outfile, dest->buffer, datacount) != datacount)
+ 319              		.loc 1 169 0
+ 320 0010 482B5308 		subq	8(%rbx), %rdx
+ 321              	.LVL32:
+ 322 0014 7542     		jne	.L26
+ 323              	.LVL33:
+ 324              	.L22:
+ 173:fltk-1.3.4-1/jpeg/jdatadst.c ****   /* Make sure we wrote the output file OK */
+ 325              		.loc 1 173 0
+ 326 0016 488B7B28 		movq	40(%rbx), %rdi
+ 327 001a E8000000 		call	fflush
+ 327      00
+ 328              	.LVL34:
+ 175:fltk-1.3.4-1/jpeg/jdatadst.c ****     ERREXIT(cinfo, JERR_FILE_WRITE);
+ 329              		.loc 1 175 0
+ 330 001f 488B7B28 		movq	40(%rbx), %rdi
+ 331 0023 E8000000 		call	ferror
+ 331      00
+ 332              	.LVL35:
+ 333 0028 85C0     		testl	%eax, %eax
+ 334 002a 750C     		jne	.L27
+ 177:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 335              		.loc 1 177 0
+ 336 002c 5B       		popq	%rbx
+ 337              		.cfi_remember_state
+ 338              		.cfi_def_cfa_offset 24
+ 339              	.LVL36:
+ 340 002d 5D       		popq	%rbp
+ 341              		.cfi_def_cfa_offset 16
+ 342 002e 415C     		popq	%r12
+ 343              		.cfi_def_cfa_offset 8
+ 344              	.LVL37:
+ 345 0030 C3       		ret
+ 346              	.LVL38:
+ 347              		.p2align 4,,10
+ 348 0031 0F1F8000 		.p2align 3
+ 348      000000
+ 349              	.L27:
+ 350              		.cfi_restore_state
+ 351              	.LBB8:
+ 352              	.LBB9:
+ 176:fltk-1.3.4-1/jpeg/jdatadst.c **** }
+ 353              		.loc 1 176 0
+ 354 0038 498B0424 		movq	(%r12), %rax
+ 355 003c 4C89E7   		movq	%r12, %rdi
+ 356 003f C7402826 		movl	$38, 40(%rax)
+ 356      000000
+ 357 0046 498B0424 		movq	(%r12), %rax
+ 358              	.LBE9:
+ 359              	.LBE8:
+ 177:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 360              		.loc 1 177 0
+ 361 004a 5B       		popq	%rbx
+ 362              		.cfi_remember_state
+ 363              		.cfi_def_cfa_offset 24
+ 364              	.LVL39:
+ 365 004b 5D       		popq	%rbp
+ 366              		.cfi_def_cfa_offset 16
+ 367 004c 415C     		popq	%r12
+ 368              		.cfi_def_cfa_offset 8
+ 369              	.LVL40:
+ 370              	.LBB11:
+ 371              	.LBB10:
+ 176:fltk-1.3.4-1/jpeg/jdatadst.c **** }
+ 372              		.loc 1 176 0
+ 373 004e 488B00   		movq	(%rax), %rax
+ 374 0051 FFE0     		jmp	*%rax
+ 375              	.LVL41:
+ 376              		.p2align 4,,10
+ 377 0053 0F1F4400 		.p2align 3
+ 377      00
+ 378              	.L26:
+ 379              		.cfi_restore_state
+ 380              	.LBE10:
+ 381              	.LBE11:
+ 170:fltk-1.3.4-1/jpeg/jdatadst.c ****       ERREXIT(cinfo, JERR_FILE_WRITE);
+ 382              		.loc 1 170 0
+ 383 0058 488B4B28 		movq	40(%rbx), %rcx
+ 384 005c 488B7B30 		movq	48(%rbx), %rdi
+ 385              	.LVL42:
+ 386 0060 4889D5   		movq	%rdx, %rbp
+ 387 0063 BE010000 		movl	$1, %esi
+ 387      00
+ 388 0068 E8000000 		call	fwrite
+ 388      00
+ 389              	.LVL43:
+ 390 006d 4839C5   		cmpq	%rax, %rbp
+ 391 0070 74A4     		je	.L22
+ 171:fltk-1.3.4-1/jpeg/jdatadst.c ****   }
+ 392              		.loc 1 171 0
+ 393 0072 498B0424 		movq	(%r12), %rax
+ 394 0076 4C89E7   		movq	%r12, %rdi
+ 395 0079 C7402826 		movl	$38, 40(%rax)
+ 395      000000
+ 396 0080 498B0424 		movq	(%r12), %rax
+ 397 0084 FF10     		call	*(%rax)
+ 398              	.LVL44:
+ 399 0086 EB8E     		jmp	.L22
+ 400              		.cfi_endproc
+ 401              	.LFE65:
+ 403              		.section	.text.unlikely.term_destination
+ 404              	.LCOLDE5:
+ 405              		.section	.text.term_destination
+ 406              	.LHOTE5:
+ 407              		.section	.text.unlikely.jpeg_stdio_dest,"ax",@progbits
+ 408              	.LCOLDB6:
+ 409              		.section	.text.jpeg_stdio_dest,"ax",@progbits
+ 410              	.LHOTB6:
+ 411              		.p2align 4,,15
+ 412              		.globl	jpeg_stdio_dest
+ 414              	jpeg_stdio_dest:
+ 415              	.LFB67:
+ 186:fltk-1.3.4-1/jpeg/jdatadst.c **** }
+ 187:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 188:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 189:fltk-1.3.4-1/jpeg/jdatadst.c **** /*
+ 190:fltk-1.3.4-1/jpeg/jdatadst.c ****  * Prepare for output to a stdio stream.
+ 191:fltk-1.3.4-1/jpeg/jdatadst.c ****  * The caller must have already opened the stream, and is responsible
+ 192:fltk-1.3.4-1/jpeg/jdatadst.c ****  * for closing it after finishing compression.
+ 193:fltk-1.3.4-1/jpeg/jdatadst.c ****  */
+ 194:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 195:fltk-1.3.4-1/jpeg/jdatadst.c **** GLOBAL(void)
+ 196:fltk-1.3.4-1/jpeg/jdatadst.c **** jpeg_stdio_dest (j_compress_ptr cinfo, FILE * outfile)
+ 197:fltk-1.3.4-1/jpeg/jdatadst.c **** {
+ 416              		.loc 1 197 0
+ 417              		.cfi_startproc
+ 418              	.LVL45:
+ 419 0000 55       		pushq	%rbp
+ 420              		.cfi_def_cfa_offset 16
+ 421              		.cfi_offset 6, -16
+ 422 0001 53       		pushq	%rbx
+ 423              		.cfi_def_cfa_offset 24
+ 424              		.cfi_offset 3, -24
+ 425 0002 4889F5   		movq	%rsi, %rbp
+ 426 0005 4883EC08 		subq	$8, %rsp
+ 427              		.cfi_def_cfa_offset 32
+ 198:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest;
+ 199:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 200:fltk-1.3.4-1/jpeg/jdatadst.c ****   /* The destination object is made permanent so that multiple JPEG images
+ 201:fltk-1.3.4-1/jpeg/jdatadst.c ****    * can be written to the same file without re-executing jpeg_stdio_dest.
+ 202:fltk-1.3.4-1/jpeg/jdatadst.c ****    * This makes it dangerous to use this manager and a different destination
+ 203:fltk-1.3.4-1/jpeg/jdatadst.c ****    * manager serially with the same JPEG object, because their private object
+ 204:fltk-1.3.4-1/jpeg/jdatadst.c ****    * sizes may be different.  Caveat programmer.
+ 205:fltk-1.3.4-1/jpeg/jdatadst.c ****    */
+ 206:fltk-1.3.4-1/jpeg/jdatadst.c ****   if (cinfo->dest == NULL) {	/* first time for this JPEG object? */
+ 428              		.loc 1 206 0
+ 429 0009 488B4728 		movq	40(%rdi), %rax
+ 430 000d 4885C0   		testq	%rax, %rax
+ 431 0010 7426     		je	.L31
+ 432              	.LVL46:
+ 433              	.L29:
+ 207:fltk-1.3.4-1/jpeg/jdatadst.c ****     cinfo->dest = (struct jpeg_destination_mgr *)
+ 208:fltk-1.3.4-1/jpeg/jdatadst.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
+ 209:fltk-1.3.4-1/jpeg/jdatadst.c **** 				  SIZEOF(my_destination_mgr));
+ 210:fltk-1.3.4-1/jpeg/jdatadst.c ****   }
+ 211:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 212:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest = (my_dest_ptr) cinfo->dest;
+ 213:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.init_destination = init_destination;
+ 434              		.loc 1 213 0
+ 435 0012 48C74010 		movq	$init_destination, 16(%rax)
+ 435      00000000 
+ 436              	.LVL47:
+ 214:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.empty_output_buffer = empty_output_buffer;
+ 437              		.loc 1 214 0
+ 438 001a 48C74018 		movq	$empty_output_buffer, 24(%rax)
+ 438      00000000 
+ 215:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.term_destination = term_destination;
+ 439              		.loc 1 215 0
+ 440 0022 48C74020 		movq	$term_destination, 32(%rax)
+ 440      00000000 
+ 216:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->outfile = outfile;
+ 441              		.loc 1 216 0
+ 442 002a 48896828 		movq	%rbp, 40(%rax)
+ 217:fltk-1.3.4-1/jpeg/jdatadst.c **** }
+ 443              		.loc 1 217 0
+ 444 002e 4883C408 		addq	$8, %rsp
+ 445              		.cfi_remember_state
+ 446              		.cfi_def_cfa_offset 24
+ 447 0032 5B       		popq	%rbx
+ 448              		.cfi_def_cfa_offset 16
+ 449 0033 5D       		popq	%rbp
+ 450              		.cfi_def_cfa_offset 8
+ 451              	.LVL48:
+ 452 0034 C3       		ret
+ 453              	.LVL49:
+ 454              		.p2align 4,,10
+ 455 0035 0F1F00   		.p2align 3
+ 456              	.L31:
+ 457              		.cfi_restore_state
+ 208:fltk-1.3.4-1/jpeg/jdatadst.c **** 				  SIZEOF(my_destination_mgr));
+ 458              		.loc 1 208 0
+ 459 0038 488B4708 		movq	8(%rdi), %rax
+ 460 003c 4889FB   		movq	%rdi, %rbx
+ 461 003f BA380000 		movl	$56, %edx
+ 461      00
+ 462 0044 31F6     		xorl	%esi, %esi
+ 463              	.LVL50:
+ 464 0046 FF10     		call	*(%rax)
+ 465              	.LVL51:
+ 207:fltk-1.3.4-1/jpeg/jdatadst.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
+ 466              		.loc 1 207 0
+ 467 0048 48894328 		movq	%rax, 40(%rbx)
+ 468 004c EBC4     		jmp	.L29
+ 469              		.cfi_endproc
+ 470              	.LFE67:
+ 472              		.section	.text.unlikely.jpeg_stdio_dest
+ 473              	.LCOLDE6:
+ 474              		.section	.text.jpeg_stdio_dest
+ 475              	.LHOTE6:
+ 476              		.section	.text.unlikely.jpeg_mem_dest,"ax",@progbits
+ 477              	.LCOLDB7:
+ 478              		.section	.text.jpeg_mem_dest,"ax",@progbits
+ 479              	.LHOTB7:
+ 480              		.p2align 4,,15
+ 481              		.globl	jpeg_mem_dest
+ 483              	jpeg_mem_dest:
+ 484              	.LFB68:
+ 218:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 219:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 220:fltk-1.3.4-1/jpeg/jdatadst.c **** /*
+ 221:fltk-1.3.4-1/jpeg/jdatadst.c ****  * Prepare for output to a memory buffer.
+ 222:fltk-1.3.4-1/jpeg/jdatadst.c ****  * The caller may supply an own initial buffer with appropriate size.
+ 223:fltk-1.3.4-1/jpeg/jdatadst.c ****  * Otherwise, or when the actual data output exceeds the given size,
+ 224:fltk-1.3.4-1/jpeg/jdatadst.c ****  * the library adapts the buffer size as necessary.
+ 225:fltk-1.3.4-1/jpeg/jdatadst.c ****  * The standard library functions malloc/free are used for allocating
+ 226:fltk-1.3.4-1/jpeg/jdatadst.c ****  * larger memory, so the buffer is available to the application after
+ 227:fltk-1.3.4-1/jpeg/jdatadst.c ****  * finishing compression, and then the application is responsible for
+ 228:fltk-1.3.4-1/jpeg/jdatadst.c ****  * freeing the requested memory.
+ 229:fltk-1.3.4-1/jpeg/jdatadst.c ****  * Note:  An initial buffer supplied by the caller is expected to be
+ 230:fltk-1.3.4-1/jpeg/jdatadst.c ****  * managed by the application.  The library does not free such buffer
+ 231:fltk-1.3.4-1/jpeg/jdatadst.c ****  * when allocating a larger buffer.
+ 232:fltk-1.3.4-1/jpeg/jdatadst.c ****  */
+ 233:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 234:fltk-1.3.4-1/jpeg/jdatadst.c **** GLOBAL(void)
+ 235:fltk-1.3.4-1/jpeg/jdatadst.c **** jpeg_mem_dest (j_compress_ptr cinfo,
+ 236:fltk-1.3.4-1/jpeg/jdatadst.c **** 	       unsigned char ** outbuffer, unsigned long * outsize)
+ 237:fltk-1.3.4-1/jpeg/jdatadst.c **** {
+ 485              		.loc 1 237 0
+ 486              		.cfi_startproc
+ 487              	.LVL52:
+ 488 0000 4155     		pushq	%r13
+ 489              		.cfi_def_cfa_offset 16
+ 490              		.cfi_offset 13, -16
+ 491 0002 4154     		pushq	%r12
+ 492              		.cfi_def_cfa_offset 24
+ 493              		.cfi_offset 12, -24
+ 494 0004 4989FD   		movq	%rdi, %r13
+ 495 0007 55       		pushq	%rbp
+ 496              		.cfi_def_cfa_offset 32
+ 497              		.cfi_offset 6, -32
+ 498 0008 53       		pushq	%rbx
+ 499              		.cfi_def_cfa_offset 40
+ 500              		.cfi_offset 3, -40
+ 501 0009 4989F4   		movq	%rsi, %r12
+ 502 000c 4889D5   		movq	%rdx, %rbp
+ 503 000f 4883EC08 		subq	$8, %rsp
+ 504              		.cfi_def_cfa_offset 48
+ 238:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_mem_dest_ptr dest;
+ 239:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 240:fltk-1.3.4-1/jpeg/jdatadst.c ****   if (outbuffer == NULL || outsize == NULL)	/* sanity check */
+ 505              		.loc 1 240 0
+ 506 0013 4885F6   		testq	%rsi, %rsi
+ 507 0016 0F849400 		je	.L39
+ 507      0000
+ 508 001c 4885D2   		testq	%rdx, %rdx
+ 509 001f 0F848B00 		je	.L39
+ 509      0000
+ 510              	.LVL53:
+ 511              	.L33:
+ 241:fltk-1.3.4-1/jpeg/jdatadst.c ****     ERREXIT(cinfo, JERR_BUFFER_SIZE);
+ 242:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 243:fltk-1.3.4-1/jpeg/jdatadst.c ****   /* The destination object is made permanent so that multiple JPEG images
+ 244:fltk-1.3.4-1/jpeg/jdatadst.c ****    * can be written to the same buffer without re-executing jpeg_mem_dest.
+ 245:fltk-1.3.4-1/jpeg/jdatadst.c ****    */
+ 246:fltk-1.3.4-1/jpeg/jdatadst.c ****   if (cinfo->dest == NULL) {	/* first time for this JPEG object? */
+ 512              		.loc 1 246 0
+ 513 0025 498B5D28 		movq	40(%r13), %rbx
+ 514 0029 4885DB   		testq	%rbx, %rbx
+ 515 002c 0F849E00 		je	.L47
+ 515      0000
+ 516              	.L35:
+ 517              	.LVL54:
+ 247:fltk-1.3.4-1/jpeg/jdatadst.c ****     cinfo->dest = (struct jpeg_destination_mgr *)
+ 248:fltk-1.3.4-1/jpeg/jdatadst.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
+ 249:fltk-1.3.4-1/jpeg/jdatadst.c **** 				  SIZEOF(my_mem_destination_mgr));
+ 250:fltk-1.3.4-1/jpeg/jdatadst.c ****   }
+ 251:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 252:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest = (my_mem_dest_ptr) cinfo->dest;
+ 253:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.init_destination = init_mem_destination;
+ 518              		.loc 1 253 0
+ 519 0032 48C74310 		movq	$init_mem_destination, 16(%rbx)
+ 519      00000000 
+ 520              	.LVL55:
+ 254:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.empty_output_buffer = empty_mem_output_buffer;
+ 521              		.loc 1 254 0
+ 522 003a 48C74318 		movq	$empty_mem_output_buffer, 24(%rbx)
+ 522      00000000 
+ 255:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.term_destination = term_mem_destination;
+ 523              		.loc 1 255 0
+ 524 0042 48C74320 		movq	$term_mem_destination, 32(%rbx)
+ 524      00000000 
+ 256:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->outbuffer = outbuffer;
+ 525              		.loc 1 256 0
+ 526 004a 4C896328 		movq	%r12, 40(%rbx)
+ 257:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->outsize = outsize;
+ 527              		.loc 1 257 0
+ 528 004e 48896B30 		movq	%rbp, 48(%rbx)
+ 258:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->newbuffer = NULL;
+ 529              		.loc 1 258 0
+ 530 0052 48C74338 		movq	$0, 56(%rbx)
+ 530      00000000 
+ 259:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 260:fltk-1.3.4-1/jpeg/jdatadst.c ****   if (*outbuffer == NULL || *outsize == 0) {
+ 531              		.loc 1 260 0
+ 532 005a 498B0424 		movq	(%r12), %rax
+ 533 005e 4885C0   		testq	%rax, %rax
+ 534 0061 7407     		je	.L36
+ 535              		.loc 1 260 0 is_stmt 0 discriminator 1
+ 536 0063 48837D00 		cmpq	$0, 0(%rbp)
+ 536      00
+ 537 0068 7523     		jne	.L37
+ 538              	.L36:
+ 261:fltk-1.3.4-1/jpeg/jdatadst.c ****     /* Allocate initial buffer */
+ 262:fltk-1.3.4-1/jpeg/jdatadst.c ****     dest->newbuffer = *outbuffer = (unsigned char *) malloc(OUTPUT_BUF_SIZE);
+ 539              		.loc 1 262 0 is_stmt 1
+ 540 006a BF001000 		movl	$4096, %edi
+ 540      00
+ 541 006f E8000000 		call	malloc
+ 541      00
+ 542              	.LVL56:
+ 263:fltk-1.3.4-1/jpeg/jdatadst.c ****     if (dest->newbuffer == NULL)
+ 543              		.loc 1 263 0
+ 544 0074 4885C0   		testq	%rax, %rax
+ 262:fltk-1.3.4-1/jpeg/jdatadst.c ****     if (dest->newbuffer == NULL)
+ 545              		.loc 1 262 0
+ 546 0077 49890424 		movq	%rax, (%r12)
+ 547 007b 48894338 		movq	%rax, 56(%rbx)
+ 548              		.loc 1 263 0
+ 549 007f 746F     		je	.L48
+ 550              	.L38:
+ 264:fltk-1.3.4-1/jpeg/jdatadst.c ****       ERREXIT1(cinfo, JERR_OUT_OF_MEMORY, 10);
+ 265:fltk-1.3.4-1/jpeg/jdatadst.c ****     *outsize = OUTPUT_BUF_SIZE;
+ 551              		.loc 1 265 0
+ 552 0081 48C74500 		movq	$4096, 0(%rbp)
+ 552      00100000 
+ 553 0089 498B0424 		movq	(%r12), %rax
+ 554              	.L37:
+ 266:fltk-1.3.4-1/jpeg/jdatadst.c ****   }
+ 267:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 268:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.next_output_byte = dest->buffer = *outbuffer;
+ 555              		.loc 1 268 0
+ 556 008d 48894340 		movq	%rax, 64(%rbx)
+ 557 0091 488903   		movq	%rax, (%rbx)
+ 269:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.free_in_buffer = dest->bufsize = *outsize;
+ 558              		.loc 1 269 0
+ 559 0094 488B4500 		movq	0(%rbp), %rax
+ 560 0098 48894348 		movq	%rax, 72(%rbx)
+ 561 009c 48894308 		movq	%rax, 8(%rbx)
+ 270:fltk-1.3.4-1/jpeg/jdatadst.c **** }
+ 562              		.loc 1 270 0
+ 563 00a0 4883C408 		addq	$8, %rsp
+ 564              		.cfi_remember_state
+ 565              		.cfi_def_cfa_offset 40
+ 566 00a4 5B       		popq	%rbx
+ 567              		.cfi_def_cfa_offset 32
+ 568 00a5 5D       		popq	%rbp
+ 569              		.cfi_def_cfa_offset 24
+ 570              	.LVL57:
+ 571 00a6 415C     		popq	%r12
+ 572              		.cfi_def_cfa_offset 16
+ 573              	.LVL58:
+ 574 00a8 415D     		popq	%r13
+ 575              		.cfi_def_cfa_offset 8
+ 576              	.LVL59:
+ 577 00aa C3       		ret
+ 578              	.LVL60:
+ 579 00ab 0F1F4400 		.p2align 4,,10
+ 579      00
+ 580              		.p2align 3
+ 581              	.L39:
+ 582              		.cfi_restore_state
+ 241:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 583              		.loc 1 241 0
+ 584 00b0 498B4500 		movq	0(%r13), %rax
+ 585 00b4 4C89EF   		movq	%r13, %rdi
+ 586              	.LVL61:
+ 587 00b7 C7402818 		movl	$24, 40(%rax)
+ 587      000000
+ 588 00be 498B4500 		movq	0(%r13), %rax
+ 589 00c2 FF10     		call	*(%rax)
+ 590              	.LVL62:
+ 591 00c4 E95CFFFF 		jmp	.L33
+ 591      FF
+ 592 00c9 0F1F8000 		.p2align 4,,10
+ 592      000000
+ 593              		.p2align 3
+ 594              	.L47:
+ 248:fltk-1.3.4-1/jpeg/jdatadst.c **** 				  SIZEOF(my_mem_destination_mgr));
+ 595              		.loc 1 248 0
+ 596 00d0 498B4508 		movq	8(%r13), %rax
+ 597 00d4 BA500000 		movl	$80, %edx
+ 597      00
+ 598 00d9 31F6     		xorl	%esi, %esi
+ 599 00db 4C89EF   		movq	%r13, %rdi
+ 600 00de FF10     		call	*(%rax)
+ 601              	.LVL63:
+ 247:fltk-1.3.4-1/jpeg/jdatadst.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
+ 602              		.loc 1 247 0
+ 603 00e0 49894528 		movq	%rax, 40(%r13)
+ 604 00e4 4889C3   		movq	%rax, %rbx
+ 605 00e7 E946FFFF 		jmp	.L35
+ 605      FF
+ 606 00ec 0F1F4000 		.p2align 4,,10
+ 607              		.p2align 3
+ 608              	.L48:
+ 264:fltk-1.3.4-1/jpeg/jdatadst.c ****     *outsize = OUTPUT_BUF_SIZE;
+ 609              		.loc 1 264 0
+ 610 00f0 498B4500 		movq	0(%r13), %rax
+ 611 00f4 4C89EF   		movq	%r13, %rdi
+ 612 00f7 C7402838 		movl	$56, 40(%rax)
+ 612      000000
+ 613 00fe 498B4500 		movq	0(%r13), %rax
+ 614 0102 C7402C0A 		movl	$10, 44(%rax)
+ 614      000000
+ 615 0109 498B4500 		movq	0(%r13), %rax
+ 616 010d FF10     		call	*(%rax)
+ 617              	.LVL64:
+ 618 010f E96DFFFF 		jmp	.L38
+ 618      FF
+ 619              		.cfi_endproc
+ 620              	.LFE68:
+ 622              		.section	.text.unlikely.jpeg_mem_dest
+ 623              	.LCOLDE7:
+ 624              		.section	.text.jpeg_mem_dest
+ 625              	.LHOTE7:
+ 626              		.text
+ 627              	.Letext0:
+ 628              		.section	.text.unlikely.init_destination
+ 629              	.Letext_cold0:
+ 630              		.file 3 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
+ 631              		.file 4 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 632              		.file 5 "/usr/include/stdio.h"
+ 633              		.file 6 "/usr/include/libio.h"
+ 634              		.file 7 "fltk-1.3.4-1/jpeg/jmorecfg.h"
+ 635              		.file 8 "fltk-1.3.4-1/jpeg/jpeglib.h"
+ 636              		.file 9 "fltk-1.3.4-1/jpeg/jerror.h"
+ 637              		.file 10 "/usr/include/stdlib.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 jdatadst.c
+     /tmp/ccRU692u.s:13     .text.init_destination:0000000000000000 init_destination
+     /tmp/ccRU692u.s:56     .text.init_mem_destination:0000000000000000 init_mem_destination
+     /tmp/ccRU692u.s:75     .text.term_mem_destination:0000000000000000 term_mem_destination
+     /tmp/ccRU692u.s:106    .text.empty_output_buffer:0000000000000000 empty_output_buffer
+     /tmp/ccRU692u.s:173    .text.empty_mem_output_buffer:0000000000000000 empty_mem_output_buffer
+     /tmp/ccRU692u.s:297    .text.term_destination:0000000000000000 term_destination
+     /tmp/ccRU692u.s:414    .text.jpeg_stdio_dest:0000000000000000 jpeg_stdio_dest
+     /tmp/ccRU692u.s:483    .text.jpeg_mem_dest:0000000000000000 jpeg_mem_dest
+                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
+                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+                           .group:0000000000000000 wm4.jconfig.h.10.247fc3ff67998f3074970b1373c70333
+                           .group:0000000000000000 wm4.features.h.19.24da27e0a4d0d521fd057013d982b8b5
+                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
+                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
+                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
+                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
+                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
+                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
+                           .group:0000000000000000 wm4.waitflags.h.25.e401b8bcfee800b540b27abd7cc78de9
+                           .group:0000000000000000 wm4.waitstatus.h.28.93f167f49d64e2b9b99f98d1162a93bf
+                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
+                           .group:0000000000000000 wm4.endian.h.41.24cced64aef71195a51d4daa8e4f4a95
+                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
+                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
+                           .group:0000000000000000 wm4.byteswap.h.38.11ee5fdc0f6cc53a16c505b9233cecef
+                           .group:0000000000000000 wm4.endian.h.63.97272d7c64d5db8020003b32e9289502
+                           .group:0000000000000000 wm4.waitstatus.h.99.408b6270fa6eb71377201a241ef15f79
+                           .group:0000000000000000 wm4.stdlib.h.50.84aeca2ac6f37d40e1e9b3cef757ba2d
+                           .group:0000000000000000 wm4.types.h.23.f6dcbaa72f8f71361acef09804d45a5e
+                           .group:0000000000000000 wm4.time.h.53.beb46e650cd406cb917b6b96b45e640a
+                           .group:0000000000000000 wm4.stddef.h.238.847b6907dabda77be90a9ab7ad789e2e
+                           .group:0000000000000000 wm4.types.h.187.bd5a05039b505b3620e6973f1b2ffeb1
+                           .group:0000000000000000 wm4.select.h.28.eb2f3debdbcffd1442ebddaebc4fb6ff
+                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
+                           .group:0000000000000000 wm4.select.h.36.f76c3b9e55c871743863013cc4cc14c9
+                           .group:0000000000000000 wm4.time.h.66.e70ce69790c975f0efb369340c432e0b
+                           .group:0000000000000000 wm4.time.h.25.ae5284cdff565e87a9198d819340325d
+                           .group:0000000000000000 wm4.select.h.49.e9d2041e5035cc68ebd1a20f7dbc8514
+                           .group:0000000000000000 wm4.select2.h.27.f95f2ab0ffee66dc1b6575014894b21a
+                           .group:0000000000000000 wm4.sysmacros.h.20.8a0c33ff175cd9b434a86c0aaa36f0a2
+                           .group:0000000000000000 wm4.types.h.229.67b3f66bd74b06b451caec392a72a945
+                           .group:0000000000000000 wm4.pthreadtypes.h.25.6892b1493314fcf446bbc76e7362acba
+                           .group:0000000000000000 wm4.alloca.h.19.edefa922a76c1cbaaf1e416903ba2d1c
+                           .group:0000000000000000 wm4.alloca.h.29.156e12058824cc23d961c4d3b13031f6
+                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
+                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
+                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
+                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
+                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
+                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
+                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
+                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
+                           .group:0000000000000000 wm4.stdio.h.80.17b7dd1ca72d8a61987532cb1d80194a
+                           .group:0000000000000000 wm4.stdio_lim.h.23.557290a6cddeba0587f574f29e3a5fb9
+                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
+                           .group:0000000000000000 wm4.stdio.h.26.cae64f7ada9bb8327a89dba6a5e93655
+                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
+                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
+                           .group:0000000000000000 wm4.string2.h.45.00535b99420fc3014c2da41d6645330d
+                           .group:0000000000000000 wm4.string3.h.31.0c4b9301b754a2db05eaafef869657d2
+                           .group:0000000000000000 wm4.jinclude.h.67.b19f941ec97c4845fa4609292c7e2db4
+                           .group:0000000000000000 wm4.jmorecfg.h.33.892d1896c42f78d6ec3a036162b3403e
+                           .group:0000000000000000 wm4.jpeglib.h.40.4f111c27252a38df39328d65454e82f4
+                           .group:0000000000000000 wm4.jerror.h.25.1dbd8674e70ab5215bc0037320e5c2a2
+
+UNDEFINED SYMBOLS
+fwrite
+malloc
+memcpy
+free
+fflush
+ferror

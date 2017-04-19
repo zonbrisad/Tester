@@ -1,0 +1,1770 @@
+   1              		.file	"jdmerge.c"
+   2              		.text
+   3              	.Ltext0:
+   4              		.section	.text.unlikely.start_pass_merged_upsample,"ax",@progbits
+   5              	.LCOLDB0:
+   6              		.section	.text.start_pass_merged_upsample,"ax",@progbits
+   7              	.LHOTB0:
+   8              		.p2align 4,,15
+   9              		.section	.text.unlikely.start_pass_merged_upsample
+  10              	.Ltext_cold0:
+  11              		.section	.text.start_pass_merged_upsample
+  13              	start_pass_merged_upsample:
+  14              	.LFB62:
+  15              		.file 1 "fltk-1.3.4-1/jpeg/jdmerge.c"
+   1:fltk-1.3.4-1/jpeg/jdmerge.c **** /*
+   2:fltk-1.3.4-1/jpeg/jdmerge.c ****  * jdmerge.c
+   3:fltk-1.3.4-1/jpeg/jdmerge.c ****  *
+   4:fltk-1.3.4-1/jpeg/jdmerge.c ****  * Copyright (C) 1994-1996, Thomas G. Lane.
+   5:fltk-1.3.4-1/jpeg/jdmerge.c ****  * Modified 2013 by Guido Vollbeding.
+   6:fltk-1.3.4-1/jpeg/jdmerge.c ****  * This file is part of the Independent JPEG Group's software.
+   7:fltk-1.3.4-1/jpeg/jdmerge.c ****  * For conditions of distribution and use, see the accompanying README file.
+   8:fltk-1.3.4-1/jpeg/jdmerge.c ****  *
+   9:fltk-1.3.4-1/jpeg/jdmerge.c ****  * This file contains code for merged upsampling/color conversion.
+  10:fltk-1.3.4-1/jpeg/jdmerge.c ****  *
+  11:fltk-1.3.4-1/jpeg/jdmerge.c ****  * This file combines functions from jdsample.c and jdcolor.c;
+  12:fltk-1.3.4-1/jpeg/jdmerge.c ****  * read those files first to understand what's going on.
+  13:fltk-1.3.4-1/jpeg/jdmerge.c ****  *
+  14:fltk-1.3.4-1/jpeg/jdmerge.c ****  * When the chroma components are to be upsampled by simple replication
+  15:fltk-1.3.4-1/jpeg/jdmerge.c ****  * (ie, box filtering), we can save some work in color conversion by
+  16:fltk-1.3.4-1/jpeg/jdmerge.c ****  * calculating all the output pixels corresponding to a pair of chroma
+  17:fltk-1.3.4-1/jpeg/jdmerge.c ****  * samples at one time.  In the conversion equations
+  18:fltk-1.3.4-1/jpeg/jdmerge.c ****  *	R = Y           + K1 * Cr
+  19:fltk-1.3.4-1/jpeg/jdmerge.c ****  *	G = Y + K2 * Cb + K3 * Cr
+  20:fltk-1.3.4-1/jpeg/jdmerge.c ****  *	B = Y + K4 * Cb
+  21:fltk-1.3.4-1/jpeg/jdmerge.c ****  * only the Y term varies among the group of pixels corresponding to a pair
+  22:fltk-1.3.4-1/jpeg/jdmerge.c ****  * of chroma samples, so the rest of the terms can be calculated just once.
+  23:fltk-1.3.4-1/jpeg/jdmerge.c ****  * At typical sampling ratios, this eliminates half or three-quarters of the
+  24:fltk-1.3.4-1/jpeg/jdmerge.c ****  * multiplications needed for color conversion.
+  25:fltk-1.3.4-1/jpeg/jdmerge.c ****  *
+  26:fltk-1.3.4-1/jpeg/jdmerge.c ****  * This file currently provides implementations for the following cases:
+  27:fltk-1.3.4-1/jpeg/jdmerge.c ****  *	YCbCr => RGB color conversion only.
+  28:fltk-1.3.4-1/jpeg/jdmerge.c ****  *	Sampling ratios of 2h1v or 2h2v.
+  29:fltk-1.3.4-1/jpeg/jdmerge.c ****  *	No scaling needed at upsample time.
+  30:fltk-1.3.4-1/jpeg/jdmerge.c ****  *	Corner-aligned (non-CCIR601) sampling alignment.
+  31:fltk-1.3.4-1/jpeg/jdmerge.c ****  * Other special cases could be added, but in most applications these are
+  32:fltk-1.3.4-1/jpeg/jdmerge.c ****  * the only common cases.  (For uncommon cases we fall back on the more
+  33:fltk-1.3.4-1/jpeg/jdmerge.c ****  * general code in jdsample.c and jdcolor.c.)
+  34:fltk-1.3.4-1/jpeg/jdmerge.c ****  */
+  35:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+  36:fltk-1.3.4-1/jpeg/jdmerge.c **** #define JPEG_INTERNALS
+  37:fltk-1.3.4-1/jpeg/jdmerge.c **** #include "jinclude.h"
+  38:fltk-1.3.4-1/jpeg/jdmerge.c **** #include "jpeglib.h"
+  39:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+  40:fltk-1.3.4-1/jpeg/jdmerge.c **** #ifdef UPSAMPLE_MERGING_SUPPORTED
+  41:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+  42:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+  43:fltk-1.3.4-1/jpeg/jdmerge.c **** /* Private subobject */
+  44:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+  45:fltk-1.3.4-1/jpeg/jdmerge.c **** typedef struct {
+  46:fltk-1.3.4-1/jpeg/jdmerge.c ****   struct jpeg_upsampler pub;	/* public fields */
+  47:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+  48:fltk-1.3.4-1/jpeg/jdmerge.c ****   /* Pointer to routine to do actual upsampling/conversion of one row group */
+  49:fltk-1.3.4-1/jpeg/jdmerge.c ****   JMETHOD(void, upmethod, (j_decompress_ptr cinfo,
+  50:fltk-1.3.4-1/jpeg/jdmerge.c **** 			   JSAMPIMAGE input_buf, JDIMENSION in_row_group_ctr,
+  51:fltk-1.3.4-1/jpeg/jdmerge.c **** 			   JSAMPARRAY output_buf));
+  52:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+  53:fltk-1.3.4-1/jpeg/jdmerge.c ****   /* Private state for YCC->RGB conversion */
+  54:fltk-1.3.4-1/jpeg/jdmerge.c ****   int * Cr_r_tab;		/* => table for Cr to R conversion */
+  55:fltk-1.3.4-1/jpeg/jdmerge.c ****   int * Cb_b_tab;		/* => table for Cb to B conversion */
+  56:fltk-1.3.4-1/jpeg/jdmerge.c ****   INT32 * Cr_g_tab;		/* => table for Cr to G conversion */
+  57:fltk-1.3.4-1/jpeg/jdmerge.c ****   INT32 * Cb_g_tab;		/* => table for Cb to G conversion */
+  58:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+  59:fltk-1.3.4-1/jpeg/jdmerge.c ****   /* For 2:1 vertical sampling, we produce two output rows at a time.
+  60:fltk-1.3.4-1/jpeg/jdmerge.c ****    * We need a "spare" row buffer to hold the second output row if the
+  61:fltk-1.3.4-1/jpeg/jdmerge.c ****    * application provides just a one-row buffer; we also use the spare
+  62:fltk-1.3.4-1/jpeg/jdmerge.c ****    * to discard the dummy last row if the image height is odd.
+  63:fltk-1.3.4-1/jpeg/jdmerge.c ****    */
+  64:fltk-1.3.4-1/jpeg/jdmerge.c ****   JSAMPROW spare_row;
+  65:fltk-1.3.4-1/jpeg/jdmerge.c ****   boolean spare_full;		/* T if spare buffer is occupied */
+  66:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+  67:fltk-1.3.4-1/jpeg/jdmerge.c ****   JDIMENSION out_row_width;	/* samples per output row */
+  68:fltk-1.3.4-1/jpeg/jdmerge.c ****   JDIMENSION rows_to_go;	/* counts rows remaining in image */
+  69:fltk-1.3.4-1/jpeg/jdmerge.c **** } my_upsampler;
+  70:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+  71:fltk-1.3.4-1/jpeg/jdmerge.c **** typedef my_upsampler * my_upsample_ptr;
+  72:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+  73:fltk-1.3.4-1/jpeg/jdmerge.c **** #define SCALEBITS	16	/* speediest right-shift on some machines */
+  74:fltk-1.3.4-1/jpeg/jdmerge.c **** #define ONE_HALF	((INT32) 1 << (SCALEBITS-1))
+  75:fltk-1.3.4-1/jpeg/jdmerge.c **** #define FIX(x)		((INT32) ((x) * (1L<<SCALEBITS) + 0.5))
+  76:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+  77:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+  78:fltk-1.3.4-1/jpeg/jdmerge.c **** /*
+  79:fltk-1.3.4-1/jpeg/jdmerge.c ****  * Initialize tables for YCC->RGB colorspace conversion.
+  80:fltk-1.3.4-1/jpeg/jdmerge.c ****  * This is taken directly from jdcolor.c; see that file for more info.
+  81:fltk-1.3.4-1/jpeg/jdmerge.c ****  */
+  82:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+  83:fltk-1.3.4-1/jpeg/jdmerge.c **** LOCAL(void)
+  84:fltk-1.3.4-1/jpeg/jdmerge.c **** build_ycc_rgb_table (j_decompress_ptr cinfo)
+  85:fltk-1.3.4-1/jpeg/jdmerge.c **** {
+  86:fltk-1.3.4-1/jpeg/jdmerge.c ****   my_upsample_ptr upsample = (my_upsample_ptr) cinfo->upsample;
+  87:fltk-1.3.4-1/jpeg/jdmerge.c ****   int i;
+  88:fltk-1.3.4-1/jpeg/jdmerge.c ****   INT32 x;
+  89:fltk-1.3.4-1/jpeg/jdmerge.c ****   SHIFT_TEMPS
+  90:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+  91:fltk-1.3.4-1/jpeg/jdmerge.c ****   upsample->Cr_r_tab = (int *)
+  92:fltk-1.3.4-1/jpeg/jdmerge.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+  93:fltk-1.3.4-1/jpeg/jdmerge.c **** 				(MAXJSAMPLE+1) * SIZEOF(int));
+  94:fltk-1.3.4-1/jpeg/jdmerge.c ****   upsample->Cb_b_tab = (int *)
+  95:fltk-1.3.4-1/jpeg/jdmerge.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+  96:fltk-1.3.4-1/jpeg/jdmerge.c **** 				(MAXJSAMPLE+1) * SIZEOF(int));
+  97:fltk-1.3.4-1/jpeg/jdmerge.c ****   upsample->Cr_g_tab = (INT32 *)
+  98:fltk-1.3.4-1/jpeg/jdmerge.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+  99:fltk-1.3.4-1/jpeg/jdmerge.c **** 				(MAXJSAMPLE+1) * SIZEOF(INT32));
+ 100:fltk-1.3.4-1/jpeg/jdmerge.c ****   upsample->Cb_g_tab = (INT32 *)
+ 101:fltk-1.3.4-1/jpeg/jdmerge.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 102:fltk-1.3.4-1/jpeg/jdmerge.c **** 				(MAXJSAMPLE+1) * SIZEOF(INT32));
+ 103:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 104:fltk-1.3.4-1/jpeg/jdmerge.c ****   for (i = 0, x = -CENTERJSAMPLE; i <= MAXJSAMPLE; i++, x++) {
+ 105:fltk-1.3.4-1/jpeg/jdmerge.c ****     /* i is the actual input pixel value, in the range 0..MAXJSAMPLE */
+ 106:fltk-1.3.4-1/jpeg/jdmerge.c ****     /* The Cb or Cr value we are thinking of is x = i - CENTERJSAMPLE */
+ 107:fltk-1.3.4-1/jpeg/jdmerge.c ****     /* Cr=>R value is nearest int to 1.402 * x */
+ 108:fltk-1.3.4-1/jpeg/jdmerge.c ****     upsample->Cr_r_tab[i] = (int)
+ 109:fltk-1.3.4-1/jpeg/jdmerge.c **** 		    RIGHT_SHIFT(FIX(1.402) * x + ONE_HALF, SCALEBITS);
+ 110:fltk-1.3.4-1/jpeg/jdmerge.c ****     /* Cb=>B value is nearest int to 1.772 * x */
+ 111:fltk-1.3.4-1/jpeg/jdmerge.c ****     upsample->Cb_b_tab[i] = (int)
+ 112:fltk-1.3.4-1/jpeg/jdmerge.c **** 		    RIGHT_SHIFT(FIX(1.772) * x + ONE_HALF, SCALEBITS);
+ 113:fltk-1.3.4-1/jpeg/jdmerge.c ****     /* Cr=>G value is scaled-up -0.714136286 * x */
+ 114:fltk-1.3.4-1/jpeg/jdmerge.c ****     upsample->Cr_g_tab[i] = (- FIX(0.714136286)) * x;
+ 115:fltk-1.3.4-1/jpeg/jdmerge.c ****     /* Cb=>G value is scaled-up -0.344136286 * x */
+ 116:fltk-1.3.4-1/jpeg/jdmerge.c ****     /* We also add in ONE_HALF so that need not do it in inner loop */
+ 117:fltk-1.3.4-1/jpeg/jdmerge.c ****     upsample->Cb_g_tab[i] = (- FIX(0.344136286)) * x + ONE_HALF;
+ 118:fltk-1.3.4-1/jpeg/jdmerge.c ****   }
+ 119:fltk-1.3.4-1/jpeg/jdmerge.c **** }
+ 120:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 121:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 122:fltk-1.3.4-1/jpeg/jdmerge.c **** /*
+ 123:fltk-1.3.4-1/jpeg/jdmerge.c ****  * Initialize for an upsampling pass.
+ 124:fltk-1.3.4-1/jpeg/jdmerge.c ****  */
+ 125:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 126:fltk-1.3.4-1/jpeg/jdmerge.c **** METHODDEF(void)
+ 127:fltk-1.3.4-1/jpeg/jdmerge.c **** start_pass_merged_upsample (j_decompress_ptr cinfo)
+ 128:fltk-1.3.4-1/jpeg/jdmerge.c **** {
+  16              		.loc 1 128 0
+  17              		.cfi_startproc
+  18              	.LVL0:
+ 129:fltk-1.3.4-1/jpeg/jdmerge.c ****   my_upsample_ptr upsample = (my_upsample_ptr) cinfo->upsample;
+  19              		.loc 1 129 0
+  20 0000 488B8780 		movq	640(%rdi), %rax
+  20      020000
+  21              	.LVL1:
+ 130:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 131:fltk-1.3.4-1/jpeg/jdmerge.c ****   /* Mark the spare buffer empty */
+ 132:fltk-1.3.4-1/jpeg/jdmerge.c ****   upsample->spare_full = FALSE;
+  22              		.loc 1 132 0
+  23 0007 C7404800 		movl	$0, 72(%rax)
+  23      000000
+ 133:fltk-1.3.4-1/jpeg/jdmerge.c ****   /* Initialize total-height counter for detecting bottom of image */
+ 134:fltk-1.3.4-1/jpeg/jdmerge.c ****   upsample->rows_to_go = cinfo->output_height;
+  24              		.loc 1 134 0
+  25 000e 8B978C00 		movl	140(%rdi), %edx
+  25      0000
+  26 0014 895050   		movl	%edx, 80(%rax)
+  27 0017 C3       		ret
+  28              		.cfi_endproc
+  29              	.LFE62:
+  31              		.section	.text.unlikely.start_pass_merged_upsample
+  32              	.LCOLDE0:
+  33              		.section	.text.start_pass_merged_upsample
+  34              	.LHOTE0:
+  35              		.section	.text.unlikely.merged_1v_upsample,"ax",@progbits
+  36              	.LCOLDB1:
+  37              		.section	.text.merged_1v_upsample,"ax",@progbits
+  38              	.LHOTB1:
+  39              		.p2align 4,,15
+  41              	merged_1v_upsample:
+  42              	.LFB64:
+ 135:fltk-1.3.4-1/jpeg/jdmerge.c **** }
+ 136:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 137:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 138:fltk-1.3.4-1/jpeg/jdmerge.c **** /*
+ 139:fltk-1.3.4-1/jpeg/jdmerge.c ****  * Control routine to do upsampling (and color conversion).
+ 140:fltk-1.3.4-1/jpeg/jdmerge.c ****  *
+ 141:fltk-1.3.4-1/jpeg/jdmerge.c ****  * The control routine just handles the row buffering considerations.
+ 142:fltk-1.3.4-1/jpeg/jdmerge.c ****  */
+ 143:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 144:fltk-1.3.4-1/jpeg/jdmerge.c **** METHODDEF(void)
+ 145:fltk-1.3.4-1/jpeg/jdmerge.c **** merged_2v_upsample (j_decompress_ptr cinfo,
+ 146:fltk-1.3.4-1/jpeg/jdmerge.c **** 		    JSAMPIMAGE input_buf, JDIMENSION *in_row_group_ctr,
+ 147:fltk-1.3.4-1/jpeg/jdmerge.c **** 		    JDIMENSION in_row_groups_avail,
+ 148:fltk-1.3.4-1/jpeg/jdmerge.c **** 		    JSAMPARRAY output_buf, JDIMENSION *out_row_ctr,
+ 149:fltk-1.3.4-1/jpeg/jdmerge.c **** 		    JDIMENSION out_rows_avail)
+ 150:fltk-1.3.4-1/jpeg/jdmerge.c **** /* 2:1 vertical sampling case: may need a spare row. */
+ 151:fltk-1.3.4-1/jpeg/jdmerge.c **** {
+ 152:fltk-1.3.4-1/jpeg/jdmerge.c ****   my_upsample_ptr upsample = (my_upsample_ptr) cinfo->upsample;
+ 153:fltk-1.3.4-1/jpeg/jdmerge.c ****   JSAMPROW work_ptrs[2];
+ 154:fltk-1.3.4-1/jpeg/jdmerge.c ****   JDIMENSION num_rows;		/* number of rows returned to caller */
+ 155:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 156:fltk-1.3.4-1/jpeg/jdmerge.c ****   if (upsample->spare_full) {
+ 157:fltk-1.3.4-1/jpeg/jdmerge.c ****     /* If we have a spare row saved from a previous cycle, just return it. */
+ 158:fltk-1.3.4-1/jpeg/jdmerge.c ****     jcopy_sample_rows(& upsample->spare_row, 0, output_buf + *out_row_ctr, 0,
+ 159:fltk-1.3.4-1/jpeg/jdmerge.c **** 		      1, upsample->out_row_width);
+ 160:fltk-1.3.4-1/jpeg/jdmerge.c ****     num_rows = 1;
+ 161:fltk-1.3.4-1/jpeg/jdmerge.c ****     upsample->spare_full = FALSE;
+ 162:fltk-1.3.4-1/jpeg/jdmerge.c ****   } else {
+ 163:fltk-1.3.4-1/jpeg/jdmerge.c ****     /* Figure number of rows to return to caller. */
+ 164:fltk-1.3.4-1/jpeg/jdmerge.c ****     num_rows = 2;
+ 165:fltk-1.3.4-1/jpeg/jdmerge.c ****     /* Not more than the distance to the end of the image. */
+ 166:fltk-1.3.4-1/jpeg/jdmerge.c ****     if (num_rows > upsample->rows_to_go)
+ 167:fltk-1.3.4-1/jpeg/jdmerge.c ****       num_rows = upsample->rows_to_go;
+ 168:fltk-1.3.4-1/jpeg/jdmerge.c ****     /* And not more than what the client can accept: */
+ 169:fltk-1.3.4-1/jpeg/jdmerge.c ****     out_rows_avail -= *out_row_ctr;
+ 170:fltk-1.3.4-1/jpeg/jdmerge.c ****     if (num_rows > out_rows_avail)
+ 171:fltk-1.3.4-1/jpeg/jdmerge.c ****       num_rows = out_rows_avail;
+ 172:fltk-1.3.4-1/jpeg/jdmerge.c ****     /* Create output pointer array for upsampler. */
+ 173:fltk-1.3.4-1/jpeg/jdmerge.c ****     work_ptrs[0] = output_buf[*out_row_ctr];
+ 174:fltk-1.3.4-1/jpeg/jdmerge.c ****     if (num_rows > 1) {
+ 175:fltk-1.3.4-1/jpeg/jdmerge.c ****       work_ptrs[1] = output_buf[*out_row_ctr + 1];
+ 176:fltk-1.3.4-1/jpeg/jdmerge.c ****     } else {
+ 177:fltk-1.3.4-1/jpeg/jdmerge.c ****       work_ptrs[1] = upsample->spare_row;
+ 178:fltk-1.3.4-1/jpeg/jdmerge.c ****       upsample->spare_full = TRUE;
+ 179:fltk-1.3.4-1/jpeg/jdmerge.c ****     }
+ 180:fltk-1.3.4-1/jpeg/jdmerge.c ****     /* Now do the upsampling. */
+ 181:fltk-1.3.4-1/jpeg/jdmerge.c ****     (*upsample->upmethod) (cinfo, input_buf, *in_row_group_ctr, work_ptrs);
+ 182:fltk-1.3.4-1/jpeg/jdmerge.c ****   }
+ 183:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 184:fltk-1.3.4-1/jpeg/jdmerge.c ****   /* Adjust counts */
+ 185:fltk-1.3.4-1/jpeg/jdmerge.c ****   *out_row_ctr += num_rows;
+ 186:fltk-1.3.4-1/jpeg/jdmerge.c ****   upsample->rows_to_go -= num_rows;
+ 187:fltk-1.3.4-1/jpeg/jdmerge.c ****   /* When the buffer is emptied, declare this input row group consumed */
+ 188:fltk-1.3.4-1/jpeg/jdmerge.c ****   if (! upsample->spare_full)
+ 189:fltk-1.3.4-1/jpeg/jdmerge.c ****     (*in_row_group_ctr)++;
+ 190:fltk-1.3.4-1/jpeg/jdmerge.c **** }
+ 191:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 192:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 193:fltk-1.3.4-1/jpeg/jdmerge.c **** METHODDEF(void)
+ 194:fltk-1.3.4-1/jpeg/jdmerge.c **** merged_1v_upsample (j_decompress_ptr cinfo,
+ 195:fltk-1.3.4-1/jpeg/jdmerge.c **** 		    JSAMPIMAGE input_buf, JDIMENSION *in_row_group_ctr,
+ 196:fltk-1.3.4-1/jpeg/jdmerge.c **** 		    JDIMENSION in_row_groups_avail,
+ 197:fltk-1.3.4-1/jpeg/jdmerge.c **** 		    JSAMPARRAY output_buf, JDIMENSION *out_row_ctr,
+ 198:fltk-1.3.4-1/jpeg/jdmerge.c **** 		    JDIMENSION out_rows_avail)
+ 199:fltk-1.3.4-1/jpeg/jdmerge.c **** /* 1:1 vertical sampling case: much easier, never need a spare row. */
+ 200:fltk-1.3.4-1/jpeg/jdmerge.c **** {
+  43              		.loc 1 200 0
+  44              		.cfi_startproc
+  45              	.LVL2:
+  46 0000 55       		pushq	%rbp
+  47              		.cfi_def_cfa_offset 16
+  48              		.cfi_offset 6, -16
+  49              	.LVL3:
+  50 0001 53       		pushq	%rbx
+  51              		.cfi_def_cfa_offset 24
+  52              		.cfi_offset 3, -24
+  53 0002 4C89CD   		movq	%r9, %rbp
+  54 0005 4889D3   		movq	%rdx, %rbx
+  55 0008 4883EC08 		subq	$8, %rsp
+  56              		.cfi_def_cfa_offset 32
+ 201:fltk-1.3.4-1/jpeg/jdmerge.c ****   my_upsample_ptr upsample = (my_upsample_ptr) cinfo->upsample;
+ 202:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 203:fltk-1.3.4-1/jpeg/jdmerge.c ****   /* Just do the upsampling. */
+ 204:fltk-1.3.4-1/jpeg/jdmerge.c ****   (*upsample->upmethod) (cinfo, input_buf, *in_row_group_ctr,
+  57              		.loc 1 204 0
+  58 000c 418B01   		movl	(%r9), %eax
+  59 000f 8B12     		movl	(%rdx), %edx
+  60              	.LVL4:
+  61 0011 498D0CC0 		leaq	(%r8,%rax,8), %rcx
+  62              	.LVL5:
+  63 0015 488B8780 		movq	640(%rdi), %rax
+  63      020000
+  64 001c FF5018   		call	*24(%rax)
+  65              	.LVL6:
+ 205:fltk-1.3.4-1/jpeg/jdmerge.c **** 			 output_buf + *out_row_ctr);
+ 206:fltk-1.3.4-1/jpeg/jdmerge.c ****   /* Adjust counts */
+ 207:fltk-1.3.4-1/jpeg/jdmerge.c ****   (*out_row_ctr)++;
+  66              		.loc 1 207 0
+  67 001f 83450001 		addl	$1, 0(%rbp)
+ 208:fltk-1.3.4-1/jpeg/jdmerge.c ****   (*in_row_group_ctr)++;
+  68              		.loc 1 208 0
+  69 0023 830301   		addl	$1, (%rbx)
+ 209:fltk-1.3.4-1/jpeg/jdmerge.c **** }
+  70              		.loc 1 209 0
+  71 0026 4883C408 		addq	$8, %rsp
+  72              		.cfi_def_cfa_offset 24
+  73 002a 5B       		popq	%rbx
+  74              		.cfi_def_cfa_offset 16
+  75              	.LVL7:
+  76 002b 5D       		popq	%rbp
+  77              		.cfi_def_cfa_offset 8
+  78              	.LVL8:
+  79 002c C3       		ret
+  80              		.cfi_endproc
+  81              	.LFE64:
+  83              		.section	.text.unlikely.merged_1v_upsample
+  84              	.LCOLDE1:
+  85              		.section	.text.merged_1v_upsample
+  86              	.LHOTE1:
+  87              		.section	.text.unlikely.h2v1_merged_upsample,"ax",@progbits
+  88              	.LCOLDB2:
+  89              		.section	.text.h2v1_merged_upsample,"ax",@progbits
+  90              	.LHOTB2:
+  91              		.p2align 4,,15
+  93              	h2v1_merged_upsample:
+  94              	.LFB65:
+ 210:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 211:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 212:fltk-1.3.4-1/jpeg/jdmerge.c **** /*
+ 213:fltk-1.3.4-1/jpeg/jdmerge.c ****  * These are the routines invoked by the control routines to do
+ 214:fltk-1.3.4-1/jpeg/jdmerge.c ****  * the actual upsampling/conversion.  One row group is processed per call.
+ 215:fltk-1.3.4-1/jpeg/jdmerge.c ****  *
+ 216:fltk-1.3.4-1/jpeg/jdmerge.c ****  * Note: since we may be writing directly into application-supplied buffers,
+ 217:fltk-1.3.4-1/jpeg/jdmerge.c ****  * we have to be honest about the output width; we can't assume the buffer
+ 218:fltk-1.3.4-1/jpeg/jdmerge.c ****  * has been rounded up to an even width.
+ 219:fltk-1.3.4-1/jpeg/jdmerge.c ****  */
+ 220:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 221:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 222:fltk-1.3.4-1/jpeg/jdmerge.c **** /*
+ 223:fltk-1.3.4-1/jpeg/jdmerge.c ****  * Upsample and color convert for the case of 2:1 horizontal and 1:1 vertical.
+ 224:fltk-1.3.4-1/jpeg/jdmerge.c ****  */
+ 225:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 226:fltk-1.3.4-1/jpeg/jdmerge.c **** METHODDEF(void)
+ 227:fltk-1.3.4-1/jpeg/jdmerge.c **** h2v1_merged_upsample (j_decompress_ptr cinfo,
+ 228:fltk-1.3.4-1/jpeg/jdmerge.c **** 		      JSAMPIMAGE input_buf, JDIMENSION in_row_group_ctr,
+ 229:fltk-1.3.4-1/jpeg/jdmerge.c **** 		      JSAMPARRAY output_buf)
+ 230:fltk-1.3.4-1/jpeg/jdmerge.c **** {
+  95              		.loc 1 230 0
+  96              		.cfi_startproc
+  97              	.LVL9:
+  98 0000 4157     		pushq	%r15
+  99              		.cfi_def_cfa_offset 16
+ 100              		.cfi_offset 15, -16
+ 101 0002 4156     		pushq	%r14
+ 102              		.cfi_def_cfa_offset 24
+ 103              		.cfi_offset 14, -24
+ 231:fltk-1.3.4-1/jpeg/jdmerge.c ****   my_upsample_ptr upsample = (my_upsample_ptr) cinfo->upsample;
+ 232:fltk-1.3.4-1/jpeg/jdmerge.c ****   register int y, cred, cgreen, cblue;
+ 233:fltk-1.3.4-1/jpeg/jdmerge.c ****   int cb, cr;
+ 234:fltk-1.3.4-1/jpeg/jdmerge.c ****   register JSAMPROW outptr;
+ 235:fltk-1.3.4-1/jpeg/jdmerge.c ****   JSAMPROW inptr0, inptr1, inptr2;
+ 236:fltk-1.3.4-1/jpeg/jdmerge.c ****   JDIMENSION col;
+ 237:fltk-1.3.4-1/jpeg/jdmerge.c ****   /* copy these pointers into registers if possible */
+ 238:fltk-1.3.4-1/jpeg/jdmerge.c ****   register JSAMPLE * range_limit = cinfo->sample_range_limit;
+ 239:fltk-1.3.4-1/jpeg/jdmerge.c ****   int * Crrtab = upsample->Cr_r_tab;
+ 240:fltk-1.3.4-1/jpeg/jdmerge.c ****   int * Cbbtab = upsample->Cb_b_tab;
+ 241:fltk-1.3.4-1/jpeg/jdmerge.c ****   INT32 * Crgtab = upsample->Cr_g_tab;
+ 242:fltk-1.3.4-1/jpeg/jdmerge.c ****   INT32 * Cbgtab = upsample->Cb_g_tab;
+ 243:fltk-1.3.4-1/jpeg/jdmerge.c ****   SHIFT_TEMPS
+ 244:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 245:fltk-1.3.4-1/jpeg/jdmerge.c ****   inptr0 = input_buf[0][in_row_group_ctr];
+ 104              		.loc 1 245 0
+ 105 0004 89D2     		movl	%edx, %edx
+ 230:fltk-1.3.4-1/jpeg/jdmerge.c ****   my_upsample_ptr upsample = (my_upsample_ptr) cinfo->upsample;
+ 106              		.loc 1 230 0
+ 107 0006 4155     		pushq	%r13
+ 108              		.cfi_def_cfa_offset 32
+ 109              		.cfi_offset 13, -32
+ 110 0008 4154     		pushq	%r12
+ 111              		.cfi_def_cfa_offset 40
+ 112              		.cfi_offset 12, -40
+ 113 000a 55       		pushq	%rbp
+ 114              		.cfi_def_cfa_offset 48
+ 115              		.cfi_offset 6, -48
+ 116 000b 53       		pushq	%rbx
+ 117              		.cfi_def_cfa_offset 56
+ 118              		.cfi_offset 3, -56
+ 231:fltk-1.3.4-1/jpeg/jdmerge.c ****   my_upsample_ptr upsample = (my_upsample_ptr) cinfo->upsample;
+ 119              		.loc 1 231 0
+ 120 000c 488B8780 		movq	640(%rdi), %rax
+ 120      020000
+ 121              	.LVL10:
+ 238:fltk-1.3.4-1/jpeg/jdmerge.c ****   int * Crrtab = upsample->Cr_r_tab;
+ 122              		.loc 1 238 0
+ 123 0013 4C8B8FB8 		movq	440(%rdi), %r9
+ 123      010000
+ 124              	.LVL11:
+ 230:fltk-1.3.4-1/jpeg/jdmerge.c ****   my_upsample_ptr upsample = (my_upsample_ptr) cinfo->upsample;
+ 125              		.loc 1 230 0
+ 126 001a 48897C24 		movq	%rdi, -8(%rsp)
+ 126      F8
+ 239:fltk-1.3.4-1/jpeg/jdmerge.c ****   int * Cbbtab = upsample->Cb_b_tab;
+ 127              		.loc 1 239 0
+ 128 001f 4C8B6020 		movq	32(%rax), %r12
+ 129              	.LVL12:
+ 240:fltk-1.3.4-1/jpeg/jdmerge.c ****   INT32 * Crgtab = upsample->Cr_g_tab;
+ 130              		.loc 1 240 0
+ 131 0023 4C8B6828 		movq	40(%rax), %r13
+ 132              	.LVL13:
+ 241:fltk-1.3.4-1/jpeg/jdmerge.c ****   INT32 * Cbgtab = upsample->Cb_g_tab;
+ 133              		.loc 1 241 0
+ 134 0027 4C8B7830 		movq	48(%rax), %r15
+ 135              	.LVL14:
+ 242:fltk-1.3.4-1/jpeg/jdmerge.c ****   SHIFT_TEMPS
+ 136              		.loc 1 242 0
+ 137 002b 4C8B7038 		movq	56(%rax), %r14
+ 138              	.LVL15:
+ 139              		.loc 1 245 0
+ 140 002f 488B06   		movq	(%rsi), %rax
+ 141              	.LVL16:
+ 142 0032 4C8B1CD0 		movq	(%rax,%rdx,8), %r11
+ 143              	.LVL17:
+ 246:fltk-1.3.4-1/jpeg/jdmerge.c ****   inptr1 = input_buf[1][in_row_group_ctr];
+ 144              		.loc 1 246 0
+ 145 0036 488B4608 		movq	8(%rsi), %rax
+ 146 003a 488B1CD0 		movq	(%rax,%rdx,8), %rbx
+ 147              	.LVL18:
+ 247:fltk-1.3.4-1/jpeg/jdmerge.c ****   inptr2 = input_buf[2][in_row_group_ctr];
+ 148              		.loc 1 247 0
+ 149 003e 488B4610 		movq	16(%rsi), %rax
+ 150 0042 488B2CD0 		movq	(%rax,%rdx,8), %rbp
+ 151              	.LVL19:
+ 248:fltk-1.3.4-1/jpeg/jdmerge.c ****   outptr = output_buf[0];
+ 152              		.loc 1 248 0
+ 153 0046 488B01   		movq	(%rcx), %rax
+ 154 0049 4889C1   		movq	%rax, %rcx
+ 155              	.LVL20:
+ 156 004c 48894424 		movq	%rax, -16(%rsp)
+ 156      F0
+ 157              	.LVL21:
+ 249:fltk-1.3.4-1/jpeg/jdmerge.c ****   /* Loop for each pair of output pixels */
+ 250:fltk-1.3.4-1/jpeg/jdmerge.c ****   for (col = cinfo->output_width >> 1; col > 0; col--) {
+ 158              		.loc 1 250 0
+ 159 0051 8B878800 		movl	136(%rdi), %eax
+ 159      0000
+ 160              	.LVL22:
+ 161 0057 89C2     		movl	%eax, %edx
+ 162              	.LVL23:
+ 163 0059 D1EA     		shrl	%edx
+ 164              	.LVL24:
+ 165 005b 0F84D100 		je	.L5
+ 165      0000
+ 166 0061 8D42FF   		leal	-1(%rdx), %eax
+ 167              		.loc 1 250 0 is_stmt 0 discriminator 3
+ 168 0064 31FF     		xorl	%edi, %edi
+ 169              	.LVL25:
+ 170 0066 4883C001 		addq	$1, %rax
+ 171 006a 48894424 		movq	%rax, -24(%rsp)
+ 171      E8
+ 172              	.LVL26:
+ 173 006f 90       		.p2align 4,,10
+ 174              		.p2align 3
+ 175              	.L6:
+ 251:fltk-1.3.4-1/jpeg/jdmerge.c ****     /* Do the chroma part of the calculation */
+ 252:fltk-1.3.4-1/jpeg/jdmerge.c ****     cb = GETJSAMPLE(*inptr1++);
+ 253:fltk-1.3.4-1/jpeg/jdmerge.c ****     cr = GETJSAMPLE(*inptr2++);
+ 254:fltk-1.3.4-1/jpeg/jdmerge.c ****     cred = Crrtab[cr];
+ 255:fltk-1.3.4-1/jpeg/jdmerge.c ****     cgreen = (int) RIGHT_SHIFT(Cbgtab[cb] + Crgtab[cr], SCALEBITS);
+ 176              		.loc 1 255 0 is_stmt 1 discriminator 3
+ 177 0070 0FB6143B 		movzbl	(%rbx,%rdi), %edx
+ 254:fltk-1.3.4-1/jpeg/jdmerge.c ****     cgreen = (int) RIGHT_SHIFT(Cbgtab[cb] + Crgtab[cr], SCALEBITS);
+ 178              		.loc 1 254 0 discriminator 3
+ 179 0074 0FB6443D 		movzbl	0(%rbp,%rdi), %eax
+ 179      00
+ 180 0079 4883C106 		addq	$6, %rcx
+ 181              	.LVL27:
+ 182 007d 418B3484 		movl	(%r12,%rax,4), %esi
+ 183              	.LVL28:
+ 256:fltk-1.3.4-1/jpeg/jdmerge.c ****     cblue = Cbbtab[cb];
+ 184              		.loc 1 256 0 discriminator 3
+ 185 0081 458B5495 		movl	0(%r13,%rdx,4), %r10d
+ 185      00
+ 255:fltk-1.3.4-1/jpeg/jdmerge.c ****     cblue = Cbbtab[cb];
+ 186              		.loc 1 255 0 discriminator 3
+ 187 0086 498B04C7 		movq	(%r15,%rax,8), %rax
+ 188 008a 490304D6 		addq	(%r14,%rdx,8), %rax
+ 257:fltk-1.3.4-1/jpeg/jdmerge.c ****     /* Fetch 2 Y values and emit 2 pixels */
+ 258:fltk-1.3.4-1/jpeg/jdmerge.c ****     y  = GETJSAMPLE(*inptr0++);
+ 189              		.loc 1 258 0 discriminator 3
+ 190 008e 410FB614 		movzbl	(%r11,%rdi,2), %edx
+ 190      7B
+ 255:fltk-1.3.4-1/jpeg/jdmerge.c ****     cblue = Cbbtab[cb];
+ 191              		.loc 1 255 0 discriminator 3
+ 192 0093 48C1F810 		sarq	$16, %rax
+ 193              	.LVL29:
+ 259:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr[RGB_RED] =   range_limit[y + cred];
+ 194              		.loc 1 259 0 discriminator 3
+ 195 0097 448D0416 		leal	(%rsi,%rdx), %r8d
+ 196 009b 4D63C0   		movslq	%r8d, %r8
+ 197 009e 470FB604 		movzbl	(%r9,%r8), %r8d
+ 197      01
+ 198 00a3 448841FA 		movb	%r8b, -6(%rcx)
+ 199              	.LVL30:
+ 260:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr[RGB_GREEN] = range_limit[y + cgreen];
+ 200              		.loc 1 260 0 discriminator 3
+ 201 00a7 448D0402 		leal	(%rdx,%rax), %r8d
+ 261:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr[RGB_BLUE] =  range_limit[y + cblue];
+ 202              		.loc 1 261 0 discriminator 3
+ 203 00ab 4401D2   		addl	%r10d, %edx
+ 204              	.LVL31:
+ 205 00ae 4863D2   		movslq	%edx, %rdx
+ 260:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr[RGB_GREEN] = range_limit[y + cgreen];
+ 206              		.loc 1 260 0 discriminator 3
+ 207 00b1 4D63C0   		movslq	%r8d, %r8
+ 208 00b4 470FB604 		movzbl	(%r9,%r8), %r8d
+ 208      01
+ 209 00b9 448841FB 		movb	%r8b, -5(%rcx)
+ 210              		.loc 1 261 0 discriminator 3
+ 211 00bd 410FB614 		movzbl	(%r9,%rdx), %edx
+ 211      11
+ 212 00c2 8851FC   		movb	%dl, -4(%rcx)
+ 213              	.LVL32:
+ 262:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr += RGB_PIXELSIZE;
+ 263:fltk-1.3.4-1/jpeg/jdmerge.c ****     y  = GETJSAMPLE(*inptr0++);
+ 214              		.loc 1 263 0 discriminator 3
+ 215 00c5 410FB654 		movzbl	1(%r11,%rdi,2), %edx
+ 215      7B01
+ 216              	.LVL33:
+ 217 00cb 4883C701 		addq	$1, %rdi
+ 218              	.LVL34:
+ 264:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr[RGB_RED] =   range_limit[y + cred];
+ 219              		.loc 1 264 0 discriminator 3
+ 220 00cf 01D6     		addl	%edx, %esi
+ 221              	.LVL35:
+ 265:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr[RGB_GREEN] = range_limit[y + cgreen];
+ 222              		.loc 1 265 0 discriminator 3
+ 223 00d1 01D0     		addl	%edx, %eax
+ 224              	.LVL36:
+ 266:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr[RGB_BLUE] =  range_limit[y + cblue];
+ 225              		.loc 1 266 0 discriminator 3
+ 226 00d3 4101D2   		addl	%edx, %r10d
+ 227              	.LVL37:
+ 264:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr[RGB_RED] =   range_limit[y + cred];
+ 228              		.loc 1 264 0 discriminator 3
+ 229 00d6 4863F6   		movslq	%esi, %rsi
+ 265:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr[RGB_GREEN] = range_limit[y + cgreen];
+ 230              		.loc 1 265 0 discriminator 3
+ 231 00d9 4898     		cltq
+ 232              		.loc 1 266 0 discriminator 3
+ 233 00db 4D63D2   		movslq	%r10d, %r10
+ 264:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr[RGB_RED] =   range_limit[y + cred];
+ 234              		.loc 1 264 0 discriminator 3
+ 235 00de 410FB634 		movzbl	(%r9,%rsi), %esi
+ 235      31
+ 236 00e3 408871FD 		movb	%sil, -3(%rcx)
+ 265:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr[RGB_GREEN] = range_limit[y + cgreen];
+ 237              		.loc 1 265 0 discriminator 3
+ 238 00e7 410FB604 		movzbl	(%r9,%rax), %eax
+ 238      01
+ 239 00ec 8841FE   		movb	%al, -2(%rcx)
+ 240              		.loc 1 266 0 discriminator 3
+ 241 00ef 430FB604 		movzbl	(%r9,%r10), %eax
+ 241      11
+ 242 00f4 8841FF   		movb	%al, -1(%rcx)
+ 243              	.LVL38:
+ 250:fltk-1.3.4-1/jpeg/jdmerge.c ****     /* Do the chroma part of the calculation */
+ 244              		.loc 1 250 0 discriminator 3
+ 245 00f7 48397C24 		cmpq	%rdi, -24(%rsp)
+ 245      E8
+ 246 00fc 0F856EFF 		jne	.L6
+ 246      FFFF
+ 247 0102 488B7C24 		movq	-24(%rsp), %rdi
+ 247      E8
+ 248              	.LVL39:
+ 249 0107 4889F8   		movq	%rdi, %rax
+ 250 010a 4801FB   		addq	%rdi, %rbx
+ 251 010d 4801FD   		addq	%rdi, %rbp
+ 252 0110 4801C0   		addq	%rax, %rax
+ 253 0113 4901C3   		addq	%rax, %r11
+ 254 0116 4801F8   		addq	%rdi, %rax
+ 255 0119 488B7C24 		movq	-16(%rsp), %rdi
+ 255      F0
+ 256 011e 488D0447 		leaq	(%rdi,%rax,2), %rax
+ 257 0122 48894424 		movq	%rax, -16(%rsp)
+ 257      F0
+ 258 0127 488B4424 		movq	-8(%rsp), %rax
+ 258      F8
+ 259 012c 8B808800 		movl	136(%rax), %eax
+ 259      0000
+ 260              	.LVL40:
+ 261              	.L5:
+ 267:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr += RGB_PIXELSIZE;
+ 268:fltk-1.3.4-1/jpeg/jdmerge.c ****   }
+ 269:fltk-1.3.4-1/jpeg/jdmerge.c ****   /* If image width is odd, do the last output column separately */
+ 270:fltk-1.3.4-1/jpeg/jdmerge.c ****   if (cinfo->output_width & 1) {
+ 262              		.loc 1 270 0
+ 263 0132 A801     		testb	$1, %al
+ 264 0134 744A     		je	.L4
+ 265              	.LVL41:
+ 271:fltk-1.3.4-1/jpeg/jdmerge.c ****     cb = GETJSAMPLE(*inptr1);
+ 272:fltk-1.3.4-1/jpeg/jdmerge.c ****     cr = GETJSAMPLE(*inptr2);
+ 273:fltk-1.3.4-1/jpeg/jdmerge.c ****     cred = Crrtab[cr];
+ 266              		.loc 1 273 0
+ 267 0136 0FB64D00 		movzbl	0(%rbp), %ecx
+ 268              	.LVL42:
+ 274:fltk-1.3.4-1/jpeg/jdmerge.c ****     cgreen = (int) RIGHT_SHIFT(Cbgtab[cb] + Crgtab[cr], SCALEBITS);
+ 269              		.loc 1 274 0
+ 270 013a 0FB613   		movzbl	(%rbx), %edx
+ 271 013d 498B04CF 		movq	(%r15,%rcx,8), %rax
+ 275:fltk-1.3.4-1/jpeg/jdmerge.c ****     cblue = Cbbtab[cb];
+ 272              		.loc 1 275 0
+ 273 0141 418B7495 		movl	0(%r13,%rdx,4), %esi
+ 273      00
+ 274:fltk-1.3.4-1/jpeg/jdmerge.c ****     cgreen = (int) RIGHT_SHIFT(Cbgtab[cb] + Crgtab[cr], SCALEBITS);
+ 274              		.loc 1 274 0
+ 275 0146 490304D6 		addq	(%r14,%rdx,8), %rax
+ 276:fltk-1.3.4-1/jpeg/jdmerge.c ****     y  = GETJSAMPLE(*inptr0);
+ 276              		.loc 1 276 0
+ 277 014a 410FB613 		movzbl	(%r11), %edx
+ 277:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr[RGB_RED] =   range_limit[y + cred];
+ 278              		.loc 1 277 0
+ 279 014e 418B1C8C 		movl	(%r12,%rcx,4), %ebx
+ 280              	.LVL43:
+ 281 0152 01D3     		addl	%edx, %ebx
+ 274:fltk-1.3.4-1/jpeg/jdmerge.c ****     cblue = Cbbtab[cb];
+ 282              		.loc 1 274 0
+ 283 0154 48C1F810 		sarq	$16, %rax
+ 284              	.LVL44:
+ 285              		.loc 1 277 0
+ 286 0158 4863CB   		movslq	%ebx, %rcx
+ 287              	.LVL45:
+ 288 015b 488B5C24 		movq	-16(%rsp), %rbx
+ 288      F0
+ 278:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr[RGB_GREEN] = range_limit[y + cgreen];
+ 289              		.loc 1 278 0
+ 290 0160 01D0     		addl	%edx, %eax
+ 291              	.LVL46:
+ 277:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr[RGB_RED] =   range_limit[y + cred];
+ 292              		.loc 1 277 0
+ 293 0162 410FB60C 		movzbl	(%r9,%rcx), %ecx
+ 293      09
+ 294              		.loc 1 278 0
+ 295 0167 4898     		cltq
+ 279:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr[RGB_BLUE] =  range_limit[y + cblue];
+ 296              		.loc 1 279 0
+ 297 0169 01F2     		addl	%esi, %edx
+ 298              	.LVL47:
+ 299 016b 4863D2   		movslq	%edx, %rdx
+ 277:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr[RGB_GREEN] = range_limit[y + cgreen];
+ 300              		.loc 1 277 0
+ 301 016e 880B     		movb	%cl, (%rbx)
+ 302              	.LVL48:
+ 278:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr[RGB_GREEN] = range_limit[y + cgreen];
+ 303              		.loc 1 278 0
+ 304 0170 410FB604 		movzbl	(%r9,%rax), %eax
+ 304      01
+ 305 0175 884301   		movb	%al, 1(%rbx)
+ 306              		.loc 1 279 0
+ 307 0178 410FB604 		movzbl	(%r9,%rdx), %eax
+ 307      11
+ 308 017d 884302   		movb	%al, 2(%rbx)
+ 309              	.LVL49:
+ 310              	.L4:
+ 280:fltk-1.3.4-1/jpeg/jdmerge.c ****   }
+ 281:fltk-1.3.4-1/jpeg/jdmerge.c **** }
+ 311              		.loc 1 281 0
+ 312 0180 5B       		popq	%rbx
+ 313              		.cfi_def_cfa_offset 48
+ 314              	.LVL50:
+ 315 0181 5D       		popq	%rbp
+ 316              		.cfi_def_cfa_offset 40
+ 317 0182 415C     		popq	%r12
+ 318              		.cfi_def_cfa_offset 32
+ 319              	.LVL51:
+ 320 0184 415D     		popq	%r13
+ 321              		.cfi_def_cfa_offset 24
+ 322              	.LVL52:
+ 323 0186 415E     		popq	%r14
+ 324              		.cfi_def_cfa_offset 16
+ 325              	.LVL53:
+ 326 0188 415F     		popq	%r15
+ 327              		.cfi_def_cfa_offset 8
+ 328              	.LVL54:
+ 329 018a C3       		ret
+ 330              		.cfi_endproc
+ 331              	.LFE65:
+ 333              		.section	.text.unlikely.h2v1_merged_upsample
+ 334              	.LCOLDE2:
+ 335              		.section	.text.h2v1_merged_upsample
+ 336              	.LHOTE2:
+ 337              		.section	.text.unlikely.h2v2_merged_upsample,"ax",@progbits
+ 338              	.LCOLDB3:
+ 339              		.section	.text.h2v2_merged_upsample,"ax",@progbits
+ 340              	.LHOTB3:
+ 341              		.p2align 4,,15
+ 343              	h2v2_merged_upsample:
+ 344              	.LFB66:
+ 282:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 283:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 284:fltk-1.3.4-1/jpeg/jdmerge.c **** /*
+ 285:fltk-1.3.4-1/jpeg/jdmerge.c ****  * Upsample and color convert for the case of 2:1 horizontal and 2:1 vertical.
+ 286:fltk-1.3.4-1/jpeg/jdmerge.c ****  */
+ 287:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 288:fltk-1.3.4-1/jpeg/jdmerge.c **** METHODDEF(void)
+ 289:fltk-1.3.4-1/jpeg/jdmerge.c **** h2v2_merged_upsample (j_decompress_ptr cinfo,
+ 290:fltk-1.3.4-1/jpeg/jdmerge.c **** 		      JSAMPIMAGE input_buf, JDIMENSION in_row_group_ctr,
+ 291:fltk-1.3.4-1/jpeg/jdmerge.c **** 		      JSAMPARRAY output_buf)
+ 292:fltk-1.3.4-1/jpeg/jdmerge.c **** {
+ 345              		.loc 1 292 0
+ 346              		.cfi_startproc
+ 347              	.LVL55:
+ 348 0000 4157     		pushq	%r15
+ 349              		.cfi_def_cfa_offset 16
+ 350              		.cfi_offset 15, -16
+ 351 0002 4156     		pushq	%r14
+ 352              		.cfi_def_cfa_offset 24
+ 353              		.cfi_offset 14, -24
+ 293:fltk-1.3.4-1/jpeg/jdmerge.c ****   my_upsample_ptr upsample = (my_upsample_ptr) cinfo->upsample;
+ 294:fltk-1.3.4-1/jpeg/jdmerge.c ****   register int y, cred, cgreen, cblue;
+ 295:fltk-1.3.4-1/jpeg/jdmerge.c ****   int cb, cr;
+ 296:fltk-1.3.4-1/jpeg/jdmerge.c ****   register JSAMPROW outptr0, outptr1;
+ 297:fltk-1.3.4-1/jpeg/jdmerge.c ****   JSAMPROW inptr00, inptr01, inptr1, inptr2;
+ 298:fltk-1.3.4-1/jpeg/jdmerge.c ****   JDIMENSION col;
+ 299:fltk-1.3.4-1/jpeg/jdmerge.c ****   /* copy these pointers into registers if possible */
+ 300:fltk-1.3.4-1/jpeg/jdmerge.c ****   register JSAMPLE * range_limit = cinfo->sample_range_limit;
+ 301:fltk-1.3.4-1/jpeg/jdmerge.c ****   int * Crrtab = upsample->Cr_r_tab;
+ 302:fltk-1.3.4-1/jpeg/jdmerge.c ****   int * Cbbtab = upsample->Cb_b_tab;
+ 303:fltk-1.3.4-1/jpeg/jdmerge.c ****   INT32 * Crgtab = upsample->Cr_g_tab;
+ 304:fltk-1.3.4-1/jpeg/jdmerge.c ****   INT32 * Cbgtab = upsample->Cb_g_tab;
+ 305:fltk-1.3.4-1/jpeg/jdmerge.c ****   SHIFT_TEMPS
+ 306:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 307:fltk-1.3.4-1/jpeg/jdmerge.c ****   inptr00 = input_buf[0][in_row_group_ctr*2];
+ 354              		.loc 1 307 0
+ 355 0004 448D0C12 		leal	(%rdx,%rdx), %r9d
+ 292:fltk-1.3.4-1/jpeg/jdmerge.c ****   my_upsample_ptr upsample = (my_upsample_ptr) cinfo->upsample;
+ 356              		.loc 1 292 0
+ 357 0008 4155     		pushq	%r13
+ 358              		.cfi_def_cfa_offset 32
+ 359              		.cfi_offset 13, -32
+ 360 000a 4154     		pushq	%r12
+ 361              		.cfi_def_cfa_offset 40
+ 362              		.cfi_offset 12, -40
+ 308:fltk-1.3.4-1/jpeg/jdmerge.c ****   inptr01 = input_buf[0][in_row_group_ctr*2 + 1];
+ 309:fltk-1.3.4-1/jpeg/jdmerge.c ****   inptr1 = input_buf[1][in_row_group_ctr];
+ 363              		.loc 1 309 0
+ 364 000c 89D2     		movl	%edx, %edx
+ 292:fltk-1.3.4-1/jpeg/jdmerge.c ****   my_upsample_ptr upsample = (my_upsample_ptr) cinfo->upsample;
+ 365              		.loc 1 292 0
+ 366 000e 55       		pushq	%rbp
+ 367              		.cfi_def_cfa_offset 48
+ 368              		.cfi_offset 6, -48
+ 369 000f 53       		pushq	%rbx
+ 370              		.cfi_def_cfa_offset 56
+ 371              		.cfi_offset 3, -56
+ 308:fltk-1.3.4-1/jpeg/jdmerge.c ****   inptr01 = input_buf[0][in_row_group_ctr*2 + 1];
+ 372              		.loc 1 308 0
+ 373 0010 458D4101 		leal	1(%r9), %r8d
+ 293:fltk-1.3.4-1/jpeg/jdmerge.c ****   register int y, cred, cgreen, cblue;
+ 374              		.loc 1 293 0
+ 375 0014 488B8780 		movq	640(%rdi), %rax
+ 375      020000
+ 376              	.LVL56:
+ 292:fltk-1.3.4-1/jpeg/jdmerge.c ****   my_upsample_ptr upsample = (my_upsample_ptr) cinfo->upsample;
+ 377              		.loc 1 292 0
+ 378 001b 4889FB   		movq	%rdi, %rbx
+ 379 001e 48897C24 		movq	%rdi, -24(%rsp)
+ 379      E8
+ 300:fltk-1.3.4-1/jpeg/jdmerge.c ****   int * Crrtab = upsample->Cr_r_tab;
+ 380              		.loc 1 300 0
+ 381 0023 488BBFB8 		movq	440(%rdi), %rdi
+ 381      010000
+ 382              	.LVL57:
+ 302:fltk-1.3.4-1/jpeg/jdmerge.c ****   INT32 * Crgtab = upsample->Cr_g_tab;
+ 383              		.loc 1 302 0
+ 384 002a 4C8B5828 		movq	40(%rax), %r11
+ 301:fltk-1.3.4-1/jpeg/jdmerge.c ****   int * Cbbtab = upsample->Cb_b_tab;
+ 385              		.loc 1 301 0
+ 386 002e 4C8B7020 		movq	32(%rax), %r14
+ 387              	.LVL58:
+ 303:fltk-1.3.4-1/jpeg/jdmerge.c ****   INT32 * Cbgtab = upsample->Cb_g_tab;
+ 388              		.loc 1 303 0
+ 389 0032 4C8B6830 		movq	48(%rax), %r13
+ 304:fltk-1.3.4-1/jpeg/jdmerge.c ****   SHIFT_TEMPS
+ 390              		.loc 1 304 0
+ 391 0036 4C8B6038 		movq	56(%rax), %r12
+ 307:fltk-1.3.4-1/jpeg/jdmerge.c ****   inptr01 = input_buf[0][in_row_group_ctr*2 + 1];
+ 392              		.loc 1 307 0
+ 393 003a 488B06   		movq	(%rsi), %rax
+ 394              	.LVL59:
+ 302:fltk-1.3.4-1/jpeg/jdmerge.c ****   INT32 * Crgtab = upsample->Cr_g_tab;
+ 395              		.loc 1 302 0
+ 396 003d 4C895C24 		movq	%r11, -80(%rsp)
+ 396      B0
+ 397              	.LVL60:
+ 307:fltk-1.3.4-1/jpeg/jdmerge.c ****   inptr01 = input_buf[0][in_row_group_ctr*2 + 1];
+ 398              		.loc 1 307 0
+ 399 0042 4E8B14C8 		movq	(%rax,%r9,8), %r10
+ 400              	.LVL61:
+ 308:fltk-1.3.4-1/jpeg/jdmerge.c ****   inptr1 = input_buf[1][in_row_group_ctr];
+ 401              		.loc 1 308 0
+ 402 0046 4A8B04C0 		movq	(%rax,%r8,8), %rax
+ 403 004a 4989C3   		movq	%rax, %r11
+ 404              	.LVL62:
+ 405 004d 48894424 		movq	%rax, -48(%rsp)
+ 405      D0
+ 406              	.LVL63:
+ 407              		.loc 1 309 0
+ 408 0052 488B4608 		movq	8(%rsi), %rax
+ 409              	.LVL64:
+ 410 0056 488B04D0 		movq	(%rax,%rdx,8), %rax
+ 411 005a 4989C1   		movq	%rax, %r9
+ 412 005d 48894424 		movq	%rax, -40(%rsp)
+ 412      D8
+ 413              	.LVL65:
+ 310:fltk-1.3.4-1/jpeg/jdmerge.c ****   inptr2 = input_buf[2][in_row_group_ctr];
+ 414              		.loc 1 310 0
+ 415 0062 488B4610 		movq	16(%rsi), %rax
+ 416              	.LVL66:
+ 417 0066 488B04D0 		movq	(%rax,%rdx,8), %rax
+ 418 006a 4889C5   		movq	%rax, %rbp
+ 419 006d 48894424 		movq	%rax, -32(%rsp)
+ 419      E0
+ 420              	.LVL67:
+ 311:fltk-1.3.4-1/jpeg/jdmerge.c ****   outptr0 = output_buf[0];
+ 421              		.loc 1 311 0
+ 422 0072 488B01   		movq	(%rcx), %rax
+ 423              	.LVL68:
+ 424 0075 4889C6   		movq	%rax, %rsi
+ 425              	.LVL69:
+ 426 0078 48894424 		movq	%rax, -56(%rsp)
+ 426      C8
+ 427              	.LVL70:
+ 312:fltk-1.3.4-1/jpeg/jdmerge.c ****   outptr1 = output_buf[1];
+ 428              		.loc 1 312 0
+ 429 007d 488B4108 		movq	8(%rcx), %rax
+ 430              	.LVL71:
+ 431 0081 4989C0   		movq	%rax, %r8
+ 432 0084 48894424 		movq	%rax, -64(%rsp)
+ 432      C0
+ 433              	.LVL72:
+ 313:fltk-1.3.4-1/jpeg/jdmerge.c ****   /* Loop for each group of output pixels */
+ 314:fltk-1.3.4-1/jpeg/jdmerge.c ****   for (col = cinfo->output_width >> 1; col > 0; col--) {
+ 434              		.loc 1 314 0
+ 435 0089 8B838800 		movl	136(%rbx), %eax
+ 435      0000
+ 436              	.LVL73:
+ 437 008f 89C2     		movl	%eax, %edx
+ 438              	.LVL74:
+ 439 0091 D1EA     		shrl	%edx
+ 440              	.LVL75:
+ 441 0093 0F840502 		je	.L21
+ 441      0000
+ 442 0099 8D42FF   		leal	-1(%rdx), %eax
+ 443              		.loc 1 314 0 is_stmt 0 discriminator 3
+ 444 009c 4C89CB   		movq	%r9, %rbx
+ 445              	.LVL76:
+ 446 009f 4883C001 		addq	$1, %rax
+ 447 00a3 48894424 		movq	%rax, -8(%rsp)
+ 447      F8
+ 448 00a8 4801C0   		addq	%rax, %rax
+ 449 00ab 48894424 		movq	%rax, -16(%rsp)
+ 449      F0
+ 450 00b0 4C01D0   		addq	%r10, %rax
+ 451 00b3 48894424 		movq	%rax, -72(%rsp)
+ 451      B8
+ 452              	.LVL77:
+ 453 00b8 0F1F8400 		.p2align 4,,10
+ 453      00000000 
+ 454              		.p2align 3
+ 455              	.L19:
+ 315:fltk-1.3.4-1/jpeg/jdmerge.c ****     /* Do the chroma part of the calculation */
+ 316:fltk-1.3.4-1/jpeg/jdmerge.c ****     cb = GETJSAMPLE(*inptr1++);
+ 456              		.loc 1 316 0 is_stmt 1 discriminator 3
+ 457 00c0 4883C301 		addq	$1, %rbx
+ 458              	.LVL78:
+ 317:fltk-1.3.4-1/jpeg/jdmerge.c ****     cr = GETJSAMPLE(*inptr2++);
+ 459              		.loc 1 317 0 discriminator 3
+ 460 00c4 4883C501 		addq	$1, %rbp
+ 461              	.LVL79:
+ 318:fltk-1.3.4-1/jpeg/jdmerge.c ****     cred = Crrtab[cr];
+ 319:fltk-1.3.4-1/jpeg/jdmerge.c ****     cgreen = (int) RIGHT_SHIFT(Cbgtab[cb] + Crgtab[cr], SCALEBITS);
+ 462              		.loc 1 319 0 discriminator 3
+ 463 00c8 0FB64BFF 		movzbl	-1(%rbx), %ecx
+ 318:fltk-1.3.4-1/jpeg/jdmerge.c ****     cred = Crrtab[cr];
+ 464              		.loc 1 318 0 discriminator 3
+ 465 00cc 0FB645FF 		movzbl	-1(%rbp), %eax
+ 320:fltk-1.3.4-1/jpeg/jdmerge.c ****     cblue = Cbbtab[cb];
+ 466              		.loc 1 320 0 discriminator 3
+ 467 00d0 4C8B4C24 		movq	-80(%rsp), %r9
+ 467      B0
+ 468 00d5 4983C202 		addq	$2, %r10
+ 469              	.LVL80:
+ 470 00d9 4983C302 		addq	$2, %r11
+ 471              	.LVL81:
+ 472 00dd 4883C606 		addq	$6, %rsi
+ 473              	.LVL82:
+ 474 00e1 4983C006 		addq	$6, %r8
+ 475              	.LVL83:
+ 476 00e5 458B0C89 		movl	(%r9,%rcx,4), %r9d
+ 318:fltk-1.3.4-1/jpeg/jdmerge.c ****     cred = Crrtab[cr];
+ 477              		.loc 1 318 0 discriminator 3
+ 478 00e9 418B1486 		movl	(%r14,%rax,4), %edx
+ 479              	.LVL84:
+ 319:fltk-1.3.4-1/jpeg/jdmerge.c ****     cblue = Cbbtab[cb];
+ 480              		.loc 1 319 0 discriminator 3
+ 481 00ed 498B44C5 		movq	0(%r13,%rax,8), %rax
+ 481      00
+ 482 00f2 490304CC 		addq	(%r12,%rcx,8), %rax
+ 321:fltk-1.3.4-1/jpeg/jdmerge.c ****     /* Fetch 4 Y values and emit 4 pixels */
+ 322:fltk-1.3.4-1/jpeg/jdmerge.c ****     y  = GETJSAMPLE(*inptr00++);
+ 483              		.loc 1 322 0 discriminator 3
+ 484 00f6 410FB64A 		movzbl	-2(%r10), %ecx
+ 484      FE
+ 323:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr0[RGB_RED] =   range_limit[y + cred];
+ 485              		.loc 1 323 0 discriminator 3
+ 486 00fb 448D3C0A 		leal	(%rdx,%rcx), %r15d
+ 319:fltk-1.3.4-1/jpeg/jdmerge.c ****     cblue = Cbbtab[cb];
+ 487              		.loc 1 319 0 discriminator 3
+ 488 00ff 48C1F810 		sarq	$16, %rax
+ 489              	.LVL85:
+ 490              		.loc 1 323 0 discriminator 3
+ 491 0103 4D63FF   		movslq	%r15d, %r15
+ 492 0106 460FB63C 		movzbl	(%rdi,%r15), %r15d
+ 492      3F
+ 493 010b 44887EFA 		movb	%r15b, -6(%rsi)
+ 494              	.LVL86:
+ 324:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr0[RGB_GREEN] = range_limit[y + cgreen];
+ 495              		.loc 1 324 0 discriminator 3
+ 496 010f 448D3C01 		leal	(%rcx,%rax), %r15d
+ 325:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr0[RGB_BLUE] =  range_limit[y + cblue];
+ 497              		.loc 1 325 0 discriminator 3
+ 498 0113 4401C9   		addl	%r9d, %ecx
+ 499              	.LVL87:
+ 500 0116 4863C9   		movslq	%ecx, %rcx
+ 324:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr0[RGB_GREEN] = range_limit[y + cgreen];
+ 501              		.loc 1 324 0 discriminator 3
+ 502 0119 4D63FF   		movslq	%r15d, %r15
+ 503 011c 460FB63C 		movzbl	(%rdi,%r15), %r15d
+ 503      3F
+ 504 0121 44887EFB 		movb	%r15b, -5(%rsi)
+ 505              		.loc 1 325 0 discriminator 3
+ 506 0125 0FB60C0F 		movzbl	(%rdi,%rcx), %ecx
+ 507 0129 884EFC   		movb	%cl, -4(%rsi)
+ 508              	.LVL88:
+ 326:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr0 += RGB_PIXELSIZE;
+ 327:fltk-1.3.4-1/jpeg/jdmerge.c ****     y  = GETJSAMPLE(*inptr00++);
+ 509              		.loc 1 327 0 discriminator 3
+ 510 012c 410FB64A 		movzbl	-1(%r10), %ecx
+ 510      FF
+ 511              	.LVL89:
+ 328:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr0[RGB_RED] =   range_limit[y + cred];
+ 512              		.loc 1 328 0 discriminator 3
+ 513 0131 448D3C0A 		leal	(%rdx,%rcx), %r15d
+ 514 0135 4D63FF   		movslq	%r15d, %r15
+ 515 0138 460FB63C 		movzbl	(%rdi,%r15), %r15d
+ 515      3F
+ 516 013d 44887EFD 		movb	%r15b, -3(%rsi)
+ 329:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr0[RGB_GREEN] = range_limit[y + cgreen];
+ 517              		.loc 1 329 0 discriminator 3
+ 518 0141 448D3C01 		leal	(%rcx,%rax), %r15d
+ 330:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr0[RGB_BLUE] =  range_limit[y + cblue];
+ 519              		.loc 1 330 0 discriminator 3
+ 520 0145 4401C9   		addl	%r9d, %ecx
+ 521              	.LVL90:
+ 522 0148 4863C9   		movslq	%ecx, %rcx
+ 329:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr0[RGB_GREEN] = range_limit[y + cgreen];
+ 523              		.loc 1 329 0 discriminator 3
+ 524 014b 4D63FF   		movslq	%r15d, %r15
+ 525 014e 460FB63C 		movzbl	(%rdi,%r15), %r15d
+ 525      3F
+ 526 0153 44887EFE 		movb	%r15b, -2(%rsi)
+ 527              		.loc 1 330 0 discriminator 3
+ 528 0157 0FB60C0F 		movzbl	(%rdi,%rcx), %ecx
+ 529 015b 884EFF   		movb	%cl, -1(%rsi)
+ 530              	.LVL91:
+ 331:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr0 += RGB_PIXELSIZE;
+ 332:fltk-1.3.4-1/jpeg/jdmerge.c ****     y  = GETJSAMPLE(*inptr01++);
+ 531              		.loc 1 332 0 discriminator 3
+ 532 015e 410FB64B 		movzbl	-2(%r11), %ecx
+ 532      FE
+ 533              	.LVL92:
+ 333:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr1[RGB_RED] =   range_limit[y + cred];
+ 534              		.loc 1 333 0 discriminator 3
+ 535 0163 448D3C0A 		leal	(%rdx,%rcx), %r15d
+ 536 0167 4D63FF   		movslq	%r15d, %r15
+ 537 016a 460FB63C 		movzbl	(%rdi,%r15), %r15d
+ 537      3F
+ 538 016f 458878FA 		movb	%r15b, -6(%r8)
+ 334:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr1[RGB_GREEN] = range_limit[y + cgreen];
+ 539              		.loc 1 334 0 discriminator 3
+ 540 0173 448D3C01 		leal	(%rcx,%rax), %r15d
+ 335:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr1[RGB_BLUE] =  range_limit[y + cblue];
+ 541              		.loc 1 335 0 discriminator 3
+ 542 0177 4401C9   		addl	%r9d, %ecx
+ 543              	.LVL93:
+ 544 017a 4863C9   		movslq	%ecx, %rcx
+ 334:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr1[RGB_GREEN] = range_limit[y + cgreen];
+ 545              		.loc 1 334 0 discriminator 3
+ 546 017d 4D63FF   		movslq	%r15d, %r15
+ 547 0180 460FB63C 		movzbl	(%rdi,%r15), %r15d
+ 547      3F
+ 548 0185 458878FB 		movb	%r15b, -5(%r8)
+ 549              		.loc 1 335 0 discriminator 3
+ 550 0189 0FB60C0F 		movzbl	(%rdi,%rcx), %ecx
+ 551 018d 418848FC 		movb	%cl, -4(%r8)
+ 552              	.LVL94:
+ 336:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr1 += RGB_PIXELSIZE;
+ 337:fltk-1.3.4-1/jpeg/jdmerge.c ****     y  = GETJSAMPLE(*inptr01++);
+ 553              		.loc 1 337 0 discriminator 3
+ 554 0191 410FB64B 		movzbl	-1(%r11), %ecx
+ 554      FF
+ 555              	.LVL95:
+ 338:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr1[RGB_RED] =   range_limit[y + cred];
+ 556              		.loc 1 338 0 discriminator 3
+ 557 0196 01CA     		addl	%ecx, %edx
+ 558              	.LVL96:
+ 339:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr1[RGB_GREEN] = range_limit[y + cgreen];
+ 559              		.loc 1 339 0 discriminator 3
+ 560 0198 01C8     		addl	%ecx, %eax
+ 561              	.LVL97:
+ 340:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr1[RGB_BLUE] =  range_limit[y + cblue];
+ 562              		.loc 1 340 0 discriminator 3
+ 563 019a 4101C9   		addl	%ecx, %r9d
+ 564              	.LVL98:
+ 338:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr1[RGB_RED] =   range_limit[y + cred];
+ 565              		.loc 1 338 0 discriminator 3
+ 566 019d 4863D2   		movslq	%edx, %rdx
+ 339:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr1[RGB_GREEN] = range_limit[y + cgreen];
+ 567              		.loc 1 339 0 discriminator 3
+ 568 01a0 4898     		cltq
+ 569              		.loc 1 340 0 discriminator 3
+ 570 01a2 4D63C9   		movslq	%r9d, %r9
+ 338:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr1[RGB_RED] =   range_limit[y + cred];
+ 571              		.loc 1 338 0 discriminator 3
+ 572 01a5 0FB61417 		movzbl	(%rdi,%rdx), %edx
+ 573 01a9 418850FD 		movb	%dl, -3(%r8)
+ 339:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr1[RGB_GREEN] = range_limit[y + cgreen];
+ 574              		.loc 1 339 0 discriminator 3
+ 575 01ad 0FB60407 		movzbl	(%rdi,%rax), %eax
+ 576 01b1 418840FE 		movb	%al, -2(%r8)
+ 577              		.loc 1 340 0 discriminator 3
+ 578 01b5 420FB604 		movzbl	(%rdi,%r9), %eax
+ 578      0F
+ 579 01ba 418840FF 		movb	%al, -1(%r8)
+ 580              	.LVL99:
+ 314:fltk-1.3.4-1/jpeg/jdmerge.c ****     /* Do the chroma part of the calculation */
+ 581              		.loc 1 314 0 discriminator 3
+ 582 01be 4C3B5424 		cmpq	-72(%rsp), %r10
+ 582      B8
+ 583 01c3 0F85F7FE 		jne	.L19
+ 583      FFFF
+ 584 01c9 488B4424 		movq	-8(%rsp), %rax
+ 584      F8
+ 585 01ce 48014424 		addq	%rax, -40(%rsp)
+ 585      D8
+ 586 01d3 48014424 		addq	%rax, -32(%rsp)
+ 586      E0
+ 587 01d8 488B7424 		movq	-16(%rsp), %rsi
+ 587      F0
+ 588              	.LVL100:
+ 589 01dd 48017424 		addq	%rsi, -48(%rsp)
+ 589      D0
+ 590 01e2 488D0440 		leaq	(%rax,%rax,2), %rax
+ 591 01e6 4801C0   		addq	%rax, %rax
+ 592 01e9 48014424 		addq	%rax, -56(%rsp)
+ 592      C8
+ 593 01ee 48014424 		addq	%rax, -64(%rsp)
+ 593      C0
+ 594 01f3 488B4424 		movq	-24(%rsp), %rax
+ 594      E8
+ 595 01f8 8B808800 		movl	136(%rax), %eax
+ 595      0000
+ 596              	.LVL101:
+ 597              	.L18:
+ 341:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr1 += RGB_PIXELSIZE;
+ 342:fltk-1.3.4-1/jpeg/jdmerge.c ****   }
+ 343:fltk-1.3.4-1/jpeg/jdmerge.c ****   /* If image width is odd, do the last output column separately */
+ 344:fltk-1.3.4-1/jpeg/jdmerge.c ****   if (cinfo->output_width & 1) {
+ 598              		.loc 1 344 0
+ 599 01fe A801     		testb	$1, %al
+ 600 0200 0F848D00 		je	.L17
+ 600      0000
+ 601              	.LVL102:
+ 345:fltk-1.3.4-1/jpeg/jdmerge.c ****     cb = GETJSAMPLE(*inptr1);
+ 346:fltk-1.3.4-1/jpeg/jdmerge.c ****     cr = GETJSAMPLE(*inptr2);
+ 347:fltk-1.3.4-1/jpeg/jdmerge.c ****     cred = Crrtab[cr];
+ 348:fltk-1.3.4-1/jpeg/jdmerge.c ****     cgreen = (int) RIGHT_SHIFT(Cbgtab[cb] + Crgtab[cr], SCALEBITS);
+ 602              		.loc 1 348 0
+ 603 0206 488B5C24 		movq	-40(%rsp), %rbx
+ 603      D8
+ 347:fltk-1.3.4-1/jpeg/jdmerge.c ****     cgreen = (int) RIGHT_SHIFT(Cbgtab[cb] + Crgtab[cr], SCALEBITS);
+ 604              		.loc 1 347 0
+ 605 020b 488B4424 		movq	-32(%rsp), %rax
+ 605      E0
+ 606              		.loc 1 348 0
+ 607 0210 0FB613   		movzbl	(%rbx), %edx
+ 349:fltk-1.3.4-1/jpeg/jdmerge.c ****     cblue = Cbbtab[cb];
+ 608              		.loc 1 349 0
+ 609 0213 488B5C24 		movq	-80(%rsp), %rbx
+ 609      B0
+ 347:fltk-1.3.4-1/jpeg/jdmerge.c ****     cgreen = (int) RIGHT_SHIFT(Cbgtab[cb] + Crgtab[cr], SCALEBITS);
+ 610              		.loc 1 347 0
+ 611 0218 0FB600   		movzbl	(%rax), %eax
+ 612              		.loc 1 349 0
+ 613 021b 448B0493 		movl	(%rbx,%rdx,4), %r8d
+ 614              	.LVL103:
+ 350:fltk-1.3.4-1/jpeg/jdmerge.c ****     y  = GETJSAMPLE(*inptr00);
+ 615              		.loc 1 350 0
+ 616 021f 488B5C24 		movq	-72(%rsp), %rbx
+ 616      B8
+ 347:fltk-1.3.4-1/jpeg/jdmerge.c ****     cgreen = (int) RIGHT_SHIFT(Cbgtab[cb] + Crgtab[cr], SCALEBITS);
+ 617              		.loc 1 347 0
+ 618 0224 418B3486 		movl	(%r14,%rax,4), %esi
+ 619              	.LVL104:
+ 348:fltk-1.3.4-1/jpeg/jdmerge.c ****     cblue = Cbbtab[cb];
+ 620              		.loc 1 348 0
+ 621 0228 498B44C5 		movq	0(%r13,%rax,8), %rax
+ 621      00
+ 622 022d 490304D4 		addq	(%r12,%rdx,8), %rax
+ 623              		.loc 1 350 0
+ 624 0231 0FB60B   		movzbl	(%rbx), %ecx
+ 351:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr0[RGB_RED] =   range_limit[y + cred];
+ 625              		.loc 1 351 0
+ 626 0234 488B5C24 		movq	-56(%rsp), %rbx
+ 626      C8
+ 348:fltk-1.3.4-1/jpeg/jdmerge.c ****     cblue = Cbbtab[cb];
+ 627              		.loc 1 348 0
+ 628 0239 48C1F810 		sarq	$16, %rax
+ 629              	.LVL105:
+ 630              		.loc 1 351 0
+ 631 023d 8D140E   		leal	(%rsi,%rcx), %edx
+ 632 0240 4863D2   		movslq	%edx, %rdx
+ 633 0243 0FB61417 		movzbl	(%rdi,%rdx), %edx
+ 634 0247 8813     		movb	%dl, (%rbx)
+ 635              	.LVL106:
+ 352:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr0[RGB_GREEN] = range_limit[y + cgreen];
+ 636              		.loc 1 352 0
+ 637 0249 8D1401   		leal	(%rcx,%rax), %edx
+ 353:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr0[RGB_BLUE] =  range_limit[y + cblue];
+ 638              		.loc 1 353 0
+ 639 024c 4401C1   		addl	%r8d, %ecx
+ 640              	.LVL107:
+ 641 024f 4863C9   		movslq	%ecx, %rcx
+ 352:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr0[RGB_GREEN] = range_limit[y + cgreen];
+ 642              		.loc 1 352 0
+ 643 0252 4863D2   		movslq	%edx, %rdx
+ 644 0255 0FB61417 		movzbl	(%rdi,%rdx), %edx
+ 645 0259 885301   		movb	%dl, 1(%rbx)
+ 646              		.loc 1 353 0
+ 647 025c 0FB6140F 		movzbl	(%rdi,%rcx), %edx
+ 648 0260 885302   		movb	%dl, 2(%rbx)
+ 354:fltk-1.3.4-1/jpeg/jdmerge.c ****     y  = GETJSAMPLE(*inptr01);
+ 649              		.loc 1 354 0
+ 650 0263 488B5C24 		movq	-48(%rsp), %rbx
+ 650      D0
+ 651 0268 0FB613   		movzbl	(%rbx), %edx
+ 652              	.LVL108:
+ 355:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr1[RGB_RED] =   range_limit[y + cred];
+ 653              		.loc 1 355 0
+ 654 026b 488B5C24 		movq	-64(%rsp), %rbx
+ 654      C0
+ 655 0270 01D6     		addl	%edx, %esi
+ 656              	.LVL109:
+ 356:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr1[RGB_GREEN] = range_limit[y + cgreen];
+ 657              		.loc 1 356 0
+ 658 0272 01D0     		addl	%edx, %eax
+ 659              	.LVL110:
+ 357:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr1[RGB_BLUE] =  range_limit[y + cblue];
+ 660              		.loc 1 357 0
+ 661 0274 4401C2   		addl	%r8d, %edx
+ 662              	.LVL111:
+ 355:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr1[RGB_RED] =   range_limit[y + cred];
+ 663              		.loc 1 355 0
+ 664 0277 4863F6   		movslq	%esi, %rsi
+ 356:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr1[RGB_GREEN] = range_limit[y + cgreen];
+ 665              		.loc 1 356 0
+ 666 027a 4898     		cltq
+ 667              		.loc 1 357 0
+ 668 027c 4863D2   		movslq	%edx, %rdx
+ 355:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr1[RGB_RED] =   range_limit[y + cred];
+ 669              		.loc 1 355 0
+ 670 027f 0FB60C37 		movzbl	(%rdi,%rsi), %ecx
+ 671 0283 880B     		movb	%cl, (%rbx)
+ 672              	.LVL112:
+ 356:fltk-1.3.4-1/jpeg/jdmerge.c ****     outptr1[RGB_GREEN] = range_limit[y + cgreen];
+ 673              		.loc 1 356 0
+ 674 0285 0FB60407 		movzbl	(%rdi,%rax), %eax
+ 675 0289 884301   		movb	%al, 1(%rbx)
+ 676              		.loc 1 357 0
+ 677 028c 0FB60417 		movzbl	(%rdi,%rdx), %eax
+ 678 0290 884302   		movb	%al, 2(%rbx)
+ 679              	.LVL113:
+ 680              	.L17:
+ 358:fltk-1.3.4-1/jpeg/jdmerge.c ****   }
+ 359:fltk-1.3.4-1/jpeg/jdmerge.c **** }
+ 681              		.loc 1 359 0
+ 682 0293 5B       		popq	%rbx
+ 683              		.cfi_remember_state
+ 684              		.cfi_def_cfa_offset 48
+ 685 0294 5D       		popq	%rbp
+ 686              		.cfi_def_cfa_offset 40
+ 687              	.LVL114:
+ 688 0295 415C     		popq	%r12
+ 689              		.cfi_def_cfa_offset 32
+ 690              	.LVL115:
+ 691 0297 415D     		popq	%r13
+ 692              		.cfi_def_cfa_offset 24
+ 693              	.LVL116:
+ 694 0299 415E     		popq	%r14
+ 695              		.cfi_def_cfa_offset 16
+ 696              	.LVL117:
+ 697 029b 415F     		popq	%r15
+ 698              		.cfi_def_cfa_offset 8
+ 699 029d C3       		ret
+ 700              	.LVL118:
+ 701              	.L21:
+ 702              		.cfi_restore_state
+ 307:fltk-1.3.4-1/jpeg/jdmerge.c ****   inptr01 = input_buf[0][in_row_group_ctr*2 + 1];
+ 703              		.loc 1 307 0
+ 704 029e 4C895424 		movq	%r10, -72(%rsp)
+ 704      B8
+ 705 02a3 E956FFFF 		jmp	.L18
+ 705      FF
+ 706              		.cfi_endproc
+ 707              	.LFE66:
+ 709              		.section	.text.unlikely.h2v2_merged_upsample
+ 710              	.LCOLDE3:
+ 711              		.section	.text.h2v2_merged_upsample
+ 712              	.LHOTE3:
+ 713              		.section	.text.unlikely.merged_2v_upsample,"ax",@progbits
+ 714              	.LCOLDB4:
+ 715              		.section	.text.merged_2v_upsample,"ax",@progbits
+ 716              	.LHOTB4:
+ 717              		.p2align 4,,15
+ 719              	merged_2v_upsample:
+ 720              	.LFB63:
+ 151:fltk-1.3.4-1/jpeg/jdmerge.c ****   my_upsample_ptr upsample = (my_upsample_ptr) cinfo->upsample;
+ 721              		.loc 1 151 0
+ 722              		.cfi_startproc
+ 723              	.LVL119:
+ 724 0000 4155     		pushq	%r13
+ 725              		.cfi_def_cfa_offset 16
+ 726              		.cfi_offset 13, -16
+ 727 0002 4154     		pushq	%r12
+ 728              		.cfi_def_cfa_offset 24
+ 729              		.cfi_offset 12, -24
+ 730 0004 4989D5   		movq	%rdx, %r13
+ 731 0007 55       		pushq	%rbp
+ 732              		.cfi_def_cfa_offset 32
+ 733              		.cfi_offset 6, -32
+ 734 0008 53       		pushq	%rbx
+ 735              		.cfi_def_cfa_offset 40
+ 736              		.cfi_offset 3, -40
+ 737 0009 4D89CC   		movq	%r9, %r12
+ 738 000c 4883EC28 		subq	$40, %rsp
+ 739              		.cfi_def_cfa_offset 80
+ 152:fltk-1.3.4-1/jpeg/jdmerge.c ****   JSAMPROW work_ptrs[2];
+ 740              		.loc 1 152 0
+ 741 0010 488B9F80 		movq	640(%rdi), %rbx
+ 741      020000
+ 742              	.LVL120:
+ 151:fltk-1.3.4-1/jpeg/jdmerge.c ****   my_upsample_ptr upsample = (my_upsample_ptr) cinfo->upsample;
+ 743              		.loc 1 151 0
+ 744 0017 64488B04 		movq	%fs:40, %rax
+ 744      25280000 
+ 744      00
+ 745 0020 48894424 		movq	%rax, 24(%rsp)
+ 745      18
+ 746 0025 31C0     		xorl	%eax, %eax
+ 156:fltk-1.3.4-1/jpeg/jdmerge.c ****     /* If we have a spare row saved from a previous cycle, just return it. */
+ 747              		.loc 1 156 0
+ 748 0027 8B5348   		movl	72(%rbx), %edx
+ 749              	.LVL121:
+ 750 002a 85D2     		testl	%edx, %edx
+ 751 002c 0F859E00 		jne	.L42
+ 751      0000
+ 752              	.LVL122:
+ 166:fltk-1.3.4-1/jpeg/jdmerge.c ****       num_rows = upsample->rows_to_go;
+ 753              		.loc 1 166 0
+ 754 0032 8B6B50   		movl	80(%rbx), %ebp
+ 169:fltk-1.3.4-1/jpeg/jdmerge.c ****     if (num_rows > out_rows_avail)
+ 755              		.loc 1 169 0
+ 756 0035 418B01   		movl	(%r9), %eax
+ 166:fltk-1.3.4-1/jpeg/jdmerge.c ****       num_rows = upsample->rows_to_go;
+ 757              		.loc 1 166 0
+ 758 0038 83FD01   		cmpl	$1, %ebp
+ 759 003b 7663     		jbe	.L43
+ 169:fltk-1.3.4-1/jpeg/jdmerge.c ****     if (num_rows > out_rows_avail)
+ 760              		.loc 1 169 0
+ 761 003d 8B6C2450 		movl	80(%rsp), %ebp
+ 762 0041 29C5     		subl	%eax, %ebp
+ 763              	.LVL123:
+ 170:fltk-1.3.4-1/jpeg/jdmerge.c ****       num_rows = out_rows_avail;
+ 764              		.loc 1 170 0
+ 765 0043 83FD01   		cmpl	$1, %ebp
+ 766 0046 7664     		jbe	.L40
+ 173:fltk-1.3.4-1/jpeg/jdmerge.c ****     if (num_rows > 1) {
+ 767              		.loc 1 173 0
+ 768 0048 89C2     		movl	%eax, %edx
+ 175:fltk-1.3.4-1/jpeg/jdmerge.c ****     } else {
+ 769              		.loc 1 175 0
+ 770 004a 83C001   		addl	$1, %eax
+ 771 004d BD020000 		movl	$2, %ebp
+ 771      00
+ 772              	.LVL124:
+ 173:fltk-1.3.4-1/jpeg/jdmerge.c ****     if (num_rows > 1) {
+ 773              		.loc 1 173 0
+ 774 0052 498B14D0 		movq	(%r8,%rdx,8), %rdx
+ 775              	.LVL125:
+ 175:fltk-1.3.4-1/jpeg/jdmerge.c ****     } else {
+ 776              		.loc 1 175 0
+ 777 0056 498B04C0 		movq	(%r8,%rax,8), %rax
+ 173:fltk-1.3.4-1/jpeg/jdmerge.c ****     if (num_rows > 1) {
+ 778              		.loc 1 173 0
+ 779 005a 48891424 		movq	%rdx, (%rsp)
+ 175:fltk-1.3.4-1/jpeg/jdmerge.c ****     } else {
+ 780              		.loc 1 175 0
+ 781 005e 48894424 		movq	%rax, 8(%rsp)
+ 781      08
+ 782              	.LVL126:
+ 783              	.L34:
+ 181:fltk-1.3.4-1/jpeg/jdmerge.c ****   }
+ 784              		.loc 1 181 0
+ 785 0063 4889E1   		movq	%rsp, %rcx
+ 786              	.LVL127:
+ 787 0066 418B5500 		movl	0(%r13), %edx
+ 788 006a FF5318   		call	*24(%rbx)
+ 789              	.LVL128:
+ 790              	.L29:
+ 185:fltk-1.3.4-1/jpeg/jdmerge.c ****   upsample->rows_to_go -= num_rows;
+ 791              		.loc 1 185 0
+ 792 006d 41012C24 		addl	%ebp, (%r12)
+ 188:fltk-1.3.4-1/jpeg/jdmerge.c ****     (*in_row_group_ctr)++;
+ 793              		.loc 1 188 0
+ 794 0071 8B4348   		movl	72(%rbx), %eax
+ 186:fltk-1.3.4-1/jpeg/jdmerge.c ****   /* When the buffer is emptied, declare this input row group consumed */
+ 795              		.loc 1 186 0
+ 796 0074 296B50   		subl	%ebp, 80(%rbx)
+ 188:fltk-1.3.4-1/jpeg/jdmerge.c ****     (*in_row_group_ctr)++;
+ 797              		.loc 1 188 0
+ 798 0077 85C0     		testl	%eax, %eax
+ 799 0079 7505     		jne	.L27
+ 189:fltk-1.3.4-1/jpeg/jdmerge.c **** }
+ 800              		.loc 1 189 0
+ 801 007b 41834500 		addl	$1, 0(%r13)
+ 801      01
+ 802              	.L27:
+ 190:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 803              		.loc 1 190 0
+ 804 0080 488B4424 		movq	24(%rsp), %rax
+ 804      18
+ 805 0085 64483304 		xorq	%fs:40, %rax
+ 805      25280000 
+ 805      00
+ 806 008e 756F     		jne	.L44
+ 807 0090 4883C428 		addq	$40, %rsp
+ 808              		.cfi_remember_state
+ 809              		.cfi_def_cfa_offset 40
+ 810 0094 5B       		popq	%rbx
+ 811              		.cfi_def_cfa_offset 32
+ 812              	.LVL129:
+ 813 0095 5D       		popq	%rbp
+ 814              		.cfi_def_cfa_offset 24
+ 815              	.LVL130:
+ 816 0096 415C     		popq	%r12
+ 817              		.cfi_def_cfa_offset 16
+ 818              	.LVL131:
+ 819 0098 415D     		popq	%r13
+ 820              		.cfi_def_cfa_offset 8
+ 821              	.LVL132:
+ 822 009a C3       		ret
+ 823              	.LVL133:
+ 824 009b 0F1F4400 		.p2align 4,,10
+ 824      00
+ 825              		.p2align 3
+ 826              	.L43:
+ 827              		.cfi_restore_state
+ 170:fltk-1.3.4-1/jpeg/jdmerge.c ****       num_rows = out_rows_avail;
+ 828              		.loc 1 170 0
+ 829 00a0 8B542450 		movl	80(%rsp), %edx
+ 830 00a4 29C2     		subl	%eax, %edx
+ 831              	.LVL134:
+ 832 00a6 39D5     		cmpl	%edx, %ebp
+ 833 00a8 7602     		jbe	.L40
+ 834 00aa 31ED     		xorl	%ebp, %ebp
+ 835              	.LVL135:
+ 836              	.L40:
+ 173:fltk-1.3.4-1/jpeg/jdmerge.c ****     if (num_rows > 1) {
+ 837              		.loc 1 173 0
+ 838 00ac 498B04C0 		movq	(%r8,%rax,8), %rax
+ 178:fltk-1.3.4-1/jpeg/jdmerge.c ****     }
+ 839              		.loc 1 178 0
+ 840 00b0 C7434801 		movl	$1, 72(%rbx)
+ 840      000000
+ 173:fltk-1.3.4-1/jpeg/jdmerge.c ****     if (num_rows > 1) {
+ 841              		.loc 1 173 0
+ 842 00b7 48890424 		movq	%rax, (%rsp)
+ 177:fltk-1.3.4-1/jpeg/jdmerge.c ****       upsample->spare_full = TRUE;
+ 843              		.loc 1 177 0
+ 844 00bb 488B4340 		movq	64(%rbx), %rax
+ 845 00bf 48894424 		movq	%rax, 8(%rsp)
+ 845      08
+ 846 00c4 EB9D     		jmp	.L34
+ 847              	.LVL136:
+ 848 00c6 662E0F1F 		.p2align 4,,10
+ 848      84000000 
+ 848      0000
+ 849              		.p2align 3
+ 850              	.L42:
+ 158:fltk-1.3.4-1/jpeg/jdmerge.c **** 		      1, upsample->out_row_width);
+ 851              		.loc 1 158 0
+ 852 00d0 418B01   		movl	(%r9), %eax
+ 853 00d3 448B4B4C 		movl	76(%rbx), %r9d
+ 854              	.LVL137:
+ 855 00d7 488D7B40 		leaq	64(%rbx), %rdi
+ 856              	.LVL138:
+ 857 00db 31C9     		xorl	%ecx, %ecx
+ 858              	.LVL139:
+ 859 00dd 31F6     		xorl	%esi, %esi
+ 860              	.LVL140:
+ 160:fltk-1.3.4-1/jpeg/jdmerge.c ****     upsample->spare_full = FALSE;
+ 861              		.loc 1 160 0
+ 862 00df BD010000 		movl	$1, %ebp
+ 862      00
+ 158:fltk-1.3.4-1/jpeg/jdmerge.c **** 		      1, upsample->out_row_width);
+ 863              		.loc 1 158 0
+ 864 00e4 498D14C0 		leaq	(%r8,%rax,8), %rdx
+ 865 00e8 41B80100 		movl	$1, %r8d
+ 865      0000
+ 866              	.LVL141:
+ 867 00ee E8000000 		call	jcopy_sample_rows
+ 867      00
+ 868              	.LVL142:
+ 161:fltk-1.3.4-1/jpeg/jdmerge.c ****   } else {
+ 869              		.loc 1 161 0
+ 870 00f3 C7434800 		movl	$0, 72(%rbx)
+ 870      000000
+ 871 00fa E96EFFFF 		jmp	.L29
+ 871      FF
+ 872              	.LVL143:
+ 873              	.L44:
+ 190:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 874              		.loc 1 190 0
+ 875 00ff E8000000 		call	__stack_chk_fail
+ 875      00
+ 876              	.LVL144:
+ 877              		.cfi_endproc
+ 878              	.LFE63:
+ 880              		.section	.text.unlikely.merged_2v_upsample
+ 881              	.LCOLDE4:
+ 882              		.section	.text.merged_2v_upsample
+ 883              	.LHOTE4:
+ 884              		.section	.text.unlikely.jinit_merged_upsampler,"ax",@progbits
+ 885              	.LCOLDB5:
+ 886              		.section	.text.jinit_merged_upsampler,"ax",@progbits
+ 887              	.LHOTB5:
+ 888              		.p2align 4,,15
+ 889              		.globl	jinit_merged_upsampler
+ 891              	jinit_merged_upsampler:
+ 892              	.LFB67:
+ 360:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 361:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 362:fltk-1.3.4-1/jpeg/jdmerge.c **** /*
+ 363:fltk-1.3.4-1/jpeg/jdmerge.c ****  * Module initialization routine for merged upsampling/color conversion.
+ 364:fltk-1.3.4-1/jpeg/jdmerge.c ****  *
+ 365:fltk-1.3.4-1/jpeg/jdmerge.c ****  * NB: this is called under the conditions determined by use_merged_upsample()
+ 366:fltk-1.3.4-1/jpeg/jdmerge.c ****  * in jdmaster.c.  That routine MUST correspond to the actual capabilities
+ 367:fltk-1.3.4-1/jpeg/jdmerge.c ****  * of this module; no safety checks are made here.
+ 368:fltk-1.3.4-1/jpeg/jdmerge.c ****  */
+ 369:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 370:fltk-1.3.4-1/jpeg/jdmerge.c **** GLOBAL(void)
+ 371:fltk-1.3.4-1/jpeg/jdmerge.c **** jinit_merged_upsampler (j_decompress_ptr cinfo)
+ 372:fltk-1.3.4-1/jpeg/jdmerge.c **** {
+ 893              		.loc 1 372 0
+ 894              		.cfi_startproc
+ 895              	.LVL145:
+ 896 0000 55       		pushq	%rbp
+ 897              		.cfi_def_cfa_offset 16
+ 898              		.cfi_offset 6, -16
+ 899 0001 53       		pushq	%rbx
+ 900              		.cfi_def_cfa_offset 24
+ 901              		.cfi_offset 3, -24
+ 902 0002 4889FD   		movq	%rdi, %rbp
+ 373:fltk-1.3.4-1/jpeg/jdmerge.c ****   my_upsample_ptr upsample;
+ 374:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 375:fltk-1.3.4-1/jpeg/jdmerge.c ****   upsample = (my_upsample_ptr)
+ 903              		.loc 1 375 0
+ 904 0005 BA580000 		movl	$88, %edx
+ 904      00
+ 905 000a BE010000 		movl	$1, %esi
+ 905      00
+ 372:fltk-1.3.4-1/jpeg/jdmerge.c ****   my_upsample_ptr upsample;
+ 906              		.loc 1 372 0
+ 907 000f 4883EC08 		subq	$8, %rsp
+ 908              		.cfi_def_cfa_offset 32
+ 376:fltk-1.3.4-1/jpeg/jdmerge.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 909              		.loc 1 376 0
+ 910 0013 488B4708 		movq	8(%rdi), %rax
+ 375:fltk-1.3.4-1/jpeg/jdmerge.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 911              		.loc 1 375 0
+ 912 0017 FF10     		call	*(%rax)
+ 913              	.LVL146:
+ 377:fltk-1.3.4-1/jpeg/jdmerge.c **** 				SIZEOF(my_upsampler));
+ 378:fltk-1.3.4-1/jpeg/jdmerge.c ****   cinfo->upsample = (struct jpeg_upsampler *) upsample;
+ 914              		.loc 1 378 0
+ 915 0019 48898580 		movq	%rax, 640(%rbp)
+ 915      020000
+ 375:fltk-1.3.4-1/jpeg/jdmerge.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 916              		.loc 1 375 0
+ 917 0020 4889C3   		movq	%rax, %rbx
+ 918              	.LVL147:
+ 379:fltk-1.3.4-1/jpeg/jdmerge.c ****   upsample->pub.start_pass = start_pass_merged_upsample;
+ 919              		.loc 1 379 0
+ 920 0023 48C70000 		movq	$start_pass_merged_upsample, (%rax)
+ 920      000000
+ 380:fltk-1.3.4-1/jpeg/jdmerge.c ****   upsample->pub.need_context_rows = FALSE;
+ 921              		.loc 1 380 0
+ 922 002a C7401000 		movl	$0, 16(%rax)
+ 922      000000
+ 381:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 382:fltk-1.3.4-1/jpeg/jdmerge.c ****   upsample->out_row_width = cinfo->output_width * cinfo->out_color_components;
+ 923              		.loc 1 382 0
+ 924 0031 8B858800 		movl	136(%rbp), %eax
+ 924      0000
+ 925              	.LVL148:
+ 926 0037 0FAF8590 		imull	144(%rbp), %eax
+ 926      000000
+ 927 003e 89434C   		movl	%eax, 76(%rbx)
+ 383:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 384:fltk-1.3.4-1/jpeg/jdmerge.c ****   if (cinfo->max_v_samp_factor == 2) {
+ 928              		.loc 1 384 0
+ 929 0041 83BDA401 		cmpl	$2, 420(%rbp)
+ 929      000002
+ 930 0048 0F84F700 		je	.L51
+ 930      0000
+ 385:fltk-1.3.4-1/jpeg/jdmerge.c ****     upsample->pub.upsample = merged_2v_upsample;
+ 386:fltk-1.3.4-1/jpeg/jdmerge.c ****     upsample->upmethod = h2v2_merged_upsample;
+ 387:fltk-1.3.4-1/jpeg/jdmerge.c ****     /* Allocate a spare row buffer */
+ 388:fltk-1.3.4-1/jpeg/jdmerge.c ****     upsample->spare_row = (JSAMPROW)
+ 389:fltk-1.3.4-1/jpeg/jdmerge.c ****       (*cinfo->mem->alloc_large) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 390:fltk-1.3.4-1/jpeg/jdmerge.c **** 		(size_t) (upsample->out_row_width * SIZEOF(JSAMPLE)));
+ 391:fltk-1.3.4-1/jpeg/jdmerge.c ****   } else {
+ 392:fltk-1.3.4-1/jpeg/jdmerge.c ****     upsample->pub.upsample = merged_1v_upsample;
+ 931              		.loc 1 392 0
+ 932 004e 48C74308 		movq	$merged_1v_upsample, 8(%rbx)
+ 932      00000000 
+ 393:fltk-1.3.4-1/jpeg/jdmerge.c ****     upsample->upmethod = h2v1_merged_upsample;
+ 933              		.loc 1 393 0
+ 934 0056 48C74318 		movq	$h2v1_merged_upsample, 24(%rbx)
+ 934      00000000 
+ 394:fltk-1.3.4-1/jpeg/jdmerge.c ****     /* No spare row needed */
+ 395:fltk-1.3.4-1/jpeg/jdmerge.c ****     upsample->spare_row = NULL;
+ 935              		.loc 1 395 0
+ 936 005e 48C74340 		movq	$0, 64(%rbx)
+ 936      00000000 
+ 937              	.L47:
+ 938              	.LVL149:
+ 939              	.LBB4:
+ 940              	.LBB5:
+  86:fltk-1.3.4-1/jpeg/jdmerge.c ****   int i;
+ 941              		.loc 1 86 0
+ 942 0066 488B9D80 		movq	640(%rbp), %rbx
+ 942      020000
+ 943              	.LVL150:
+  92:fltk-1.3.4-1/jpeg/jdmerge.c **** 				(MAXJSAMPLE+1) * SIZEOF(int));
+ 944              		.loc 1 92 0
+ 945 006d 488B4508 		movq	8(%rbp), %rax
+ 946 0071 BA000400 		movl	$1024, %edx
+ 946      00
+ 947 0076 BE010000 		movl	$1, %esi
+ 947      00
+ 948 007b 4889EF   		movq	%rbp, %rdi
+ 949 007e FF10     		call	*(%rax)
+ 950              	.LVL151:
+  91:fltk-1.3.4-1/jpeg/jdmerge.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 951              		.loc 1 91 0
+ 952 0080 48894320 		movq	%rax, 32(%rbx)
+  95:fltk-1.3.4-1/jpeg/jdmerge.c **** 				(MAXJSAMPLE+1) * SIZEOF(int));
+ 953              		.loc 1 95 0
+ 954 0084 488B4508 		movq	8(%rbp), %rax
+ 955 0088 BA000400 		movl	$1024, %edx
+ 955      00
+ 956 008d BE010000 		movl	$1, %esi
+ 956      00
+ 957 0092 4889EF   		movq	%rbp, %rdi
+ 958 0095 FF10     		call	*(%rax)
+ 959              	.LVL152:
+  94:fltk-1.3.4-1/jpeg/jdmerge.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 960              		.loc 1 94 0
+ 961 0097 48894328 		movq	%rax, 40(%rbx)
+  98:fltk-1.3.4-1/jpeg/jdmerge.c **** 				(MAXJSAMPLE+1) * SIZEOF(INT32));
+ 962              		.loc 1 98 0
+ 963 009b 488B4508 		movq	8(%rbp), %rax
+ 964 009f BA000800 		movl	$2048, %edx
+ 964      00
+ 965 00a4 BE010000 		movl	$1, %esi
+ 965      00
+ 966 00a9 4889EF   		movq	%rbp, %rdi
+ 967 00ac FF10     		call	*(%rax)
+ 968              	.LVL153:
+  97:fltk-1.3.4-1/jpeg/jdmerge.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 969              		.loc 1 97 0
+ 970 00ae 48894330 		movq	%rax, 48(%rbx)
+ 101:fltk-1.3.4-1/jpeg/jdmerge.c **** 				(MAXJSAMPLE+1) * SIZEOF(INT32));
+ 971              		.loc 1 101 0
+ 972 00b2 488B4508 		movq	8(%rbp), %rax
+ 973 00b6 BA000800 		movl	$2048, %edx
+ 973      00
+ 974 00bb BE010000 		movl	$1, %esi
+ 974      00
+ 975 00c0 4889EF   		movq	%rbp, %rdi
+ 976 00c3 FF10     		call	*(%rax)
+ 977              	.LVL154:
+ 100:fltk-1.3.4-1/jpeg/jdmerge.c ****     (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 978              		.loc 1 100 0
+ 979 00c5 BF808C2C 		movl	$2919552, %edi
+ 979      00
+ 980 00ca 48894338 		movq	%rax, 56(%rbx)
+ 981              	.LVL155:
+ 982 00ce BE00695B 		movl	$5990656, %esi
+ 982      00
+ 983 00d3 48C7C100 		movq	$-14831872, %rcx
+ 983      AF1DFF
+ 984 00da 48C7C280 		movq	$-11728000, %rdx
+ 984      0B4DFF
+ 985 00e1 31C0     		xorl	%eax, %eax
+ 986              	.LVL156:
+ 987              		.p2align 4,,10
+ 988 00e3 0F1F4400 		.p2align 3
+ 988      00
+ 989              	.L48:
+ 108:fltk-1.3.4-1/jpeg/jdmerge.c **** 		    RIGHT_SHIFT(FIX(1.402) * x + ONE_HALF, SCALEBITS);
+ 990              		.loc 1 108 0
+ 991 00e8 4C8B4320 		movq	32(%rbx), %r8
+ 992 00ec 4989D1   		movq	%rdx, %r9
+ 993 00ef 4881C2E9 		addq	$91881, %rdx
+ 993      660100
+ 994 00f6 49C1F910 		sarq	$16, %r9
+ 995 00fa 45890C00 		movl	%r9d, (%r8,%rax)
+ 111:fltk-1.3.4-1/jpeg/jdmerge.c **** 		    RIGHT_SHIFT(FIX(1.772) * x + ONE_HALF, SCALEBITS);
+ 996              		.loc 1 111 0
+ 997 00fe 4C8B4328 		movq	40(%rbx), %r8
+ 998 0102 4989C9   		movq	%rcx, %r9
+ 999 0105 49C1F910 		sarq	$16, %r9
+ 1000 0109 4881C1A2 		addq	$116130, %rcx
+ 1000      C50100
+ 1001 0110 45890C00 		movl	%r9d, (%r8,%rax)
+ 114:fltk-1.3.4-1/jpeg/jdmerge.c ****     /* Cb=>G value is scaled-up -0.344136286 * x */
+ 1002              		.loc 1 114 0
+ 1003 0114 4C8B4330 		movq	48(%rbx), %r8
+ 1004 0118 49893440 		movq	%rsi, (%r8,%rax,2)
+ 117:fltk-1.3.4-1/jpeg/jdmerge.c ****   }
+ 1005              		.loc 1 117 0
+ 1006 011c 4C8B4338 		movq	56(%rbx), %r8
+ 1007 0120 4881EED2 		subq	$46802, %rsi
+ 1007      B60000
+ 1008 0127 49893C40 		movq	%rdi, (%r8,%rax,2)
+ 1009 012b 4883C004 		addq	$4, %rax
+ 1010 012f 4881EF19 		subq	$22553, %rdi
+ 1010      580000
+ 104:fltk-1.3.4-1/jpeg/jdmerge.c ****     /* i is the actual input pixel value, in the range 0..MAXJSAMPLE */
+ 1011              		.loc 1 104 0
+ 1012 0136 483D0004 		cmpq	$1024, %rax
+ 1012      0000
+ 1013 013c 75AA     		jne	.L48
+ 1014              	.LBE5:
+ 1015              	.LBE4:
+ 396:fltk-1.3.4-1/jpeg/jdmerge.c ****   }
+ 397:fltk-1.3.4-1/jpeg/jdmerge.c **** 
+ 398:fltk-1.3.4-1/jpeg/jdmerge.c ****   build_ycc_rgb_table(cinfo);
+ 399:fltk-1.3.4-1/jpeg/jdmerge.c **** }
+ 1016              		.loc 1 399 0
+ 1017 013e 4883C408 		addq	$8, %rsp
+ 1018              		.cfi_remember_state
+ 1019              		.cfi_def_cfa_offset 24
+ 1020 0142 5B       		popq	%rbx
+ 1021              		.cfi_def_cfa_offset 16
+ 1022              	.LVL157:
+ 1023 0143 5D       		popq	%rbp
+ 1024              		.cfi_def_cfa_offset 8
+ 1025              	.LVL158:
+ 1026 0144 C3       		ret
+ 1027              	.LVL159:
+ 1028              	.L51:
+ 1029              		.cfi_restore_state
+ 385:fltk-1.3.4-1/jpeg/jdmerge.c ****     upsample->upmethod = h2v2_merged_upsample;
+ 1030              		.loc 1 385 0
+ 1031 0145 48C74308 		movq	$merged_2v_upsample, 8(%rbx)
+ 1031      00000000 
+ 386:fltk-1.3.4-1/jpeg/jdmerge.c ****     /* Allocate a spare row buffer */
+ 1032              		.loc 1 386 0
+ 1033 014d 48C74318 		movq	$h2v2_merged_upsample, 24(%rbx)
+ 1033      00000000 
+ 389:fltk-1.3.4-1/jpeg/jdmerge.c **** 		(size_t) (upsample->out_row_width * SIZEOF(JSAMPLE)));
+ 1034              		.loc 1 389 0
+ 1035 0155 89C2     		movl	%eax, %edx
+ 1036 0157 488B4508 		movq	8(%rbp), %rax
+ 1037 015b BE010000 		movl	$1, %esi
+ 1037      00
+ 1038 0160 4889EF   		movq	%rbp, %rdi
+ 1039 0163 FF5008   		call	*8(%rax)
+ 1040              	.LVL160:
+ 388:fltk-1.3.4-1/jpeg/jdmerge.c ****       (*cinfo->mem->alloc_large) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+ 1041              		.loc 1 388 0
+ 1042 0166 48894340 		movq	%rax, 64(%rbx)
+ 1043 016a E9F7FEFF 		jmp	.L47
+ 1043      FF
+ 1044              		.cfi_endproc
+ 1045              	.LFE67:
+ 1047              		.section	.text.unlikely.jinit_merged_upsampler
+ 1048              	.LCOLDE5:
+ 1049              		.section	.text.jinit_merged_upsampler
+ 1050              	.LHOTE5:
+ 1051              		.text
+ 1052              	.Letext0:
+ 1053              		.section	.text.unlikely.start_pass_merged_upsample
+ 1054              	.Letext_cold0:
+ 1055              		.file 2 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
+ 1056              		.file 3 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 1057              		.file 4 "/usr/include/libio.h"
+ 1058              		.file 5 "fltk-1.3.4-1/jpeg/jmorecfg.h"
+ 1059              		.file 6 "fltk-1.3.4-1/jpeg/jpeglib.h"
+ 1060              		.file 7 "fltk-1.3.4-1/jpeg/jpegint.h"
+ 1061              		.file 8 "/usr/include/stdio.h"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 jdmerge.c
+     /tmp/ccpYye5U.s:13     .text.start_pass_merged_upsample:0000000000000000 start_pass_merged_upsample
+     /tmp/ccpYye5U.s:41     .text.merged_1v_upsample:0000000000000000 merged_1v_upsample
+     /tmp/ccpYye5U.s:93     .text.h2v1_merged_upsample:0000000000000000 h2v1_merged_upsample
+     /tmp/ccpYye5U.s:343    .text.h2v2_merged_upsample:0000000000000000 h2v2_merged_upsample
+     /tmp/ccpYye5U.s:719    .text.merged_2v_upsample:0000000000000000 merged_2v_upsample
+     /tmp/ccpYye5U.s:891    .text.jinit_merged_upsampler:0000000000000000 jinit_merged_upsampler
+                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
+                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+                           .group:0000000000000000 wm4.jconfig.h.10.247fc3ff67998f3074970b1373c70333
+                           .group:0000000000000000 wm4.features.h.19.24da27e0a4d0d521fd057013d982b8b5
+                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
+                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
+                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
+                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
+                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
+                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
+                           .group:0000000000000000 wm4.waitflags.h.25.e401b8bcfee800b540b27abd7cc78de9
+                           .group:0000000000000000 wm4.waitstatus.h.28.93f167f49d64e2b9b99f98d1162a93bf
+                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
+                           .group:0000000000000000 wm4.endian.h.41.24cced64aef71195a51d4daa8e4f4a95
+                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
+                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
+                           .group:0000000000000000 wm4.byteswap.h.38.11ee5fdc0f6cc53a16c505b9233cecef
+                           .group:0000000000000000 wm4.endian.h.63.97272d7c64d5db8020003b32e9289502
+                           .group:0000000000000000 wm4.waitstatus.h.99.408b6270fa6eb71377201a241ef15f79
+                           .group:0000000000000000 wm4.stdlib.h.50.84aeca2ac6f37d40e1e9b3cef757ba2d
+                           .group:0000000000000000 wm4.types.h.23.f6dcbaa72f8f71361acef09804d45a5e
+                           .group:0000000000000000 wm4.time.h.53.beb46e650cd406cb917b6b96b45e640a
+                           .group:0000000000000000 wm4.stddef.h.238.847b6907dabda77be90a9ab7ad789e2e
+                           .group:0000000000000000 wm4.types.h.187.bd5a05039b505b3620e6973f1b2ffeb1
+                           .group:0000000000000000 wm4.select.h.28.eb2f3debdbcffd1442ebddaebc4fb6ff
+                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
+                           .group:0000000000000000 wm4.select.h.36.f76c3b9e55c871743863013cc4cc14c9
+                           .group:0000000000000000 wm4.time.h.66.e70ce69790c975f0efb369340c432e0b
+                           .group:0000000000000000 wm4.time.h.25.ae5284cdff565e87a9198d819340325d
+                           .group:0000000000000000 wm4.select.h.49.e9d2041e5035cc68ebd1a20f7dbc8514
+                           .group:0000000000000000 wm4.select2.h.27.f95f2ab0ffee66dc1b6575014894b21a
+                           .group:0000000000000000 wm4.sysmacros.h.20.8a0c33ff175cd9b434a86c0aaa36f0a2
+                           .group:0000000000000000 wm4.types.h.229.67b3f66bd74b06b451caec392a72a945
+                           .group:0000000000000000 wm4.pthreadtypes.h.25.6892b1493314fcf446bbc76e7362acba
+                           .group:0000000000000000 wm4.alloca.h.19.edefa922a76c1cbaaf1e416903ba2d1c
+                           .group:0000000000000000 wm4.alloca.h.29.156e12058824cc23d961c4d3b13031f6
+                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
+                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
+                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
+                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
+                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
+                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
+                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
+                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
+                           .group:0000000000000000 wm4.stdio.h.80.17b7dd1ca72d8a61987532cb1d80194a
+                           .group:0000000000000000 wm4.stdio_lim.h.23.557290a6cddeba0587f574f29e3a5fb9
+                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
+                           .group:0000000000000000 wm4.stdio.h.26.cae64f7ada9bb8327a89dba6a5e93655
+                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
+                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
+                           .group:0000000000000000 wm4.string2.h.45.00535b99420fc3014c2da41d6645330d
+                           .group:0000000000000000 wm4.string3.h.31.0c4b9301b754a2db05eaafef869657d2
+                           .group:0000000000000000 wm4.jinclude.h.67.b19f941ec97c4845fa4609292c7e2db4
+                           .group:0000000000000000 wm4.jmorecfg.h.33.3b4c5f9cc07b3737823b06caf24d5b05
+                           .group:0000000000000000 wm4.jpeglib.h.40.4f111c27252a38df39328d65454e82f4
+                           .group:0000000000000000 wm4.jpegint.h.26.5219ef5d4e4921371d38e77b6091fd20
+                           .group:0000000000000000 wm4.jerror.h.25.1dbd8674e70ab5215bc0037320e5c2a2
+
+UNDEFINED SYMBOLS
+jcopy_sample_rows
+__stack_chk_fail

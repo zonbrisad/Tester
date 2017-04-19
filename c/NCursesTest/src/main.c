@@ -134,8 +134,8 @@ void statusRowTest() {
  */
 int main(int argc, char** argv) {
    
-  attributeTest();
-	statusRowTest();
+//  attributeTest();
+//	statusRowTest();
   keyboardTest();
 
  

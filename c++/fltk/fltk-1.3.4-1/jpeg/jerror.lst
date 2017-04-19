@@ -1,0 +1,2139 @@
+   1              		.file	"jerror.c"
+   2              		.text
+   3              	.Ltext0:
+   4              		.section	.text.unlikely.emit_message,"ax",@progbits
+   5              	.LCOLDB0:
+   6              		.section	.text.emit_message,"ax",@progbits
+   7              	.LHOTB0:
+   8              		.p2align 4,,15
+   9              		.section	.text.unlikely.emit_message
+  10              	.Ltext_cold0:
+  11              		.section	.text.emit_message
+  13              	emit_message:
+  14              	.LFB63:
+  15              		.file 1 "fltk-1.3.4-1/jpeg/jerror.c"
+   1:fltk-1.3.4-1/jpeg/jerror.c **** /*
+   2:fltk-1.3.4-1/jpeg/jerror.c ****  * jerror.c
+   3:fltk-1.3.4-1/jpeg/jerror.c ****  *
+   4:fltk-1.3.4-1/jpeg/jerror.c ****  * Copyright (C) 1991-1998, Thomas G. Lane.
+   5:fltk-1.3.4-1/jpeg/jerror.c ****  * Modified 2012 by Guido Vollbeding.
+   6:fltk-1.3.4-1/jpeg/jerror.c ****  * This file is part of the Independent JPEG Group's software.
+   7:fltk-1.3.4-1/jpeg/jerror.c ****  * For conditions of distribution and use, see the accompanying README file.
+   8:fltk-1.3.4-1/jpeg/jerror.c ****  *
+   9:fltk-1.3.4-1/jpeg/jerror.c ****  * This file contains simple error-reporting and trace-message routines.
+  10:fltk-1.3.4-1/jpeg/jerror.c ****  * These are suitable for Unix-like systems and others where writing to
+  11:fltk-1.3.4-1/jpeg/jerror.c ****  * stderr is the right thing to do.  Many applications will want to replace
+  12:fltk-1.3.4-1/jpeg/jerror.c ****  * some or all of these routines.
+  13:fltk-1.3.4-1/jpeg/jerror.c ****  *
+  14:fltk-1.3.4-1/jpeg/jerror.c ****  * If you define USE_WINDOWS_MESSAGEBOX in jconfig.h or in the makefile,
+  15:fltk-1.3.4-1/jpeg/jerror.c ****  * you get a Windows-specific hack to display error messages in a dialog box.
+  16:fltk-1.3.4-1/jpeg/jerror.c ****  * It ain't much, but it beats dropping error messages into the bit bucket,
+  17:fltk-1.3.4-1/jpeg/jerror.c ****  * which is what happens to output to stderr under most Windows C compilers.
+  18:fltk-1.3.4-1/jpeg/jerror.c ****  *
+  19:fltk-1.3.4-1/jpeg/jerror.c ****  * These routines are used by both the compression and decompression code.
+  20:fltk-1.3.4-1/jpeg/jerror.c ****  */
+  21:fltk-1.3.4-1/jpeg/jerror.c **** 
+  22:fltk-1.3.4-1/jpeg/jerror.c **** /* this is not a core library module, so it doesn't define JPEG_INTERNALS */
+  23:fltk-1.3.4-1/jpeg/jerror.c **** #include "jinclude.h"
+  24:fltk-1.3.4-1/jpeg/jerror.c **** #include "jpeglib.h"
+  25:fltk-1.3.4-1/jpeg/jerror.c **** #include "jversion.h"
+  26:fltk-1.3.4-1/jpeg/jerror.c **** #include "jerror.h"
+  27:fltk-1.3.4-1/jpeg/jerror.c **** 
+  28:fltk-1.3.4-1/jpeg/jerror.c **** #ifdef USE_WINDOWS_MESSAGEBOX
+  29:fltk-1.3.4-1/jpeg/jerror.c **** #include <windows.h>
+  30:fltk-1.3.4-1/jpeg/jerror.c **** #endif
+  31:fltk-1.3.4-1/jpeg/jerror.c **** 
+  32:fltk-1.3.4-1/jpeg/jerror.c **** #ifndef EXIT_FAILURE		/* define exit() codes if not provided */
+  33:fltk-1.3.4-1/jpeg/jerror.c **** #define EXIT_FAILURE  1
+  34:fltk-1.3.4-1/jpeg/jerror.c **** #endif
+  35:fltk-1.3.4-1/jpeg/jerror.c **** 
+  36:fltk-1.3.4-1/jpeg/jerror.c **** 
+  37:fltk-1.3.4-1/jpeg/jerror.c **** /*
+  38:fltk-1.3.4-1/jpeg/jerror.c ****  * Create the message string table.
+  39:fltk-1.3.4-1/jpeg/jerror.c ****  * We do this from the master message list in jerror.h by re-reading
+  40:fltk-1.3.4-1/jpeg/jerror.c ****  * jerror.h with a suitable definition for macro JMESSAGE.
+  41:fltk-1.3.4-1/jpeg/jerror.c ****  * The message table is made an external symbol just in case any applications
+  42:fltk-1.3.4-1/jpeg/jerror.c ****  * want to refer to it directly.
+  43:fltk-1.3.4-1/jpeg/jerror.c ****  */
+  44:fltk-1.3.4-1/jpeg/jerror.c **** 
+  45:fltk-1.3.4-1/jpeg/jerror.c **** #ifdef NEED_SHORT_EXTERNAL_NAMES
+  46:fltk-1.3.4-1/jpeg/jerror.c **** #define jpeg_std_message_table	jMsgTable
+  47:fltk-1.3.4-1/jpeg/jerror.c **** #endif
+  48:fltk-1.3.4-1/jpeg/jerror.c **** 
+  49:fltk-1.3.4-1/jpeg/jerror.c **** #define JMESSAGE(code,string)	string ,
+  50:fltk-1.3.4-1/jpeg/jerror.c **** 
+  51:fltk-1.3.4-1/jpeg/jerror.c **** const char * const jpeg_std_message_table[] = {
+  52:fltk-1.3.4-1/jpeg/jerror.c **** #include "jerror.h"
+  53:fltk-1.3.4-1/jpeg/jerror.c ****   NULL
+  54:fltk-1.3.4-1/jpeg/jerror.c **** };
+  55:fltk-1.3.4-1/jpeg/jerror.c **** 
+  56:fltk-1.3.4-1/jpeg/jerror.c **** 
+  57:fltk-1.3.4-1/jpeg/jerror.c **** /*
+  58:fltk-1.3.4-1/jpeg/jerror.c ****  * Error exit handler: must not return to caller.
+  59:fltk-1.3.4-1/jpeg/jerror.c ****  *
+  60:fltk-1.3.4-1/jpeg/jerror.c ****  * Applications may override this if they want to get control back after
+  61:fltk-1.3.4-1/jpeg/jerror.c ****  * an error.  Typically one would longjmp somewhere instead of exiting.
+  62:fltk-1.3.4-1/jpeg/jerror.c ****  * The setjmp buffer can be made a private field within an expanded error
+  63:fltk-1.3.4-1/jpeg/jerror.c ****  * handler object.  Note that the info needed to generate an error message
+  64:fltk-1.3.4-1/jpeg/jerror.c ****  * is stored in the error object, so you can generate the message now or
+  65:fltk-1.3.4-1/jpeg/jerror.c ****  * later, at your convenience.
+  66:fltk-1.3.4-1/jpeg/jerror.c ****  * You should make sure that the JPEG object is cleaned up (with jpeg_abort
+  67:fltk-1.3.4-1/jpeg/jerror.c ****  * or jpeg_destroy) at some point.
+  68:fltk-1.3.4-1/jpeg/jerror.c ****  */
+  69:fltk-1.3.4-1/jpeg/jerror.c **** 
+  70:fltk-1.3.4-1/jpeg/jerror.c **** METHODDEF(noreturn_t)
+  71:fltk-1.3.4-1/jpeg/jerror.c **** error_exit (j_common_ptr cinfo)
+  72:fltk-1.3.4-1/jpeg/jerror.c **** {
+  73:fltk-1.3.4-1/jpeg/jerror.c ****   /* Always display the message */
+  74:fltk-1.3.4-1/jpeg/jerror.c ****   (*cinfo->err->output_message) (cinfo);
+  75:fltk-1.3.4-1/jpeg/jerror.c **** 
+  76:fltk-1.3.4-1/jpeg/jerror.c ****   /* Let the memory manager delete any temp files before we die */
+  77:fltk-1.3.4-1/jpeg/jerror.c ****   jpeg_destroy(cinfo);
+  78:fltk-1.3.4-1/jpeg/jerror.c **** 
+  79:fltk-1.3.4-1/jpeg/jerror.c ****   exit(EXIT_FAILURE);
+  80:fltk-1.3.4-1/jpeg/jerror.c **** }
+  81:fltk-1.3.4-1/jpeg/jerror.c **** 
+  82:fltk-1.3.4-1/jpeg/jerror.c **** 
+  83:fltk-1.3.4-1/jpeg/jerror.c **** /*
+  84:fltk-1.3.4-1/jpeg/jerror.c ****  * Actual output of an error or trace message.
+  85:fltk-1.3.4-1/jpeg/jerror.c ****  * Applications may override this method to send JPEG messages somewhere
+  86:fltk-1.3.4-1/jpeg/jerror.c ****  * other than stderr.
+  87:fltk-1.3.4-1/jpeg/jerror.c ****  *
+  88:fltk-1.3.4-1/jpeg/jerror.c ****  * On Windows, printing to stderr is generally completely useless,
+  89:fltk-1.3.4-1/jpeg/jerror.c ****  * so we provide optional code to produce an error-dialog popup.
+  90:fltk-1.3.4-1/jpeg/jerror.c ****  * Most Windows applications will still prefer to override this routine,
+  91:fltk-1.3.4-1/jpeg/jerror.c ****  * but if they don't, it'll do something at least marginally useful.
+  92:fltk-1.3.4-1/jpeg/jerror.c ****  *
+  93:fltk-1.3.4-1/jpeg/jerror.c ****  * NOTE: to use the library in an environment that doesn't support the
+  94:fltk-1.3.4-1/jpeg/jerror.c ****  * C stdio library, you may have to delete the call to fprintf() entirely,
+  95:fltk-1.3.4-1/jpeg/jerror.c ****  * not just not use this routine.
+  96:fltk-1.3.4-1/jpeg/jerror.c ****  */
+  97:fltk-1.3.4-1/jpeg/jerror.c **** 
+  98:fltk-1.3.4-1/jpeg/jerror.c **** METHODDEF(void)
+  99:fltk-1.3.4-1/jpeg/jerror.c **** output_message (j_common_ptr cinfo)
+ 100:fltk-1.3.4-1/jpeg/jerror.c **** {
+ 101:fltk-1.3.4-1/jpeg/jerror.c ****   char buffer[JMSG_LENGTH_MAX];
+ 102:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 103:fltk-1.3.4-1/jpeg/jerror.c ****   /* Create the message */
+ 104:fltk-1.3.4-1/jpeg/jerror.c ****   (*cinfo->err->format_message) (cinfo, buffer);
+ 105:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 106:fltk-1.3.4-1/jpeg/jerror.c **** #ifdef USE_WINDOWS_MESSAGEBOX
+ 107:fltk-1.3.4-1/jpeg/jerror.c ****   /* Display it in a message dialog box */
+ 108:fltk-1.3.4-1/jpeg/jerror.c ****   MessageBox(GetActiveWindow(), buffer, "JPEG Library Error",
+ 109:fltk-1.3.4-1/jpeg/jerror.c **** 	     MB_OK | MB_ICONERROR);
+ 110:fltk-1.3.4-1/jpeg/jerror.c **** #else
+ 111:fltk-1.3.4-1/jpeg/jerror.c ****   /* Send it to stderr, adding a newline */
+ 112:fltk-1.3.4-1/jpeg/jerror.c ****   fprintf(stderr, "%s\n", buffer);
+ 113:fltk-1.3.4-1/jpeg/jerror.c **** #endif
+ 114:fltk-1.3.4-1/jpeg/jerror.c **** }
+ 115:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 116:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 117:fltk-1.3.4-1/jpeg/jerror.c **** /*
+ 118:fltk-1.3.4-1/jpeg/jerror.c ****  * Decide whether to emit a trace or warning message.
+ 119:fltk-1.3.4-1/jpeg/jerror.c ****  * msg_level is one of:
+ 120:fltk-1.3.4-1/jpeg/jerror.c ****  *   -1: recoverable corrupt-data warning, may want to abort.
+ 121:fltk-1.3.4-1/jpeg/jerror.c ****  *    0: important advisory messages (always display to user).
+ 122:fltk-1.3.4-1/jpeg/jerror.c ****  *    1: first level of tracing detail.
+ 123:fltk-1.3.4-1/jpeg/jerror.c ****  *    2,3,...: successively more detailed tracing messages.
+ 124:fltk-1.3.4-1/jpeg/jerror.c ****  * An application might override this method if it wanted to abort on warnings
+ 125:fltk-1.3.4-1/jpeg/jerror.c ****  * or change the policy about which messages to display.
+ 126:fltk-1.3.4-1/jpeg/jerror.c ****  */
+ 127:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 128:fltk-1.3.4-1/jpeg/jerror.c **** METHODDEF(void)
+ 129:fltk-1.3.4-1/jpeg/jerror.c **** emit_message (j_common_ptr cinfo, int msg_level)
+ 130:fltk-1.3.4-1/jpeg/jerror.c **** {
+  16              		.loc 1 130 0
+  17              		.cfi_startproc
+  18              	.LVL0:
+ 131:fltk-1.3.4-1/jpeg/jerror.c ****   struct jpeg_error_mgr * err = cinfo->err;
+ 132:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 133:fltk-1.3.4-1/jpeg/jerror.c ****   if (msg_level < 0) {
+  19              		.loc 1 133 0
+  20 0000 85F6     		testl	%esi, %esi
+ 130:fltk-1.3.4-1/jpeg/jerror.c ****   struct jpeg_error_mgr * err = cinfo->err;
+  21              		.loc 1 130 0
+  22 0002 53       		pushq	%rbx
+  23              		.cfi_def_cfa_offset 16
+  24              		.cfi_offset 3, -16
+ 131:fltk-1.3.4-1/jpeg/jerror.c ****   struct jpeg_error_mgr * err = cinfo->err;
+  25              		.loc 1 131 0
+  26 0003 488B1F   		movq	(%rdi), %rbx
+  27              	.LVL1:
+  28              		.loc 1 133 0
+  29 0006 7818     		js	.L11
+ 134:fltk-1.3.4-1/jpeg/jerror.c ****     /* It's a warning message.  Since corrupt files may generate many warnings,
+ 135:fltk-1.3.4-1/jpeg/jerror.c ****      * the policy implemented here is to show only the first warning,
+ 136:fltk-1.3.4-1/jpeg/jerror.c ****      * unless trace_level >= 3.
+ 137:fltk-1.3.4-1/jpeg/jerror.c ****      */
+ 138:fltk-1.3.4-1/jpeg/jerror.c ****     if (err->num_warnings == 0 || err->trace_level >= 3)
+ 139:fltk-1.3.4-1/jpeg/jerror.c ****       (*err->output_message) (cinfo);
+ 140:fltk-1.3.4-1/jpeg/jerror.c ****     /* Always count warnings in num_warnings. */
+ 141:fltk-1.3.4-1/jpeg/jerror.c ****     err->num_warnings++;
+ 142:fltk-1.3.4-1/jpeg/jerror.c ****   } else {
+ 143:fltk-1.3.4-1/jpeg/jerror.c ****     /* It's a trace message.  Show it if trace_level >= msg_level. */
+ 144:fltk-1.3.4-1/jpeg/jerror.c ****     if (err->trace_level >= msg_level)
+  30              		.loc 1 144 0
+  31 0008 3B737C   		cmpl	124(%rbx), %esi
+  32 000b 7E03     		jle	.L12
+ 145:fltk-1.3.4-1/jpeg/jerror.c ****       (*err->output_message) (cinfo);
+ 146:fltk-1.3.4-1/jpeg/jerror.c ****   }
+ 147:fltk-1.3.4-1/jpeg/jerror.c **** }
+  33              		.loc 1 147 0
+  34 000d 5B       		popq	%rbx
+  35              		.cfi_remember_state
+  36              		.cfi_def_cfa_offset 8
+  37              	.LVL2:
+  38 000e C3       		ret
+  39              	.LVL3:
+  40 000f 90       		.p2align 4,,10
+  41              		.p2align 3
+  42              	.L12:
+  43              		.cfi_restore_state
+ 145:fltk-1.3.4-1/jpeg/jerror.c ****       (*err->output_message) (cinfo);
+  44              		.loc 1 145 0
+  45 0010 488B4310 		movq	16(%rbx), %rax
+  46              		.loc 1 147 0
+  47 0014 5B       		popq	%rbx
+  48              		.cfi_remember_state
+  49              		.cfi_def_cfa_offset 8
+  50              	.LVL4:
+ 145:fltk-1.3.4-1/jpeg/jerror.c ****       (*err->output_message) (cinfo);
+  51              		.loc 1 145 0
+  52 0015 FFE0     		jmp	*%rax
+  53              	.LVL5:
+  54 0017 660F1F84 		.p2align 4,,10
+  54      00000000 
+  54      00
+  55              		.p2align 3
+  56              	.L11:
+  57              		.cfi_restore_state
+ 138:fltk-1.3.4-1/jpeg/jerror.c ****       (*err->output_message) (cinfo);
+  58              		.loc 1 138 0
+  59 0020 488B8380 		movq	128(%rbx), %rax
+  59      000000
+  60 0027 4885C0   		testq	%rax, %rax
+  61 002a 7406     		je	.L3
+ 138:fltk-1.3.4-1/jpeg/jerror.c ****       (*err->output_message) (cinfo);
+  62              		.loc 1 138 0 is_stmt 0 discriminator 1
+  63 002c 837B7C02 		cmpl	$2, 124(%rbx)
+  64 0030 7E0A     		jle	.L4
+  65              	.L3:
+ 139:fltk-1.3.4-1/jpeg/jerror.c ****     /* Always count warnings in num_warnings. */
+  66              		.loc 1 139 0 is_stmt 1
+  67 0032 FF5310   		call	*16(%rbx)
+  68              	.LVL6:
+  69 0035 488B8380 		movq	128(%rbx), %rax
+  69      000000
+  70              	.L4:
+ 141:fltk-1.3.4-1/jpeg/jerror.c ****   } else {
+  71              		.loc 1 141 0
+  72 003c 4883C001 		addq	$1, %rax
+  73 0040 48898380 		movq	%rax, 128(%rbx)
+  73      000000
+  74              		.loc 1 147 0
+  75 0047 5B       		popq	%rbx
+  76              		.cfi_def_cfa_offset 8
+  77              	.LVL7:
+  78 0048 C3       		ret
+  79              		.cfi_endproc
+  80              	.LFE63:
+  82              		.section	.text.unlikely.emit_message
+  83              	.LCOLDE0:
+  84              		.section	.text.emit_message
+  85              	.LHOTE0:
+  86              		.section	.text.unlikely.reset_error_mgr,"ax",@progbits
+  87              	.LCOLDB1:
+  88              		.section	.text.reset_error_mgr,"ax",@progbits
+  89              	.LHOTB1:
+  90              		.p2align 4,,15
+  92              	reset_error_mgr:
+  93              	.LFB65:
+ 148:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 149:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 150:fltk-1.3.4-1/jpeg/jerror.c **** /*
+ 151:fltk-1.3.4-1/jpeg/jerror.c ****  * Format a message string for the most recent JPEG error or message.
+ 152:fltk-1.3.4-1/jpeg/jerror.c ****  * The message is stored into buffer, which should be at least JMSG_LENGTH_MAX
+ 153:fltk-1.3.4-1/jpeg/jerror.c ****  * characters.  Note that no '\n' character is added to the string.
+ 154:fltk-1.3.4-1/jpeg/jerror.c ****  * Few applications should need to override this method.
+ 155:fltk-1.3.4-1/jpeg/jerror.c ****  */
+ 156:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 157:fltk-1.3.4-1/jpeg/jerror.c **** METHODDEF(void)
+ 158:fltk-1.3.4-1/jpeg/jerror.c **** format_message (j_common_ptr cinfo, char * buffer)
+ 159:fltk-1.3.4-1/jpeg/jerror.c **** {
+ 160:fltk-1.3.4-1/jpeg/jerror.c ****   struct jpeg_error_mgr * err = cinfo->err;
+ 161:fltk-1.3.4-1/jpeg/jerror.c ****   int msg_code = err->msg_code;
+ 162:fltk-1.3.4-1/jpeg/jerror.c ****   const char * msgtext = NULL;
+ 163:fltk-1.3.4-1/jpeg/jerror.c ****   const char * msgptr;
+ 164:fltk-1.3.4-1/jpeg/jerror.c ****   char ch;
+ 165:fltk-1.3.4-1/jpeg/jerror.c ****   boolean isstring;
+ 166:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 167:fltk-1.3.4-1/jpeg/jerror.c ****   /* Look up message string in proper table */
+ 168:fltk-1.3.4-1/jpeg/jerror.c ****   if (msg_code > 0 && msg_code <= err->last_jpeg_message) {
+ 169:fltk-1.3.4-1/jpeg/jerror.c ****     msgtext = err->jpeg_message_table[msg_code];
+ 170:fltk-1.3.4-1/jpeg/jerror.c ****   } else if (err->addon_message_table != NULL &&
+ 171:fltk-1.3.4-1/jpeg/jerror.c **** 	     msg_code >= err->first_addon_message &&
+ 172:fltk-1.3.4-1/jpeg/jerror.c **** 	     msg_code <= err->last_addon_message) {
+ 173:fltk-1.3.4-1/jpeg/jerror.c ****     msgtext = err->addon_message_table[msg_code - err->first_addon_message];
+ 174:fltk-1.3.4-1/jpeg/jerror.c ****   }
+ 175:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 176:fltk-1.3.4-1/jpeg/jerror.c ****   /* Defend against bogus message number */
+ 177:fltk-1.3.4-1/jpeg/jerror.c ****   if (msgtext == NULL) {
+ 178:fltk-1.3.4-1/jpeg/jerror.c ****     err->msg_parm.i[0] = msg_code;
+ 179:fltk-1.3.4-1/jpeg/jerror.c ****     msgtext = err->jpeg_message_table[0];
+ 180:fltk-1.3.4-1/jpeg/jerror.c ****   }
+ 181:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 182:fltk-1.3.4-1/jpeg/jerror.c ****   /* Check for string parameter, as indicated by %s in the message text */
+ 183:fltk-1.3.4-1/jpeg/jerror.c ****   isstring = FALSE;
+ 184:fltk-1.3.4-1/jpeg/jerror.c ****   msgptr = msgtext;
+ 185:fltk-1.3.4-1/jpeg/jerror.c ****   while ((ch = *msgptr++) != '\0') {
+ 186:fltk-1.3.4-1/jpeg/jerror.c ****     if (ch == '%') {
+ 187:fltk-1.3.4-1/jpeg/jerror.c ****       if (*msgptr == 's') isstring = TRUE;
+ 188:fltk-1.3.4-1/jpeg/jerror.c ****       break;
+ 189:fltk-1.3.4-1/jpeg/jerror.c ****     }
+ 190:fltk-1.3.4-1/jpeg/jerror.c ****   }
+ 191:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 192:fltk-1.3.4-1/jpeg/jerror.c ****   /* Format the message into the passed buffer */
+ 193:fltk-1.3.4-1/jpeg/jerror.c ****   if (isstring)
+ 194:fltk-1.3.4-1/jpeg/jerror.c ****     sprintf(buffer, msgtext, err->msg_parm.s);
+ 195:fltk-1.3.4-1/jpeg/jerror.c ****   else
+ 196:fltk-1.3.4-1/jpeg/jerror.c ****     sprintf(buffer, msgtext,
+ 197:fltk-1.3.4-1/jpeg/jerror.c **** 	    err->msg_parm.i[0], err->msg_parm.i[1],
+ 198:fltk-1.3.4-1/jpeg/jerror.c **** 	    err->msg_parm.i[2], err->msg_parm.i[3],
+ 199:fltk-1.3.4-1/jpeg/jerror.c **** 	    err->msg_parm.i[4], err->msg_parm.i[5],
+ 200:fltk-1.3.4-1/jpeg/jerror.c **** 	    err->msg_parm.i[6], err->msg_parm.i[7]);
+ 201:fltk-1.3.4-1/jpeg/jerror.c **** }
+ 202:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 203:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 204:fltk-1.3.4-1/jpeg/jerror.c **** /*
+ 205:fltk-1.3.4-1/jpeg/jerror.c ****  * Reset error state variables at start of a new image.
+ 206:fltk-1.3.4-1/jpeg/jerror.c ****  * This is called during compression startup to reset trace/error
+ 207:fltk-1.3.4-1/jpeg/jerror.c ****  * processing to default state, without losing any application-specific
+ 208:fltk-1.3.4-1/jpeg/jerror.c ****  * method pointers.  An application might possibly want to override
+ 209:fltk-1.3.4-1/jpeg/jerror.c ****  * this method if it has additional error processing state.
+ 210:fltk-1.3.4-1/jpeg/jerror.c ****  */
+ 211:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 212:fltk-1.3.4-1/jpeg/jerror.c **** METHODDEF(void)
+ 213:fltk-1.3.4-1/jpeg/jerror.c **** reset_error_mgr (j_common_ptr cinfo)
+ 214:fltk-1.3.4-1/jpeg/jerror.c **** {
+  94              		.loc 1 214 0
+  95              		.cfi_startproc
+  96              	.LVL8:
+ 215:fltk-1.3.4-1/jpeg/jerror.c ****   cinfo->err->num_warnings = 0;
+  97              		.loc 1 215 0
+  98 0000 488B07   		movq	(%rdi), %rax
+  99 0003 48C78080 		movq	$0, 128(%rax)
+  99      00000000 
+  99      000000
+ 216:fltk-1.3.4-1/jpeg/jerror.c ****   /* trace_level is not reset since it is an application-supplied parameter */
+ 217:fltk-1.3.4-1/jpeg/jerror.c ****   cinfo->err->msg_code = 0;	/* may be useful as a flag for "no error" */
+ 100              		.loc 1 217 0
+ 101 000e 488B07   		movq	(%rdi), %rax
+ 102 0011 C7402800 		movl	$0, 40(%rax)
+ 102      000000
+ 103 0018 C3       		ret
+ 104              		.cfi_endproc
+ 105              	.LFE65:
+ 107              		.section	.text.unlikely.reset_error_mgr
+ 108              	.LCOLDE1:
+ 109              		.section	.text.reset_error_mgr
+ 110              	.LHOTE1:
+ 111              		.section	.text.unlikely.format_message,"ax",@progbits
+ 112              	.LCOLDB2:
+ 113              		.section	.text.format_message,"ax",@progbits
+ 114              	.LHOTB2:
+ 115              		.p2align 4,,15
+ 117              	format_message:
+ 118              	.LFB64:
+ 159:fltk-1.3.4-1/jpeg/jerror.c ****   struct jpeg_error_mgr * err = cinfo->err;
+ 119              		.loc 1 159 0
+ 120              		.cfi_startproc
+ 121              	.LVL9:
+ 122 0000 4883EC08 		subq	$8, %rsp
+ 123              		.cfi_def_cfa_offset 16
+ 160:fltk-1.3.4-1/jpeg/jerror.c ****   int msg_code = err->msg_code;
+ 124              		.loc 1 160 0
+ 125 0004 4C8B07   		movq	(%rdi), %r8
+ 126              	.LVL10:
+ 159:fltk-1.3.4-1/jpeg/jerror.c ****   struct jpeg_error_mgr * err = cinfo->err;
+ 127              		.loc 1 159 0
+ 128 0007 4989F1   		movq	%rsi, %r9
+ 161:fltk-1.3.4-1/jpeg/jerror.c ****   const char * msgtext = NULL;
+ 129              		.loc 1 161 0
+ 130 000a 418B4028 		movl	40(%r8), %eax
+ 131              	.LVL11:
+ 168:fltk-1.3.4-1/jpeg/jerror.c ****     msgtext = err->jpeg_message_table[msg_code];
+ 132              		.loc 1 168 0
+ 133 000e 85C0     		testl	%eax, %eax
+ 134 0010 0F8E8A00 		jle	.L15
+ 134      0000
+ 168:fltk-1.3.4-1/jpeg/jerror.c ****     msgtext = err->jpeg_message_table[msg_code];
+ 135              		.loc 1 168 0 is_stmt 0 discriminator 1
+ 136 0016 413B8090 		cmpl	144(%r8), %eax
+ 136      000000
+ 137 001d 0F8F7D00 		jg	.L15
+ 137      0000
+ 169:fltk-1.3.4-1/jpeg/jerror.c ****   } else if (err->addon_message_table != NULL &&
+ 138              		.loc 1 169 0 is_stmt 1
+ 139 0023 498B8888 		movq	136(%r8), %rcx
+ 139      000000
+ 140 002a 4863D0   		movslq	%eax, %rdx
+ 141 002d 488B0CD1 		movq	(%rcx,%rdx,8), %rcx
+ 142              	.LVL12:
+ 143              	.L16:
+ 177:fltk-1.3.4-1/jpeg/jerror.c ****     err->msg_parm.i[0] = msg_code;
+ 144              		.loc 1 177 0
+ 145 0031 4885C9   		testq	%rcx, %rcx
+ 146 0034 0F84C600 		je	.L17
+ 146      0000
+ 147              	.LVL13:
+ 148              	.L18:
+ 184:fltk-1.3.4-1/jpeg/jerror.c ****   while ((ch = *msgptr++) != '\0') {
+ 149              		.loc 1 184 0
+ 150 003a 4889CE   		movq	%rcx, %rsi
+ 151              	.LVL14:
+ 185:fltk-1.3.4-1/jpeg/jerror.c ****     if (ch == '%') {
+ 152              		.loc 1 185 0
+ 153 003d EB0C     		jmp	.L19
+ 154              	.LVL15:
+ 155 003f 90       		.p2align 4,,10
+ 156              		.p2align 3
+ 157              	.L22:
+ 186:fltk-1.3.4-1/jpeg/jerror.c ****       if (*msgptr == 's') isstring = TRUE;
+ 158              		.loc 1 186 0
+ 159 0040 3C25     		cmpb	$37, %al
+ 160 0042 0F848800 		je	.L30
+ 160      0000
+ 161 0048 4889D6   		movq	%rdx, %rsi
+ 162              	.LVL16:
+ 163              	.L19:
+ 185:fltk-1.3.4-1/jpeg/jerror.c ****     if (ch == '%') {
+ 164              		.loc 1 185 0
+ 165 004b 488D5601 		leaq	1(%rsi), %rdx
+ 166              	.LVL17:
+ 167 004f 0FB642FF 		movzbl	-1(%rdx), %eax
+ 168              	.LVL18:
+ 169 0053 84C0     		testb	%al, %al
+ 170 0055 75E9     		jne	.L22
+ 171              	.L21:
+ 172              	.LBB8:
+ 173              	.LBB9:
+ 174              		.file 2 "/usr/include/x86_64-linux-gnu/bits/stdio2.h"
+   1:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** /* Checking macros for stdio functions.
+   2:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    Copyright (C) 2004-2016 Free Software Foundation, Inc.
+   3:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    This file is part of the GNU C Library.
+   4:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+   5:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    The GNU C Library is free software; you can redistribute it and/or
+   6:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    modify it under the terms of the GNU Lesser General Public
+   7:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    License as published by the Free Software Foundation; either
+   8:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    version 2.1 of the License, or (at your option) any later version.
+   9:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  10:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    The GNU C Library is distributed in the hope that it will be useful,
+  11:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    but WITHOUT ANY WARRANTY; without even the implied warranty of
+  12:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  13:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    Lesser General Public License for more details.
+  14:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  15:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    You should have received a copy of the GNU Lesser General Public
+  16:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    License along with the GNU C Library; if not, see
+  17:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    <http://www.gnu.org/licenses/>.  */
+  18:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  19:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #ifndef _STDIO_H
+  20:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # error "Never include <bits/stdio2.h> directly; use <stdio.h> instead."
+  21:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
+  22:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  23:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __sprintf_chk (char *__restrict __s, int __flag, size_t __slen,
+  24:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  const char *__restrict __format, ...) __THROW;
+  25:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vsprintf_chk (char *__restrict __s, int __flag, size_t __slen,
+  26:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   const char *__restrict __format,
+  27:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   _G_va_list __ap) __THROW;
+  28:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  29:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #ifdef __va_arg_pack
+  30:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+  31:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (sprintf (char *__restrict __s, const char *__restrict __fmt, ...))
+  32:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+  33:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __builtin___sprintf_chk (__s, __USE_FORTIFY_LEVEL - 1,
+ 175              		.loc 2 33 0
+ 176 0057 418B4048 		movl	72(%r8), %eax
+ 177              	.LVL19:
+ 178 005b 4C89CF   		movq	%r9, %rdi
+ 179              	.LVL20:
+ 180 005e 48C7C2FF 		movq	$-1, %rdx
+ 180      FFFFFF
+ 181              	.LVL21:
+ 182 0065 BE010000 		movl	$1, %esi
+ 182      00
+ 183              	.LVL22:
+ 184 006a 50       		pushq	%rax
+ 185              		.cfi_def_cfa_offset 24
+ 186              	.LVL23:
+ 187 006b 418B4044 		movl	68(%r8), %eax
+ 188 006f 50       		pushq	%rax
+ 189              		.cfi_def_cfa_offset 32
+ 190 0070 418B4040 		movl	64(%r8), %eax
+ 191 0074 50       		pushq	%rax
+ 192              		.cfi_def_cfa_offset 40
+ 193 0075 418B403C 		movl	60(%r8), %eax
+ 194 0079 50       		pushq	%rax
+ 195              		.cfi_def_cfa_offset 48
+ 196 007a 418B4038 		movl	56(%r8), %eax
+ 197 007e 50       		pushq	%rax
+ 198              		.cfi_def_cfa_offset 56
+ 199 007f 418B4034 		movl	52(%r8), %eax
+ 200 0083 50       		pushq	%rax
+ 201              		.cfi_def_cfa_offset 64
+ 202 0084 458B4830 		movl	48(%r8), %r9d
+ 203              	.LVL24:
+ 204 0088 31C0     		xorl	%eax, %eax
+ 205 008a 458B402C 		movl	44(%r8), %r8d
+ 206              	.LVL25:
+ 207 008e E8000000 		call	__sprintf_chk
+ 207      00
+ 208              	.LVL26:
+ 209              	.LBE9:
+ 210              	.LBE8:
+ 201:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 211              		.loc 1 201 0
+ 212 0093 4883C438 		addq	$56, %rsp
+ 213              		.cfi_def_cfa_offset 8
+ 214 0097 C3       		ret
+ 215              	.LVL27:
+ 216 0098 0F1F8400 		.p2align 4,,10
+ 216      00000000 
+ 217              		.p2align 3
+ 218              	.L15:
+ 219              		.cfi_def_cfa_offset 16
+ 170:fltk-1.3.4-1/jpeg/jerror.c **** 	     msg_code >= err->first_addon_message &&
+ 220              		.loc 1 170 0
+ 221 00a0 498B9098 		movq	152(%r8), %rdx
+ 221      000000
+ 222 00a7 4885D2   		testq	%rdx, %rdx
+ 223 00aa 7454     		je	.L17
+ 171:fltk-1.3.4-1/jpeg/jerror.c **** 	     msg_code <= err->last_addon_message) {
+ 224              		.loc 1 171 0 discriminator 1
+ 225 00ac 418B88A0 		movl	160(%r8), %ecx
+ 225      000000
+ 170:fltk-1.3.4-1/jpeg/jerror.c **** 	     msg_code >= err->first_addon_message &&
+ 226              		.loc 1 170 0 discriminator 1
+ 227 00b3 39C8     		cmpl	%ecx, %eax
+ 228 00b5 7C49     		jl	.L17
+ 171:fltk-1.3.4-1/jpeg/jerror.c **** 	     msg_code <= err->last_addon_message) {
+ 229              		.loc 1 171 0
+ 230 00b7 413B80A4 		cmpl	164(%r8), %eax
+ 230      000000
+ 231 00be 7F40     		jg	.L17
+ 173:fltk-1.3.4-1/jpeg/jerror.c ****   }
+ 232              		.loc 1 173 0
+ 233 00c0 89C7     		movl	%eax, %edi
+ 234              	.LVL28:
+ 235 00c2 29CF     		subl	%ecx, %edi
+ 236 00c4 4863CF   		movslq	%edi, %rcx
+ 237 00c7 488B0CCA 		movq	(%rdx,%rcx,8), %rcx
+ 238              	.LVL29:
+ 239 00cb E961FFFF 		jmp	.L16
+ 239      FF
+ 240              	.LVL30:
+ 241              		.p2align 4,,10
+ 242              		.p2align 3
+ 243              	.L30:
+ 187:fltk-1.3.4-1/jpeg/jerror.c ****       break;
+ 244              		.loc 1 187 0
+ 245 00d0 807E0173 		cmpb	$115, 1(%rsi)
+ 246 00d4 0F857DFF 		jne	.L21
+ 246      FFFF
+ 247              	.LVL31:
+ 248              	.LBB10:
+ 249              	.LBB11:
+ 250              		.loc 2 33 0
+ 251 00da 4983C02C 		addq	$44, %r8
+ 252              	.LVL32:
+ 253 00de 48C7C2FF 		movq	$-1, %rdx
+ 253      FFFFFF
+ 254              	.LVL33:
+ 255 00e5 BE010000 		movl	$1, %esi
+ 255      00
+ 256              	.LVL34:
+ 257 00ea 4C89CF   		movq	%r9, %rdi
+ 258 00ed 31C0     		xorl	%eax, %eax
+ 259              	.LVL35:
+ 260              	.LBE11:
+ 261              	.LBE10:
+ 201:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 262              		.loc 1 201 0
+ 263 00ef 4883C408 		addq	$8, %rsp
+ 264              		.cfi_remember_state
+ 265              		.cfi_def_cfa_offset 8
+ 266              	.LBB13:
+ 267              	.LBB12:
+ 268              		.loc 2 33 0
+ 269 00f3 E9000000 		jmp	__sprintf_chk
+ 269      00
+ 270              	.LVL36:
+ 271 00f8 0F1F8400 		.p2align 4,,10
+ 271      00000000 
+ 272              		.p2align 3
+ 273              	.L17:
+ 274              		.cfi_restore_state
+ 275              	.LBE12:
+ 276              	.LBE13:
+ 178:fltk-1.3.4-1/jpeg/jerror.c ****     msgtext = err->jpeg_message_table[0];
+ 277              		.loc 1 178 0
+ 278 0100 4189402C 		movl	%eax, 44(%r8)
+ 179:fltk-1.3.4-1/jpeg/jerror.c ****   }
+ 279              		.loc 1 179 0
+ 280 0104 498B8088 		movq	136(%r8), %rax
+ 280      000000
+ 281              	.LVL37:
+ 282 010b 488B08   		movq	(%rax), %rcx
+ 283              	.LVL38:
+ 284 010e E927FFFF 		jmp	.L18
+ 284      FF
+ 285              		.cfi_endproc
+ 286              	.LFE64:
+ 288              		.section	.text.unlikely.format_message
+ 289              	.LCOLDE2:
+ 290              		.section	.text.format_message
+ 291              	.LHOTE2:
+ 292              		.section	.rodata.str1.1,"aMS",@progbits,1
+ 293              	.LC3:
+ 294 0000 25730A00 		.string	"%s\n"
+ 295              		.section	.text.unlikely.output_message,"ax",@progbits
+ 296              	.LCOLDB4:
+ 297              		.section	.text.output_message,"ax",@progbits
+ 298              	.LHOTB4:
+ 299              		.p2align 4,,15
+ 301              	output_message:
+ 302              	.LFB62:
+ 100:fltk-1.3.4-1/jpeg/jerror.c ****   char buffer[JMSG_LENGTH_MAX];
+ 303              		.loc 1 100 0
+ 304              		.cfi_startproc
+ 305              	.LVL39:
+ 306 0000 4881ECD8 		subq	$216, %rsp
+ 306      000000
+ 307              		.cfi_def_cfa_offset 224
+ 100:fltk-1.3.4-1/jpeg/jerror.c ****   char buffer[JMSG_LENGTH_MAX];
+ 308              		.loc 1 100 0
+ 309 0007 64488B04 		movq	%fs:40, %rax
+ 309      25280000 
+ 309      00
+ 310 0010 48898424 		movq	%rax, 200(%rsp)
+ 310      C8000000 
+ 311 0018 31C0     		xorl	%eax, %eax
+ 104:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 312              		.loc 1 104 0
+ 313 001a 488B07   		movq	(%rdi), %rax
+ 314 001d 4889E6   		movq	%rsp, %rsi
+ 315 0020 FF5018   		call	*24(%rax)
+ 316              	.LVL40:
+ 317              	.LBB14:
+ 318              	.LBB15:
+  34:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				  __bos (__s), __fmt, __va_arg_pack ());
+  35:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+  36:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #elif !defined __cplusplus
+  37:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # define sprintf(str, ...) \
+  38:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __builtin___sprintf_chk (str, __USE_FORTIFY_LEVEL - 1, __bos (str), \
+  39:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   __VA_ARGS__)
+  40:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
+  41:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  42:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+  43:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (vsprintf (char *__restrict __s, const char *__restrict __fmt,
+  44:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		 _G_va_list __ap))
+  45:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+  46:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __builtin___vsprintf_chk (__s, __USE_FORTIFY_LEVEL - 1,
+  47:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				   __bos (__s), __fmt, __ap);
+  48:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+  49:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  50:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #if defined __USE_ISOC99 || defined __USE_UNIX98
+  51:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  52:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __snprintf_chk (char *__restrict __s, size_t __n, int __flag,
+  53:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   size_t __slen, const char *__restrict __format,
+  54:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   ...) __THROW;
+  55:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vsnprintf_chk (char *__restrict __s, size_t __n, int __flag,
+  56:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			    size_t __slen, const char *__restrict __format,
+  57:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			    _G_va_list __ap) __THROW;
+  58:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  59:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # ifdef __va_arg_pack
+  60:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+  61:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (snprintf (char *__restrict __s, size_t __n,
+  62:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		 const char *__restrict __fmt, ...))
+  63:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+  64:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+  65:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				   __bos (__s), __fmt, __va_arg_pack ());
+  66:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+  67:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # elif !defined __cplusplus
+  68:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  define snprintf(str, len, ...) \
+  69:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __builtin___snprintf_chk (str, len, __USE_FORTIFY_LEVEL - 1, __bos (str), \
+  70:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			    __VA_ARGS__)
+  71:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # endif
+  72:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  73:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+  74:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (vsnprintf (char *__restrict __s, size_t __n,
+  75:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		  const char *__restrict __fmt, _G_va_list __ap))
+  76:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+  77:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __builtin___vsnprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+  78:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				    __bos (__s), __fmt, __ap);
+  79:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+  80:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  81:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
+  82:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  83:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #if __USE_FORTIFY_LEVEL > 1
+  84:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  85:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __fprintf_chk (FILE *__restrict __stream, int __flag,
+  86:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  const char *__restrict __format, ...);
+  87:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __printf_chk (int __flag, const char *__restrict __format, ...);
+  88:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vfprintf_chk (FILE *__restrict __stream, int __flag,
+  89:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   const char *__restrict __format, _G_va_list __ap);
+  90:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vprintf_chk (int __flag, const char *__restrict __format,
+  91:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  _G_va_list __ap);
+  92:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  93:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # ifdef __va_arg_pack
+  94:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+  95:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** fprintf (FILE *__restrict __stream, const char *__restrict __fmt, ...)
+  96:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+  97:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __fprintf_chk (__stream, __USE_FORTIFY_LEVEL - 1, __fmt,
+ 319              		.loc 2 97 0
+ 320 0023 488B3D00 		movq	stderr(%rip), %rdi
+ 320      000000
+ 321 002a 31C0     		xorl	%eax, %eax
+ 322 002c 4889E1   		movq	%rsp, %rcx
+ 323 002f BA000000 		movl	$.LC3, %edx
+ 323      00
+ 324 0034 BE010000 		movl	$1, %esi
+ 324      00
+ 325 0039 E8000000 		call	__fprintf_chk
+ 325      00
+ 326              	.LVL41:
+ 327              	.LBE15:
+ 328              	.LBE14:
+ 114:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 329              		.loc 1 114 0
+ 330 003e 488B8424 		movq	200(%rsp), %rax
+ 330      C8000000 
+ 331 0046 64483304 		xorq	%fs:40, %rax
+ 331      25280000 
+ 331      00
+ 332 004f 7508     		jne	.L34
+ 333 0051 4881C4D8 		addq	$216, %rsp
+ 333      000000
+ 334              		.cfi_remember_state
+ 335              		.cfi_def_cfa_offset 8
+ 336 0058 C3       		ret
+ 337              	.L34:
+ 338              		.cfi_restore_state
+ 339 0059 E8000000 		call	__stack_chk_fail
+ 339      00
+ 340              	.LVL42:
+ 341              		.cfi_endproc
+ 342              	.LFE62:
+ 344              		.section	.text.unlikely.output_message
+ 345              	.LCOLDE4:
+ 346              		.section	.text.output_message
+ 347              	.LHOTE4:
+ 348              		.section	.text.unlikely.error_exit,"ax",@progbits
+ 349              	.LCOLDB5:
+ 350              		.section	.text.error_exit,"ax",@progbits
+ 351              	.LHOTB5:
+ 352              		.p2align 4,,15
+ 354              	error_exit:
+ 355              	.LFB61:
+  72:fltk-1.3.4-1/jpeg/jerror.c ****   /* Always display the message */
+ 356              		.loc 1 72 0
+ 357              		.cfi_startproc
+ 358              	.LVL43:
+ 359 0000 53       		pushq	%rbx
+ 360              		.cfi_def_cfa_offset 16
+ 361              		.cfi_offset 3, -16
+  74:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 362              		.loc 1 74 0
+ 363 0001 488B07   		movq	(%rdi), %rax
+  72:fltk-1.3.4-1/jpeg/jerror.c ****   /* Always display the message */
+ 364              		.loc 1 72 0
+ 365 0004 4889FB   		movq	%rdi, %rbx
+  74:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 366              		.loc 1 74 0
+ 367 0007 FF5010   		call	*16(%rax)
+ 368              	.LVL44:
+  77:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 369              		.loc 1 77 0
+ 370 000a 4889DF   		movq	%rbx, %rdi
+ 371 000d E8000000 		call	jpeg_destroy
+ 371      00
+ 372              	.LVL45:
+  79:fltk-1.3.4-1/jpeg/jerror.c **** }
+ 373              		.loc 1 79 0
+ 374 0012 BF010000 		movl	$1, %edi
+ 374      00
+ 375 0017 E8000000 		call	exit
+ 375      00
+ 376              	.LVL46:
+ 377              		.cfi_endproc
+ 378              	.LFE61:
+ 380              		.section	.text.unlikely.error_exit
+ 381              	.LCOLDE5:
+ 382              		.section	.text.error_exit
+ 383              	.LHOTE5:
+ 384              		.section	.text.unlikely.jpeg_std_error,"ax",@progbits
+ 385              	.LCOLDB6:
+ 386              		.section	.text.jpeg_std_error,"ax",@progbits
+ 387              	.LHOTB6:
+ 388              		.p2align 4,,15
+ 389              		.globl	jpeg_std_error
+ 391              	jpeg_std_error:
+ 392              	.LFB66:
+ 218:fltk-1.3.4-1/jpeg/jerror.c **** }
+ 219:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 220:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 221:fltk-1.3.4-1/jpeg/jerror.c **** /*
+ 222:fltk-1.3.4-1/jpeg/jerror.c ****  * Fill in the standard error-handling methods in a jpeg_error_mgr object.
+ 223:fltk-1.3.4-1/jpeg/jerror.c ****  * Typical call is:
+ 224:fltk-1.3.4-1/jpeg/jerror.c ****  *	struct jpeg_compress_struct cinfo;
+ 225:fltk-1.3.4-1/jpeg/jerror.c ****  *	struct jpeg_error_mgr err;
+ 226:fltk-1.3.4-1/jpeg/jerror.c ****  *
+ 227:fltk-1.3.4-1/jpeg/jerror.c ****  *	cinfo.err = jpeg_std_error(&err);
+ 228:fltk-1.3.4-1/jpeg/jerror.c ****  * after which the application may override some of the methods.
+ 229:fltk-1.3.4-1/jpeg/jerror.c ****  */
+ 230:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 231:fltk-1.3.4-1/jpeg/jerror.c **** GLOBAL(struct jpeg_error_mgr *)
+ 232:fltk-1.3.4-1/jpeg/jerror.c **** jpeg_std_error (struct jpeg_error_mgr * err)
+ 233:fltk-1.3.4-1/jpeg/jerror.c **** {
+ 393              		.loc 1 233 0
+ 394              		.cfi_startproc
+ 395              	.LVL47:
+ 396              		.loc 1 233 0
+ 397 0000 4889F8   		movq	%rdi, %rax
+ 234:fltk-1.3.4-1/jpeg/jerror.c ****   err->error_exit = error_exit;
+ 398              		.loc 1 234 0
+ 399 0003 48C70700 		movq	$error_exit, (%rdi)
+ 399      000000
+ 235:fltk-1.3.4-1/jpeg/jerror.c ****   err->emit_message = emit_message;
+ 400              		.loc 1 235 0
+ 401 000a 48C74708 		movq	$emit_message, 8(%rdi)
+ 401      00000000 
+ 236:fltk-1.3.4-1/jpeg/jerror.c ****   err->output_message = output_message;
+ 402              		.loc 1 236 0
+ 403 0012 48C74710 		movq	$output_message, 16(%rdi)
+ 403      00000000 
+ 237:fltk-1.3.4-1/jpeg/jerror.c ****   err->format_message = format_message;
+ 404              		.loc 1 237 0
+ 405 001a 48C74718 		movq	$format_message, 24(%rdi)
+ 405      00000000 
+ 238:fltk-1.3.4-1/jpeg/jerror.c ****   err->reset_error_mgr = reset_error_mgr;
+ 406              		.loc 1 238 0
+ 407 0022 48C74720 		movq	$reset_error_mgr, 32(%rdi)
+ 407      00000000 
+ 239:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 240:fltk-1.3.4-1/jpeg/jerror.c ****   err->trace_level = 0;		/* default = no tracing */
+ 408              		.loc 1 240 0
+ 409 002a C7477C00 		movl	$0, 124(%rdi)
+ 409      000000
+ 241:fltk-1.3.4-1/jpeg/jerror.c ****   err->num_warnings = 0;	/* no warnings emitted yet */
+ 410              		.loc 1 241 0
+ 411 0031 48C78780 		movq	$0, 128(%rdi)
+ 411      00000000 
+ 411      000000
+ 242:fltk-1.3.4-1/jpeg/jerror.c ****   err->msg_code = 0;		/* may be useful as a flag for "no error" */
+ 412              		.loc 1 242 0
+ 413 003c C7472800 		movl	$0, 40(%rdi)
+ 413      000000
+ 243:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 244:fltk-1.3.4-1/jpeg/jerror.c ****   /* Initialize message table pointers */
+ 245:fltk-1.3.4-1/jpeg/jerror.c ****   err->jpeg_message_table = jpeg_std_message_table;
+ 414              		.loc 1 245 0
+ 415 0043 48C78788 		movq	$jpeg_std_message_table, 136(%rdi)
+ 415      00000000 
+ 415      000000
+ 246:fltk-1.3.4-1/jpeg/jerror.c ****   err->last_jpeg_message = (int) JMSG_LASTMSGCODE - 1;
+ 416              		.loc 1 246 0
+ 417 004e C7879000 		movl	$126, 144(%rdi)
+ 417      00007E00 
+ 417      0000
+ 247:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 248:fltk-1.3.4-1/jpeg/jerror.c ****   err->addon_message_table = NULL;
+ 418              		.loc 1 248 0
+ 419 0058 48C78798 		movq	$0, 152(%rdi)
+ 419      00000000 
+ 419      000000
+ 249:fltk-1.3.4-1/jpeg/jerror.c ****   err->first_addon_message = 0;	/* for safety */
+ 420              		.loc 1 249 0
+ 421 0063 C787A000 		movl	$0, 160(%rdi)
+ 421      00000000 
+ 421      0000
+ 250:fltk-1.3.4-1/jpeg/jerror.c ****   err->last_addon_message = 0;
+ 422              		.loc 1 250 0
+ 423 006d C787A400 		movl	$0, 164(%rdi)
+ 423      00000000 
+ 423      0000
+ 251:fltk-1.3.4-1/jpeg/jerror.c **** 
+ 252:fltk-1.3.4-1/jpeg/jerror.c ****   return err;
+ 253:fltk-1.3.4-1/jpeg/jerror.c **** }
+ 424              		.loc 1 253 0
+ 425 0077 C3       		ret
+ 426              		.cfi_endproc
+ 427              	.LFE66:
+ 429              		.section	.text.unlikely.jpeg_std_error
+ 430              	.LCOLDE6:
+ 431              		.section	.text.jpeg_std_error
+ 432              	.LHOTE6:
+ 433              		.globl	jpeg_std_message_table
+ 434              		.section	.rodata.str1.1
+ 435              	.LC7:
+ 436 0004 426F6775 		.string	"Bogus message code %d"
+ 436      73206D65 
+ 436      73736167 
+ 436      6520636F 
+ 436      64652025 
+ 437              		.section	.rodata.str1.8,"aMS",@progbits,1
+ 438              		.align 8
+ 439              	.LC8:
+ 440 0000 414C4947 		.string	"ALIGN_TYPE is wrong, please fix"
+ 440      4E5F5459 
+ 440      50452069 
+ 440      73207772 
+ 440      6F6E672C 
+ 441              		.align 8
+ 442              	.LC9:
+ 443 0020 4D41585F 		.string	"MAX_ALLOC_CHUNK is wrong, please fix"
+ 443      414C4C4F 
+ 443      435F4348 
+ 443      554E4B20 
+ 443      69732077 
+ 444              		.section	.rodata.str1.1
+ 445              	.LC10:
+ 446 001a 426F6775 		.string	"Bogus buffer control mode"
+ 446      73206275 
+ 446      66666572 
+ 446      20636F6E 
+ 446      74726F6C 
+ 447              		.section	.rodata.str1.8
+ 448 0045 000000   		.align 8
+ 449              	.LC11:
+ 450 0048 496E7661 		.string	"Invalid component ID %d in SOS"
+ 450      6C696420 
+ 450      636F6D70 
+ 450      6F6E656E 
+ 450      74204944 
+ 451              		.section	.rodata.str1.1
+ 452              	.LC12:
+ 453 0034 496E7661 		.string	"Invalid crop request"
+ 453      6C696420 
+ 453      63726F70 
+ 453      20726571 
+ 453      75657374 
+ 454              	.LC13:
+ 455 0049 44435420 		.string	"DCT coefficient out of range"
+ 455      636F6566 
+ 455      66696369 
+ 455      656E7420 
+ 455      6F757420 
+ 456              		.section	.rodata.str1.8
+ 457 0067 00       		.align 8
+ 458              	.LC14:
+ 459 0068 44435420 		.string	"DCT scaled block size %dx%d not supported"
+ 459      7363616C 
+ 459      65642062 
+ 459      6C6F636B 
+ 459      2073697A 
+ 460 0092 00000000 		.align 8
+ 460      0000
+ 461              	.LC15:
+ 462 0098 436F6D70 		.string	"Component index %d: mismatching sampling ratio %d:%d, %d:%d, %c"
+ 462      6F6E656E 
+ 462      7420696E 
+ 462      64657820 
+ 462      25643A20 
+ 463              		.align 8
+ 464              	.LC16:
+ 465 00d8 426F6775 		.string	"Bogus Huffman table definition"
+ 465      73204875 
+ 465      66666D61 
+ 465      6E207461 
+ 465      626C6520 
+ 466              		.section	.rodata.str1.1
+ 467              	.LC17:
+ 468 0066 426F6775 		.string	"Bogus input colorspace"
+ 468      7320696E 
+ 468      70757420 
+ 468      636F6C6F 
+ 468      72737061 
+ 469              	.LC18:
+ 470 007d 426F6775 		.string	"Bogus JPEG colorspace"
+ 470      73204A50 
+ 470      45472063 
+ 470      6F6C6F72 
+ 470      73706163 
+ 471              	.LC19:
+ 472 0093 426F6775 		.string	"Bogus marker length"
+ 472      73206D61 
+ 472      726B6572 
+ 472      206C656E 
+ 472      67746800 
+ 473              		.section	.rodata.str1.8
+ 474 00f7 00       		.align 8
+ 475              	.LC20:
+ 476 00f8 57726F6E 		.string	"Wrong JPEG library version: library is %d, caller expects %d"
+ 476      67204A50 
+ 476      4547206C 
+ 476      69627261 
+ 476      72792076 
+ 477 0135 000000   		.align 8
+ 478              	.LC21:
+ 479 0138 53616D70 		.string	"Sampling factors too large for interleaved scan"
+ 479      6C696E67 
+ 479      20666163 
+ 479      746F7273 
+ 479      20746F6F 
+ 480              		.section	.rodata.str1.1
+ 481              	.LC22:
+ 482 00a7 496E7661 		.string	"Invalid memory pool code %d"
+ 482      6C696420 
+ 482      6D656D6F 
+ 482      72792070 
+ 482      6F6F6C20 
+ 483              		.section	.rodata.str1.8
+ 484              		.align 8
+ 485              	.LC23:
+ 486 0168 556E7375 		.string	"Unsupported JPEG data precision %d"
+ 486      70706F72 
+ 486      74656420 
+ 486      4A504547 
+ 486      20646174 
+ 487 018b 00000000 		.align 8
+ 487      00
+ 488              	.LC24:
+ 489 0190 496E7661 		.string	"Invalid progressive parameters Ss=%d Se=%d Ah=%d Al=%d"
+ 489      6C696420 
+ 489      70726F67 
+ 489      72657373 
+ 489      69766520 
+ 490 01c7 00       		.align 8
+ 491              	.LC25:
+ 492 01c8 496E7661 		.string	"Invalid progressive parameters at scan script entry %d"
+ 492      6C696420 
+ 492      70726F67 
+ 492      72657373 
+ 492      69766520 
+ 493              		.section	.rodata.str1.1
+ 494              	.LC26:
+ 495 00c3 426F6775 		.string	"Bogus sampling factors"
+ 495      73207361 
+ 495      6D706C69 
+ 495      6E672066 
+ 495      6163746F 
+ 496              		.section	.rodata.str1.8
+ 497 01ff 00       		.align 8
+ 498              	.LC27:
+ 499 0200 496E7661 		.string	"Invalid scan script at entry %d"
+ 499      6C696420 
+ 499      7363616E 
+ 499      20736372 
+ 499      69707420 
+ 500              		.align 8
+ 501              	.LC28:
+ 502 0220 496D7072 		.string	"Improper call to JPEG library in state %d"
+ 502      6F706572 
+ 502      2063616C 
+ 502      6C20746F 
+ 502      204A5045 
+ 503 024a 00000000 		.align 8
+ 503      0000
+ 504              	.LC29:
+ 505 0250 4A504547 		.string	"JPEG parameter struct mismatch: library thinks size is %u, caller expects %u"
+ 505      20706172 
+ 505      616D6574 
+ 505      65722073 
+ 505      74727563 
+ 506              		.section	.rodata.str1.1
+ 507              	.LC30:
+ 508 00da 426F6775 		.string	"Bogus virtual array access"
+ 508      73207669 
+ 508      72747561 
+ 508      6C206172 
+ 508      72617920 
+ 509              		.section	.rodata.str1.8
+ 510 029d 000000   		.align 8
+ 511              	.LC31:
+ 512 02a0 42756666 		.string	"Buffer passed to JPEG library is too small"
+ 512      65722070 
+ 512      61737365 
+ 512      6420746F 
+ 512      204A5045 
+ 513              		.section	.rodata.str1.1
+ 514              	.LC32:
+ 515 00f5 53757370 		.string	"Suspension not allowed here"
+ 515      656E7369 
+ 515      6F6E206E 
+ 515      6F742061 
+ 515      6C6C6F77 
+ 516              		.section	.rodata.str1.8
+ 517 02cb 00000000 		.align 8
+ 517      00
+ 518              	.LC33:
+ 519 02d0 43434952 		.string	"CCIR601 sampling not implemented yet"
+ 519      36303120 
+ 519      73616D70 
+ 519      6C696E67 
+ 519      206E6F74 
+ 520 02f5 000000   		.align 8
+ 521              	.LC34:
+ 522 02f8 546F6F20 		.string	"Too many color components: %d, max %d"
+ 522      6D616E79 
+ 522      20636F6C 
+ 522      6F722063 
+ 522      6F6D706F 
+ 523 031e 0000     		.align 8
+ 524              	.LC35:
+ 525 0320 556E7375 		.string	"Unsupported color conversion request"
+ 525      70706F72 
+ 525      74656420 
+ 525      636F6C6F 
+ 525      7220636F 
+ 526              		.section	.rodata.str1.1
+ 527              	.LC36:
+ 528 0111 426F6775 		.string	"Bogus DAC index %d"
+ 528      73204441 
+ 528      4320696E 
+ 528      64657820 
+ 528      256400
+ 529              	.LC37:
+ 530 0124 426F6775 		.string	"Bogus DAC value 0x%x"
+ 530      73204441 
+ 530      43207661 
+ 530      6C756520 
+ 530      30782578 
+ 531              	.LC38:
+ 532 0139 426F6775 		.string	"Bogus DHT index %d"
+ 532      73204448 
+ 532      5420696E 
+ 532      64657820 
+ 532      256400
+ 533              	.LC39:
+ 534 014c 426F6775 		.string	"Bogus DQT index %d"
+ 534      73204451 
+ 534      5420696E 
+ 534      64657820 
+ 534      256400
+ 535              		.section	.rodata.str1.8
+ 536 0345 000000   		.align 8
+ 537              	.LC40:
+ 538 0348 456D7074 		.string	"Empty JPEG image (DNL not supported)"
+ 538      79204A50 
+ 538      45472069 
+ 538      6D616765 
+ 538      2028444E 
+ 539              		.section	.rodata.str1.1
+ 540              	.LC41:
+ 541 015f 52656164 		.string	"Read from EMS failed"
+ 541      2066726F 
+ 541      6D20454D 
+ 541      53206661 
+ 541      696C6564 
+ 542              	.LC42:
+ 543 0174 57726974 		.string	"Write to EMS failed"
+ 543      6520746F 
+ 543      20454D53 
+ 543      20666169 
+ 543      6C656400 
+ 544              		.section	.rodata.str1.8
+ 545 036d 000000   		.align 8
+ 546              	.LC43:
+ 547 0370 4469646E 		.string	"Didn't expect more than one scan"
+ 547      27742065 
+ 547      78706563 
+ 547      74206D6F 
+ 547      72652074 
+ 548              		.section	.rodata.str1.1
+ 549              	.LC44:
+ 550 0188 496E7075 		.string	"Input file read error"
+ 550      74206669 
+ 550      6C652072 
+ 550      65616420 
+ 550      6572726F 
+ 551              		.section	.rodata.str1.8
+ 552 0391 00000000 		.align 8
+ 552      000000
+ 553              	.LC45:
+ 554 0398 4F757470 		.string	"Output file write error --- out of disk space?"
+ 554      75742066 
+ 554      696C6520 
+ 554      77726974 
+ 554      65206572 
+ 555 03c7 00       		.align 8
+ 556              	.LC46:
+ 557 03c8 46726163 		.string	"Fractional sampling not implemented yet"
+ 557      74696F6E 
+ 557      616C2073 
+ 557      616D706C 
+ 557      696E6720 
+ 558              		.align 8
+ 559              	.LC47:
+ 560 03f0 48756666 		.string	"Huffman code size table overflow"
+ 560      6D616E20 
+ 560      636F6465 
+ 560      2073697A 
+ 560      65207461 
+ 561 0411 00000000 		.align 8
+ 561      000000
+ 562              	.LC48:
+ 563 0418 4D697373 		.string	"Missing Huffman code table entry"
+ 563      696E6720 
+ 563      48756666 
+ 563      6D616E20 
+ 563      636F6465 
+ 564 0439 00000000 		.align 8
+ 564      000000
+ 565              	.LC49:
+ 566 0440 4D617869 		.string	"Maximum supported image dimension is %u pixels"
+ 566      6D756D20 
+ 566      73757070 
+ 566      6F727465 
+ 566      6420696D 
+ 567              		.section	.rodata.str1.1
+ 568              	.LC50:
+ 569 019e 456D7074 		.string	"Empty input file"
+ 569      7920696E 
+ 569      70757420 
+ 569      66696C65 
+ 569      00
+ 570              	.LC51:
+ 571 01af 5072656D 		.string	"Premature end of input file"
+ 571      61747572 
+ 571      6520656E 
+ 571      64206F66 
+ 571      20696E70 
+ 572              		.section	.rodata.str1.8
+ 573 046f 00       		.align 8
+ 574              	.LC52:
+ 575 0470 43616E6E 		.string	"Cannot transcode due to multiple use of quantization table %d"
+ 575      6F742074 
+ 575      72616E73 
+ 575      636F6465 
+ 575      20647565 
+ 576 04ae 0000     		.align 8
+ 577              	.LC53:
+ 578 04b0 5363616E 		.string	"Scan script does not transmit all data"
+ 578      20736372 
+ 578      69707420 
+ 578      646F6573 
+ 578      206E6F74 
+ 579 04d7 00       		.align 8
+ 580              	.LC54:
+ 581 04d8 496E7661 		.string	"Invalid color quantization mode change"
+ 581      6C696420 
+ 581      636F6C6F 
+ 581      72207175 
+ 581      616E7469 
+ 582              		.section	.rodata.str1.1
+ 583              	.LC55:
+ 584 01cb 4E6F7420 		.string	"Not implemented yet"
+ 584      696D706C 
+ 584      656D656E 
+ 584      74656420 
+ 584      79657400 
+ 585              		.section	.rodata.str1.8
+ 586 04ff 00       		.align 8
+ 587              	.LC56:
+ 588 0500 52657175 		.string	"Requested feature was omitted at compile time"
+ 588      65737465 
+ 588      64206665 
+ 588      61747572 
+ 588      65207761 
+ 589 052e 0000     		.align 8
+ 590              	.LC57:
+ 591 0530 41726974 		.string	"Arithmetic table 0x%02x was not defined"
+ 591      686D6574 
+ 591      69632074 
+ 591      61626C65 
+ 591      20307825 
+ 592              		.section	.rodata.str1.1
+ 593              	.LC58:
+ 594 01df 4261636B 		.string	"Backing store not supported"
+ 594      696E6720 
+ 594      73746F72 
+ 594      65206E6F 
+ 594      74207375 
+ 595              		.section	.rodata.str1.8
+ 596              		.align 8
+ 597              	.LC59:
+ 598 0558 48756666 		.string	"Huffman table 0x%02x was not defined"
+ 598      6D616E20 
+ 598      7461626C 
+ 598      65203078 
+ 598      25303278 
+ 599 057d 000000   		.align 8
+ 600              	.LC60:
+ 601 0580 4A504547 		.string	"JPEG datastream contains no image"
+ 601      20646174 
+ 601      61737472 
+ 601      65616D20 
+ 601      636F6E74 
+ 602 05a2 00000000 		.align 8
+ 602      0000
+ 603              	.LC61:
+ 604 05a8 5175616E 		.string	"Quantization table 0x%02x was not defined"
+ 604      74697A61 
+ 604      74696F6E 
+ 604      20746162 
+ 604      6C652030 
+ 605 05d2 00000000 		.align 8
+ 605      0000
+ 606              	.LC62:
+ 607 05d8 4E6F7420 		.string	"Not a JPEG file: starts with 0x%02x 0x%02x"
+ 607      61204A50 
+ 607      45472066 
+ 607      696C653A 
+ 607      20737461 
+ 608              		.section	.rodata.str1.1
+ 609              	.LC63:
+ 610 01fb 496E7375 		.string	"Insufficient memory (case %d)"
+ 610      66666963 
+ 610      69656E74 
+ 610      206D656D 
+ 610      6F727920 
+ 611              		.section	.rodata.str1.8
+ 612 0603 00000000 		.align 8
+ 612      00
+ 613              	.LC64:
+ 614 0608 43616E6E 		.string	"Cannot quantize more than %d color components"
+ 614      6F742071 
+ 614      75616E74 
+ 614      697A6520 
+ 614      6D6F7265 
+ 615 0636 0000     		.align 8
+ 616              	.LC65:
+ 617 0638 43616E6E 		.string	"Cannot quantize to fewer than %d colors"
+ 617      6F742071 
+ 617      75616E74 
+ 617      697A6520 
+ 617      746F2066 
+ 618              		.align 8
+ 619              	.LC66:
+ 620 0660 43616E6E 		.string	"Cannot quantize to more than %d colors"
+ 620      6F742071 
+ 620      75616E74 
+ 620      697A6520 
+ 620      746F206D 
+ 621 0687 00       		.align 8
+ 622              	.LC67:
+ 623 0688 496E7661 		.string	"Invalid JPEG file structure: %s before SOF"
+ 623      6C696420 
+ 623      4A504547 
+ 623      2066696C 
+ 623      65207374 
+ 624 06b3 00000000 		.align 8
+ 624      00
+ 625              	.LC68:
+ 626 06b8 496E7661 		.string	"Invalid JPEG file structure: two SOF markers"
+ 626      6C696420 
+ 626      4A504547 
+ 626      2066696C 
+ 626      65207374 
+ 627 06e5 000000   		.align 8
+ 628              	.LC69:
+ 629 06e8 496E7661 		.string	"Invalid JPEG file structure: missing SOS marker"
+ 629      6C696420 
+ 629      4A504547 
+ 629      2066696C 
+ 629      65207374 
+ 630              		.align 8
+ 631              	.LC70:
+ 632 0718 556E7375 		.string	"Unsupported JPEG process: SOF type 0x%02x"
+ 632      70706F72 
+ 632      74656420 
+ 632      4A504547 
+ 632      2070726F 
+ 633 0742 00000000 		.align 8
+ 633      0000
+ 634              	.LC71:
+ 635 0748 496E7661 		.string	"Invalid JPEG file structure: two SOI markers"
+ 635      6C696420 
+ 635      4A504547 
+ 635      2066696C 
+ 635      65207374 
+ 636 0775 000000   		.align 8
+ 637              	.LC72:
+ 638 0778 4661696C 		.string	"Failed to create temporary file %s"
+ 638      65642074 
+ 638      6F206372 
+ 638      65617465 
+ 638      2074656D 
+ 639              		.section	.rodata.str1.1
+ 640              	.LC73:
+ 641 0219 52656164 		.string	"Read failed on temporary file"
+ 641      20666169 
+ 641      6C656420 
+ 641      6F6E2074 
+ 641      656D706F 
+ 642              	.LC74:
+ 643 0237 5365656B 		.string	"Seek failed on temporary file"
+ 643      20666169 
+ 643      6C656420 
+ 643      6F6E2074 
+ 643      656D706F 
+ 644              		.section	.rodata.str1.8
+ 645 079b 00000000 		.align 8
+ 645      00
+ 646              	.LC75:
+ 647 07a0 57726974 		.string	"Write failed on temporary file --- out of disk space?"
+ 647      65206661 
+ 647      696C6564 
+ 647      206F6E20 
+ 647      74656D70 
+ 648 07d6 0000     		.align 8
+ 649              	.LC76:
+ 650 07d8 4170706C 		.string	"Application transferred too few scanlines"
+ 650      69636174 
+ 650      696F6E20 
+ 650      7472616E 
+ 650      73666572 
+ 651 0802 00000000 		.align 8
+ 651      0000
+ 652              	.LC77:
+ 653 0808 556E7375 		.string	"Unsupported marker type 0x%02x"
+ 653      70706F72 
+ 653      74656420 
+ 653      6D61726B 
+ 653      65722074 
+ 654 0827 00       		.align 8
+ 655              	.LC78:
+ 656 0828 56697274 		.string	"Virtual array controller messed up"
+ 656      75616C20 
+ 656      61727261 
+ 656      7920636F 
+ 656      6E74726F 
+ 657 084b 00000000 		.align 8
+ 657      00
+ 658              	.LC79:
+ 659 0850 496D6167 		.string	"Image too wide for this implementation"
+ 659      6520746F 
+ 659      6F207769 
+ 659      64652066 
+ 659      6F722074 
+ 660              		.section	.rodata.str1.1
+ 661              	.LC80:
+ 662 0255 52656164 		.string	"Read from XMS failed"
+ 662      2066726F 
+ 662      6D20584D 
+ 662      53206661 
+ 662      696C6564 
+ 663              	.LC81:
+ 664 026a 57726974 		.string	"Write to XMS failed"
+ 664      6520746F 
+ 664      20584D53 
+ 664      20666169 
+ 664      6C656400 
+ 665              		.section	.rodata.str1.8
+ 666 0877 00       		.align 8
+ 667              	.LC82:
+ 668 0878 436F7079 		.string	"Copyright (C) 2014, Thomas G. Lane, Guido Vollbeding"
+ 668      72696768 
+ 668      74202843 
+ 668      29203230 
+ 668      31342C20 
+ 669              		.section	.rodata.str1.1
+ 670              	.LC83:
+ 671 027e 39612020 		.string	"9a  19-Jan-2014"
+ 671      31392D4A 
+ 671      616E2D32 
+ 671      30313400 
+ 672              		.section	.rodata.str1.8
+ 673 08ad 000000   		.align 8
+ 674              	.LC84:
+ 675 08b0 43617574 		.string	"Caution: quantization tables are too coarse for baseline JPEG"
+ 675      696F6E3A 
+ 675      20717561 
+ 675      6E74697A 
+ 675      6174696F 
+ 676 08ee 0000     		.align 8
+ 677              	.LC85:
+ 678 08f0 41646F62 		.string	"Adobe APP14 marker: version %d, flags 0x%04x 0x%04x, transform %d"
+ 678      65204150 
+ 678      50313420 
+ 678      6D61726B 
+ 678      65723A20 
+ 679 0932 00000000 		.align 8
+ 679      0000
+ 680              	.LC86:
+ 681 0938 556E6B6E 		.string	"Unknown APP0 marker (not JFIF), length %u"
+ 681      6F776E20 
+ 681      41505030 
+ 681      206D6172 
+ 681      6B657220 
+ 682 0962 00000000 		.align 8
+ 682      0000
+ 683              	.LC87:
+ 684 0968 556E6B6E 		.string	"Unknown APP14 marker (not Adobe), length %u"
+ 684      6F776E20 
+ 684      41505031 
+ 684      34206D61 
+ 684      726B6572 
+ 685 0994 00000000 		.align 8
+ 686              	.LC88:
+ 687 0998 44656669 		.string	"Define Arithmetic Table 0x%02x: 0x%02x"
+ 687      6E652041 
+ 687      72697468 
+ 687      6D657469 
+ 687      63205461 
+ 688              		.section	.rodata.str1.1
+ 689              	.LC89:
+ 690 028e 44656669 		.string	"Define Huffman Table 0x%02x"
+ 690      6E652048 
+ 690      7566666D 
+ 690      616E2054 
+ 690      61626C65 
+ 691              		.section	.rodata.str1.8
+ 692 09bf 00       		.align 8
+ 693              	.LC90:
+ 694 09c0 44656669 		.string	"Define Quantization Table %d  precision %d"
+ 694      6E652051 
+ 694      75616E74 
+ 694      697A6174 
+ 694      696F6E20 
+ 695              		.section	.rodata.str1.1
+ 696              	.LC91:
+ 697 02aa 44656669 		.string	"Define Restart Interval %u"
+ 697      6E652052 
+ 697      65737461 
+ 697      72742049 
+ 697      6E746572 
+ 698              	.LC92:
+ 699 02c5 46726565 		.string	"Freed EMS handle %u"
+ 699      6420454D 
+ 699      53206861 
+ 699      6E646C65 
+ 699      20257500 
+ 700              	.LC93:
+ 701 02d9 4F627461 		.string	"Obtained EMS handle %u"
+ 701      696E6564 
+ 701      20454D53 
+ 701      2068616E 
+ 701      646C6520 
+ 702              	.LC94:
+ 703 02f0 456E6420 		.string	"End Of Image"
+ 703      4F662049 
+ 703      6D616765 
+ 703      00
+ 704              		.section	.rodata.str1.8
+ 705 09eb 00000000 		.align 8
+ 705      00
+ 706              	.LC95:
+ 707 09f0 20202020 		.string	"        %3d %3d %3d %3d %3d %3d %3d %3d"
+ 707      20202020 
+ 707      25336420 
+ 707      25336420 
+ 707      25336420 
+ 708              		.align 8
+ 709              	.LC96:
+ 710 0a18 4A464946 		.string	"JFIF APP0 marker: version %d.%02d, density %dx%d  %d"
+ 710      20415050 
+ 710      30206D61 
+ 710      726B6572 
+ 710      3A207665 
+ 711 0a4d 000000   		.align 8
+ 712              	.LC97:
+ 713 0a50 5761726E 		.string	"Warning: thumbnail image size does not match data length %u"
+ 713      696E673A 
+ 713      20746875 
+ 713      6D626E61 
+ 713      696C2069 
+ 714 0a8c 00000000 		.align 8
+ 715              	.LC98:
+ 716 0a90 4A464946 		.string	"JFIF extension marker: type 0x%02x, length %u"
+ 716      20657874 
+ 716      656E7369 
+ 716      6F6E206D 
+ 716      61726B65 
+ 717 0abe 0000     		.align 8
+ 718              	.LC99:
+ 719 0ac0 20202020 		.string	"    with %d x %d thumbnail image"
+ 719      77697468 
+ 719      20256420 
+ 719      78202564 
+ 719      20746875 
+ 720 0ae1 00000000 		.align 8
+ 720      000000
+ 721              	.LC100:
+ 722 0ae8 4D697363 		.string	"Miscellaneous marker 0x%02x, length %u"
+ 722      656C6C61 
+ 722      6E656F75 
+ 722      73206D61 
+ 722      726B6572 
+ 723              		.section	.rodata.str1.1
+ 724              	.LC101:
+ 725 02fd 556E6578 		.string	"Unexpected marker 0x%02x"
+ 725      70656374 
+ 725      6564206D 
+ 725      61726B65 
+ 725      72203078 
+ 726              		.section	.rodata.str1.8
+ 727 0b0f 00       		.align 8
+ 728              	.LC102:
+ 729 0b10 20202020 		.string	"        %4u %4u %4u %4u %4u %4u %4u %4u"
+ 729      20202020 
+ 729      25347520 
+ 729      25347520 
+ 729      25347520 
+ 730              		.align 8
+ 731              	.LC103:
+ 732 0b38 5175616E 		.string	"Quantizing to %d = %d*%d*%d colors"
+ 732      74697A69 
+ 732      6E672074 
+ 732      6F202564 
+ 732      203D2025 
+ 733              		.section	.rodata.str1.1
+ 734              	.LC104:
+ 735 0316 5175616E 		.string	"Quantizing to %d colors"
+ 735      74697A69 
+ 735      6E672074 
+ 735      6F202564 
+ 735      20636F6C 
+ 736              		.section	.rodata.str1.8
+ 737 0b5b 00000000 		.align 8
+ 737      00
+ 738              	.LC105:
+ 739 0b60 53656C65 		.string	"Selected %d colors for quantization"
+ 739      63746564 
+ 739      20256420 
+ 739      636F6C6F 
+ 739      72732066 
+ 740 0b84 00000000 		.align 8
+ 741              	.LC106:
+ 742 0b88 4174206D 		.string	"At marker 0x%02x, recovery action %d"
+ 742      61726B65 
+ 742      72203078 
+ 742      25303278 
+ 742      2C207265 
+ 743              		.section	.rodata.str1.1
+ 744              	.LC107:
+ 745 032e 52535425 		.string	"RST%d"
+ 745      6400
+ 746              		.section	.rodata.str1.8
+ 747 0bad 000000   		.align 8
+ 748              	.LC108:
+ 749 0bb0 536D6F6F 		.string	"Smoothing not supported with nonstandard sampling ratios"
+ 749      7468696E 
+ 749      67206E6F 
+ 749      74207375 
+ 749      70706F72 
+ 750 0be9 00000000 		.align 8
+ 750      000000
+ 751              	.LC109:
+ 752 0bf0 53746172 		.string	"Start Of Frame 0x%02x: width=%u, height=%u, components=%d"
+ 752      74204F66 
+ 752      20467261 
+ 752      6D652030 
+ 752      78253032 
+ 753 0c2a 00000000 		.align 8
+ 753      0000
+ 754              	.LC110:
+ 755 0c30 20202020 		.string	"    Component %d: %dhx%dv q=%d"
+ 755      436F6D70 
+ 755      6F6E656E 
+ 755      74202564 
+ 755      3A202564 
+ 756              		.section	.rodata.str1.1
+ 757              	.LC111:
+ 758 0334 53746172 		.string	"Start of Image"
+ 758      74206F66 
+ 758      20496D61 
+ 758      676500
+ 759              	.LC112:
+ 760 0343 53746172 		.string	"Start Of Scan: %d components"
+ 760      74204F66 
+ 760      20536361 
+ 760      6E3A2025 
+ 760      6420636F 
+ 761              	.LC113:
+ 762 0360 20202020 		.string	"    Component %d: dc=%d ac=%d"
+ 762      436F6D70 
+ 762      6F6E656E 
+ 762      74202564 
+ 762      3A206463 
+ 763              	.LC114:
+ 764 037e 20205373 		.string	"  Ss=%d, Se=%d, Ah=%d, Al=%d"
+ 764      3D25642C 
+ 764      2053653D 
+ 764      25642C20 
+ 764      41683D25 
+ 765              	.LC115:
+ 766 039b 436C6F73 		.string	"Closed temporary file %s"
+ 766      65642074 
+ 766      656D706F 
+ 766      72617279 
+ 766      2066696C 
+ 767              	.LC116:
+ 768 03b4 4F70656E 		.string	"Opened temporary file %s"
+ 768      65642074 
+ 768      656D706F 
+ 768      72617279 
+ 768      2066696C 
+ 769              		.section	.rodata.str1.8
+ 770 0c4f 00       		.align 8
+ 771              	.LC117:
+ 772 0c50 4A464946 		.string	"JFIF extension marker: JPEG-compressed thumbnail image, length %u"
+ 772      20657874 
+ 772      656E7369 
+ 772      6F6E206D 
+ 772      61726B65 
+ 773 0c92 00000000 		.align 8
+ 773      0000
+ 774              	.LC118:
+ 775 0c98 4A464946 		.string	"JFIF extension marker: palette thumbnail image, length %u"
+ 775      20657874 
+ 775      656E7369 
+ 775      6F6E206D 
+ 775      61726B65 
+ 776 0cd2 00000000 		.align 8
+ 776      0000
+ 777              	.LC119:
+ 778 0cd8 4A464946 		.string	"JFIF extension marker: RGB thumbnail image, length %u"
+ 778      20657874 
+ 778      656E7369 
+ 778      6F6E206D 
+ 778      61726B65 
+ 779 0d0e 0000     		.align 8
+ 780              	.LC120:
+ 781 0d10 556E7265 		.string	"Unrecognized component IDs %d %d %d, assuming YCbCr"
+ 781      636F676E 
+ 781      697A6564 
+ 781      20636F6D 
+ 781      706F6E65 
+ 782              		.section	.rodata.str1.1
+ 783              	.LC121:
+ 784 03cd 46726565 		.string	"Freed XMS handle %u"
+ 784      6420584D 
+ 784      53206861 
+ 784      6E646C65 
+ 784      20257500 
+ 785              	.LC122:
+ 786 03e1 4F627461 		.string	"Obtained XMS handle %u"
+ 786      696E6564 
+ 786      20584D53 
+ 786      2068616E 
+ 786      646C6520 
+ 787              		.section	.rodata.str1.8
+ 788 0d44 00000000 		.align 8
+ 789              	.LC123:
+ 790 0d48 556E6B6E 		.string	"Unknown Adobe color transform code %d"
+ 790      6F776E20 
+ 790      41646F62 
+ 790      6520636F 
+ 790      6C6F7220 
+ 791 0d6e 0000     		.align 8
+ 792              	.LC124:
+ 793 0d70 436F7272 		.string	"Corrupt JPEG data: bad arithmetic code"
+ 793      75707420 
+ 793      4A504547 
+ 793      20646174 
+ 793      613A2062 
+ 794 0d97 00       		.align 8
+ 795              	.LC125:
+ 796 0d98 496E636F 		.string	"Inconsistent progression sequence for component %d coefficient %d"
+ 796      6E736973 
+ 796      74656E74 
+ 796      2070726F 
+ 796      67726573 
+ 797 0dda 00000000 		.align 8
+ 797      0000
+ 798              	.LC126:
+ 799 0de0 436F7272 		.string	"Corrupt JPEG data: %u extraneous bytes before marker 0x%02x"
+ 799      75707420 
+ 799      4A504547 
+ 799      20646174 
+ 799      613A2025 
+ 800 0e1c 00000000 		.align 8
+ 801              	.LC127:
+ 802 0e20 436F7272 		.string	"Corrupt JPEG data: premature end of data segment"
+ 802      75707420 
+ 802      4A504547 
+ 802      20646174 
+ 802      613A2070 
+ 803 0e51 00000000 		.align 8
+ 803      000000
+ 804              	.LC128:
+ 805 0e58 436F7272 		.string	"Corrupt JPEG data: bad Huffman code"
+ 805      75707420 
+ 805      4A504547 
+ 805      20646174 
+ 805      613A2062 
+ 806 0e7c 00000000 		.align 8
+ 807              	.LC129:
+ 808 0e80 5761726E 		.string	"Warning: unknown JFIF revision number %d.%02d"
+ 808      696E673A 
+ 808      20756E6B 
+ 808      6E6F776E 
+ 808      204A4649 
+ 809              		.section	.rodata.str1.1
+ 810              	.LC130:
+ 811 03f8 5072656D 		.string	"Premature end of JPEG file"
+ 811      61747572 
+ 811      6520656E 
+ 811      64206F66 
+ 811      204A5045 
+ 812              		.section	.rodata.str1.8
+ 813 0eae 0000     		.align 8
+ 814              	.LC131:
+ 815 0eb0 436F7272 		.string	"Corrupt JPEG data: found marker 0x%02x instead of RST%d"
+ 815      75707420 
+ 815      4A504547 
+ 815      20646174 
+ 815      613A2066 
+ 816              		.align 8
+ 817              	.LC132:
+ 818 0ee8 496E7661 		.string	"Invalid SOS parameters for sequential JPEG"
+ 818      6C696420 
+ 818      534F5320 
+ 818      70617261 
+ 818      6D657465 
+ 819 0f13 00000000 		.align 8
+ 819      00
+ 820              	.LC133:
+ 821 0f18 4170706C 		.string	"Application transferred too many scanlines"
+ 821      69636174 
+ 821      696F6E20 
+ 821      7472616E 
+ 821      73666572 
+ 822              		.section	.rodata.jpeg_std_message_table,"a",@progbits
+ 823              		.align 32
+ 826              	jpeg_std_message_table:
+ 827 0000 00000000 		.quad	.LC7
+ 827      00000000 
+ 828 0008 00000000 		.quad	.LC8
+ 828      00000000 
+ 829 0010 00000000 		.quad	.LC9
+ 829      00000000 
+ 830 0018 00000000 		.quad	.LC10
+ 830      00000000 
+ 831 0020 00000000 		.quad	.LC11
+ 831      00000000 
+ 832 0028 00000000 		.quad	.LC12
+ 832      00000000 
+ 833 0030 00000000 		.quad	.LC13
+ 833      00000000 
+ 834 0038 00000000 		.quad	.LC14
+ 834      00000000 
+ 835 0040 00000000 		.quad	.LC15
+ 835      00000000 
+ 836 0048 00000000 		.quad	.LC16
+ 836      00000000 
+ 837 0050 00000000 		.quad	.LC17
+ 837      00000000 
+ 838 0058 00000000 		.quad	.LC18
+ 838      00000000 
+ 839 0060 00000000 		.quad	.LC19
+ 839      00000000 
+ 840 0068 00000000 		.quad	.LC20
+ 840      00000000 
+ 841 0070 00000000 		.quad	.LC21
+ 841      00000000 
+ 842 0078 00000000 		.quad	.LC22
+ 842      00000000 
+ 843 0080 00000000 		.quad	.LC23
+ 843      00000000 
+ 844 0088 00000000 		.quad	.LC24
+ 844      00000000 
+ 845 0090 00000000 		.quad	.LC25
+ 845      00000000 
+ 846 0098 00000000 		.quad	.LC26
+ 846      00000000 
+ 847 00a0 00000000 		.quad	.LC27
+ 847      00000000 
+ 848 00a8 00000000 		.quad	.LC28
+ 848      00000000 
+ 849 00b0 00000000 		.quad	.LC29
+ 849      00000000 
+ 850 00b8 00000000 		.quad	.LC30
+ 850      00000000 
+ 851 00c0 00000000 		.quad	.LC31
+ 851      00000000 
+ 852 00c8 00000000 		.quad	.LC32
+ 852      00000000 
+ 853 00d0 00000000 		.quad	.LC33
+ 853      00000000 
+ 854 00d8 00000000 		.quad	.LC34
+ 854      00000000 
+ 855 00e0 00000000 		.quad	.LC35
+ 855      00000000 
+ 856 00e8 00000000 		.quad	.LC36
+ 856      00000000 
+ 857 00f0 00000000 		.quad	.LC37
+ 857      00000000 
+ 858 00f8 00000000 		.quad	.LC38
+ 858      00000000 
+ 859 0100 00000000 		.quad	.LC39
+ 859      00000000 
+ 860 0108 00000000 		.quad	.LC40
+ 860      00000000 
+ 861 0110 00000000 		.quad	.LC41
+ 861      00000000 
+ 862 0118 00000000 		.quad	.LC42
+ 862      00000000 
+ 863 0120 00000000 		.quad	.LC43
+ 863      00000000 
+ 864 0128 00000000 		.quad	.LC44
+ 864      00000000 
+ 865 0130 00000000 		.quad	.LC45
+ 865      00000000 
+ 866 0138 00000000 		.quad	.LC46
+ 866      00000000 
+ 867 0140 00000000 		.quad	.LC47
+ 867      00000000 
+ 868 0148 00000000 		.quad	.LC48
+ 868      00000000 
+ 869 0150 00000000 		.quad	.LC49
+ 869      00000000 
+ 870 0158 00000000 		.quad	.LC50
+ 870      00000000 
+ 871 0160 00000000 		.quad	.LC51
+ 871      00000000 
+ 872 0168 00000000 		.quad	.LC52
+ 872      00000000 
+ 873 0170 00000000 		.quad	.LC53
+ 873      00000000 
+ 874 0178 00000000 		.quad	.LC54
+ 874      00000000 
+ 875 0180 00000000 		.quad	.LC55
+ 875      00000000 
+ 876 0188 00000000 		.quad	.LC56
+ 876      00000000 
+ 877 0190 00000000 		.quad	.LC57
+ 877      00000000 
+ 878 0198 00000000 		.quad	.LC58
+ 878      00000000 
+ 879 01a0 00000000 		.quad	.LC59
+ 879      00000000 
+ 880 01a8 00000000 		.quad	.LC60
+ 880      00000000 
+ 881 01b0 00000000 		.quad	.LC61
+ 881      00000000 
+ 882 01b8 00000000 		.quad	.LC62
+ 882      00000000 
+ 883 01c0 00000000 		.quad	.LC63
+ 883      00000000 
+ 884 01c8 00000000 		.quad	.LC64
+ 884      00000000 
+ 885 01d0 00000000 		.quad	.LC65
+ 885      00000000 
+ 886 01d8 00000000 		.quad	.LC66
+ 886      00000000 
+ 887 01e0 00000000 		.quad	.LC67
+ 887      00000000 
+ 888 01e8 00000000 		.quad	.LC68
+ 888      00000000 
+ 889 01f0 00000000 		.quad	.LC69
+ 889      00000000 
+ 890 01f8 00000000 		.quad	.LC70
+ 890      00000000 
+ 891 0200 00000000 		.quad	.LC71
+ 891      00000000 
+ 892 0208 00000000 		.quad	.LC72
+ 892      00000000 
+ 893 0210 00000000 		.quad	.LC73
+ 893      00000000 
+ 894 0218 00000000 		.quad	.LC74
+ 894      00000000 
+ 895 0220 00000000 		.quad	.LC75
+ 895      00000000 
+ 896 0228 00000000 		.quad	.LC76
+ 896      00000000 
+ 897 0230 00000000 		.quad	.LC77
+ 897      00000000 
+ 898 0238 00000000 		.quad	.LC78
+ 898      00000000 
+ 899 0240 00000000 		.quad	.LC79
+ 899      00000000 
+ 900 0248 00000000 		.quad	.LC80
+ 900      00000000 
+ 901 0250 00000000 		.quad	.LC81
+ 901      00000000 
+ 902 0258 00000000 		.quad	.LC82
+ 902      00000000 
+ 903 0260 00000000 		.quad	.LC83
+ 903      00000000 
+ 904 0268 00000000 		.quad	.LC84
+ 904      00000000 
+ 905 0270 00000000 		.quad	.LC85
+ 905      00000000 
+ 906 0278 00000000 		.quad	.LC86
+ 906      00000000 
+ 907 0280 00000000 		.quad	.LC87
+ 907      00000000 
+ 908 0288 00000000 		.quad	.LC88
+ 908      00000000 
+ 909 0290 00000000 		.quad	.LC89
+ 909      00000000 
+ 910 0298 00000000 		.quad	.LC90
+ 910      00000000 
+ 911 02a0 00000000 		.quad	.LC91
+ 911      00000000 
+ 912 02a8 00000000 		.quad	.LC92
+ 912      00000000 
+ 913 02b0 00000000 		.quad	.LC93
+ 913      00000000 
+ 914 02b8 00000000 		.quad	.LC94
+ 914      00000000 
+ 915 02c0 00000000 		.quad	.LC95
+ 915      00000000 
+ 916 02c8 00000000 		.quad	.LC96
+ 916      00000000 
+ 917 02d0 00000000 		.quad	.LC97
+ 917      00000000 
+ 918 02d8 00000000 		.quad	.LC98
+ 918      00000000 
+ 919 02e0 00000000 		.quad	.LC99
+ 919      00000000 
+ 920 02e8 00000000 		.quad	.LC100
+ 920      00000000 
+ 921 02f0 00000000 		.quad	.LC101
+ 921      00000000 
+ 922 02f8 00000000 		.quad	.LC102
+ 922      00000000 
+ 923 0300 00000000 		.quad	.LC103
+ 923      00000000 
+ 924 0308 00000000 		.quad	.LC104
+ 924      00000000 
+ 925 0310 00000000 		.quad	.LC105
+ 925      00000000 
+ 926 0318 00000000 		.quad	.LC106
+ 926      00000000 
+ 927 0320 00000000 		.quad	.LC107
+ 927      00000000 
+ 928 0328 00000000 		.quad	.LC108
+ 928      00000000 
+ 929 0330 00000000 		.quad	.LC109
+ 929      00000000 
+ 930 0338 00000000 		.quad	.LC110
+ 930      00000000 
+ 931 0340 00000000 		.quad	.LC111
+ 931      00000000 
+ 932 0348 00000000 		.quad	.LC112
+ 932      00000000 
+ 933 0350 00000000 		.quad	.LC113
+ 933      00000000 
+ 934 0358 00000000 		.quad	.LC114
+ 934      00000000 
+ 935 0360 00000000 		.quad	.LC115
+ 935      00000000 
+ 936 0368 00000000 		.quad	.LC116
+ 936      00000000 
+ 937 0370 00000000 		.quad	.LC117
+ 937      00000000 
+ 938 0378 00000000 		.quad	.LC118
+ 938      00000000 
+ 939 0380 00000000 		.quad	.LC119
+ 939      00000000 
+ 940 0388 00000000 		.quad	.LC120
+ 940      00000000 
+ 941 0390 00000000 		.quad	.LC121
+ 941      00000000 
+ 942 0398 00000000 		.quad	.LC122
+ 942      00000000 
+ 943 03a0 00000000 		.quad	.LC123
+ 943      00000000 
+ 944 03a8 00000000 		.quad	.LC124
+ 944      00000000 
+ 945 03b0 00000000 		.quad	.LC125
+ 945      00000000 
+ 946 03b8 00000000 		.quad	.LC126
+ 946      00000000 
+ 947 03c0 00000000 		.quad	.LC127
+ 947      00000000 
+ 948 03c8 00000000 		.quad	.LC128
+ 948      00000000 
+ 949 03d0 00000000 		.quad	.LC129
+ 949      00000000 
+ 950 03d8 00000000 		.quad	.LC130
+ 950      00000000 
+ 951 03e0 00000000 		.quad	.LC131
+ 951      00000000 
+ 952 03e8 00000000 		.quad	.LC132
+ 952      00000000 
+ 953 03f0 00000000 		.quad	.LC133
+ 953      00000000 
+ 954 03f8 00000000 		.quad	0
+ 954      00000000 
+ 955              		.text
+ 956              	.Letext0:
+ 957              		.section	.text.unlikely.emit_message
+ 958              	.Letext_cold0:
+ 959              		.file 3 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
+ 960              		.file 4 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 961              		.file 5 "/usr/include/stdio.h"
+ 962              		.file 6 "/usr/include/libio.h"
+ 963              		.file 7 "fltk-1.3.4-1/jpeg/jmorecfg.h"
+ 964              		.file 8 "fltk-1.3.4-1/jpeg/jpeglib.h"
+ 965              		.file 9 "fltk-1.3.4-1/jpeg/jerror.h"
+ 966              		.file 10 "/usr/include/stdlib.h"
+ 967              		.file 11 "<built-in>"
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 jerror.c
+     /tmp/ccvTkcuh.s:13     .text.emit_message:0000000000000000 emit_message
+     /tmp/ccvTkcuh.s:92     .text.reset_error_mgr:0000000000000000 reset_error_mgr
+     /tmp/ccvTkcuh.s:117    .text.format_message:0000000000000000 format_message
+     /tmp/ccvTkcuh.s:301    .text.output_message:0000000000000000 output_message
+     /tmp/ccvTkcuh.s:354    .text.error_exit:0000000000000000 error_exit
+     /tmp/ccvTkcuh.s:391    .text.jpeg_std_error:0000000000000000 jpeg_std_error
+     /tmp/ccvTkcuh.s:826    .rodata.jpeg_std_message_table:0000000000000000 jpeg_std_message_table
+                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
+                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+                           .group:0000000000000000 wm4.jconfig.h.10.247fc3ff67998f3074970b1373c70333
+                           .group:0000000000000000 wm4.features.h.19.24da27e0a4d0d521fd057013d982b8b5
+                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
+                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
+                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
+                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
+                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
+                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
+                           .group:0000000000000000 wm4.waitflags.h.25.e401b8bcfee800b540b27abd7cc78de9
+                           .group:0000000000000000 wm4.waitstatus.h.28.93f167f49d64e2b9b99f98d1162a93bf
+                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
+                           .group:0000000000000000 wm4.endian.h.41.24cced64aef71195a51d4daa8e4f4a95
+                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
+                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
+                           .group:0000000000000000 wm4.byteswap.h.38.11ee5fdc0f6cc53a16c505b9233cecef
+                           .group:0000000000000000 wm4.endian.h.63.97272d7c64d5db8020003b32e9289502
+                           .group:0000000000000000 wm4.waitstatus.h.99.408b6270fa6eb71377201a241ef15f79
+                           .group:0000000000000000 wm4.stdlib.h.50.84aeca2ac6f37d40e1e9b3cef757ba2d
+                           .group:0000000000000000 wm4.types.h.23.f6dcbaa72f8f71361acef09804d45a5e
+                           .group:0000000000000000 wm4.time.h.53.beb46e650cd406cb917b6b96b45e640a
+                           .group:0000000000000000 wm4.stddef.h.238.847b6907dabda77be90a9ab7ad789e2e
+                           .group:0000000000000000 wm4.types.h.187.bd5a05039b505b3620e6973f1b2ffeb1
+                           .group:0000000000000000 wm4.select.h.28.eb2f3debdbcffd1442ebddaebc4fb6ff
+                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
+                           .group:0000000000000000 wm4.select.h.36.f76c3b9e55c871743863013cc4cc14c9
+                           .group:0000000000000000 wm4.time.h.66.e70ce69790c975f0efb369340c432e0b
+                           .group:0000000000000000 wm4.time.h.25.ae5284cdff565e87a9198d819340325d
+                           .group:0000000000000000 wm4.select.h.49.e9d2041e5035cc68ebd1a20f7dbc8514
+                           .group:0000000000000000 wm4.select2.h.27.f95f2ab0ffee66dc1b6575014894b21a
+                           .group:0000000000000000 wm4.sysmacros.h.20.8a0c33ff175cd9b434a86c0aaa36f0a2
+                           .group:0000000000000000 wm4.types.h.229.67b3f66bd74b06b451caec392a72a945
+                           .group:0000000000000000 wm4.pthreadtypes.h.25.6892b1493314fcf446bbc76e7362acba
+                           .group:0000000000000000 wm4.alloca.h.19.edefa922a76c1cbaaf1e416903ba2d1c
+                           .group:0000000000000000 wm4.alloca.h.29.156e12058824cc23d961c4d3b13031f6
+                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
+                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
+                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
+                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
+                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
+                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
+                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
+                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
+                           .group:0000000000000000 wm4.stdio.h.80.17b7dd1ca72d8a61987532cb1d80194a
+                           .group:0000000000000000 wm4.stdio_lim.h.23.557290a6cddeba0587f574f29e3a5fb9
+                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
+                           .group:0000000000000000 wm4.stdio.h.26.cae64f7ada9bb8327a89dba6a5e93655
+                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
+                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
+                           .group:0000000000000000 wm4.string2.h.45.00535b99420fc3014c2da41d6645330d
+                           .group:0000000000000000 wm4.string3.h.31.0c4b9301b754a2db05eaafef869657d2
+                           .group:0000000000000000 wm4.jinclude.h.67.b19f941ec97c4845fa4609292c7e2db4
+                           .group:0000000000000000 wm4.jmorecfg.h.33.892d1896c42f78d6ec3a036162b3403e
+                           .group:0000000000000000 wm4.jpeglib.h.40.4f111c27252a38df39328d65454e82f4
+                           .group:0000000000000000 wm4.jversion.h.12.115a7a320e2cda8961bc9fa5fb92d0dc
+                           .group:0000000000000000 wm4.jerror.h.25.1dbd8674e70ab5215bc0037320e5c2a2
+
+UNDEFINED SYMBOLS
+__sprintf_chk
+stderr
+__fprintf_chk
+__stack_chk_fail
+jpeg_destroy
+exit
