@@ -109,6 +109,7 @@ def main():
     parser.add_argument("--author",  type=str,            help="Author of file",      default="")
     parser.add_argument("--dir",     type=str,            help="Directory where to store file",  default=".")
 
+    
     args = parser.parse_args()
     sys.exit(0)
     if args.newc:

@@ -57,12 +57,12 @@ QT = core gui widgets
 #
 # Header files
 #
-HEADERS += 
+HEADERS += MainWindows.h
 
 #
 # Sourcefiles
 #
-SOURCES += main.cpp
+SOURCES += main.cpp MainWindow.cpp
 
 
 #
