@@ -27,6 +27,7 @@
 // Variables --------------------------------------------------------------
 
 #define STR "ABCDEFGHIJ"
+
 // Prototypes -------------------------------------------------------------
 
 // Code -------------------------------------------------------------------
@@ -35,10 +36,15 @@
 
 int main(int argc, char *argv[]) {
 	char *str = STR;
+
+	printf("Some printf tests\n\n");
+  printf("String fmt(%%3s):  %3s Text after string.\n", STR);
+	printf("String fmt(%%.3s): %.3s Text after string\n", STR);
+	printf("String fmt(%%.*s): %.*s Text after string\n", 3, STR);
 	
-  printf("Test: %3s\n", STR);
-	printf("Test: %.3s After text\n", STR);
-	printf("Test: %.*s After text\n", 4, STR);
+	
+	
 	printf("Void Pointer(%%p): %16p\n", str);
+
 	return 0;
 }
