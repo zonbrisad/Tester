@@ -47,9 +47,11 @@ bpUserSettings() {
 # User defined functions
 #---------------------------------------------------------------------
 
-arg() { ##D Argparse
+##-
+
+arg() { ##D getopt test
   options=$(getopt --long debug --long nisse: -- "$@")
-	echo $options
+	#echo $options
 	eval set -- "$options"
 	while true; do
 	  case "$1" in

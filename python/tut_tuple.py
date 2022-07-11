@@ -1,12 +1,23 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------
 # Python Tutorial and test project
 # ----------------------------------------------------------------------------
 #
-# __DESCRIPTION__
+# some examples of tuple operations.
 #
-# File:     __NAME__
-# Author:   __AUTHOR__  __EMAIL__
-# Date:     __DATE__
-# License:  __LICENSE__
+# File:     tut_tuple.py
+# Author:   Peter Malmberg  <peter.malmberg@gmail.com>
+# Date:     2022-06-26
+# License:  
 #
 # ----------------------------------------------------------------------------
+
+
+tpl = (1, 2, 3)
+
+a, b, c = tpl
+
+print(a)
+print(b)
+print(c)

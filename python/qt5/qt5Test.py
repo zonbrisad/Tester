@@ -24,6 +24,8 @@ import logging
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
+from PyQt5.QtGui import QGuiApplication
+#from PyQt5.QtGui import Q
 
 # Settings ------------------------------------------------------------------
 
@@ -74,10 +76,12 @@ def msgBox():
     retval = msg.exec_()
     print("value of pressed message box button:", retval)
     
+  
+
 
 def addText(txt):
     text.append(txt)
-
+  
 def timerEvent():
     addText("Timer event")
     

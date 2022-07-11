@@ -1,12 +1,14 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------
 # Python Tutorial and test project
 # ----------------------------------------------------------------------------
 #
-# __DESCRIPTION__
+# examples of comprehension usage.
 #
-# File:     __NAME__
-# Author:   __AUTHOR__  __EMAIL__
-# Date:     __DATE__
-# License:  __LICENSE__
+# File:     comprehensions.py
+# Author:   Peter Malmberg  <peter.malmberg@gmail.com>
+# Date:     2022-06-26
+# License:  
 #
 # ----------------------------------------------------------------------------

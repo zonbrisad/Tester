@@ -1,12 +1,20 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------
 # Python Tutorial and test project
 # ----------------------------------------------------------------------------
 #
-# __DESCRIPTION__
+# tutorial of python lists.
 #
-# File:     __NAME__
-# Author:   __AUTHOR__  __EMAIL__
-# Date:     __DATE__
-# License:  __LICENSE__
+# File:     tut_lists.py
+# Author:   Peter Malmberg  <peter.malmberg@gmail.com>
+# Date:     2022-06-26
+# License:  
 #
 # ----------------------------------------------------------------------------
+
+l = [1, 4, 87, 12]
+
+for i, val in enumerate(l):
+    print(f"index {i} value {val}")
+
