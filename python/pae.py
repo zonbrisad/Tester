@@ -1,6 +1,20 @@
-
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# --------------------------------------------------------------------------
+#
+# Python automation engine
+#
+# File:    pae.py
+# Author:  Peter Malmberg <peter.malmberg@gmail.com>
+# Date:    
+# Version: 0.3
+# Python:  >=3
+# License: MIT
+#
+# ---------------------------------------------------------------------------
 
 import argparse
+from dataclasses import dataclass
 from enum import Enum
 from logging import NullHandler
 from platform import node
@@ -10,11 +24,12 @@ from xmlrpc.client import Boolean
 
 
 class PaeType(Enum):
-    Normal  = 0
-    Max     = 1
-    Min     = 2
-    Count   = 3
+    Normal = 0
+    Max = 1
+    Min = 2
+    Count = 3
     Average = 4
+    Integrate = 5
 
     Sine    = 100
     Noise   = 101
@@ -24,17 +39,16 @@ class PaeType(Enum):
     #     this.Max    : "Max"
     # }
 
-
 class PaeObject:
     tick = 0
 
-    def __init__(self) -> None:
-        self.enabled = True
-        self.id = ""
-        self.name = ""
-        self.description = ""
-        self.source = None
-        self.unit = ""
+    def __init__(self, enabled=True, id="", name="", description="", source=None, unit="") -> None:
+        self.enabled = enabled
+        self.id = id
+        self.name = name
+        self.description = description
+        self.source = source
+        self.unit = unit
 
     def enable(self, en: Boolean):
         self.enabled = en
@@ -44,23 +58,23 @@ class PaeObject:
 
     def get_id(self):
         if self.source is not None :
-            return self.source.getId()
+            return self.source.get_id()
 
         return self.id
 
-    def setId(self, id):
+    def set_id(self, id):
         self.id = id
 
-    def setDescription(self, description):
+    def set_description(self, description):
         self.description = description
 
-    def getDescription(self):
+    def get_description(self):
         return self.description
 
-    def setSource(self, source):
+    def set_source(self, source):
         self.source = source
     
-    def getSource(self):
+    def get_source(self):
         return self.source
 
     def update(self):
@@ -161,8 +175,8 @@ def main() -> None:
     n_sin = PaeNode()
     
     
-    n1.setId("Id1")
-    n2.setSource(n1)
+    n1.set_id("Id1")
+    n2.set_source(n1)
     
     motor = PaeMotor()
     
@@ -171,8 +185,8 @@ def main() -> None:
     motor.addNode(n_sin)
     
     
-    print("n1 id = " + n1.getId() )
-    print("n2 id = " + n2.getId() )
+    print("n1 id = " + n1.get_id() )
+    print("n2 id = " + n2.get_id() )
     
     
     print("n1 tick = ", n1.tick )

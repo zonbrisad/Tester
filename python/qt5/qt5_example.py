@@ -41,44 +41,75 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 # Settings ------------------------------------------------------------------
 
+
+
+
 # Application settings
-AppName     = "__NAME__"
-AppVersion  = "0.1"
-AppLicense  = "__LICENSE__"
-AppAuthor   = "__AUTHOR__"
-AppDesc     = "__DESC__"
+app_name = "qt5example"
+app_version = "0.1"
+app_license = "__LICENSE__"
+app_author = "Peter Malmberg"
+app_description = "Qt5 test program"
 AppDomain   = "Domain"
 AppOrg      = "__ORG__"
 
 # Qt settings
-WindowTitle = AppName
+WindowTitle = app_name
 WindowXSize = 500
 WindowYSize = 400
 
 QCoreApplication.setOrganizationName(AppOrg)
 QCoreApplication.setOrganizationDomain(AppDomain)
-QCoreApplication.setApplicationName(AppName)
+QCoreApplication.setApplicationName(app_name)
 
 # Time to show message in ms
 MsgTime     = 2000
 
+
+# Absolute path to script itself        
+self_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
+
 # Code ----------------------------------------------------------------------
 
-aboutHtml='''
-<h3>About '''+AppName+'''</h3>
+about_test=f'''
+<center><h2>{app_name}</h2></center>
 <br>
-<b>Version: </b> '''+AppVersion+'''
+<table>
+  <tr>
+    <th> 
+    <img src="{self_dir}/flower.jpg" width="64" height="64">
+    </th>
+    <td>  
+      <b>Version: </b>{app_version}
+    <br>
+    <b>Author: </b>{app_author}
+    </td>
+  </tr>
+</table>
+<br><hr><br>
+{app_description}
 <br>
-<b>Author: </b>'''+AppAuthor+'''
-<br><br>
-'''+AppDesc+'''
+
+'''
+
+about_html=f'''
+<center><h2>{app_name}</h2></center>
+<br>
+<b>Version: </b>{app_version}
+<br>
+<b>Author: </b>{app_author}
+<br>
+<hr>
+<br>
+{app_description}
+<br>
 '''
 
 class AboutDialog(QDialog):
     def __init__(self, parent = None):
         super(AboutDialog, self).__init__(parent)
 
-        self.setWindowTitle("About " + AppName)
+        self.setWindowTitle(app_name)
         self.setWindowModality(Qt.ApplicationModal)
         
         # Set dialog size. 
@@ -111,7 +142,7 @@ class AboutDialog(QDialog):
         self.buttonBox.rejected.connect(self.reject)
         self.verticalLayout.addWidget(self.buttonBox)
         
-        self.textEdit.insertHtml(aboutHtml)
+        self.textEdit.insertHtml(about_test)
         
     @staticmethod
     def about(parent = None):
@@ -140,6 +171,9 @@ class MainForm(QMainWindow):
  
         # Set window title  
         self.setWindowTitle(WindowTitle) 
+
+        # Set window icon
+        self.setWindowIcon(QtGui.QIcon(f"{self_dir}/flower.jpg"))
         
         # Create central widget
         self.centralwidget = QtWidgets.QWidget(self)
@@ -262,15 +296,9 @@ class MainForm(QMainWindow):
         self.actionQuit.triggered.connect(self.appExit)
         self.menuFile.addAction(self.actionQuit)
         
-        self.actionHelp  = QtWidgets.QAction("Help",  self )
-        self.menuHelp.addAction(self.actionHelp)
-        
-        self.menuHelp.addSeparator()
-        
         self.actionAbout = QtWidgets.QAction("About", self )
         self.actionAbout.triggered.connect(self.about)
         self.menuHelp.addAction(self.actionAbout)
-        
         
         # test items
         self.actionTestText = QtWidgets.QAction("Input text", self)
@@ -284,7 +312,6 @@ class MainForm(QMainWindow):
         self.actionTestItems = QtWidgets.QAction("Input items", self)
         self.actionTestItems.triggered.connect(self.testItems)
         self.menuTests.addAction(self.actionTestItems)
-        
         
 
     def testText(self):
@@ -369,13 +396,14 @@ class MainForm(QMainWindow):
      
     def about(self):  
         AboutDialog.about()
+
         
 def main():
     logging.basicConfig(level=logging.DEBUG)
 
     # options parsing
-    parser = argparse.ArgumentParser(prog=AppName, add_help = True, description=AppDesc)
-    parser.add_argument('--version', action='version', version='%(prog)s '+AppVersion)
+    parser = argparse.ArgumentParser(prog=app_name, add_help = True, description=app_description)
+    parser.add_argument('--version', action='version', version='%(prog)s '+app_version)
     parser.add_argument("--info",  action="store_true", help="Information about script")
 
     # Some examples of parameters (rename or remove unwanted parameters)
@@ -408,8 +436,7 @@ def main():
     mainForm.show()
     sys.exit(app.exec_())                   
 
-# Absolute path to script itself        
-scriptPath = os.path.abspath(os.path.dirname(sys.argv[0]))
+
 
 # Main program handle 
 if __name__ == "__main__":

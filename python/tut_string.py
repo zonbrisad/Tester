@@ -19,6 +19,17 @@ num2 = 42
 num3 = 123.456
 pad = 8
 
+
+#
+# Strings
+s  = "aa bb cc dd"
+sl = s.split()
+print(sl)
+
+s2 = "aa 'bb cc' dd"
+print(s2.split())
+
+
 print(f"No formating:    {num}")
 print(f"Force sign:      {num:+}")
 print(f"Underscore:      {num:_}")

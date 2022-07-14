@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # The Python version of Qwt-5.0.0/examples/data_plot
 
@@ -13,6 +13,7 @@ import sys
 from PyQt4 import Qt
 import PyQt4.Qwt5 as Qwt
 from PyQt4.Qwt5.anynumpy import *
+
 
 
 class DataPlot(Qwt.QwtPlot):
@@ -102,19 +103,17 @@ def make():
     demo.show()
     return demo
 
-# make()
+
 
 def main(args): 
     app = Qt.QApplication(args)
     demo = make()
     sys.exit(app.exec_())
 
-# main()
+
 
 # Admire
 if __name__ == '__main__':
     main(sys.argv)
 
-# Local Variables: ***
-# mode: python ***
-# End: ***
+

@@ -37,29 +37,50 @@ def main():
         description=app_description,
         epilog="",
         add_help=True)
-    parser.add_argument("--name",
-                        type=str,
-                        help="Name of Python module",
-                        default="")
-    parser.add_argument("--brief",
-                        type=str,
-                        help="Brief description",
-                        default="")
-    parser.add_argument("--main",
-                        action="store_true",
-                        help="Add main function block",
-                        default=False)
-    parser.add_argument("--header",
-                        action="store_true",
-                        help="Include header",
-                        default=False)
+
     parser.add_argument("--version",
                         action="version",
                         help="Print version information",
                         version=f"{app_name} {app_version}")
 
+     # Some examples of parameters (rename or remove unwanted parameters)
+    parser.add_argument("-s", "--storetrue",
+                        action="store_true",
+                        help="Boolean type argument")
+    parser.add_argument("--string",
+                        action="store",
+                        type=str,
+                        help="String type argument",
+                        default="HejHopp")
+    parser.add_argument('-i, --integer',
+                        action="store",
+                        type=int,
+                        help="Integer type argument with default value",
+                        default=42)
+    parser.add_argument("-l", "--list",
+                        action="append",
+                        type=int,
+                        help="Append values to list",
+                        dest='dlist',
+                        default=[])
+    parser.add_argument("-e",
+                        action="store",
+                        type=int,
+                        help="Integer type argument, no default")
+    parser.add_argument("--choice",
+                        choices=['aa', 'bb', 'cc'],
+                        help="String choices argument")
+    parser.add_argument("--range",
+                        type=int,
+                        choices=range(1, 10),
+                        help="Integer choices argument")
 
     args = parser.parse_args()
+    print(args)
+    if hasattr(args, "string"):
+        print(f"String argument: {args.string}")
+        return
+    
     parser.print_help()
 
 

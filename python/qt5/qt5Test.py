@@ -78,7 +78,6 @@ def msgBox():
     
   
 
-
 def addText(txt):
     text.append(txt)
   
