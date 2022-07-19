@@ -2,16 +2,19 @@
 
 # Form implementation generated from reading ui file 'mpTerminal.ui'
 #
-# Created by: PyQt5 UI code generator 5.5.1
+# Created by: PyQt5 UI code generator 5.14.1
 #
 # WARNING! All changes made in this file will be lost!
 
+
 from PyQt5 import QtCore, QtGui, QtWidgets
+
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(923, 530)
+        MainWindow.setIconSize(QtCore.QSize(128, 128))
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.horizontalLayout = QtWidgets.QHBoxLayout(self.centralwidget)
@@ -114,14 +117,11 @@ class Ui_MainWindow(object):
         self.verticalLayout_4.addWidget(self.pushButton_2)
         self.horizontalLayout.addLayout(self.verticalLayout_4)
         self.textEdit = QtWidgets.QTextEdit(self.centralwidget)
+        font = QtGui.QFont()
+        font.setFamily("Monospace")
+        self.textEdit.setFont(font)
         self.textEdit.setObjectName("textEdit")
         self.horizontalLayout.addWidget(self.textEdit)
-        self.plainTextEdit = QtWidgets.QPlainTextEdit(self.centralwidget)
-        font = QtGui.QFont()
-        font.setFamily("Bitstream Vera Sans Mono")
-        self.plainTextEdit.setFont(font)
-        self.plainTextEdit.setObjectName("plainTextEdit")
-        self.horizontalLayout.addWidget(self.plainTextEdit)
         self.verticalLayout_3 = QtWidgets.QVBoxLayout()
         self.verticalLayout_3.setSpacing(2)
         self.verticalLayout_3.setObjectName("verticalLayout_3")
@@ -140,6 +140,9 @@ class Ui_MainWindow(object):
         self.bpTest2 = QtWidgets.QPushButton(self.gbDebug)
         self.bpTest2.setObjectName("bpTest2")
         self.verticalLayout_7.addWidget(self.bpTest2)
+        self.colorTest = QtWidgets.QPushButton(self.gbDebug)
+        self.colorTest.setObjectName("colorTest")
+        self.verticalLayout_7.addWidget(self.colorTest)
         self.pushButton = QtWidgets.QPushButton(self.gbDebug)
         self.pushButton.setObjectName("pushButton")
         self.verticalLayout_7.addWidget(self.pushButton)
@@ -149,7 +152,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout.addLayout(self.verticalLayout_3)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 923, 25))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 923, 22))
         self.menubar.setObjectName("menubar")
         self.menuFile = QtWidgets.QMenu(self.menubar)
         self.menuFile.setObjectName("menuFile")
@@ -159,7 +162,7 @@ class Ui_MainWindow(object):
         self.menuAction.setObjectName("menuAction")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
-        self.statusbar.setLayoutDirection(QtCore.Qt.RightToLeft)
+        self.statusbar.setLayoutDirection(QtCore.Qt.LeftToRight)
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
         self.actionExit = QtWidgets.QAction(MainWindow)
@@ -169,7 +172,7 @@ class Ui_MainWindow(object):
         self.actionAbout = QtWidgets.QAction(MainWindow)
         self.actionAbout.setObjectName("actionAbout")
         self.actionNew = QtWidgets.QAction(MainWindow)
-        self.actionNew.setCheckable(True)
+        self.actionNew.setCheckable(False)
         self.actionNew.setObjectName("actionNew")
         self.actionClear = QtWidgets.QAction(MainWindow)
         self.actionClear.setObjectName("actionClear")
@@ -208,6 +211,7 @@ class Ui_MainWindow(object):
         self.gbDebug.setTitle(_translate("MainWindow", "Debug"))
         self.bpTest1.setText(_translate("MainWindow", "Test1"))
         self.bpTest2.setText(_translate("MainWindow", "Test2"))
+        self.colorTest.setText(_translate("MainWindow", "Escape Color"))
         self.pushButton.setText(_translate("MainWindow", "PushButton"))
         self.menuFile.setTitle(_translate("MainWindow", "&File"))
         self.menuHelp.setTitle(_translate("MainWindow", "&Help"))
@@ -220,4 +224,3 @@ class Ui_MainWindow(object):
         self.actionClear.setText(_translate("MainWindow", "Clear"))
         self.actionReset_port.setText(_translate("MainWindow", "Reset port"))
         self.actionPortInfo.setText(_translate("MainWindow", "Port Info"))
-

@@ -19,7 +19,7 @@
 #   Peter Malmberg <peter.malmberg@gmail.com>
 #
 # Available at:
-#   https://github.com/zobrisad/pyplate.git
+#   https://github.com/zonbrisad/pyplate.git
 # 
 # ---------------------------------------------------------------------------
 #

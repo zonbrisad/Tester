@@ -21,7 +21,7 @@
 # pyuic5 mpTerminal.ui -o ui_MainWindow.py
 #
 
-# Imports -------------------------------------------------------------------
+# Imports --------------------------------------------------------------------
 
 import sys
 import os
@@ -31,284 +31,151 @@ import logging
 import argparse
 from datetime import datetime, date, time
 
+from PyQt5.QtCore import Qt, QTimer, QSettings, QIODevice
+from PyQt5.QtGui import QTextCursor, QIcon, QFont
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QMenuBar,\
+                            QAction, QStatusBar, QDialog, QVBoxLayout,\
+                            QHBoxLayout, QTextEdit, QDialogButtonBox,\
+                            QPushButton, QMessageBox, QWidget, QLabel,\
+                            QFileDialog
+                                           
+from PyQt5.QtSerialPort import QSerialPort, QSerialPortInfo
 from ui_MainWindow import Ui_MainWindow
-#<<<<<<< HEAD
-#from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QScrollBar, QLabel, QDialog
 
-#from PyQt5.QtGui import QPalette, QColor
-#from PyQt5.QtCore import QIODevice
-#from PyQt5.QtCore import QCoreApplication
-#from PyQt5.QtCore import QSettings
-#from PyQt5.QtCore import Qt
-#=======
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QScrollBar, QLabel, QPushButton
-#>>>>>>> 08c3dbfdfad839827b5b55e3191ca9774229b1df
-
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
-
-#from PyQt5 import QtCore, QtGui, QtWidgets
-
-
-from PyQt5.QtSerialPort import QSerialPort
-from PyQt5.QtSerialPort import QSerialPortInfo
+from escape import Esc, EscapeDecoder
 
 # Settings ------------------------------------------------------------------
 
-# Application settings
-AppName     = "mpterm"
-AppVersion  = "0.2"
-AppLicense  = ""
-AppAuthor   = "Peter Malmberg <peter.malmberg@gmail.com"
-AppDesc     = "MpTerm is a simple serial terminal program"
-AppOrg      = "Mudderverk"
-AppDomain   = ""
+# Absolute path to script itself        
+self_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
 
-# Qt settings
-QCoreApplication.setOrganizationName(AppOrg)
-QCoreApplication.setOrganizationDomain(AppDomain)
-QCoreApplication.setApplicationName(AppName)
-
+app_name = "mpterm"
+app_version = "0.2"
+app_license = ""
+app_author = "Peter Malmberg <peter.malmberg@gmail.com"
+app_org = ""
+app_description = "MpTerm is a simple serial terminal program"
+app_icon = f"{self_dir}/mp_icon.png"
+#app_icon = f"{self_dir}/mp_icon2.svg"
 
 # Definitions ---------------------------------------------------------------
 
 class MpTerm():
     # Display modes
-    Ascii    = 0
-    Hex      = 1
+    Ascii = 0
+    Hex = 1
     AsciiHex = 2
     
     # Newline modes
-    Nl       = 0
-    Cr       = 1
-    NlCr     = 2
+    Nl = 0
+    Cr = 1
+    NlCr = 2
     
-    Black         = '<font color="Black">'
-    Red           = '<font color="DarkRed">'
-    Green         = '<font color="Green">'
-    Yellow        = '<font color="Yellow">'
-    Blue          = '<font color="Blue">'
-    Magenta       = '<font color="Purple">'
-    Cyan          = '<font color="Teal">'
-    Gray          = '<font color="Gray">'
-    Darkgray      = '<font color="Black">'
-    Br_Red        = '<font color="Red">'
-    Br_Green      = '<font color="Green">'
-    Br_Yellow     = '<font color="Yellow">'
-    Br_Blue       = '<font color="Blue">'
-    Br_Magenta    = '<font color="Fuchsia">'
-    Br_Cyan       = '<font color="Aqua">'
-    White         = '<font color="White">'
+    Black = '<font color="Black">'
+    Red = '<font color="DarkRed">'
+    Green = '<font color="Green">'
+    Yellow = '<font color="Yellow">'
+    Blue = '<font color="Blue">'
+    Magenta = '<font color="Purple">'
+    Cyan = '<font color="Teal">'
+    Gray = '<font color="Gray">'
+    Darkgray = '<font color="Black">'
+    Br_Red = '<font color="Red">'
+    Br_Green = '<font color="Green">'
+    Br_Yellow = '<font color="Yellow">'
+    Br_Blue = '<font color="Blue">'
+    Br_Magenta = '<font color="Fuchsia">'
+    Br_Cyan = '<font color="Aqua">'
+    White = '<font color="White">'
     
-    ON_BLACK      = '<font color="">'
-    ON_RED        = '<font color="">'
-    ON_GREEN      = '<font color="">'
-    ON_YELLOW     = '<font color="">'
-    ON_BLUE       = '<font color="">'
-    ON_MAGENTA    = '<font color="">'
-    ON_CYAN       = '<font color="">'
-    ON_WHITE      = '<font color="">'
+    ON_BLACK = '<font color="">'
+    ON_RED = '<font color="">'
+    ON_GREEN = '<font color="">'
+    ON_YELLOW = '<font color="">'
+    ON_BLUE = '<font color="">'
+    ON_MAGENTA = '<font color="">'
+    ON_CYAN = '<font color="">'
+    ON_WHITE = '<font color="">'
     
     # ANSI Text attributes
-    ATTR_BOLD      = '\x1b[1m'
-    ATTR_LOWI      = '\x1b[2m'
+    ATTR_BOLD = '\x1b[1m'
+    ATTR_LOWI = '\x1b[2m'
     ATTR_UNDERLINE = '\x1b[4m'
-    ATTR_BLINK     = '\x1b[5m'
-    ATTR_REVERSE   = '\x1b[7m'
+    ATTR_BLINK = '\x1b[5m'
+    ATTR_REVERSE = '\x1b[7m'
     
-    END           = '\x1b[0m'
-    CLEAR         = '\x1b[2J'
-    RESET         = '\x1bc'
+    END = '\x1b[0m'
+    CLEAR = '\x1b[2J'
+    RESET = '\x1bc'
     
-    WONR          = '\x1b[1;47\x1b[1;31m'
+    WONR = '\x1b[1;47\x1b[1;31m'
     
     # ANSI movement codes 
-    CUR_RETURN  = '\x1b[;0F'      # cursor return
-    CUR_UP      = '\x1b[;0A'      # cursor up
-    CUR_DOWN    = '\x1b[;0B'      # cursor down
+    CUR_RETURN = '\x1b[;0F'      # cursor return
+    CUR_UP = '\x1b[;0A'      # cursor up
+    CUR_DOWN = '\x1b[;0B'      # cursor down
     CUR_FORWARD = '\x1b[;0C'      # cursor forward
-    CUR_BACK    = '\x1b[;0D'      # cursor back
+    CUR_BACK = '\x1b[;0D'      # cursor back
     HIDE_CURSOR = '\x1b[?25l'     # hide cursor
     SHOW_CURSOR = '\x1b[?25h'     # show cursor
 
-    
-    
-class Esc():
-    Esc = 0x1b
-    
-    # ANSI Colors
-    Black         = '\x1b[0;300m'
-    Red           = '\x1b[0;31m'
-    Green         = '\x1b[0;32m'
-    Yellow        = '\x1b[0;33m'
-    Blue          = '\x1b[0;34m'
-    Magenta       = '\x1b[0;35m'
-    Cyan          = '\x1b[0;36m'
-    Gray          = '\x1b[0;37m'
-    Darkgray      = '\x1b[1;30m'
-    Br_Red        = '\x1b[1;31m'
-    Br_Green      = '\x1b[1;32m'
-    Br_Yellow     = '\x1b[1;33m'
-    Br_Blue       = '\x1b[1;34m'
-    Br_Magenta    = '\x1b[1;35m'
-    Br_Cyan       = '\x1b[1;36m'
-    White         = '\x1b[1;37m'
-    
-    ON_BLACK      = '\x1b[40m'
-    ON_RED        = '\x1b[41m'
-    ON_GREEN      = '\x1b[42m'
-    ON_YELLOW     = '\x1b[43m'
-    ON_BLUE       = '\x1b[44m'
-    ON_MAGENTA    = '\x1b[45m'
-    ON_CYAN       = '\x1b[46m'
-    ON_WHITE      = '\x1b[1;47m'
-    
-    # ANSI Text attributes
-    ATTR_BOLD      = '\x1b[1m'
-    ATTR_LOWI      = '\x1b[2m'
-    ATTR_UNDERLINE = '\x1b[4m'
-    ATTR_BLINK     = '\x1b[5m'
-    ATTR_REVERSE   = '\x1b[7m'
-    
-    END           = '\x1b[0m'
-    CLEAR         = '\x1b[2J'
-    RESET         = '\x1bc'
-    
-    WONR          = '\x1b[1;47\x1b[1;31m'
-    
-    # ANSI movement codes 
-    CUR_RETURN  = '\x1b[;0F'      # cursor return
-    CUR_UP      = '\x1b[;0A'      # cursor up
-    CUR_DOWN    = '\x1b[;0B'      # cursor down
-    CUR_FORWARD = '\x1b[;0C'      # cursor forward
-    CUR_BACK    = '\x1b[;0D'      # cursor back
-    HIDE_CURSOR = '\x1b[?25l'     # hide cursor
-    SHOW_CURSOR = '\x1b[?25h'     # show cursor
-    
-    E_RET  = 100
-    E_UP   = 101
-    E_DOWN = 102
-    
-    x = [ CUR_RETURN, CUR_UP, CUR_DOWN ]
-    y = { E_RET:CUR_RETURN, 
-          E_UP:CUR_UP, 
-          E_DOWN:CUR_DOWN }
 
-    @staticmethod
-    def findEnd(data, idx):
-        i = idx
-        while (i-idx) < 12:
-            ch = data.at(i)
-            if ch.isalpha():
-                return i
-            else:
-                i += 1
-        return -1
-      
-class EscapeDecoder():
-    
-    def __init__(self):
-        self.idx = 0
-        self.clear()
-        
-    def clear(self):
-        self.buf = ''
-#        self.buf = bytearray()
-   
-    def append(self, ch):
-        self.buf += ch 
-        #self.buf.append(ch)
-    
-    def len(self):
-        return len(self.buf)
-    
-    def getSequence(self):
-        print(self.buf)
-#        str = self.buf.decode('utf-8')
-        return self.buf
-        
-    def next(self, ch):
-#        print('Char: ',ch,'  Type: ', type(ch))
-        if ord(ch) == Esc.Esc:
-            print("EscapeDecoder: found escape sequence")
-            self.clear()
-            self.append(ch)
-            return chr(0)
-            
-        if len(self.buf) > 0:   # an escape sequence has been detected
-
-            if ch.isalpha(): # end of escape message
-                self.append(ch)
-                print("EscapeDecoder: End of escape message, len=", self.len())
-                str = self.getSequence()
-                self.clear()
-                return str
-            else:
-                self.append(ch)
-                return chr(0)
-                            
-            
-            if len(self.buf) > 10:
-                print("EscapeDecoder: oversize, len=", self.len())
-                self.clear()
-                return chr(0)
-        
-        return ch    
-    
-    
+colorTest = f"""
+BLACK 
+{Esc.RED}RED
+{Esc.GREEN}GREEN{Esc.RESET}
+YELLOW
+BLUE
+MAGENTA
+CYAN
+GRAY 
+DARKGRAY 
+"""
 
 # Code ----------------------------------------------------------------------    
-    
-aboutHtml='''
-<h3>About '''+AppName+'''</h3>
+
+
+about_html=f"""
+<center><h2>{app_name}</h2></center>
 <br>
-<b>Version: </b> '''+AppVersion+'''
+<img src={app_icon} width="48" height="48">
 <br>
-<b>Author: </b>'''+AppAuthor+'''
-<br><br>
-'''+AppDesc+'''
-'''
+<b>Version: </b>{app_version}
+<br>
+<b>Author: </b>{app_author}
+<br>
+<hr>
+<br>
+{app_description}
+<br>
+"""    
+
 
 class AboutDialog(QDialog):
     def __init__(self, parent = None):
         super(AboutDialog, self).__init__(parent)
 
-        self.setWindowTitle("About " + AppName)
+        self.setWindowTitle(app_name)
         self.setWindowModality(Qt.ApplicationModal)
-        
-        # Set dialog size. 
         self.resize(400, 300)
-                                
+
         self.verticalLayout = QVBoxLayout(self)
         self.verticalLayout.setSpacing(2)
-        #horizontalLayout.addLayout(self.verticalLayout)
-        
-        self.mainLayout = QHBoxLayout()
-        self.mainLayout.setContentsMargins(2, 2, 2, 2)
-        self.mainLayout.setSpacing(2)
-
-        self.buttonLayout = QHBoxLayout()
-        self.buttonLayout.setContentsMargins(2, 2, 2, 2)
-        self.buttonLayout.setSpacing(2)
-
         self.setLayout(self.verticalLayout)
-                
+
         # TextEdit
         self.textEdit = QTextEdit(self)
         self.textEdit.setReadOnly(True)
         self.verticalLayout.addWidget(self.textEdit)
+        self.textEdit.insertHtml(about_html)
 
         # Buttonbox
         self.buttonBox = QDialogButtonBox(self)
-        self.buttonBox.setOrientation(Qt.Horizontal)
-        self.buttonBox.setStandardButtons( QDialogButtonBox.Ok | QDialogButtonBox.Cancel )
+        self.buttonBox.setStandardButtons( QDialogButtonBox.Ok )
         self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
+        self.buttonBox.setCenterButtons(True)
         self.verticalLayout.addWidget(self.buttonBox)
-        
-        self.textEdit.insertHtml(aboutHtml)
-        
+
     @staticmethod
     def about(parent = None):
         dialog = AboutDialog(parent)
@@ -322,11 +189,11 @@ settings = { 'alias':str,
              'parity':str,   
              'stopbits':int, 
              }
-             
-    
+
+
 class mpProfile():
     def __init__(self, group):
-        self.settings = QSettings(AppOrg, AppName)
+        self.settings = QSettings(app_org, app_name)
         self.group    = group
         self.setDefaults()
         
@@ -376,20 +243,24 @@ class mpProfile():
         self.settings.sync()
         return
 
+
 class MainForm(QMainWindow):
     def __init__(self, parent=None):
         super(MainForm, self).__init__(parent)
         
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+
+        # Set window icon
+        self.setWindowIcon(QIcon(app_icon))
         
         self.rxLabel = QLabel('')
         self.txLabel = QLabel('')
-        self.ui.statusbar.addWidget(self.rxLabel)
-        self.ui.statusbar.addWidget(self.txLabel)
+        self.ui.statusbar.addPermanentWidget(self.rxLabel, stretch=0)
+        self.ui.statusbar.addPermanentWidget(self.txLabel, stretch=0)
         
-        self.sbb = QPushButton("Sbb", self.ui.centralwidget)
-        self.ui.statusbar.addWidget(self.sbb)
+        # self.sbb = QPushButton("Sbb", self.ui.centralwidget)
+        # self.ui.statusbar.addPermanentWidget(self.sbb)
                 
         self.rxCnt = 0
         self.txCnt = 0
@@ -402,19 +273,23 @@ class MainForm(QMainWindow):
         self.ui.cbStopBits.addItem("1",   QSerialPort.OneStop)
         self.ui.cbStopBits.addItem("1.5", QSerialPort.OneAndHalfStop)
         self.ui.cbStopBits.addItem("2",   QSerialPort.TwoStop)
+        self.ui.cbStopBits.setCurrentIndex(0)
 
         self.ui.cbBits.addItem("5", QSerialPort.Data5)
         self.ui.cbBits.addItem("6", QSerialPort.Data6)
         self.ui.cbBits.addItem("7", QSerialPort.Data7)
         self.ui.cbBits.addItem("8", QSerialPort.Data8)
+        self.ui.cbBits.setCurrentIndex(3)
                 
         self.ui.cbParity.addItem("None", QSerialPort.NoParity)
         self.ui.cbParity.addItem("Odd",  QSerialPort.OddParity)
         self.ui.cbParity.addItem("Even", QSerialPort.EvenParity)
+        self.ui.cbParity.setCurrentIndex(0)
         
         self.ui.cbFlowControl.addItem("No Flow Control",  QSerialPort.NoFlowControl )
         self.ui.cbFlowControl.addItem("Hardware Control", QSerialPort.HardwareControl )
         self.ui.cbFlowControl.addItem("Software Control", QSerialPort.SoftwareControl )
+        self.ui.cbFlowControl.setCurrentIndex(0)
 
         self.ui.cbBitrate.addItem('300',   300    )
         self.ui.cbBitrate.addItem('600',   600    )
@@ -425,8 +300,9 @@ class MainForm(QMainWindow):
         self.ui.cbBitrate.addItem("19200", 19200  )
         self.ui.cbBitrate.addItem("28400", 28400  )
         self.ui.cbBitrate.addItem("57600", 57600  )        
-
         self.ui.cbBitrate.addItem("115200",115200 )
+        self.ui.cbBitrate.setCurrentIndex(5)
+
         
         self.ui.cbNewline.addItem("nl",    0 )
         self.ui.cbNewline.addItem("cr",    1 )
@@ -460,14 +336,15 @@ class MainForm(QMainWindow):
         
         self.ui.bpTest1.pressed.connect(self.test1)
         self.ui.bpTest2.pressed.connect(self.test2)
-
+        self.ui.colorTest.pressed.connect(self.colorTest)
+        
         self.ui.leSyncString.textChanged.connect(self.syncChanged)
         
         self.ui.textEdit.setReadOnly(True)
         
-        self.mpDefault = mpProfile("Default")
-        self.mpDefault.load()
-        self.loadProfile(self.mpDefault)
+        # self.mpDefault = mpProfile("Default")
+        # self.mpDefault.load()
+        # self.loadProfile(self.mpDefault)
                 
         #self.ui.textEdit.setMaximumBlockCount(200)
         
@@ -481,17 +358,55 @@ class MainForm(QMainWindow):
 
         self.escDec = EscapeDecoder()
 
-        
         self.updateUi()
         
     def about(self):
         AboutDialog.about()
         
     def timerEvent(self):
-        pass
-#        if (!self.serial.isOpen()):
-#            print("Timer event")
+        
+        portNames = [x.portName() for x in QSerialPortInfo.availablePorts()]
+        #logging.debug(portNames)
 
+        # Check if current port is still connecter (USB to serial adapters), if not close port
+        if self.serial.isOpen():
+            if self.serial.portName() not in portNames:
+                self.serial.close()
+                self.messageError(f"Port {self.serial.portName()} no longer available.")
+                logging.debug(f"Port missing, closing port.  {self.serial.portName()}")
+
+        # Update list of serialports in combobox
+        for x in range(self.ui.cbPort.count()):
+            if self.ui.cbPort.itemText(x) not in portNames:
+                self.ui.cbPort.removeItem(x)
+            else:
+                portNames.remove(self.ui.cbPort.itemText(x))
+
+        for x in portNames:
+            self.ui.cbPort.addItem(x)
+            
+        self.updateUi()
+
+    def updateUi(self):
+        if (self.serial.isOpen()):
+            self.setWindowTitle(f"MpTerm  /dev/{self.ui.cbPort.currentText()} {self.ui.cbBitrate.currentText()}")
+            self.ui.pbOpen.setText("Close")
+            self.ui.cbPort.setEnabled(0)
+        else:
+            self.setWindowTitle('MpTerm')
+            self.ui.pbOpen.setText("Open")
+            self.ui.cbPort.setEnabled(1)
+            
+        self.rxLabel.setText(f"<font color=\"Purple\"> RX: {self.rxCnt:06d} ")
+        self.txLabel.setText(f"<font color=\"Purple\"> TX: {self.txCnt:06d} ")            
+
+    def updatePorts(self):
+        ports = QSerialPortInfo.availablePorts()
+        for port in ports:
+            self.ui.cbPort.addItem(port.portName())
+
+ #       os.path.exists(f"/dev/{}")
+            
     def syncChanged(self):
         try:
             self.sync = int(self.ui.leSyncString.text(), 16)
@@ -510,20 +425,19 @@ class MainForm(QMainWindow):
                 self.ui.lSync.setText('<font color="Red">Sync string')
             else:
                 self.ui.lSync.setText('<font color="Black">Sync string')
-            
-
         return
 
     def actionClear(self):
         self.ui.textEdit.clear()
+
+    def colorTest(self):
+        self.send(colorTest)
         
     def test1(self):
         self.send(b'ABCD')
-        return
     
     def test2(self):
         self.send(b'0123456789')
-        return
         
     def testing(self):
 #        p = self.ui.plainTextEdit.palette()
@@ -568,118 +482,113 @@ class MainForm(QMainWindow):
     def decodeEscape(self, data, index):
         end = Esc.findEnd(data, index)        
         if (end<0):
-            print("Negative escape")
+            logging.debug("Negative escape")
             return 1
             
         endCh = data.at(end)
-        print("Escape: ",(end-index), "  Ch:", endCh)
+        logging.debug(f"Escape: {end-index}  Ch: {endCh}")
 
         if endCh == 'c':
-            print('Escape clear')
+            logging.debug('Escape clear')
         #    return 2
         
         elif endCh == 'm': # Attribute and colors
-            print('Esc: Attribute/colors')
+            logging.debug('Esc: Attribute/colors')
 
         return (end-index+1)
 
     def appendText(self, str):
         # move cursor to end of buffer
         self.ui.textEdit.moveCursor(QTextCursor.End)
-#        print("x")
-        # QPlaintTextEdit
         self.ui.textEdit.appendPlainText(str)
-        
-    
+            
     def appendHtml(self, str):
         # move cursor to end of buffer
         self.ui.textEdit.moveCursor(QTextCursor.End)
-#        print("h")
-        # QPlaintTextEdit
-#        self.ui.textEdit.appendHtml(str)
         self.ui.textEdit.insertHtml(str)
-        
-                       
+                               
     def read(self):        
         # get all data from buffer
         data = self.serial.readAll()        
         
-        print("Receive: ", len(data), '  Type data: ', type(data))
+        logging.debug(f"Data received: {len(data)}")
         
         DisplayMode = self.ui.cbDisplay.currentData()
                     
         if DisplayMode == MpTerm.Ascii:   # Standard ascii display mode
             self.color = ''
             i = 0
-            str = ''
+            st = ""
             while i<data.count():                
                 ch = self.escDec.next(data.at(i))
+                logging.debug(f"Char: {ch}  Type: {type(ch)}   Decoded: {str(data, 'utf-8')}")
                 if (len(ch) == 1) and (ord(ch) > 0):
-                    if ch == '\n':
+                    if ch == b'\n':
 #                        str += '\n'
-                       str += '<br>'
+                       st += "<br>"
                     else:
-                        str += ch
-                        
+                        st += str(ch, 'utf-8')
+                       
                 if (len(ch) > 1):
 #                    chx = bytearray(ch, 'utf-8')
 #                    print(chx)        
                         
-                    if ch == Esc.Black:
+                    if ch == Esc.BLACK:
                         self.color = MpTerm.Black
-                    elif ch == Esc.Red:
+                    elif ch == Esc.RED:
                         self.color = MpTerm.Red
         #                self.ui.textEdit.setColor(QColor('Red'))
-                    elif ch == Esc.Green:         
+                    elif ch == Esc.GREEN:         
                         self.color = MpTerm.Green
-                    elif ch == Esc.Yellow:  
+                    elif ch == Esc.YELLOW:  
                         self.color = MpTerm.Yellow
-                    elif ch == Esc.Blue:
+                    elif ch == Esc.BLUE:
                         self.color = MpTerm.Blue
-                    elif ch == Esc.Magenta:
+                    elif ch == Esc.MAGENTA:
                         self.color = MpTerm.Magenta
-                    elif ch == Esc.Cyan:
+                    elif ch == Esc.CYAN:
                         self.color = MpTerm.Cyan
-                    elif ch == Esc.Gray:
+                    elif ch == Esc.GRAY:
                         self.color = MpTerm.Gray
-                    elif ch == Esc.Darkgray:
+                    elif ch == Esc.DARKGRAY:
                         self.color = MpTerm.Darkgray
-                    elif ch == Esc.Br_Red:
+                    elif ch == Esc.BR_RED:
                         self.color = MpTerm.Br_Red
-                    elif ch == Esc.Br_Green:
+                    elif ch == Esc.BR_GREEN:
                         self.color = MpTerm.Br_Green
-                    elif ch == Esc.Br_Yellow:
+                    elif ch == Esc.BR_YELLOW:
                         self.color = MpTerm.Br_Green
-                    elif ch == Esc.Br_Blue:
+                    elif ch == Esc.BR_BLUE:
                         self.color = MpTerm.Br_Blue
-                    elif ch == Esc.Br_Magenta:
+                    elif ch == Esc.BR_MAGENTA:
                         self.color = MpTerm.Br_Magenta
-                    elif ch == Esc.Br_Cyan:
+                    elif ch == Esc.BR_CYAN:
                         self.color = MpTerm.Br_Cyan
-                    elif ch == Esc.White:
+                    elif ch == Esc.WHITE:
                         self.color = MpTerm.White
                         
                     else:
                         pass
-
-                
+   
                 i += 1
                 
-            self.appendHtml(str)
+            self.appendHtml(st)
                 
         elif DisplayMode == MpTerm.Hex:  # Hexadecimal display mode
-            s = ''
+            s = ""
+            #self.ui.textEdit.setFont()
             for i in range(0, data.count()):
                 ch = data.at(i)
                 
+                logging.debug(f"type: {type(ch)}  {int.from_bytes(ch, 'big'):02x}")
                 # handle sync 
-                if self.sync >= 0 and ord(ch) == self.sync:
-                    s = s + '\n'
+                # if self.sync >= 0 and ord(ch) == self.sync:
+                #     s = s + '\n'
 
-                s = s + '{0:02x} '.format(ord(ch))
+                s = s + f"{int.from_bytes(ch, byteorder='big'):02x} "
                 
             #self.ui.textEdit.insertPlainText(s)
-            self.appendText(s)
+            self.appendHtml(s)
                     
 
         self.rxCnt += data.count()
@@ -697,39 +606,39 @@ class MainForm(QMainWindow):
         return
         
     def keyPressEvent(self, a):
-#        print("  ",a.key(),"  ",a.text(), "  ord: ",ord(a.text()))
+        logging.debug(f"  {a.key()}  {a.text()}  ord: {ord(a.text())}")
         
         if a.key() == Qt.Key_Escape:
-            print("Escape")
+            logging.debug("Escape")
             return
 
         if (a.key() == Qt.Key_Enter) or (a.key() == Qt.Key_Return):
-            self.send(b'\n')
-            print("Enter")
+            self.send(b"\n")
+            logging.debug("Enter")
             return
 
         if a.key() == Qt.Key_Left:
-            print("Left")
+            logging.debug("Left")
             return
 
         if a.key() == Qt.Key_Delete:
-            print("Delete")
+            logging.debug("Delete")
             return            
 
         if a.key() == Qt.Key_Insert:
-            print("Insert")
+            logging.debug("Insert")
             return
 
         if a.key() == Qt.Key_Backspace:
-            print("Backspace")
+            logging.debug("Backspace")
             return
             
         if a.key() == Qt.Key_End:
-            print("End")
+            logging.debug("End")
             return
 
         if a.key() == Qt.Key_F1:
-            print("F1")
+            logging.debug("F1")
             return
 
 #        if (self.serial.isOpen()):
@@ -739,22 +648,6 @@ class MainForm(QMainWindow):
         msg = bytearray([ ord(a.text()) ])
         self.send(msg)
         
-    def kalle(self):
-#        self.ui.plainTextEdit.appendPlainText("A")
-        print("Kalle")
-        
-    def updateUi(self):
-        if (self.serial.isOpen()):
-            self.setWindowTitle('MpTerm  /dev/'+self.ui.cbPort.currentText() + '  '+self.ui.cbBitrate.currentText())
-            self.ui.pbOpen.setText("Close")
-            self.ui.cbPort.setEnabled(0)
-        else:
-            self.setWindowTitle('MpTerm')
-            self.ui.pbOpen.setText("Open")
-            self.ui.cbPort.setEnabled(1)
-            
-        self.rxLabel.setText('RX: '+str(self.rxCnt))
-        self.txLabel.setText('TX: '+str(self.txCnt))            
 
     def openPort(self):
         if (self.serial.isOpen()):
@@ -770,7 +663,7 @@ class MainForm(QMainWindow):
         else:
             self.messageError('Failed to open port: /dev/'+self.ui.cbPort.currentText())
             err = self.serial.error()
-            print(err)
+            logging.error(err)
         
         self.updateUi() 
 
@@ -831,8 +724,7 @@ class MainForm(QMainWindow):
         prof.display     = self.ui.cbDisplay.currentData()
         prof.sync        = self.ui.leSyncString.text()
         prof.write()
-        
-        
+              
     def loadProfile(self, prof):
         self.setCbText(self.ui.cbPort,        prof.port)
         self.setCbText(self.ui.cbBitrate,     prof.bitrate)
@@ -848,8 +740,7 @@ class MainForm(QMainWindow):
         
         self.serial.close()
         self.close()
-        
-    
+         
     def ss(self, str):
         print(len(str))
         nstr = str
@@ -861,7 +752,6 @@ class MainForm(QMainWindow):
         self.ui.textEdit.appendHtml('<b>'+self.ss(desc)+'</b><code><font color="Green">'+data)
         
     def portInfo(self):
-        self.ss("Kalle")
         ports = QSerialPortInfo.availablePorts()
         for port in ports:
             self.appendInfo('Port:', port.portName() )
@@ -870,15 +760,10 @@ class MainForm(QMainWindow):
             self.appendInfo('Product id:', str(port.productIdentifier()) )
             self.appendInfo('Manufacturer:', port.manufacturer()  )
             self.appendInfo('Description:', port.description()   )
-            self.ui.textEdit.appendHtml('<b>')
+            #self.ui.textEdit.appendHtml('<b>')
         
-    def updatePorts(self):
-        ports = QSerialPortInfo.availablePorts()
-        for port in ports:
-            self.ui.cbPort.addItem(port.portName())
-            
     def new(self):
-        subprocess.Popen([scriptPath+"/mpterm.py", ""], shell=False)
+        subprocess.Popen([f"{self_dir}/mpterm.py"], shell=False)
         
     def openFile(self):
         dlg = QFileDialog()
@@ -887,17 +772,10 @@ class MainForm(QMainWindow):
         filenames = QStringList()
 
 
-def findPorts():
-    ports = []
-    for n, (port, desc, hwid) in enumerate(sorted(comports()), 1):
-        sys.stderr.write('--- {:2}: {:20} {}\n'.format(n, port, desc))
-        ports.append(port)
-
-
-def findPorts2():        
+def list_ports():        
     spi = QSerialPortInfo.availablePorts()
     for p in spi:
-        print(p.portName()," ", p.description(), ' ',p.systemLocation())
+        print(f"{p.portName()}  {p.description()}  {p.systemLocation()}")
 
 
 def settings():
@@ -906,20 +784,38 @@ def settings():
 
 
 def main():
+    logging_format = "[%(levelname)s] Line: %(lineno)d %(message)s"   
+    
     # options parsing
-    parser = argparse.ArgumentParser(prog=AppName, add_help = True, description=AppDesc)
-    parser.add_argument('--version', action='version', version='%(prog)s '+AppVersion)
+    parser = argparse.ArgumentParser(prog=app_name,
+                                     add_help=True,
+                                     description=app_description)
+    parser.add_argument('--version', action='version', version='%(prog)s '+app_version)
     parser.add_argument("--info",  action="store_true", help="Information about script")
+    parser.add_argument("--signal", action="store_true", help="Signal to release port temporary")
+    parser.add_argument("--list", action="store_true", help="List serialports")
+    parser.add_argument("--build", action="store_true", help="Build ui code")
+    parser.add_argument("--debug", action="store_true", help="Activate debug printout")
+    
     args = parser.parse_args()
 
+    if args.debug:
+        logging.basicConfig(format=logging_format, level=logging.DEBUG)
+        
+    if args.build:
+        os.system("pyuic5 mpTerminal.ui -o ui_MainWindow.py")
+        sys.exit()
+
+    if args.list:
+        list_ports()
+        sys.exit()
+    
     app = QApplication(sys.argv)
+    app.setAttribute(Qt.AA_UseHighDpiPixmaps)
     mainForm = MainForm()
     mainForm.show()
     sys.exit(app.exec_())
 
-
-# Absolute path to script itself        
-scriptPath = os.path.abspath(os.path.dirname(sys.argv[0]))
 
 # Main program handle  
 if __name__ == "__main__":

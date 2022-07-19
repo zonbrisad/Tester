@@ -123,9 +123,9 @@ def main():
     # Add about button
     aboutButton = QAction( 'About', w)
     aboutButton.setStatusTip('About application')
-#    aboutButton.triggered.connect(aboutDialog)
+    aboutButton.triggered.connect(aboutDialog)
     aboutButton.triggered.connect(msgBox)
-    #helpMenu.addAction(aboutButton)                 
+    helpMenu.addAction(aboutButton)                 
     
     # Statusbar
     w.statusBar().showMessage('Kalle')

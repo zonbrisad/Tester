@@ -330,13 +330,21 @@ def color2html(col):
 
   
 htmlFonts = '''\
-<br>
+<br><br>
 <font color="Black">
+<h1>HTML Font test</h1>
+<br><br>
 Normal<br>
 <b>Bold</b><br>
 <i>Italic</i><br>
 <code>Code</code><br>
+<big>Big</big>
 <h1>Heading 1</h1>
+<h2>Heading 2</h2>
+<h3>Heading 3</h3>
+<h4>Heading 4</h4>
+<h5>Heading 5</h5>
+<h6>Heading 6</h6>
 <h2 color="Red">Heading 2</h2>
 <h3 bgcolor="Maroon">Heading 3</h3>
 <h4><font bgcolor="Tan">Heading 4</h4>
