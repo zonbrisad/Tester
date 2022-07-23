@@ -58,14 +58,14 @@ MsgTime = 2000
 
 # Code ----------------------------------------------------------------------
 
-aboutHtml = '''
-<h3>About '''+AppName+'''</h3>
+aboutHtml = f'''
+<h3>About {AppName}</h3>
 <br>
-<b>Version: </b> '''+AppVersion+'''
+<b>Version: </b> {AppVersion}
 <br>
-<b>Author: </b>'''+AppAuthor+'''
+<b>Author: </b>{AppAuthor}
 <br><br>
-'''+AppDesc+'''
+{AppDesc}
 '''
 
 htmlTable = '''
@@ -86,10 +86,24 @@ htmlTable = '''
 <td>94</td>
 </tr>
 </table>
+
+<div style="background-color:Blue;color:White;"><span>
+Blue background, white text
+</span></div>
+<span style="background-color:Blue;color:White;">
+Blue background, white text
+</span>
+<span style="background-color:Red;color:White;">
+Red background, white text
+</span>
+Normal text
+<div style="background-color:Red;color:White;">
+Red background, white text
+</div>
 '''
 
 htmlBlock = '''
-<div style="background-color:Silver;color:Green;padding:30px;">
+<div style="background-color:Blue;color:Green;padding:30px;">
 <h2>London</h2>
 <p>London is the capital city of England. It is the most populous city in the United Kingdom, with a metropolitan area of over$
 <p>Standing on the River Thames, London has been a major settlement for two millennia, its history going back to its founding $
