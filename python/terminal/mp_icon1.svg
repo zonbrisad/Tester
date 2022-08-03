@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="9.2574568mm"
+   height="9.2574568mm"
+   viewBox="0 0 34.988813 34.988814"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.2 (1:1.2.1+202207142221+cd75a1ee6d)"
+   sodipodi:docname="mp_icon1.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="7.7197578"
+     inkscape:cx="15.350223"
+     inkscape:cy="38.019327"
+     inkscape:window-width="1920"
+     inkscape:window-height="1169"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2">
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient5966">
+      <stop
+         style="stop-color:#76adff;stop-opacity:1;"
+         offset="0"
+         id="stop5962" />
+      <stop
+         style="stop-color:#0367ff;stop-opacity:1;"
+         offset="1"
+         id="stop5964" />
+    </linearGradient>
+    <inkscape:path-effect
+       effect="fillet_chamfer"
+       id="path-effect739"
+       is_visible="true"
+       lpeversion="1"
+       nodesatellites_param="F,0,0,1,0,3.7041667,0,8 @ F,0,0,1,0,3.7041667,0,8 @ F,0,0,1,0,3.7041667,0,8 @ F,0,0,1,0,3.7041667,0,8"
+       unit="px"
+       method="auto"
+       mode="F"
+       radius="14"
+       chamfer_steps="8"
+       flexible="false"
+       use_knot_distance="true"
+       apply_no_radius="true"
+       apply_with_radius="true"
+       only_selected="false"
+       hide_knots="false" />
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient5966"
+       id="radialGradient901"
+       gradientUnits="userSpaceOnUse"
+       cx="193.89072"
+       cy="164.58244"
+       fx="193.89072"
+       fy="164.58244"
+       r="17.777872"
+       gradientTransform="translate(55.079934)" />
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     style="display:inline"
+     transform="translate(-231.47624,-147.08803)">
+    <rect
+       style="fill:url(#radialGradient901);fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:0.566929;stroke-dasharray:none"
+       id="rect887"
+       width="34.988815"
+       height="34.988815"
+       x="231.47624"
+       y="147.08803"
+       ry="10.481451"
+       rx="0"
+       inkscape:export-filename="mp_icon.png"
+       inkscape:export-xdpi="1404.7917"
+       inkscape:export-ydpi="1404.7917" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';letter-spacing:0.95px;fill:#e580ff;stroke:#00112b;stroke-width:1.13386;stroke-dasharray:none"
+       x="234.6517"
+       y="168.58145"
+       id="text891"
+       inkscape:transform-center-x="33.448731"
+       inkscape:transform-center-y="3.2035279"><tspan
+         sodipodi:role="line"
+         id="tspan889"
+         x="234.6517"
+         y="168.58145"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Manjari;-inkscape-font-specification:Manjari;fill:#11002b;stroke:#11002b;stroke-width:1.13386;stroke-dasharray:none">IOIOI</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:9.82722px;fill:#ffffff;stroke:none;stroke-width:0.818935"
+       x="237.32172"
+       y="162.81287"
+       id="text895"
+       transform="skewY(-1.2073078)"><tspan
+         sodipodi:role="line"
+         x="237.32172"
+         y="162.81287"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';fill:#ffffff;stroke-width:0.818935;stroke:none"
+         id="tspan893">M</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:9.82722px;opacity:1;fill:#ffffff;stroke:none;stroke-width:0.818935"
+       x="252.6127"
+       y="184.13489"
+       id="text899"
+       transform="skewY(-1.2073078)"><tspan
+         sodipodi:role="line"
+         x="252.6127"
+         y="184.13489"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:'DejaVu Sans';-inkscape-font-specification:'DejaVu Sans Bold';fill:#ffffff;stroke-width:0.818935"
+         id="tspan897">T</tspan></text>
+  </g>
+</svg>
