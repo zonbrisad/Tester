@@ -65,7 +65,6 @@ QCoreApplication.setApplicationName(app_name)
 # Time to show message in ms
 MsgTime     = 2000
 
-
 # Absolute path to script itself        
 self_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
 

@@ -34,7 +34,7 @@ import enum
 from datetime import datetime, date, time
 
 from PyQt5.QtCore import Qt, QTimer, QSettings, QIODevice
-from PyQt5.QtGui import QTextCursor, QIcon, QFont
+from PyQt5.QtGui import QTextCursor, QIcon, QFont, QKeyEvent
 from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -57,7 +57,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtSerialPort import QSerialPort, QSerialPortInfo
 from ui_MainWindow import Ui_MainWindow
 
-from escape import Esc, EscapeDecoder
+from escape import Esc, EscapeDecoder, Ascii, hex2str
 
 # Settings ------------------------------------------------------------------
 
@@ -66,14 +66,121 @@ self_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
 
 app_name = "mpterm"
 app_version = "0.2"
-app_license = ""
-app_author = "Peter Malmberg <peter.malmberg@gmail.com"
-app_org = ""
 app_description = "MpTerm is a simple serial terminal program"
+app_license = ""
+app_author = "Peter Malmberg"
+app_email = "peter.malmberg@gmail.com"
+app_org = ""
+app_home = "github.com/zonbrisad/mpterm"
 app_icon = f"{self_dir}/mp_icon.png"
 # app_icon = f"{self_dir}/mp_icon2.svg"
 
+class App:
+    NAME = "mpterm"
+    VERSION = "0.2"
+    DESCRIPTION = "MpTerm is a simple serial terminal program"
+    LICENSE = ""
+    AUTHOR = "Peter Malmberg"
+    EMAIL = "peter.malmberg@gmail.com"
+    ORG = ""
+    HOME = "github.com/zonbrisad/mpterm"
+    ICON = f"{self_dir}/mp_icon.png"
+    
+
 # Definitions ---------------------------------------------------------------
+
+chars = {  0x00:"NULL",
+           0x01:"SOH",
+           0x02:"STX",
+           0x03:"ETX",
+           0x04:"EOT",
+           0x05:"ENQ",
+           0x06:"ACK",
+           0x07:"BEL",
+           0x08:"BS",
+           0x09:"TAB",
+           0x0A:"LF",
+           0x0B:"VT",
+           0x0C:"FF",
+           0x0D:"CR",
+           0x0E:"SO",
+           0x0F:"SI",
+           0x10:"DLE",
+           0x11:"DC1",
+           0x12:"DC2",
+           0x13:"DC3",
+           0x14:"DC4",
+           0x15:"NAK",
+           0x16:"SYN",
+           0x17:"ETB",
+           0x18:"CAN",
+           0x19:"EM",
+           0x1A:"SUB",
+           0x1B:"ESC",
+           0x1C:"FS",
+           0x1D:"GS",
+           0x1E:"RS",
+           0x1F:"US"
+}
+
+keys = { Qt.Key_Enter:("\n", "Enter"), 
+         Qt.Key_Return:("\n", "Return"), 
+         Qt.Key_Escape:("", "Escape"), 
+         Qt.Key_Delete:("", "Delete"), 
+         Qt.Key_Left:("", "Left"),
+         Qt.Key_Right:("", "Right"),
+         Qt.Key_Up:("", "Up"),
+         Qt.Key_Down:("", "Down"),
+         Qt.Key_Insert:("", "Insert"),
+         Qt.Key_Backspace:("", "Backspace"),
+         Qt.Key_Home:("", "Home"),
+         Qt.Key_End:("", "End"),
+         Qt.Key_PageDown:("", "Page down"),
+         Qt.Key_PageUp:("", "Page up"),
+         Qt.Key_F1:("", "F1"),
+         Qt.Key_F2:("", "F2"),
+         Qt.Key_F3:("", "F3"),
+         Qt.Key_F4:("", "F4"),
+         Qt.Key_F5:("", "F5"),
+         Qt.Key_F6:("", "F6"),
+         Qt.Key_F7:("", "F7"),
+         Qt.Key_F8:("", "F8"),
+         Qt.Key_F9:("", "F9"),
+         Qt.Key_F10:("", "F10"),
+         Qt.Key_F11:("", "F11"),
+         Qt.Key_F12:("", "F12"),
+         Qt.Key_Control:("", "Control"),
+         Qt.Key_Shift:("", "Shift"),
+         Qt.Key_Alt:("", "Alt"),
+         Qt.Key_AltGr:("", "Alt Gr"),
+         Qt.Key_Space:(" ", "Space"),
+         Qt.Key_Print:("", "Print"),
+         Qt.Key_ScrollLock:("", "Scroll lock"),
+         Qt.Key_CapsLock:("", "Caps lock"),
+         Qt.Key_Pause:("", "Pause"),
+} 
+
+def get_description(key: QKeyEvent) -> str:
+    for a,b in keys.items():
+        if key.key() == a:
+            return b[1]
+
+    return key.text()
+
+def get_key(key: QKeyEvent) -> str:
+    for a,b in keys.items():
+        if key.key() == a:
+            return b[0]
+
+    return key.text()
+
+
+def get_char(c: QKeyEvent) -> str:
+    for a, b in chars.items():
+        if  c.key() == a:
+            return b
+    return c.text()
+
 
 errors = {
     QSerialPort.NoError:"No error",
@@ -174,12 +281,50 @@ DARKGRAY
 about_html = f"""
 <center><h2>{app_name}</h2></center>
 <br>
-<img src={app_icon} width="48" height="48">
-<br>
-<b>Version: </b>{app_version}
-<br>
-<b>Author: </b>{app_author}
-<br>
+
+<table>
+  <tr>
+    <td> 
+      <img src={app_icon} width="48" height="48">
+    </td>
+    <td>
+      <table>
+        <tr>
+          <td> 
+            <b>Version: </b>
+          </td>
+          <td>  
+            {app_version}
+          </td>
+        </tr>
+        <tr>
+          <td> 
+            <b>Author: </b>
+          </td>
+          <td>  
+            {app_author}
+          </td/
+        </tr>
+        <tr>
+          <td> 
+            <b>Email: </b>
+          </td>
+          <td>  
+            </b><a href="{app_email}">{app_email}</a>
+          </td/
+        </tr>
+        <tr> 
+          <td>
+            <b>Github: </b>
+          </td>
+          <td>  
+            <a href="{app_home}">{app_home}</a>
+          </td/
+          </td>
+        </tr>
+      </table>
+  </tr>
+</table>
 <hr>
 <br>
 {app_description}
@@ -352,6 +497,8 @@ class MainForm(QMainWindow):
         self.ui.cbDisplay.addItem("Hex", MpTerm.Hex)
         #self.ui.cbDisplay.addItem("Hex + Ascii", MpTerm.AsciiHex)
 
+        self.ui.cbRTS.clicked.connect(self.handle_rts)
+        
         # Timers
         self.timer = QTimer()
         self.timer.setInterval(1000)
@@ -376,17 +523,16 @@ class MainForm(QMainWindow):
         self.ui.actionAbout.triggered.connect(self.about)
         self.ui.actionPortInfo.triggered.connect(self.portInfo)
 
-        self.ui.pushButton.pressed.connect(self.testing)
         self.ui.pbOpen.pressed.connect(self.openPort)
 
-        self.ui.bpTest1.pressed.connect(self.test1)
-        self.ui.bpTest2.pressed.connect(self.test2)
-        self.ui.colorTest.pressed.connect(self.colorTest)
-
+        self.ui.bpTest1.pressed.connect(lambda: self.send(b"ABCD"))
+        self.ui.bpTest2.pressed.connect(lambda: self.send(b"0123456789"))
+        self.ui.colorTest.pressed.connect(lambda: self.send(colorTest))
         self.ui.leSyncString.textChanged.connect(self.syncChanged)
 
         self.ui.textEdit.setReadOnly(True)
 
+        
         # self.mpDefault = mpProfile("Default")
         # self.mpDefault.load()
         # self.loadProfile(self.mpDefault)
@@ -404,7 +550,7 @@ class MainForm(QMainWindow):
         # Initiate terminal state
         self.state = State.DISCONNECTED
 
-        self.escDec = EscapeDecoder()
+        self.decoder = EscapeDecoder()
 
         # Configure signal handler
         signal.signal(signal.SIGUSR1, self.signal_usr1)
@@ -439,7 +585,7 @@ class MainForm(QMainWindow):
 
     def timer_5_timeout(self):
 
-        # Recconect state
+        # Reconnect state
         if self.state == State.RECONNECTING:
             self.initPort()
             self.serial.clear()
@@ -462,9 +608,7 @@ class MainForm(QMainWindow):
             pass
         
     def timerEvent(self):
-
         portNames = [x.portName() for x in QSerialPortInfo.availablePorts()]
-        # logging.debug(portNames)
 
         # Check if current port is still connecter (USB to serial adapters), if not close port
         if self.serial.isOpen():
@@ -507,6 +651,16 @@ class MainForm(QMainWindow):
 
     #       os.path.exists(f"/dev/{}")
 
+
+    def handle_rts(self):
+        logging.debug("RTS")
+        if self.ui.cbRTS.isChecked():
+            self.ui.cbRTS.setChecked(True)
+            self.serial.setRequestToSend(True)
+        else:
+            self.ui.cbRTS.setChecked(False)
+            self.serial.setRequestToSend(False)
+            
     def syncChanged(self):
         try:
             self.sync = int(self.ui.leSyncString.text(), 16)
@@ -530,38 +684,8 @@ class MainForm(QMainWindow):
     def actionClear(self):
         self.ui.textEdit.clear()
 
-    def colorTest(self):
-        self.send(colorTest)
-
-    def test1(self):
-        self.send(b"ABCD")
-
-    def test2(self):
-        self.send(b"0123456789")
-
-    def testing(self):
-        #        p = self.ui.plainTextEdit.palette()
-        #        p = QPalette()
-        #        c = QColor("red")
-        #        p.setColor( QPalette.Text, c )
-        #        self.ui.plainTextEdit.setPalette(p)
-        #        self.ui.plainTextEdit.appendPlainText("A")
-        # print(chr(65))
-        x = b"\n"
-        #        print(x.decode("utf-8"))
-        #        self.ui.plainTextEdit.appendPlainText(x.decode("utf-8"))
-        #        self.ui.plainTextEdit.appendPlainText(x.decode("utf-8"))
-        #        self.ui.plainTextEdit.insertPlainText(x.decode("utf-8"))
-        # QString notifyHtml = "<font color=\"Lime\">";
-
-        self.showMessage("Nisse")
-        self.scrollDown()
-
     # scroll down to bottom
     def scrollDown(self):
-        #        vsb = self.ui.plainTextEdit.verticalScrollBar()
-        #        vsb.setValue(vsb.maximum())
-
         vsb = self.ui.textEdit.verticalScrollBar()
         vsb.setValue(vsb.maximum())
 
@@ -580,23 +704,23 @@ class MainForm(QMainWindow):
         self._message(msg)
         logging.error(msg)
 
-    def decodeEscape(self, data, index):
-        end = Esc.findEnd(data, index)
-        if end < 0:
-            logging.debug("Negative escape")
-            return 1
+    # def decodeEscape(self, data, index):
+    #     end = Esc.findEnd(data, index)
+    #     if end < 0:
+    #         logging.debug("Negative escape")
+    #         return 1
 
-        endCh = data.at(end)
-        logging.debug(f"Escape: {end-index}  Ch: {endCh}")
+    #     endCh = data.at(end)
+    #     logging.debug(f"Escape: {end-index}  Ch: {endCh}")
 
-        if endCh == "c":
-            logging.debug("Escape clear")
-        #    return 2
+    #     if endCh == "c":
+    #         logging.debug("Escape clear")
+    #     #    return 2
 
-        elif endCh == "m":  # Attribute and colors
-            logging.debug("Esc: Attribute/colors")
+    #     elif endCh == "m":  # Attribute and colors
+    #         logging.debug("Esc: Attribute/colors")
 
-        return end - index + 1
+    #     return end - index + 1
 
     def appendText(self, str):
         # move cursor to end of buffer
@@ -610,144 +734,66 @@ class MainForm(QMainWindow):
 
     def read(self):
         # get all data from buffer
-        data = self.serial.readAll()
 
-        logging.debug(f"Data received: {len(data)}")
+        data = self.serial.readAll()
+        data_str = str(data, "utf-8")
+
+        self.rxCnt += data.count()
+
+        # db = data_str.replace('\e', '\\x1b').replace('\n', '\\n').replace('\c', '\\c')
+        db = data_str.replace("\x1b", "\\x1b").replace("\x0a", "\\n").replace("\x0d", '\\c')
+        logging.debug(f"Data received: {data.count()} {db}")
 
         DisplayMode = self.ui.cbDisplay.currentData()
 
         if DisplayMode == MpTerm.Ascii:  # Standard ascii display mode
-            self.color = ""
-            i = 0
-            st = ""
-            while i < data.count():
-                ch = self.escDec.next(data.at(i))
-                logging.debug(
-                    f"Char: {ch}  Type: {type(ch)}   Decoded: {str(data, 'utf-8')}"
-                )
-                if (len(ch) == 1) and (ord(ch) > 0):
-                    if ch == b"\n":
-                        #                        str += '\n'
-                        st += "<br>"
-                    else:
-                        st += str(ch, "utf-8")
+            self.decoder.append_string(data_str)
+            
+            for x in self.decoder:
+                #logging.debug(x)
+                if x == Ascii.NL:
+                    self.appendHtml("<br>")
 
-                if len(ch) > 1:
-                    #                    chx = bytearray(ch, 'utf-8')
-                    #                    print(chx)
-
-                    if ch == Esc.BLACK:
-                        self.color = MpTerm.Black
-                    elif ch == Esc.RED:
-                        self.color = MpTerm.Red
-                    #                self.ui.textEdit.setColor(QColor('Red'))
-                    elif ch == Esc.GREEN:
-                        self.color = MpTerm.Green
-                    elif ch == Esc.YELLOW:
-                        self.color = MpTerm.Yellow
-                    elif ch == Esc.BLUE:
-                        self.color = MpTerm.Blue
-                    elif ch == Esc.MAGENTA:
-                        self.color = MpTerm.Magenta
-                    elif ch == Esc.CYAN:
-                        self.color = MpTerm.Cyan
-                    elif ch == Esc.GRAY:
-                        self.color = MpTerm.Gray
-                    elif ch == Esc.DARKGRAY:
-                        self.color = MpTerm.Darkgray
-                    elif ch == Esc.BR_RED:
-                        self.color = MpTerm.Br_Red
-                    elif ch == Esc.BR_GREEN:
-                        self.color = MpTerm.Br_Green
-                    elif ch == Esc.BR_YELLOW:
-                        self.color = MpTerm.Br_Green
-                    elif ch == Esc.BR_BLUE:
-                        self.color = MpTerm.Br_Blue
-                    elif ch == Esc.BR_MAGENTA:
-                        self.color = MpTerm.Br_Magenta
-                    elif ch == Esc.BR_CYAN:
-                        self.color = MpTerm.Br_Cyan
-                    elif ch == Esc.WHITE:
-                        self.color = MpTerm.White
-
-                    else:
-                        pass
-
-                i += 1
-
-            self.appendHtml(st)
+                if x[0] != Esc.ESCAPE:    
+                #if not Esc.is_escape_seq(x):
+                    self.appendHtml(x)
 
         elif DisplayMode == MpTerm.Hex:  # Hexadecimal display mode
             s = ""
             # self.ui.textEdit.setFont()
             for i in range(0, data.count()):
                 ch = data.at(i)
+                chd = int.from_bytes(ch, 'big')
 
-                logging.debug(f"type: {type(ch)}  {int.from_bytes(ch, 'big'):02x}")
+                logging.debug(f"{chd:02x} {hex2str(chd)}")
                 # handle sync
                 # if self.sync >= 0 and ord(ch) == self.sync:
                 #     s = s + '\n'
 
-                s = s + f"{int.from_bytes(ch, byteorder='big'):02x} "
+                s = s + f"{chd:02x} "
 
             # self.ui.textEdit.insertPlainText(s)
             self.appendHtml(s)
 
-        self.rxCnt += data.count()
+        
         self.scrollDown()
         self.updateUi()
 
-    def send(self, data):
+    def send(self, data: bytearray):
         if self.serial.isOpen():
-            self.serial.write(data)
-            self.txCnt += len(data)
+            res = self.serial.write(data)
+            if res >0: 
+                self.txCnt += res
+            else:
+                logging.error("Could not write data.")
             self.updateUi()
 
-    def sendStr(self, str):
-        return
+    def send_string(self, data: str):
+        self.send(bytearray(data, "utf-8"))
 
-    def keyPressEvent(self, a):
-        logging.debug(f"  {a.key()}  {a.text()}  ord: {ord(a.text())}")
-
-        if a.key() == Qt.Key_Escape:
-            logging.debug("Escape")
-            return
-
-        if (a.key() == Qt.Key_Enter) or (a.key() == Qt.Key_Return):
-            self.send(b"\n")
-            logging.debug("Enter")
-            return
-
-        if a.key() == Qt.Key_Left:
-            logging.debug("Left")
-            return
-
-        if a.key() == Qt.Key_Delete:
-            logging.debug("Delete")
-            return
-
-        if a.key() == Qt.Key_Insert:
-            logging.debug("Insert")
-            return
-
-        if a.key() == Qt.Key_Backspace:
-            logging.debug("Backspace")
-            return
-
-        if a.key() == Qt.Key_End:
-            logging.debug("End")
-            return
-
-        if a.key() == Qt.Key_F1:
-            logging.debug("F1")
-            return
-
-        #        if (self.serial.isOpen()):
-        #        msg = bytearray([ a.key() ])
-        #        self.sendByte(msg)
-        # msg = bytearray([ a.key() ])
-        msg = bytearray([ord(a.text())])
-        self.send(msg)
+    def keyPressEvent(self, a: QKeyEvent):
+        logging.debug(f"  {a.key():x}  {get_description(a)}")   
+        self.send_string(get_key(a))
 
     def openPort(self):
         if self.serial.isOpen():
@@ -853,8 +899,8 @@ class MainForm(QMainWindow):
         return nstr
 
     def appendInfo(self, desc, data):
-        self.ui.textEdit.appendHtml(
-            "<b>" + self.ss(desc) + '</b><code><font color="Green">' + data
+        self.ui.textEdit.insertHtml(
+            f"<b>{self.ss(desc)}</b><code><font color='Green'>{data}<br>"
         )
 
     def portInfo(self):
@@ -866,7 +912,8 @@ class MainForm(QMainWindow):
             self.appendInfo("Product id:", str(port.productIdentifier()))
             self.appendInfo("Manufacturer:", port.manufacturer())
             self.appendInfo("Description:", port.description())
-            # self.ui.textEdit.appendHtml('<b>')
+            #self.ui.textEdit.insertHtml("<hr>")
+            self.ui.textEdit.insertHtml("<br>")
 
     def new(self):
         subprocess.Popen([f"{self_dir}/mpterm.py"], shell=False)
@@ -890,7 +937,7 @@ def settings():
 
 
 def main():
-    logging_format = "[%(levelname)s] Line: %(lineno)d %(message)s"
+    logging_format = "[%(levelname)s] %(lineno)d %(funcName)s() : %(message)s"
 
     # options parsing
     parser = argparse.ArgumentParser(
@@ -931,7 +978,9 @@ def main():
         sys.exit()
 
     app = QApplication(sys.argv)
+    app.setStyle("Fusion")   # 'cleanlooks', 'gtk2', 'cde', 'motif', 'plastique', 'qt5ct-style', 'Windows', 'Fusion'
     app.setAttribute(Qt.AA_UseHighDpiPixmaps)
+    
     mainForm = MainForm()
     mainForm.show()
     sys.exit(app.exec_())

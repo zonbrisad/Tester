@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>923</width>
-    <height>530</height>
+    <height>555</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -193,6 +193,23 @@
        </layout>
       </item>
       <item>
+       <widget class="QCheckBox" name="cbRTS">
+        <property name="text">
+         <string>RTS</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="checkBox_2">
+        <property name="text">
+         <string>CheckBox</string>
+        </property>
+        <property name="tristate">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
        <spacer name="verticalSpacer">
         <property name="orientation">
          <enum>Qt::Vertical</enum>
@@ -282,6 +299,9 @@
          </item>
         </layout>
        </widget>
+      </item>
+      <item>
+       <widget class="QWidget" name="widget_2" native="true"/>
       </item>
       <item>
        <spacer name="verticalSpacer_2">

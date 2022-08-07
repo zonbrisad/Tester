@@ -24,8 +24,11 @@
 #
 #
 
+import subprocess
+import enum
 import logging
-from enum import Enum
+import os
+from enum import Enum, auto
 
 class TerminalState:
     def __init__(self) -> None:
@@ -87,7 +90,8 @@ ascii = {  0x00:"NULL",
            0x1C:"FS",
            0x1D:"GS",
            0x1E:"RS",
-           0x1F:"US"
+           0x1F:"US",
+           0x20:"Space"
 }
 
 def getc(c: str) -> str:
@@ -96,11 +100,80 @@ def getc(c: str) -> str:
             return b
     return c
 
+def hex2str(c: int) -> str:
+    for a, b in ascii.items():
+        if c == a:
+            return b
+    return chr(c)
+
+
 # class CType(Enum):
 #     NONE = 0
 #     CHARACTER = 1
 #     ESC_CSI = 2
 
+
+
+class Escape(Enum):
+    BLACK = auto()
+    RED = auto()
+    GREEN = auto()
+    YELLOW = auto()
+    BLUE = auto()
+    MAGENTA = auto()
+    CYAN = auto()
+    GRAY = auto()
+    DARKGRAY = auto()
+    BRIGHT_RED = auto()
+    BRIGHT_GREEN = auto()
+    BRIGHT_YELLOW = auto()
+    BRIGHT_BLUE = auto()
+    BRIGHT_MAGENTA = auto()
+    BRIGHT_CYAN = auto()
+    WHITE = auto()
+
+    # ANSI background color codes
+    #
+    ON_BLACK = auto()
+    ON_RED = auto()
+    ON_GREEN = auto()
+    ON_YELLOW = auto()
+    ON_BLUE = auto()
+    ON_MAGENTA = auto()
+    ON_CYAN = auto()
+    ON_WHITE = auto()
+
+    # ANSI Text attributes
+    ATTR_NORMAL = auto()
+    ATTR_BOLD = auto()
+    ATTR_LOWINTENSITY = auto()
+    ATTR_ITALIC = auto()
+    ATTR_UNDERLINE = auto()
+    ATTR_SLOWBLINK = auto()
+    ATTR_FASTBLINK = auto()
+    ATTR_REVERSE = auto()
+    ATTR_FRACTUR = auto()
+    ATTR_FRAMED = auto()
+    ATTR_OVERLINED = auto()
+    ATTR_SUPERSCRIPT = auto()
+    ATTR_SUBSCRIPT = auto()
+    
+    END = auto()
+    CLEAR = auto()
+    RESET = auto()
+    
+    WONR = auto()
+
+    # ANSI cursor operations
+    #
+    RETURN = auto()
+    UP = auto()
+    DOWN = auto()
+    FORWARD = auto()
+    BACK = auto()
+    HIDE = auto()
+    SHOW = auto()
+ 
 
 class Esc:
     ESCAPE = "\x1b"
@@ -203,6 +276,93 @@ class Esc:
             return False
 
 
+escape2html = {
+    Escape.BLACK: [ Esc.BLACK ],
+    Escape.RED: [ Esc.RED ],
+    Escape.GREEN: [ Esc.GREEN ],
+    Escape.YELLOW: [ Esc.YELLOW ],
+    Escape.BLUE: [ Esc.BLUE ],
+    Escape.MAGENTA: [ Esc.MAGENTA ],
+    Escape.CYAN: [ Esc.CYAN ],
+    Escape.GRAY: [ Esc.GRAY ],
+    Escape.DARKGRAY: [ Esc.DARKGRAY ],
+    Escape.BRIGHT_RED: [ Esc.BR_RED ],
+    Escape.BRIGHT_GREEN: [ Esc.BR_GREEN ],
+    Escape.BRIGHT_YELLOW: [ Esc.BR_YELLOW ],
+    Escape.BRIGHT_BLUE: [ Esc.BR_BLUE ],
+    Escape.BRIGHT_MAGENTA: [ Esc.BR_MAGENTA ],
+    Escape.BRIGHT_CYAN: [ Esc.BR_CYAN ],
+    Escape.WHITE: [ Esc.WHITE ],
+
+    # ANSI background color codes
+    #
+    Escape.ON_BLACK: [ Esc.ON_BLACK ],
+    Escape.ON_RED: [ Esc.ON_RED ],
+    Escape.ON_GREEN: [ Esc.ON_GREEN ],
+    Escape.ON_YELLOW: [ Esc.ON_YELLOW ],
+    Escape.ON_BLUE: [ Esc.ON_BLUE ],
+    Escape.ON_MAGENTA: [ Esc.ON_MAGENTA ],
+    Escape.ON_CYAN: [ Esc.ON_CYAN ],
+    Escape.ON_WHITE: [ Esc.ON_WHITE ],
+
+    # ANSI Text attributes
+    Escape.ATTR_NORMAL: [ Esc.ATTR_NORMAL ],
+    Escape.ATTR_BOLD: [ Esc.ATTR_BOLD ],
+    Escape.ATTR_LOWINTENSITY: [ Esc.ATTR_LOWINTENSITY ],
+    Escape.ATTR_ITALIC: [ Esc.ATTR_ITALIC ],
+    Escape.ATTR_UNDERLINE: [ Esc.ATTR_UNDERLINE ],
+    Escape.ATTR_SLOWBLINK: [ Esc.ATTR_SLOWBLINK ],
+    Escape.ATTR_FASTBLINK: [ Esc.ATTR_FASTBLINK ],
+    Escape.ATTR_REVERSE: [ Esc.ATTR_REVERSE ],
+    Escape.ATTR_FRACTUR: [ Esc.ATTR_FRACTUR ],
+    Escape.ATTR_FRAMED: [ Esc.ATTR_FRAMED ],
+    Escape.ATTR_OVERLINED: [ Esc.ATTR_OVERLINED ],
+    Escape.ATTR_SUPERSCRIPT: [ Esc.ATTR_SUPERSCRIPT ],
+    Escape.ATTR_SUBSCRIPT: [ Esc.ATTR_SUBSCRIPT ],
+    
+    Escape.END: [ Esc.END ]
+    # Escape.CLEAR: [ Esc. ],
+    # Escape.RESET: [ Esc. ],
+    
+    # Escape.WONR: [ Esc. ],
+
+    # # ANSI cursor operations
+    # #
+    # Escape.RETURN: [ Esc. ],
+    # Escape.UP: [ Esc. ],
+    # Escape.DOWN: [ Esc. ],
+    # Escape.FORWARD: [ Esc. ],
+    # Escape.BACK: [ Esc. ],
+    # Escape.HIDE: [ Esc. ],
+    # Escape.SHOW: [ Esc. ],    
+
+}
+
+
+def e2h(s: str) -> Escape:
+    if s[0] != Esc.ESCAPE:
+        return None
+
+    for x, y in escape2html.items():
+        if y[0] == s:
+            return x
+
+    return None
+
+
+
+def escape2string(s: str) -> str:
+    if s[0] != Esc.ESCAPE:
+        # return "Not escape sequence"
+        return str
+
+    for x, y in escape2html.items():
+        if y[0] == s:
+            return f"'\\x1b{s[1:]}' {x}"
+
+    return f"'\\x1b{s[1:]}' Sequence not supported"
+
+
 FLAG_BLUE="\x1b[48;5;20m"
 FLAG_YELLOW="\x1b[48;5;226m"
 
@@ -215,7 +375,7 @@ flag = f"""
 """
       
 class EscapeDecoder():
-    nls = ["\n", "\c", "\e"]
+    nls = ["\n", "\x0d", "\x1b"]
     
     def __init__(self):
         self.idx = 0
@@ -243,91 +403,132 @@ class EscapeDecoder():
             return True
         return False
 
+    def next_char(self):
+        pass
+
     def __iter__(self):
+        self.i = 0
         return self 
 
     def __next__(self):
-        if len(self.buf) == 0:
+        l = len(self.buf)
+        if l == 0:                # Buffer is empty, abort iteration
             raise StopIteration
 
         j = 0
-        # handle escape and newline sequence
-        if self.is_nls(self.buf[0]):
 
-            if self.buf[0]==Esc.ESCAPE:
-                while j<len(self.buf) and not self.buf[j].isalpha():
-                    j += 1
-    
+        if self.buf[j] == Esc.ESCAPE:              # Escape sequence found
+            while j<l and not self.buf[j].isalpha():
+                j += 1
+
+            # Complete Escape sequence
+            if self.buf[j].isalpha():
                 res = self.buf[0:j+1]
                 self.buf = self.buf[j+1:]
+                logging.debug(f"Found escape sequence: {escape2string(res)}")
+                # logging.debug(f"Found escape sequence: {e2h(res)}")
                 return res
-
-            #if self.buf[0]=="\n" or self.buf[0]=="\c":     
+            
+            # Escape sequence not complete, abort iteration
+            raise StopIteration
+            
+        if  self.buf[j] == Ascii.NL:
+            logging.debug(f"Found newline:")
+            res = self.buf[0:j+1]
+            self.buf = self.buf[j+1:]
+            return res
         
-        # handle text sequence
-        # if self.buf[0] != Esc.ESCAPE:
-        if not self.is_nls(self.buf[0]):
-            # while (j<len(self.buf) and self.buf[j] != Esc.ESCAPE):
-            while (j<len(self.buf) and not self.is_nls(self.buf[j])):
-                j += 1
-        
-            res = self.buf[0:j]
-            self.buf = self.buf[j:]
+        if  self.buf[j] == Ascii.CR:
+            logging.debug(f"Found carriage return:")
+            res = self.buf[0:j+1]
+            self.buf = self.buf[j+1:]
             return res
 
-        # handle escape sequence
-        # while j<len(self.buf) and not self.buf[j].isalpha():
-        #     j += 1
-        # res = self.buf[0:j+1]
-        # self.buf = self.buf[j+1:]
-        #return res    
+        # Handle normal text    
+        #if self.buf[j] != Esc.ESCAPE: 
+        while j<l and not self.is_nls(self.buf[j]):
+           j += 1
+        res = self.buf[0:j]
+        self.buf = self.buf[j:]
+        logging.debug(f"Found text sequence: '" + res.replace("\x1b", "\\x1b").replace("\x0a", "\\n").replace("\x0d", '\\c')+"'")
+        return res
+
+
+etest = f"""  
+{Esc.ATTR_NORMAL}Normal text{Esc.END}
+{Esc.ATTR_BOLD}Bold text{Esc.ATTR_NORMAL}
+{Esc.ATTR_LOWINTENSITY}Dim text{Esc.ATTR_NORMAL}
+{Esc.ATTR_ITALIC}Italic text{Esc.ATTR_NORMAL}
+{Esc.ATTR_UNDERLINE}Underline text{Esc.ATTR_NORMAL}
+{Esc.ATTR_SLOWBLINK}Slow blinking text{Esc.ATTR_NORMAL}
+{Esc.ATTR_FASTBLINK}Fast blinking text{Esc.ATTR_NORMAL}
+{Esc.ATTR_FRAMED}Framed text{Esc.ATTR_NORMAL}
+{Esc.ATTR_SUBSCRIPT}Subscript text{Esc.ATTR_NORMAL}
+{Esc.ATTR_SUPERSCRIPT}Superscript text{Esc.ATTR_NORMAL}
+{Esc.ATTR_FRACTUR}Fractur/Gothic text{Esc.ATTR_NORMAL}
+{Esc.ATTR_OVERLINED}Overlined text{Esc.ATTR_NORMAL}
+{Esc.BLACK}Black{Esc.END}
+{Esc.RED}Red{Esc.END}
+{Esc.GREEN}Green{Esc.END}
+{Esc.YELLOW}Yellow{Esc.END}
+{Esc.BLUE}Blue{Esc.END}
+{Esc.MAGENTA}Magenta{Esc.END}
+{Esc.CYAN}Cyan{Esc.END}
+{Esc.GRAY}Gray{Esc.END}
+{Esc.WHITE}White{Esc.END}
+{Esc.DARKGRAY}Dark Gray{Esc.END}
+{Esc.BR_RED}Bright Red{Esc.END}
+{Esc.BR_GREEN}Bright Green{Esc.END}
+{Esc.BR_YELLOW}Bright Yellow{Esc.END}
+{Esc.BR_BLUE}Bright Blue{Esc.END}
+{Esc.BR_MAGENTA}Bright Magenta{Esc.END}
+{Esc.BR_CYAN}Bright Cyan{Esc.END}
+"""
+
+incomplete_escape_sequence = f"""
+{Esc.BR_MAGENTA}Some colored text{Esc.END}
+{Esc.GREEN}Some more text with incomplete escape sequence \x1b["""
+
+end_with_newline = "Some text with newline end\n"
     
-
-def attributes():
-    print(f"{Esc.ATTR_NORMAL}Normal text{Esc.END}")
-    print(f"{Esc.ATTR_BOLD}Bold text{Esc.ATTR_NORMAL}")
-    print(f"{Esc.ATTR_LOWINTENSITY}Dim text{Esc.ATTR_NORMAL}")
-    print(f"{Esc.ATTR_ITALIC}Italic text{Esc.ATTR_NORMAL}")
-    print(f"{Esc.ATTR_UNDERLINE}Underline text{Esc.ATTR_NORMAL}")
-    print(f"{Esc.ATTR_SLOWBLINK}Slow blinking text{Esc.ATTR_NORMAL}")
-    print(f"{Esc.ATTR_FASTBLINK}Fast blinking text{Esc.ATTR_NORMAL}")
-    print(f"{Esc.ATTR_FRAMED}Framed text{Esc.ATTR_NORMAL}")
-    print(f"{Esc.ATTR_SUBSCRIPT}Subscript text{Esc.ATTR_NORMAL}")
-    print(f"{Esc.ATTR_SUPERSCRIPT}Superscript text{Esc.ATTR_NORMAL}")
-    print(f"{Esc.ATTR_FRACTUR}Fractur/Gorhic text{Esc.ATTR_NORMAL}")
-    print(f"{Esc.ATTR_OVERLINED}Overlined text{Esc.ATTR_NORMAL}")
-
 
 def main() -> None:
     logging.basicConfig(format="[%(levelname)s] Line: %(lineno)d %(message)s", level=logging.DEBUG)
-    attributes()
+   
+    print(etest)
+    print(flag)
+
+    
 
     dec = EscapeDecoder()
     dec.append_string(f"Normal color {Esc.RED}Red color {Esc.END}More normal color {Esc.BLUE}Blue angels {Esc.END}White end")
     for x in dec:
-        print(x)
+        print(f"{x}")
+        
+    dec2 = EscapeDecoder()
+    dec2.append_string(etest)
+    for x in dec2:
+        pass
+        #print(f"{x}")
 
-    return
-    
-    print(f"{Esc.BLACK}Black{Esc.END}")
-    print(f"{Esc.RED}Red{Esc.END}")
-    print(f"{Esc.GREEN}Green{Esc.END}")
-    print(f"{Esc.YELLOW}Yellow{Esc.END}")
-    print(f"{Esc.BLUE}Blue{Esc.END}")
-    print(f"{Esc.MAGENTA}Magenta{Esc.END}")
-    print(f"{Esc.CYAN}Cyan{Esc.END}")
-    print(f"{Esc.GRAY}Gray{Esc.END}")
-    print(f"{Esc.WHITE}White{Esc.END}")
-    
-    print(f"{Esc.DARKGRAY}Dark Gray{Esc.END}")
-    print(f"{Esc.BR_RED}Bright Red{Esc.END}")
-    print(f"{Esc.BR_GREEN}Bright Green{Esc.END}")
-    print(f"{Esc.BR_YELLOW}Bright Yellow{Esc.END}")
-    print(f"{Esc.BR_BLUE}Bright Blue{Esc.END}")
-    print(f"{Esc.BR_MAGENTA}Bright Magenta{Esc.END}")
-    print(f"{Esc.BR_CYAN}Bright Cyan{Esc.END}")
+    print(etest.replace("\x1b", "\\x1b").replace("\x0a", "\\n").replace("\x0d", '\\c'))
 
-    print(flag)
+    res = subprocess.Popen(["pmg"], shell=False, stdout=subprocess.PIPE)
+    out, err = res.communicate()
+    dec3 = EscapeDecoder()
+    dec3.append_bytearray(out)    
+    #for x in dec3:
+    #    pass
+    
+    dec4 = EscapeDecoder()
+    dec4.append_string(incomplete_escape_sequence)
+    for x in dec4:
+        pass
+    
+    dec5 = EscapeDecoder()
+    dec5.append_string(end_with_newline)
+    for x in dec5:
+        pass
 
 if __name__ == "__main__":
     main()

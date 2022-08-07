@@ -13,12 +13,23 @@
 #
 # ----------------------------------------------------------------------------
 
+from enum import Enum, auto
+
+
+class State(Enum):
+    IDLE = 0
+    STARTUP = 1
+    RUNNING = 2
+    ALARM = 3
+
 
 num = 123456789
 num2 = 42
 num3 = 123.456
 pad = 8
-
+num4 = .42
+my_variable = "Some value"
+state = State.STARTUP
 
 #
 # Strings
@@ -31,9 +42,6 @@ print(s2.split())
 
 
 print(f"No formating:    {num}")
-print(f"Force sign:      {num:+}")
-print(f"Underscore:      {num:_}")
-print(f"Comma:           {num:,}")
 print(f"Hexadecimal:     {num:x}")
 print(f"Binary:          {num:b}")
 print(f"Octal:           {num:o}")
@@ -41,13 +49,31 @@ print(f"Scientific:      {num:e}")
 print(f"Hexadecimal alt: {num:#x}")
 print(f"Binary alt:      {num:#b}")
 print(f"Octal alt:       {num:#o}")
+print(f"Separator:       {num:_}")
+print(f"Separator:       {num:,}")
+
 
 print(f"No format:       {num2}")
+print(f"Force sign:      {num2:+}")
+print(f"Force sign:      {num2:>20+}")
+
 print(f"Right aligned:   {num2:>10}")
 print(f"Left aligned:    {num2:<10}")
-print(f"Middle aligned:  {num2:^10}")
-print(f"Middle aligned:  {num2:_^10}")
+print(f"Middle aligned:  {num2:^10}") 
+
+print(f"Pad:                {num2:_}")
+print(f"Right aligned pad:  {num2:_>10}")
+print(f"Left aligned pad:   {num2:_<10}")
+print(f"Middle aligned pad: {num2:_^10}")
+
 
 print(f"Decimal:         {num3}")
 print(f"2 decimals:      {num3:.2f}")
 print(f"4 total digits:  {num3:.4g}")
+
+print(f"Percentage:  {num4:%}")
+print(f"Percentage:  {num4:.2%}")
+print(f"Percentage:  {num4:.0%}")
+
+print(f"Var:  {my_variable=}")
+print(f"Var:  {state=}")
