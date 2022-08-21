@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>923</width>
-    <height>555</height>
+    <width>1056</width>
+    <height>614</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,8 +15,8 @@
   </property>
   <property name="iconSize">
    <size>
-    <width>128</width>
-    <height>128</height>
+    <width>512</width>
+    <height>512</height>
    </size>
   </property>
   <widget class="QWidget" name="centralwidget">
@@ -232,15 +232,6 @@
      </layout>
     </item>
     <item>
-     <widget class="QTextEdit" name="textEdit">
-      <property name="font">
-       <font>
-        <family>Monospace</family>
-       </font>
-      </property>
-     </widget>
-    </item>
-    <item>
      <layout class="QVBoxLayout" name="verticalLayout_3">
       <property name="spacing">
        <number>2</number>
@@ -325,7 +316,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>923</width>
+     <width>1056</width>
      <height>22</height>
     </rect>
    </property>

@@ -12,7 +12,7 @@
 # QT       5
 #
 # -----------------------------------------------------------------------
-# This file is generated from pyplate Python template generator.
+# This file is generated from pyplate Python template generator.    
 # Pyplate is developed by
 # Peter Malmberg <peter.malmberg@gmail.com>
 #
@@ -23,6 +23,7 @@
 
 # Imports --------------------------------------------------------------------
 
+from re import ASCII
 import sys
 import os
 import subprocess
@@ -57,7 +58,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtSerialPort import QSerialPort, QSerialPortInfo
 from ui_MainWindow import Ui_MainWindow
 
-from escape import Esc, EscapeDecoder, Ascii, hex2str
+from escape import Esc, Escape, EscapeDecoder, Ascii, e2h, hex2str, TerminalState
 
 # Settings ------------------------------------------------------------------
 
@@ -72,8 +73,8 @@ app_author = "Peter Malmberg"
 app_email = "peter.malmberg@gmail.com"
 app_org = ""
 app_home = "github.com/zonbrisad/mpterm"
-app_icon = f"{self_dir}/mp_icon.png"
-# app_icon = f"{self_dir}/mp_icon2.svg"
+app_icon = f"{self_dir}/mp_icon2.png"
+#app_icon = f"{self_dir}/mp_icon2.svg"
 
 class App:
     NAME = "mpterm"
@@ -137,7 +138,7 @@ keys = { Qt.Key_Enter:("\n", "Enter"),
          Qt.Key_End:("", "End"),
          Qt.Key_PageDown:("", "Page down"),
          Qt.Key_PageUp:("", "Page up"),
-         Qt.Key_F1:("", "F1"),
+         Qt.Key_F1:("\x09", "F1"),
          Qt.Key_F2:("", "F2"),
          Qt.Key_F3:("", "F3"),
          Qt.Key_F4:("", "F4"),
@@ -158,6 +159,7 @@ keys = { Qt.Key_Enter:("\n", "Enter"),
          Qt.Key_ScrollLock:("", "Scroll lock"),
          Qt.Key_CapsLock:("", "Caps lock"),
          Qt.Key_Pause:("", "Pause"),
+         Qt.Key_Tab:(Ascii.TAB, "Tab")
 } 
 
 def get_description(key: QKeyEvent) -> str:
@@ -214,53 +216,53 @@ class MpTerm:
     Cr = 1
     NlCr = 2
 
-    Black = '<font color="Black">'
-    Red = '<font color="DarkRed">'
-    Green = '<font color="Green">'
-    Yellow = '<font color="Yellow">'
-    Blue = '<font color="Blue">'
-    Magenta = '<font color="Purple">'
-    Cyan = '<font color="Teal">'
-    Gray = '<font color="Gray">'
-    Darkgray = '<font color="Black">'
-    Br_Red = '<font color="Red">'
-    Br_Green = '<font color="Green">'
-    Br_Yellow = '<font color="Yellow">'
-    Br_Blue = '<font color="Blue">'
-    Br_Magenta = '<font color="Fuchsia">'
-    Br_Cyan = '<font color="Aqua">'
-    White = '<font color="White">'
+    # Black = '<font color="Black">'
+    # Red = '<font color="DarkRed">'
+    # Green = '<font color="Green">'
+    # Yellow = '<font color="Yellow">'
+    # Blue = '<font color="Blue">'
+    # Magenta = '<font color="Purple">'
+    # Cyan = '<font color="Teal">'
+    # Gray = '<font color="Gray">'
+    # Darkgray = '<font color="Black">'
+    # Br_Red = '<font color="Red">'
+    # Br_Green = '<font color="Green">'
+    # Br_Yellow = '<font color="Yellow">'
+    # Br_Blue = '<font color="Blue">'
+    # Br_Magenta = '<font color="Fuchsia">'
+    # Br_Cyan = '<font color="Aqua">'
+    # White = '<font color="White">'
 
-    ON_BLACK = '<font color="">'
-    ON_RED = '<font color="">'
-    ON_GREEN = '<font color="">'
-    ON_YELLOW = '<font color="">'
-    ON_BLUE = '<font color="">'
-    ON_MAGENTA = '<font color="">'
-    ON_CYAN = '<font color="">'
-    ON_WHITE = '<font color="">'
+    # ON_BLACK = '<font color="">'
+    # ON_RED = '<font color="">'
+    # ON_GREEN = '<font color="">'
+    # ON_YELLOW = '<font color="">'
+    # ON_BLUE = '<font color="">'
+    # ON_MAGENTA = '<font color="">'
+    # ON_CYAN = '<font color="">'
+    # ON_WHITE = '<font color="">'
 
-    # ANSI Text attributes
-    ATTR_BOLD = "\x1b[1m"
-    ATTR_LOWI = "\x1b[2m"
-    ATTR_UNDERLINE = "\x1b[4m"
-    ATTR_BLINK = "\x1b[5m"
-    ATTR_REVERSE = "\x1b[7m"
+    # # ANSI Text attributes
+    # ATTR_BOLD = "\x1b[1m"
+    # ATTR_LOWI = "\x1b[2m"
+    # ATTR_UNDERLINE = "\x1b[4m"
+    # ATTR_BLINK = "\x1b[5m"
+    # ATTR_REVERSE = "\x1b[7m"
 
-    END = "\x1b[0m"
-    CLEAR = "\x1b[2J"
-    RESET = "\x1bc"
+    # END = "\x1b[0m"
+    # CLEAR = "\x1b[2J"
+    # RESET = "\x1bc"
 
-    WONR = "\x1b[1;47\x1b[1;31m"
+    # WONR = "\x1b[1;47\x1b[1;31m"
 
-    # ANSI movement codes
-    CUR_RETURN = "\x1b[;0F"  # cursor return
-    CUR_UP = "\x1b[;0A"  # cursor up
-    CUR_DOWN = "\x1b[;0B"  # cursor down
-    CUR_FORWARD = "\x1b[;0C"  # cursor forward
-    CUR_BACK = "\x1b[;0D"  # cursor back
-    HIDE_CURSOR = "\x1b[?25l"  # hide cursor
-    SHOW_CURSOR = "\x1b[?25h"  # show cursor
+    # # ANSI movement codes
+    # CUR_RETURN = "\x1b[;0F"  # cursor return
+    # CUR_UP = "\x1b[;0A"  # cursor up
+    # CUR_DOWN = "\x1b[;0B"  # cursor down
+    # CUR_FORWARD = "\x1b[;0C"  # cursor forward
+    # CUR_BACK = "\x1b[;0D"  # cursor back
+    # HIDE_CURSOR = "\x1b[?25l"  # hide cursor
+    # SHOW_CURSOR = "\x1b[?25h"  # show cursor
 
 
 colorTest = f"""
@@ -427,12 +429,66 @@ class mpProfile:
         return
 
 
+class TerminalWin(QTextEdit):
+    def __init__(self, parent=None, sp=None):
+        super().__init__(parent)
+        self.sp=sp
+        font = QFont()
+        font.setFamily("Monospace")
+        self.setFont(font)
+        self.setObjectName("textEdit")
+        self.setReadOnly(True)
+
+    def keyPressEvent(self, e: QKeyEvent) -> None:
+        super().keyPressEvent(e)
+
+        logging.debug(f"  {e.key():x}  {get_description(e)}")   
+        self.sp.send_string(get_key(e))
+        
+
+
+class SerialPort:
+    def __init__(self) -> None:
+        self.clear()
+        self.serial_port = QSerialPort()
+
+        # Initiate terminal state
+        self.state = State.DISCONNECTED
+        self.decoder = EscapeDecoder()
+
+    def clear(self):
+        self.rxCnt = 0
+        self.txCnt = 0
+
+    def send_string(self, data: str):
+        self.send(bytearray(data, "utf-8"))
+
+    def send(self, data: bytearray):
+        if self.serial_port.isOpen():
+            res = self.serial_port.write(data)
+            if res >0: 
+                self.txCnt += res
+            else:
+                logging.error("Could not write data.")
+            
+
+
+
 class MainForm(QMainWindow):
     def __init__(self, parent=None):
         super(MainForm, self).__init__(parent)
 
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+
+        self.sp = SerialPort()
+        self.sp.serial_port.readyRead.connect(self.read)
+
+        self.updatePorts()
+
+        self.terminal = TerminalWin(self.ui.centralwidget, sp = self.sp)
+        
+        self.ui.horizontalLayout.insertWidget(1, self.terminal) 
 
         # Set window icon
         self.setWindowIcon(QIcon(app_icon))
@@ -441,17 +497,6 @@ class MainForm(QMainWindow):
         self.txLabel = QLabel("")
         self.ui.statusbar.addPermanentWidget(self.rxLabel, stretch=0)
         self.ui.statusbar.addPermanentWidget(self.txLabel, stretch=0)
-
-        # self.sbb = QPushButton("Sbb", self.ui.centralwidget)
-        # self.ui.statusbar.addPermanentWidget(self.sbb)
-
-        self.rxCnt = 0
-        self.txCnt = 0
-
-        self.serial = QSerialPort()
-        self.serial.readyRead.connect(self.read)
-
-        self.updatePorts()
 
         self.ui.cbStopBits.addItem("1", QSerialPort.OneStop)
         self.ui.cbStopBits.addItem("1.5", QSerialPort.OneAndHalfStop)
@@ -511,11 +556,11 @@ class MainForm(QMainWindow):
         self.timer_5.start()
 
         # event slots
-        self.ui.cbBitrate.activated.connect(self.setBitrate)
-        self.ui.cbStopBits.activated.connect(self.setStopBits)
-        self.ui.cbBits.activated.connect(self.setBits)
-        self.ui.cbParity.activated.connect(self.setParity)
-        self.ui.cbFlowControl.activated.connect(self.setFlowControl)
+        self.ui.cbBitrate.activated.connect(self.set_sp)
+        self.ui.cbStopBits.activated.connect(self.set_sp)
+        self.ui.cbBits.activated.connect(self.set_sp)
+        self.ui.cbParity.activated.connect(self.set_sp)
+        self.ui.cbFlowControl.activated.connect(self.set_sp)
 
         self.ui.actionNew.triggered.connect(self.new)
         self.ui.actionExit.triggered.connect(self.exitProgram)
@@ -530,22 +575,9 @@ class MainForm(QMainWindow):
         self.ui.colorTest.pressed.connect(lambda: self.send(colorTest))
         self.ui.leSyncString.textChanged.connect(self.syncChanged)
 
-        self.ui.textEdit.setReadOnly(True)
-
         
-        # self.mpDefault = mpProfile("Default")
-        # self.mpDefault.load()
-        # self.loadProfile(self.mpDefault)
-
-        # self.ui.textEdit.setMaximumBlockCount(200)
-
-        # Some debug widgets (comment out for production)
-        # self.ui.gbDebug.hide()
-
-        #        palette = self.palette().text().color()
-        #        color = self.palette().text().color()
-        #        r,g,b=color.getRgb()
-        #        print (palette)
+        #self.ui.textEdit.setReadOnly(True)
+        #self.ui.textEdit.keyReleaseEvent.connect(lambda: print("Hep"))
 
         # Initiate terminal state
         self.state = State.DISCONNECTED
@@ -564,6 +596,8 @@ class MainForm(QMainWindow):
         self.signal_timerx = QTimer()
         self.signal_timerx.setSingleShot(True)
 
+        self.ts = TerminalState()
+        
         self.updateUi()
 
     def signal_usr1(self, signum, frame) -> None:
@@ -611,11 +645,11 @@ class MainForm(QMainWindow):
         portNames = [x.portName() for x in QSerialPortInfo.availablePorts()]
 
         # Check if current port is still connecter (USB to serial adapters), if not close port
-        if self.serial.isOpen():
-            if self.serial.portName() not in portNames:
-                self.serial.close()
+        if self.sp.serial_port.isOpen():
+            if self.sp.serial_port.portName() not in portNames:
+                self.sp.serial_port.close()
                 self.state = State.DISCONNECTED
-                self.messageError(f"Port {self.serial.portName()} no longer available.")
+                self.messageError(f"Port {self.sp.serial_port.portName()} no longer available.")
                 
         # Update list of serialports in combobox
         for x in range(self.ui.cbPort.count()):
@@ -630,7 +664,7 @@ class MainForm(QMainWindow):
         self.updateUi()
 
     def updateUi(self):
-        if self.serial.isOpen():
+        if self.sp.serial_port.isOpen():
             self.setWindowTitle(
                 f"MpTerm  /dev/{self.ui.cbPort.currentText()} {self.ui.cbBitrate.currentText()}"
             )
@@ -641,16 +675,13 @@ class MainForm(QMainWindow):
             self.ui.pbOpen.setText("Open")
             self.ui.cbPort.setEnabled(1)
 
-        self.rxLabel.setText(f'<font color="Purple"> RX: {self.rxCnt:06d} ')
-        self.txLabel.setText(f'<font color="Purple"> TX: {self.txCnt:06d} ')
+        self.rxLabel.setText(f'<font color="Purple"> RX: {self.sp.rxCnt:06d} ')
+        self.txLabel.setText(f'<font color="Purple"> TX: {self.sp.txCnt:06d} ')
 
     def updatePorts(self):
         ports = QSerialPortInfo.availablePorts()
         for port in ports:
             self.ui.cbPort.addItem(port.portName())
-
-    #       os.path.exists(f"/dev/{}")
-
 
     def handle_rts(self):
         logging.debug("RTS")
@@ -682,12 +713,14 @@ class MainForm(QMainWindow):
         return
 
     def actionClear(self):
-        self.ui.textEdit.clear()
+        pass
+        # self.ui.textEdit.clear()
 
     # scroll down to bottom
     def scrollDown(self):
-        vsb = self.ui.textEdit.verticalScrollBar()
-        vsb.setValue(vsb.maximum())
+        #vsb = self.ui.textEdit.verticalScrollBar()
+        #vsb.setValue(vsb.maximum())
+        pass
 
     def _message(self, msg):
         self.ui.statusbar.showMessage(msg, 4000)
@@ -704,43 +737,24 @@ class MainForm(QMainWindow):
         self._message(msg)
         logging.error(msg)
 
-    # def decodeEscape(self, data, index):
-    #     end = Esc.findEnd(data, index)
-    #     if end < 0:
-    #         logging.debug("Negative escape")
-    #         return 1
-
-    #     endCh = data.at(end)
-    #     logging.debug(f"Escape: {end-index}  Ch: {endCh}")
-
-    #     if endCh == "c":
-    #         logging.debug("Escape clear")
-    #     #    return 2
-
-    #     elif endCh == "m":  # Attribute and colors
-    #         logging.debug("Esc: Attribute/colors")
-
-    #     return end - index + 1
-
-    def appendText(self, str):
-        # move cursor to end of buffer
-        self.ui.textEdit.moveCursor(QTextCursor.End)
-        self.ui.textEdit.appendPlainText(str)
+    # def appendText(self, str):    
+    #     # move cursor to end of buffer
+    #     self.ui.textEdit.moveCursor(QTextCursor.End)
+    #     self.ui.textEdit.appendPlainText(str)
 
     def appendHtml(self, str):
         # move cursor to end of buffer
-        self.ui.textEdit.moveCursor(QTextCursor.End)
-        self.ui.textEdit.insertHtml(str)
+        #self.terminal.moveCursor(QTextCursor.End)
+        self.terminal.insertHtml(str)
 
     def read(self):
         # get all data from buffer
 
-        data = self.serial.readAll()
+        data = self.sp.serial_port.readAll()
         data_str = str(data, "utf-8")
 
-        self.rxCnt += data.count()
+        self.sp.rxCnt += data.count()
 
-        # db = data_str.replace('\e', '\\x1b').replace('\n', '\\n').replace('\c', '\\c')
         db = data_str.replace("\x1b", "\\x1b").replace("\x0a", "\\n").replace("\x0d", '\\c')
         logging.debug(f"Data received: {data.count()} {db}")
 
@@ -753,10 +767,40 @@ class MainForm(QMainWindow):
                 #logging.debug(x)
                 if x == Ascii.NL:
                     self.appendHtml("<br>")
+                    self.terminal.moveCursor(QTextCursor.StartOfLine)
+                    continue
+
+                if x == Ascii.CR:
+                    self.terminal.moveCursor(QTextCursor.StartOfLine)
+                    logging.debug("Carriage return")
+                    continue
+                    self.appendHtml("<br>")
+
+                if x == Esc.RETURN:
+                    self.terminal.moveCursor(QTextCursor.StartOfLine)
+                    continue
+
+                if x == Esc.UP:
+                    self.terminal.moveCursor(QTextCursor.Up)
+                    continue
+
+                if x == " ":
+                    self.appendHtml("&nbsp;")
+                    continue 
+
+                if x[0] == Esc.ESCAPE:
+                    self.ts.update(e2h(x))
+                    #e = e2h(x)
+                    # if e in [Escape.GREEN]:
+                    #     self.ts.color = e
+                    # if e == Escape.END:
+                    #     self.ts.color = Escape.BLACK
+                    #     self.ts.attribute = Escape.ATTR_NORMAL
+
 
                 if x[0] != Esc.ESCAPE:    
-                #if not Esc.is_escape_seq(x):
-                    self.appendHtml(x)
+                    self.appendHtml(self.ts.state2html(x))
+                    #self.appendHtml(x)
 
         elif DisplayMode == MpTerm.Hex:  # Hexadecimal display mode
             s = ""
@@ -780,10 +824,10 @@ class MainForm(QMainWindow):
         self.updateUi()
 
     def send(self, data: bytearray):
-        if self.serial.isOpen():
-            res = self.serial.write(data)
+        if self.sp.serial_port.isOpen():
+            res = self.sp.serial_port.write(data)
             if res >0: 
-                self.txCnt += res
+                self.sp.txCnt += res
             else:
                 logging.error("Could not write data.")
             self.updateUi()
@@ -791,25 +835,26 @@ class MainForm(QMainWindow):
     def send_string(self, data: str):
         self.send(bytearray(data, "utf-8"))
 
-    def keyPressEvent(self, a: QKeyEvent):
+    def keyPressEvent(self, a: QKeyEvent):  
+
         logging.debug(f"  {a.key():x}  {get_description(a)}")   
-        self.send_string(get_key(a))
+        #self.send_string(get_key(a))
 
     def openPort(self):
-        if self.serial.isOpen():
-            self.serial.close()
+        if self.sp.serial_port.isOpen():
+            self.sp.serial_port.close()
             self.state = State.DISCONNECTED
             self.updateUi()
             return
 
         self.initPort()
-        self.serial.clear()
-        res = self.serial.open(QIODevice.ReadWrite)
+        self.sp.serial_port.clear()
+        res = self.sp.serial_port.open(QIODevice.ReadWrite)
         if res:
             self.message("Opening port: /dev/" + self.ui.cbPort.currentText())
             self.state = State.CONNECTED
         else:
-            err = self.serial.error()
+            err = self.sp.serial_port.error()
             self.messageError(
                 f"Failed to open port /dev/{self.ui.cbPort.currentText()}. {errors[err]}"
             )
@@ -819,29 +864,37 @@ class MainForm(QMainWindow):
 
     def initPort(self):
         self.setPort()
-        self.setBitrate()
-        self.setBits()
-        self.setStopBits()
-        self.setParity()
-        self.setFlowControl()
+        self.set_sp()
+        # self.setBitrate()
+        # self.setBits()
+        # self.setStopBits()
+        # self.setParity()
+        # self.setFlowControl()
 
     def setPort(self):
-        self.serial.setPortName("/dev/" + self.ui.cbPort.currentText())
+        self.sp.serial_port.setPortName("/dev/" + self.ui.cbPort.currentText())
 
-    def setBitrate(self):
-        self.serial.setBaudRate(self.ui.cbBitrate.currentData())
+    def set_sp(self):
+        self.sp.serial_port.setBaudRate(self.ui.cbBitrate.currentData())
+        self.sp.serial_port.setStopBits(self.ui.cbStopBits.currentData())
+        self.sp.serial_port.setDataBits(self.ui.cbBits.currentData())
+        self.sp.serial_port.setParity(self.ui.cbParity.currentData())
+        self.sp.serial_port.setFlowControl(self.ui.cbFlowControl.currentData())
+      
+    # def setBitrate(self):
+    #     self.serial.setBaudRate(self.ui.cbBitrate.currentData())
 
-    def setStopBits(self):
-        self.serial.setStopBits(self.ui.cbStopBits.currentData())
+    # def setStopBits(self):
+    #     self.serial.setStopBits(self.ui.cbStopBits.currentData())
 
-    def setBits(self):
-        self.serial.setDataBits(self.ui.cbBits.currentData())
+    # def setBits(self):
+    #     self.serial.setDataBits(self.ui.cbBits.currentData())
 
-    def setParity(self):
-        self.serial.setParity(self.ui.cbParity.currentData())
+    # def setParity(self):
+    #     self.serial.setParity(self.ui.cbParity.currentData())
 
-    def setFlowControl(self):
-        self.serial.setFlowControl(self.ui.cbFlowControl.currentData())
+    # def setFlowControl(self):
+    #     self.serial.setFlowControl(self.ui.cbFlowControl.currentData())
 
     def saveSetting(self):
         #        self.mpDefault.write()

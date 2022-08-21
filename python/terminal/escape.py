@@ -24,22 +24,13 @@
 #
 #
 
+from dataclasses import dataclass
 import subprocess
 import enum
 import logging
 import os
 from enum import Enum, auto
 
-class TerminalState:
-    def __init__(self) -> None:
-        self.color = ""
-        self.bg_color = ""
-        self.cur_x = ""
-        self.cur_y = ""
-        self.bold = False
-        self.dim = False
-        self.italic = False
-        self.underline = False
 
 class Ascii:
     NULL = "\0"
@@ -175,6 +166,7 @@ class Escape(Enum):
     SHOW = auto()
  
 
+
 class Esc:
     ESCAPE = "\x1b"
 
@@ -277,50 +269,50 @@ class Esc:
 
 
 escape2html = {
-    Escape.BLACK: [ Esc.BLACK ],
-    Escape.RED: [ Esc.RED ],
-    Escape.GREEN: [ Esc.GREEN ],
-    Escape.YELLOW: [ Esc.YELLOW ],
-    Escape.BLUE: [ Esc.BLUE ],
-    Escape.MAGENTA: [ Esc.MAGENTA ],
-    Escape.CYAN: [ Esc.CYAN ],
-    Escape.GRAY: [ Esc.GRAY ],
-    Escape.DARKGRAY: [ Esc.DARKGRAY ],
-    Escape.BRIGHT_RED: [ Esc.BR_RED ],
-    Escape.BRIGHT_GREEN: [ Esc.BR_GREEN ],
-    Escape.BRIGHT_YELLOW: [ Esc.BR_YELLOW ],
-    Escape.BRIGHT_BLUE: [ Esc.BR_BLUE ],
-    Escape.BRIGHT_MAGENTA: [ Esc.BR_MAGENTA ],
-    Escape.BRIGHT_CYAN: [ Esc.BR_CYAN ],
-    Escape.WHITE: [ Esc.WHITE ],
+    Escape.BLACK: [ Esc.BLACK, "black"],
+    Escape.RED: [ Esc.RED, "red"],
+    Escape.GREEN: [ Esc.GREEN, "green"],
+    Escape.YELLOW: [ Esc.YELLOW, "yellow"],
+    Escape.BLUE: [ Esc.BLUE, "blue"],
+    Escape.MAGENTA: [ Esc.MAGENTA, "magenta"],
+    Escape.CYAN: [ Esc.CYAN, "cyan"],
+    Escape.GRAY: [ Esc.GRAY, "gray"],
+    Escape.DARKGRAY: [ Esc.DARKGRAY, "darkgray"],
+    Escape.BRIGHT_RED: [ Esc.BR_RED, "red"],
+    Escape.BRIGHT_GREEN: [ Esc.BR_GREEN, "green"],
+    Escape.BRIGHT_YELLOW: [ Esc.BR_YELLOW, "yellow"],
+    Escape.BRIGHT_BLUE: [ Esc.BR_BLUE, "blue"],
+    Escape.BRIGHT_MAGENTA: [ Esc.BR_MAGENTA, "magenta"],
+    Escape.BRIGHT_CYAN: [ Esc.BR_CYAN, "cyan"],
+    Escape.WHITE: [ Esc.WHITE, "white"],
 
     # ANSI background color codes
     #
-    Escape.ON_BLACK: [ Esc.ON_BLACK ],
-    Escape.ON_RED: [ Esc.ON_RED ],
-    Escape.ON_GREEN: [ Esc.ON_GREEN ],
-    Escape.ON_YELLOW: [ Esc.ON_YELLOW ],
-    Escape.ON_BLUE: [ Esc.ON_BLUE ],
-    Escape.ON_MAGENTA: [ Esc.ON_MAGENTA ],
-    Escape.ON_CYAN: [ Esc.ON_CYAN ],
-    Escape.ON_WHITE: [ Esc.ON_WHITE ],
+    Escape.ON_BLACK: [ Esc.ON_BLACK, "black"],
+    Escape.ON_RED: [ Esc.ON_RED, "red"],
+    Escape.ON_GREEN: [ Esc.ON_GREEN, "green"],
+    Escape.ON_YELLOW: [ Esc.ON_YELLOW, "yellow"],
+    Escape.ON_BLUE: [ Esc.ON_BLUE, "blue"],
+    Escape.ON_MAGENTA: [ Esc.ON_MAGENTA, "magenta"],
+    Escape.ON_CYAN: [ Esc.ON_CYAN, "cyan"],
+    Escape.ON_WHITE: [ Esc.ON_WHITE, "white"],
 
     # ANSI Text attributes
-    Escape.ATTR_NORMAL: [ Esc.ATTR_NORMAL ],
-    Escape.ATTR_BOLD: [ Esc.ATTR_BOLD ],
-    Escape.ATTR_LOWINTENSITY: [ Esc.ATTR_LOWINTENSITY ],
-    Escape.ATTR_ITALIC: [ Esc.ATTR_ITALIC ],
-    Escape.ATTR_UNDERLINE: [ Esc.ATTR_UNDERLINE ],
-    Escape.ATTR_SLOWBLINK: [ Esc.ATTR_SLOWBLINK ],
-    Escape.ATTR_FASTBLINK: [ Esc.ATTR_FASTBLINK ],
-    Escape.ATTR_REVERSE: [ Esc.ATTR_REVERSE ],
-    Escape.ATTR_FRACTUR: [ Esc.ATTR_FRACTUR ],
-    Escape.ATTR_FRAMED: [ Esc.ATTR_FRAMED ],
-    Escape.ATTR_OVERLINED: [ Esc.ATTR_OVERLINED ],
-    Escape.ATTR_SUPERSCRIPT: [ Esc.ATTR_SUPERSCRIPT ],
-    Escape.ATTR_SUBSCRIPT: [ Esc.ATTR_SUBSCRIPT ],
+    Escape.ATTR_NORMAL: [ Esc.ATTR_NORMAL, "normal"],
+    Escape.ATTR_BOLD: [ Esc.ATTR_BOLD, "bold"],
+    Escape.ATTR_LOWINTENSITY: [ Esc.ATTR_LOWINTENSITY, ""],
+    Escape.ATTR_ITALIC: [ Esc.ATTR_ITALIC, ""],
+    Escape.ATTR_UNDERLINE: [ Esc.ATTR_UNDERLINE, ""],
+    Escape.ATTR_SLOWBLINK: [ Esc.ATTR_SLOWBLINK, ""],
+    Escape.ATTR_FASTBLINK: [ Esc.ATTR_FASTBLINK, ""],
+    Escape.ATTR_REVERSE: [ Esc.ATTR_REVERSE, ""],
+    Escape.ATTR_FRACTUR: [ Esc.ATTR_FRACTUR, ""],
+    Escape.ATTR_FRAMED: [ Esc.ATTR_FRAMED, ""],
+    Escape.ATTR_OVERLINED: [ Esc.ATTR_OVERLINED, ""],
+    Escape.ATTR_SUPERSCRIPT: [ Esc.ATTR_SUPERSCRIPT, ""],
+    Escape.ATTR_SUBSCRIPT: [ Esc.ATTR_SUBSCRIPT, ""],
     
-    Escape.END: [ Esc.END ]
+    Escape.END: [ Esc.END, "" ]
     # Escape.CLEAR: [ Esc. ],
     # Escape.RESET: [ Esc. ],
     
@@ -349,8 +341,6 @@ def e2h(s: str) -> Escape:
 
     return None
 
-
-
 def escape2string(s: str) -> str:
     if s[0] != Esc.ESCAPE:
         # return "Not escape sequence"
@@ -362,6 +352,36 @@ def escape2string(s: str) -> str:
 
     return f"'\\x1b{s[1:]}' Sequence not supported"
 
+def esc2html(e: Escape) -> str:
+    return escape2html[e][1]
+
+@dataclass
+class TerminalState:
+    color:Escape = Escape.BLACK
+    bg_color:Escape = Escape.ON_WHITE
+    attribute:Escape = Escape.ATTR_NORMAL
+    cur_x = None
+    cur_y = None
+
+    def update(self, es) -> None:
+        #logging.debug(es)
+        if es == Escape.END:
+            self.color = Escape.BLACK
+            self.bg_color = Escape.WHITE
+            self.attribute = Escape.ATTR_NORMAL
+            
+        if es in [Escape.BLACK, Escape.RED, Escape.GREEN, Escape.YELLOW, Escape.BLUE,
+                  Escape.MAGENTA, Escape.CYAN, Escape.GRAY, Escape.DARKGRAY, Escape.BRIGHT_RED,
+                  Escape.BRIGHT_GREEN, Escape.BRIGHT_YELLOW, Escape.BRIGHT_BLUE, Escape.BRIGHT_MAGENTA,
+                  Escape.BRIGHT_CYAN, Escape.WHITE]:
+            self.color = es
+        logging.debug(f"{self.color}")
+
+    def state2html(self, s: str) -> str:
+        #x = f"""<span style="color:{esc2html(self.color)};background-color:{};font-weight:{}">{s}</span>"""
+        x = f"""<pre><span style="color:{esc2html(self.color)}">{s}</span></pre>"""
+        logging.debug(x)
+        return x
 
 FLAG_BLUE="\x1b[48;5;20m"
 FLAG_YELLOW="\x1b[48;5;226m"
@@ -420,7 +440,8 @@ class EscapeDecoder():
         if self.buf[j] == Esc.ESCAPE:              # Escape sequence found
             while j<l and not self.buf[j].isalpha():
                 j += 1
-
+            if j == l:
+                raise StopIteration
             # Complete Escape sequence
             if self.buf[j].isalpha():
                 res = self.buf[0:j+1]
@@ -454,7 +475,7 @@ class EscapeDecoder():
         return res
 
 
-etest = f"""  
+escape_attribute_test = f"""  
 {Esc.ATTR_NORMAL}Normal text{Esc.END}
 {Esc.ATTR_BOLD}Bold text{Esc.ATTR_NORMAL}
 {Esc.ATTR_LOWINTENSITY}Dim text{Esc.ATTR_NORMAL}
@@ -491,14 +512,11 @@ incomplete_escape_sequence = f"""
 
 end_with_newline = "Some text with newline end\n"
     
-
 def main() -> None:
     logging.basicConfig(format="[%(levelname)s] Line: %(lineno)d %(message)s", level=logging.DEBUG)
    
-    print(etest)
+    print(escape_attribute_test)
     print(flag)
-
-    
 
     dec = EscapeDecoder()
     dec.append_string(f"Normal color {Esc.RED}Red color {Esc.END}More normal color {Esc.BLUE}Blue angels {Esc.END}White end")
@@ -506,12 +524,12 @@ def main() -> None:
         print(f"{x}")
         
     dec2 = EscapeDecoder()
-    dec2.append_string(etest)
+    dec2.append_string(escape_attribute_test)
     for x in dec2:
         pass
         #print(f"{x}")
 
-    print(etest.replace("\x1b", "\\x1b").replace("\x0a", "\\n").replace("\x0d", '\\c'))
+    print(escape_attribute_test.replace("\x1b", "\\x1b").replace("\x0a", "\\n").replace("\x0d", '\\c'))
 
     res = subprocess.Popen(["pmg"], shell=False, stdout=subprocess.PIPE)
     out, err = res.communicate()
