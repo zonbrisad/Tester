@@ -1,18 +1,13 @@
    1              		.file	"jcinit.c"
    2              		.text
    3              	.Ltext0:
-   4              		.section	.text.unlikely.jinit_compress_master,"ax",@progbits
-   5              	.LCOLDB0:
-   6              		.section	.text.jinit_compress_master,"ax",@progbits
-   7              	.LHOTB0:
-   8              		.p2align 4,,15
-   9              		.section	.text.unlikely.jinit_compress_master
-  10              	.Ltext_cold0:
-  11              		.section	.text.jinit_compress_master
-  12              		.globl	jinit_compress_master
-  14              	jinit_compress_master:
-  15              	.LFB61:
-  16              		.file 1 "fltk-1.3.4-1/jpeg/jcinit.c"
+   4              		.section	.text.jinit_compress_master,"ax",@progbits
+   5              		.p2align 4
+   6              		.globl	jinit_compress_master
+   8              	jinit_compress_master:
+   9              	.LVL0:
+  10              	.LFB51:
+  11              		.file 1 "fltk-1.3.4-1/jpeg/jcinit.c"
    1:fltk-1.3.4-1/jpeg/jcinit.c **** /*
    2:fltk-1.3.4-1/jpeg/jcinit.c ****  * jcinit.c
    3:fltk-1.3.4-1/jpeg/jcinit.c ****  *
@@ -45,324 +40,354 @@
   30:fltk-1.3.4-1/jpeg/jcinit.c **** GLOBAL(void)
   31:fltk-1.3.4-1/jpeg/jcinit.c **** jinit_compress_master (j_compress_ptr cinfo)
   32:fltk-1.3.4-1/jpeg/jcinit.c **** {
-  17              		.loc 1 32 0
-  18              		.cfi_startproc
-  19              	.LVL0:
-  20 0000 53       		pushq	%rbx
-  21              		.cfi_def_cfa_offset 16
-  22              		.cfi_offset 3, -16
+  12              		.loc 1 32 1 view -0
+  13              		.cfi_startproc
+  14              		.loc 1 32 1 is_stmt 0 view .LVU1
+  15 0000 F30F1EFA 		endbr64
   33:fltk-1.3.4-1/jpeg/jcinit.c ****   long samplesperrow;
+  16              		.loc 1 33 3 is_stmt 1 view .LVU2
   34:fltk-1.3.4-1/jpeg/jcinit.c ****   JDIMENSION jd_samplesperrow;
+  17              		.loc 1 34 3 view .LVU3
   35:fltk-1.3.4-1/jpeg/jcinit.c **** 
   36:fltk-1.3.4-1/jpeg/jcinit.c ****   /* For now, precision must match compiled-in value... */
   37:fltk-1.3.4-1/jpeg/jcinit.c ****   if (cinfo->data_precision != BITS_IN_JSAMPLE)
-  23              		.loc 1 37 0
-  24 0001 837F5808 		cmpl	$8, 88(%rdi)
+  18              		.loc 1 37 3 view .LVU4
   32:fltk-1.3.4-1/jpeg/jcinit.c ****   long samplesperrow;
-  25              		.loc 1 32 0
-  26 0005 4889FB   		movq	%rdi, %rbx
-  27              		.loc 1 37 0
-  28 0008 7418     		je	.L2
+  19              		.loc 1 32 1 is_stmt 0 view .LVU5
+  20 0004 55       		pushq	%rbp
+  21              		.cfi_def_cfa_offset 16
+  22              		.cfi_offset 6, -16
+  23              		.loc 1 37 6 view .LVU6
+  24 0005 837F5808 		cmpl	$8, 88(%rdi)
+  32:fltk-1.3.4-1/jpeg/jcinit.c ****   long samplesperrow;
+  25              		.loc 1 32 1 view .LVU7
+  26 0009 4889FD   		movq	%rdi, %rbp
+  27              		.loc 1 37 6 view .LVU8
+  28 000c 7418     		je	.L2
   38:fltk-1.3.4-1/jpeg/jcinit.c ****     ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
-  29              		.loc 1 38 0
-  30 000a 488B07   		movq	(%rdi), %rax
-  31 000d C7402810 		movl	$16, 40(%rax)
+  29              		.loc 1 38 5 is_stmt 1 view .LVU9
+  30 000e 488B07   		movq	(%rdi), %rax
+  31 0011 C7402810 		movl	$16, 40(%rax)
   31      000000
-  32 0014 488B07   		movq	(%rdi), %rax
-  33 0017 8B5758   		movl	88(%rdi), %edx
-  34 001a 89502C   		movl	%edx, 44(%rax)
-  35 001d 488B07   		movq	(%rdi), %rax
-  36 0020 FF10     		call	*(%rax)
+  32 0018 488B07   		movq	(%rdi), %rax
+  33 001b 8B5758   		movl	88(%rdi), %edx
+  34 001e 89502C   		movl	%edx, 44(%rax)
+  35 0021 488B07   		movq	(%rdi), %rax
+  36 0024 FF10     		call	*(%rax)
   37              	.LVL1:
   38              	.L2:
   39:fltk-1.3.4-1/jpeg/jcinit.c **** 
   40:fltk-1.3.4-1/jpeg/jcinit.c ****   /* Sanity check on image dimensions */
   41:fltk-1.3.4-1/jpeg/jcinit.c ****   if (cinfo->image_height <= 0 || cinfo->image_width <= 0 ||
-  39              		.loc 1 41 0
-  40 0022 8B7334   		movl	52(%rbx), %esi
-  41 0025 85F6     		testl	%esi, %esi
-  42 0027 740B     		je	.L3
-  43              		.loc 1 41 0 is_stmt 0 discriminator 1
-  44 0029 8B4330   		movl	48(%rbx), %eax
-  45 002c 85C0     		testl	%eax, %eax
-  46 002e 0F85CC00 		jne	.L16
-  46      0000
-  47              	.L3:
+  39              		.loc 1 41 3 view .LVU10
+  40              		.loc 1 41 6 is_stmt 0 view .LVU11
+  41 0026 8B7534   		movl	52(%rbp), %esi
+  42 0029 85F6     		testl	%esi, %esi
+  43 002b 740B     		je	.L3
+  44              		.loc 1 41 40 discriminator 1 view .LVU12
+  45 002d 8B4530   		movl	48(%rbp), %eax
+  46              		.loc 1 41 32 discriminator 1 view .LVU13
+  47 0030 85C0     		testl	%eax, %eax
+  48 0032 0F85C800 		jne	.L16
+  48      0000
+  49              	.L3:
   42:fltk-1.3.4-1/jpeg/jcinit.c ****       cinfo->input_components <= 0)
   43:fltk-1.3.4-1/jpeg/jcinit.c ****     ERREXIT(cinfo, JERR_EMPTY_IMAGE);
-  48              		.loc 1 43 0 is_stmt 1
-  49 0034 488B03   		movq	(%rbx), %rax
-  50 0037 4889DF   		movq	%rbx, %rdi
-  51 003a C7402821 		movl	$33, 40(%rax)
-  51      000000
-  52 0041 488B03   		movq	(%rbx), %rax
-  53 0044 FF10     		call	*(%rax)
-  54              	.LVL2:
-  55 0046 8B4330   		movl	48(%rbx), %eax
-  56 0049 48635338 		movslq	56(%rbx), %rdx
-  57              	.L4:
+  50              		.loc 1 43 5 is_stmt 1 view .LVU14
+  51 0038 488B4500 		movq	0(%rbp), %rax
+  52 003c 4889EF   		movq	%rbp, %rdi
+  53 003f C7402821 		movl	$33, 40(%rax)
+  53      000000
+  54 0046 488B4500 		movq	0(%rbp), %rax
+  55 004a FF10     		call	*(%rax)
+  56              	.LVL2:
+  57 004c 8B4530   		movl	48(%rbp), %eax
+  58 004f 48635538 		movslq	56(%rbp), %rdx
+  59              	.L4:
   44:fltk-1.3.4-1/jpeg/jcinit.c **** 
   45:fltk-1.3.4-1/jpeg/jcinit.c ****   /* Width of an input scanline must be representable as JDIMENSION. */
   46:fltk-1.3.4-1/jpeg/jcinit.c ****   samplesperrow = (long) cinfo->image_width * (long) cinfo->input_components;
-  58              		.loc 1 46 0
-  59 004d 480FAFC2 		imulq	%rdx, %rax
-  60              	.LVL3:
+  60              		.loc 1 46 3 view .LVU15
+  61              		.loc 1 46 17 is_stmt 0 view .LVU16
+  62 0053 480FAFC2 		imulq	%rdx, %rax
+  63              	.LVL3:
   47:fltk-1.3.4-1/jpeg/jcinit.c ****   jd_samplesperrow = (JDIMENSION) samplesperrow;
+  64              		.loc 1 47 3 is_stmt 1 view .LVU17
   48:fltk-1.3.4-1/jpeg/jcinit.c ****   if ((long) jd_samplesperrow != samplesperrow)
-  61              		.loc 1 48 0
-  62 0051 89C2     		movl	%eax, %edx
-  63 0053 4839D0   		cmpq	%rdx, %rax
-  64 0056 7412     		je	.L5
+  65              		.loc 1 48 3 view .LVU18
+  66              		.loc 1 48 6 is_stmt 0 view .LVU19
+  67 0057 89C2     		movl	%eax, %edx
+  68 0059 4839D0   		cmpq	%rdx, %rax
+  69 005c 7414     		je	.L5
   49:fltk-1.3.4-1/jpeg/jcinit.c ****     ERREXIT(cinfo, JERR_WIDTH_OVERFLOW);
-  65              		.loc 1 49 0
-  66 0058 488B03   		movq	(%rbx), %rax
-  67              	.LVL4:
-  68 005b 4889DF   		movq	%rbx, %rdi
-  69 005e C7402848 		movl	$72, 40(%rax)
-  69      000000
-  70 0065 488B03   		movq	(%rbx), %rax
-  71 0068 FF10     		call	*(%rax)
-  72              	.LVL5:
-  73              	.L5:
+  70              		.loc 1 49 5 is_stmt 1 view .LVU20
+  71 005e 488B4500 		movq	0(%rbp), %rax
+  72              	.LVL4:
+  73              		.loc 1 49 5 is_stmt 0 view .LVU21
+  74 0062 4889EF   		movq	%rbp, %rdi
+  75 0065 C7402848 		movl	$72, 40(%rax)
+  75      000000
+  76 006c 488B4500 		movq	0(%rbp), %rax
+  77 0070 FF10     		call	*(%rax)
+  78              	.LVL5:
+  79              	.L5:
   50:fltk-1.3.4-1/jpeg/jcinit.c **** 
   51:fltk-1.3.4-1/jpeg/jcinit.c ****   /* Initialize master control (includes parameter checking/processing) */
   52:fltk-1.3.4-1/jpeg/jcinit.c ****   jinit_c_master_control(cinfo, FALSE /* full compression */);
-  74              		.loc 1 52 0
-  75 006a 31F6     		xorl	%esi, %esi
-  76 006c 4889DF   		movq	%rbx, %rdi
-  77 006f E8000000 		call	jinit_c_master_control
-  77      00
-  78              	.LVL6:
+  80              		.loc 1 52 3 is_stmt 1 view .LVU22
+  81 0072 31F6     		xorl	%esi, %esi
+  82 0074 4889EF   		movq	%rbp, %rdi
+  83 0077 E8000000 		call	jinit_c_master_control@PLT
+  83      00
+  84              	.LVL6:
   53:fltk-1.3.4-1/jpeg/jcinit.c **** 
   54:fltk-1.3.4-1/jpeg/jcinit.c ****   /* Preprocessing */
   55:fltk-1.3.4-1/jpeg/jcinit.c ****   if (! cinfo->raw_data_in) {
-  79              		.loc 1 55 0
-  80 0074 8B8B2001 		movl	288(%rbx), %ecx
-  80      0000
-  81 007a 85C9     		testl	%ecx, %ecx
-  82 007c 0F849600 		je	.L17
-  82      0000
-  83              	.L6:
+  85              		.loc 1 55 3 view .LVU23
+  86              		.loc 1 55 6 is_stmt 0 view .LVU24
+  87 007c 8B8D2001 		movl	288(%rbp), %ecx
+  87      0000
+  88 0082 85C9     		testl	%ecx, %ecx
+  89 0084 0F848E00 		je	.L17
+  89      0000
+  90              	.L6:
   56:fltk-1.3.4-1/jpeg/jcinit.c ****     jinit_color_converter(cinfo);
   57:fltk-1.3.4-1/jpeg/jcinit.c ****     jinit_downsampler(cinfo);
   58:fltk-1.3.4-1/jpeg/jcinit.c ****     jinit_c_prep_controller(cinfo, FALSE /* never need full buffer here */);
   59:fltk-1.3.4-1/jpeg/jcinit.c ****   }
   60:fltk-1.3.4-1/jpeg/jcinit.c ****   /* Forward DCT */
   61:fltk-1.3.4-1/jpeg/jcinit.c ****   jinit_forward_dct(cinfo);
-  84              		.loc 1 61 0
-  85 0082 4889DF   		movq	%rbx, %rdi
-  86 0085 E8000000 		call	jinit_forward_dct
-  86      00
-  87              	.LVL7:
+  91              		.loc 1 61 3 is_stmt 1 view .LVU25
+  92 008a 4889EF   		movq	%rbp, %rdi
+  93 008d E8000000 		call	jinit_forward_dct@PLT
+  93      00
+  94              	.LVL7:
   62:fltk-1.3.4-1/jpeg/jcinit.c ****   /* Entropy encoding: either Huffman or arithmetic coding. */
   63:fltk-1.3.4-1/jpeg/jcinit.c ****   if (cinfo->arith_code)
-  88              		.loc 1 63 0
-  89 008a 8B932401 		movl	292(%rbx), %edx
-  89      0000
+  95              		.loc 1 63 3 view .LVU26
+  96              		.loc 1 63 6 is_stmt 0 view .LVU27
+  97 0092 8B952401 		movl	292(%rbp), %edx
+  97      0000
   64:fltk-1.3.4-1/jpeg/jcinit.c ****     jinit_arith_encoder(cinfo);
-  90              		.loc 1 64 0
-  91 0090 4889DF   		movq	%rbx, %rdi
+  98              		.loc 1 64 5 view .LVU28
+  99 0098 4889EF   		movq	%rbp, %rdi
   63:fltk-1.3.4-1/jpeg/jcinit.c ****     jinit_arith_encoder(cinfo);
-  92              		.loc 1 63 0
-  93 0093 85D2     		testl	%edx, %edx
-  94 0095 7459     		je	.L7
-  95              		.loc 1 64 0
-  96 0097 E8000000 		call	jinit_arith_encoder
-  96      00
-  97              	.LVL8:
-  98              	.L8:
+ 100              		.loc 1 63 6 view .LVU29
+ 101 009b 85D2     		testl	%edx, %edx
+ 102 009d 7459     		je	.L7
+ 103              	.LVL8:
+ 104              		.loc 1 64 5 is_stmt 1 view .LVU30
+ 105 009f E8000000 		call	jinit_arith_encoder@PLT
+ 105      00
+ 106              	.LVL9:
+ 107              	.L8:
   65:fltk-1.3.4-1/jpeg/jcinit.c ****   else {
   66:fltk-1.3.4-1/jpeg/jcinit.c ****     jinit_huff_encoder(cinfo);
   67:fltk-1.3.4-1/jpeg/jcinit.c ****   }
   68:fltk-1.3.4-1/jpeg/jcinit.c **** 
   69:fltk-1.3.4-1/jpeg/jcinit.c ****   /* Need a full-image coefficient buffer in any multi-pass mode. */
   70:fltk-1.3.4-1/jpeg/jcinit.c ****   jinit_c_coef_controller(cinfo,
+ 108              		.loc 1 70 3 view .LVU31
   71:fltk-1.3.4-1/jpeg/jcinit.c **** 		(boolean) (cinfo->num_scans > 1 || cinfo->optimize_coding));
-  99              		.loc 1 71 0
- 100 009c 83BB1001 		cmpl	$1, 272(%rbx)
- 100      000001
- 101 00a3 BE010000 		movl	$1, %esi
- 101      00
- 102 00a8 7F0E     		jg	.L9
- 103 00aa 8B832801 		movl	296(%rbx), %eax
- 103      0000
- 104 00b0 31F6     		xorl	%esi, %esi
- 105 00b2 85C0     		testl	%eax, %eax
- 106 00b4 400F95C6 		setne	%sil
- 107              	.L9:
+ 109              		.loc 1 71 35 is_stmt 0 view .LVU32
+ 110 00a4 83BD1001 		cmpl	$1, 272(%rbp)
+ 110      000001
+ 111 00ab BE010000 		movl	$1, %esi
+ 111      00
+ 112 00b0 7F0E     		jg	.L9
+ 113              		.loc 1 71 35 discriminator 2 view .LVU33
+ 114 00b2 8B852801 		movl	296(%rbp), %eax
+ 114      0000
+ 115 00b8 31F6     		xorl	%esi, %esi
+ 116 00ba 85C0     		testl	%eax, %eax
+ 117 00bc 400F95C6 		setne	%sil
+ 118              	.L9:
   70:fltk-1.3.4-1/jpeg/jcinit.c **** 		(boolean) (cinfo->num_scans > 1 || cinfo->optimize_coding));
- 108              		.loc 1 70 0
- 109 00b8 4889DF   		movq	%rbx, %rdi
- 110 00bb E8000000 		call	jinit_c_coef_controller
- 110      00
- 111              	.LVL9:
+ 119              		.loc 1 70 3 view .LVU34
+ 120 00c0 4889EF   		movq	%rbp, %rdi
+ 121 00c3 E8000000 		call	jinit_c_coef_controller@PLT
+ 121      00
+ 122              	.LVL10:
   72:fltk-1.3.4-1/jpeg/jcinit.c ****   jinit_c_main_controller(cinfo, FALSE /* never need full buffer here */);
- 112              		.loc 1 72 0
- 113 00c0 31F6     		xorl	%esi, %esi
- 114 00c2 4889DF   		movq	%rbx, %rdi
- 115 00c5 E8000000 		call	jinit_c_main_controller
- 115      00
- 116              	.LVL10:
+ 123              		.loc 1 72 3 is_stmt 1 view .LVU35
+ 124 00c8 31F6     		xorl	%esi, %esi
+ 125 00ca 4889EF   		movq	%rbp, %rdi
+ 126 00cd E8000000 		call	jinit_c_main_controller@PLT
+ 126      00
+ 127              	.LVL11:
   73:fltk-1.3.4-1/jpeg/jcinit.c **** 
   74:fltk-1.3.4-1/jpeg/jcinit.c ****   jinit_marker_writer(cinfo);
- 117              		.loc 1 74 0
- 118 00ca 4889DF   		movq	%rbx, %rdi
- 119 00cd E8000000 		call	jinit_marker_writer
- 119      00
- 120              	.LVL11:
+ 128              		.loc 1 74 3 view .LVU36
+ 129 00d2 4889EF   		movq	%rbp, %rdi
+ 130 00d5 E8000000 		call	jinit_marker_writer@PLT
+ 130      00
+ 131              	.LVL12:
   75:fltk-1.3.4-1/jpeg/jcinit.c **** 
   76:fltk-1.3.4-1/jpeg/jcinit.c ****   /* We can now tell the memory manager to allocate virtual arrays. */
   77:fltk-1.3.4-1/jpeg/jcinit.c ****   (*cinfo->mem->realize_virt_arrays) ((j_common_ptr) cinfo);
- 121              		.loc 1 77 0
- 122 00d2 488B4308 		movq	8(%rbx), %rax
- 123 00d6 4889DF   		movq	%rbx, %rdi
- 124 00d9 FF5030   		call	*48(%rax)
- 125              	.LVL12:
+ 132              		.loc 1 77 3 view .LVU37
+ 133              		.loc 1 77 4 is_stmt 0 view .LVU38
+ 134 00da 488B4508 		movq	8(%rbp), %rax
+ 135 00de 4889EF   		movq	%rbp, %rdi
+ 136 00e1 FF5030   		call	*48(%rax)
+ 137              	.LVL13:
   78:fltk-1.3.4-1/jpeg/jcinit.c **** 
   79:fltk-1.3.4-1/jpeg/jcinit.c ****   /* Write the datastream header (SOI) immediately.
   80:fltk-1.3.4-1/jpeg/jcinit.c ****    * Frame and scan headers are postponed till later.
   81:fltk-1.3.4-1/jpeg/jcinit.c ****    * This lets application insert special markers after the SOI.
   82:fltk-1.3.4-1/jpeg/jcinit.c ****    */
   83:fltk-1.3.4-1/jpeg/jcinit.c ****   (*cinfo->marker->write_file_header) (cinfo);
- 126              		.loc 1 83 0
- 127 00dc 488B8310 		movq	528(%rbx), %rax
- 127      020000
- 128 00e3 4889DF   		movq	%rbx, %rdi
+ 138              		.loc 1 83 3 is_stmt 1 view .LVU39
+ 139              		.loc 1 83 4 is_stmt 0 view .LVU40
+ 140 00e4 488B8510 		movq	528(%rbp), %rax
+ 140      020000
+ 141 00eb 4889EF   		movq	%rbp, %rdi
   84:fltk-1.3.4-1/jpeg/jcinit.c **** }
- 129              		.loc 1 84 0
- 130 00e6 5B       		popq	%rbx
- 131              		.cfi_remember_state
- 132              		.cfi_def_cfa_offset 8
- 133              	.LVL13:
+ 142              		.loc 1 84 1 view .LVU41
+ 143 00ee 5D       		popq	%rbp
+ 144              		.cfi_remember_state
+ 145              		.cfi_def_cfa_offset 8
+ 146              	.LVL14:
   83:fltk-1.3.4-1/jpeg/jcinit.c **** }
- 134              		.loc 1 83 0
- 135 00e7 488B00   		movq	(%rax), %rax
- 136 00ea FFE0     		jmp	*%rax
- 137              	.LVL14:
- 138 00ec 0F1F4000 		.p2align 4,,10
- 139              		.p2align 3
- 140              	.L7:
- 141              		.cfi_restore_state
+ 147              		.loc 1 83 4 view .LVU42
+ 148 00ef 488B00   		movq	(%rax), %rax
+ 149 00f2 FFE0     		jmp	*%rax
+ 150              	.LVL15:
+ 151              		.p2align 4,,10
+ 152 00f4 0F1F4000 		.p2align 3
+ 153              	.L7:
+ 154              		.cfi_restore_state
   66:fltk-1.3.4-1/jpeg/jcinit.c ****   }
- 142              		.loc 1 66 0
- 143 00f0 E8000000 		call	jinit_huff_encoder
- 143      00
- 144              	.LVL15:
- 145 00f5 EBA5     		jmp	.L8
- 146 00f7 660F1F84 		.p2align 4,,10
- 146      00000000 
- 146      00
- 147              		.p2align 3
- 148              	.L16:
+ 155              		.loc 1 66 5 is_stmt 1 view .LVU43
+ 156 00f8 E8000000 		call	jinit_huff_encoder@PLT
+ 156      00
+ 157              	.LVL16:
+  66:fltk-1.3.4-1/jpeg/jcinit.c ****   }
+ 158              		.loc 1 66 5 is_stmt 0 view .LVU44
+ 159 00fd EBA5     		jmp	.L8
+ 160 00ff 90       		.p2align 4,,10
+ 161              		.p2align 3
+ 162              	.L16:
   42:fltk-1.3.4-1/jpeg/jcinit.c ****     ERREXIT(cinfo, JERR_EMPTY_IMAGE);
- 149              		.loc 1 42 0 discriminator 2
- 150 0100 48635338 		movslq	56(%rbx), %rdx
+ 163              		.loc 1 42 12 discriminator 2 view .LVU45
+ 164 0100 48635538 		movslq	56(%rbp), %rdx
   41:fltk-1.3.4-1/jpeg/jcinit.c ****       cinfo->input_components <= 0)
- 151              		.loc 1 41 0 discriminator 2
- 152 0104 85D2     		testl	%edx, %edx
- 153 0106 0F8F41FF 		jg	.L4
- 153      FFFF
- 154 010c E923FFFF 		jmp	.L3
- 154      FF
- 155              		.p2align 4,,10
- 156 0111 0F1F8000 		.p2align 3
- 156      000000
- 157              	.L17:
+ 165              		.loc 1 41 59 discriminator 2 view .LVU46
+ 166 0104 85D2     		testl	%edx, %edx
+ 167 0106 0F8F47FF 		jg	.L4
+ 167      FFFF
+ 168 010c E927FFFF 		jmp	.L3
+ 168      FF
+ 169              		.p2align 4,,10
+ 170 0111 0F1F8000 		.p2align 3
+ 170      000000
+ 171              	.L17:
   56:fltk-1.3.4-1/jpeg/jcinit.c ****     jinit_downsampler(cinfo);
- 158              		.loc 1 56 0
- 159 0118 4889DF   		movq	%rbx, %rdi
- 160 011b E8000000 		call	jinit_color_converter
- 160      00
- 161              	.LVL16:
+ 172              		.loc 1 56 5 is_stmt 1 view .LVU47
+ 173 0118 4889EF   		movq	%rbp, %rdi
+ 174 011b E8000000 		call	jinit_color_converter@PLT
+ 174      00
+ 175              	.LVL17:
   57:fltk-1.3.4-1/jpeg/jcinit.c ****     jinit_c_prep_controller(cinfo, FALSE /* never need full buffer here */);
- 162              		.loc 1 57 0
- 163 0120 4889DF   		movq	%rbx, %rdi
- 164 0123 E8000000 		call	jinit_downsampler
- 164      00
- 165              	.LVL17:
+ 176              		.loc 1 57 5 view .LVU48
+ 177 0120 4889EF   		movq	%rbp, %rdi
+ 178 0123 E8000000 		call	jinit_downsampler@PLT
+ 178      00
+ 179              	.LVL18:
   58:fltk-1.3.4-1/jpeg/jcinit.c ****   }
- 166              		.loc 1 58 0
- 167 0128 31F6     		xorl	%esi, %esi
- 168 012a 4889DF   		movq	%rbx, %rdi
- 169 012d E8000000 		call	jinit_c_prep_controller
- 169      00
- 170              	.LVL18:
- 171 0132 E94BFFFF 		jmp	.L6
- 171      FF
- 172              		.cfi_endproc
- 173              	.LFE61:
- 175              		.section	.text.unlikely.jinit_compress_master
- 176              	.LCOLDE0:
- 177              		.section	.text.jinit_compress_master
- 178              	.LHOTE0:
- 179              		.text
- 180              	.Letext0:
- 181              		.section	.text.unlikely.jinit_compress_master
- 182              	.Letext_cold0:
- 183              		.file 2 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
- 184              		.file 3 "/usr/include/x86_64-linux-gnu/bits/types.h"
- 185              		.file 4 "/usr/include/libio.h"
- 186              		.file 5 "fltk-1.3.4-1/jpeg/jmorecfg.h"
- 187              		.file 6 "fltk-1.3.4-1/jpeg/jpeglib.h"
- 188              		.file 7 "fltk-1.3.4-1/jpeg/jpegint.h"
- 189              		.file 8 "fltk-1.3.4-1/jpeg/jerror.h"
- 190              		.file 9 "/usr/include/stdio.h"
+ 180              		.loc 1 58 5 view .LVU49
+ 181 0128 31F6     		xorl	%esi, %esi
+ 182 012a 4889EF   		movq	%rbp, %rdi
+ 183 012d E8000000 		call	jinit_c_prep_controller@PLT
+ 183      00
+ 184              	.LVL19:
+ 185 0132 E953FFFF 		jmp	.L6
+ 185      FF
+ 186              		.cfi_endproc
+ 187              	.LFE51:
+ 189              		.text
+ 190              	.Letext0:
+ 191              		.file 2 "/usr/lib/gcc/x86_64-linux-gnu/9/include/stddef.h"
+ 192              		.file 3 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 193              		.file 4 "/usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h"
+ 194              		.file 5 "/usr/include/x86_64-linux-gnu/bits/types/FILE.h"
+ 195              		.file 6 "/usr/include/stdio.h"
+ 196              		.file 7 "/usr/include/x86_64-linux-gnu/bits/sys_errlist.h"
+ 197              		.file 8 "fltk-1.3.4-1/jpeg/jmorecfg.h"
+ 198              		.file 9 "fltk-1.3.4-1/jpeg/jpeglib.h"
+ 199              		.file 10 "fltk-1.3.4-1/jpeg/jpegint.h"
+ 200              		.file 11 "fltk-1.3.4-1/jpeg/jerror.h"
+ 10883              		.section	.note.gnu.property,"a"
+ 10884              		.align 8
+ 10885 0000 04000000 		.long	 1f - 0f
+ 10886 0004 10000000 		.long	 4f - 1f
+ 10887 0008 05000000 		.long	 5
+ 10888              	0:
+ 10889 000c 474E5500 		.string	 "GNU"
+ 10890              	1:
+ 10891              		.align 8
+ 10892 0010 020000C0 		.long	 0xc0000002
+ 10893 0014 04000000 		.long	 3f - 2f
+ 10894              	2:
+ 10895 0018 03000000 		.long	 0x3
+ 10896              	3:
+ 10897 001c 00000000 		.align 8
+ 10898              	4:
 DEFINED SYMBOLS
                             *ABS*:0000000000000000 jcinit.c
-     /tmp/cc6akBra.s:14     .text.jinit_compress_master:0000000000000000 jinit_compress_master
-                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
-                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+     /tmp/ccR1W2uD.s:8      .text.jinit_compress_master:0000000000000000 jinit_compress_master
+                           .group:0000000000000000 wm4.0.a6b23a418548ac0bda5d8549c4a2ec91
+                           .group:0000000000000000 wm4.stdcpredef.h.19.8dc41bed5d9037ff9622e015fb5f0ce3
                            .group:0000000000000000 wm4.jconfig.h.10.247fc3ff67998f3074970b1373c70333
-                           .group:0000000000000000 wm4.features.h.19.24da27e0a4d0d521fd057013d982b8b5
-                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
-                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
-                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
-                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
-                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
-                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
-                           .group:0000000000000000 wm4.waitflags.h.25.e401b8bcfee800b540b27abd7cc78de9
+                           .group:0000000000000000 wm4.features.h.19.5b5f5a19624a0527f479fdc52d54808f
+                           .group:0000000000000000 wm4.cdefs.h.19.98d80eddbb3f64f4f30cd9aee9c5593c
+                           .group:0000000000000000 wm4.wordsize.h.4.baf119258a1e53d8dba67ceac44ab6bc
+                           .group:0000000000000000 wm4.cdefs.h.475.fb75d2e4416aa349344e6f45f683bf28
+                           .group:0000000000000000 wm4.stubs64.h.10.6ce4c34010988db072c080326a6b6319
+                           .group:0000000000000000 wm4.libcheaderstart.h.37.d9274df4cc0172452960ad9644fa5579
+                           .group:0000000000000000 wm4.stdlib.h.28.2cffa49d94c5d85f4538f55f7b59771d
+                           .group:0000000000000000 wm4.stddef.h.181.13772e73e5434e8cc4fafaaddad2b5da
+                           .group:0000000000000000 wm4.waitflags.h.25.41934de4af99038521c2782f418699b1
                            .group:0000000000000000 wm4.waitstatus.h.28.93f167f49d64e2b9b99f98d1162a93bf
-                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
-                           .group:0000000000000000 wm4.endian.h.41.24cced64aef71195a51d4daa8e4f4a95
-                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
-                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
-                           .group:0000000000000000 wm4.byteswap.h.38.11ee5fdc0f6cc53a16c505b9233cecef
-                           .group:0000000000000000 wm4.endian.h.63.97272d7c64d5db8020003b32e9289502
-                           .group:0000000000000000 wm4.waitstatus.h.99.408b6270fa6eb71377201a241ef15f79
-                           .group:0000000000000000 wm4.stdlib.h.50.84aeca2ac6f37d40e1e9b3cef757ba2d
-                           .group:0000000000000000 wm4.types.h.23.f6dcbaa72f8f71361acef09804d45a5e
-                           .group:0000000000000000 wm4.time.h.53.beb46e650cd406cb917b6b96b45e640a
-                           .group:0000000000000000 wm4.stddef.h.238.847b6907dabda77be90a9ab7ad789e2e
-                           .group:0000000000000000 wm4.types.h.187.bd5a05039b505b3620e6973f1b2ffeb1
+                           .group:0000000000000000 wm4.stdlib.h.43.9fa4f727a2f1cb8d2450a574c9195553
+                           .group:0000000000000000 wm4.floatn.h.20.80c7cf8a8dfad237004b28d051d5afda
+                           .group:0000000000000000 wm4.floatncommon.h.34.7e1840d7dfb19e9bdb51aeb077d76637
+                           .group:0000000000000000 wm4.stdlib.h.71.2927e068ec678159b4f68ec2f089f7e6
+                           .group:0000000000000000 wm4.types.h.109.56eb9ae966b255288cc544f18746a7ff
+                           .group:0000000000000000 wm4.typesizes.h.24.2c64f817c0dc4b6fb2a2c619d717be26
+                           .group:0000000000000000 wm4.time64.h.24.a8166ae916ec910dab0d8987098d42ee
+                           .group:0000000000000000 wm4.types.h.40.18f72bab8242c2bb4c532a2aa95b5f00
+                           .group:0000000000000000 wm4.stddef.h.231.0adce5c8c1fd8096aaff50981b3d1f0f
+                           .group:0000000000000000 wm4.endian.h.20.efabd1018df5d7b4052c27dc6bdd5ce5
+                           .group:0000000000000000 wm4.endianness.h.2.2c6a211f7909f3af5e9e9cfa3b6b63c8
+                           .group:0000000000000000 wm4.endian.h.40.9e5d395adda2f4eb53ae69b69b664084
+                           .group:0000000000000000 wm4.endian.h.27.4c4f94262c4eaee2982fe00ed1b4f173
+                           .group:0000000000000000 wm4.byteswap.h.24.5363c019348146aada5aeadf51456576
+                           .group:0000000000000000 wm4.endian.h.39.30a606dbd99b6c3df61c1f06dbdabd4e
                            .group:0000000000000000 wm4.select.h.28.eb2f3debdbcffd1442ebddaebc4fb6ff
-                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
-                           .group:0000000000000000 wm4.select.h.36.f76c3b9e55c871743863013cc4cc14c9
-                           .group:0000000000000000 wm4.time.h.66.e70ce69790c975f0efb369340c432e0b
-                           .group:0000000000000000 wm4.time.h.25.ae5284cdff565e87a9198d819340325d
-                           .group:0000000000000000 wm4.select.h.49.e9d2041e5035cc68ebd1a20f7dbc8514
+                           .group:0000000000000000 wm4.__sigset_t.h.2.6b1ab6ff3d7b8fd9c0c42b0d80afbd80
+                           .group:0000000000000000 wm4.select.h.44.887a4ff60aa97fcd9c1be017735e1675
                            .group:0000000000000000 wm4.select2.h.27.f95f2ab0ffee66dc1b6575014894b21a
-                           .group:0000000000000000 wm4.sysmacros.h.20.8a0c33ff175cd9b434a86c0aaa36f0a2
-                           .group:0000000000000000 wm4.types.h.229.67b3f66bd74b06b451caec392a72a945
-                           .group:0000000000000000 wm4.pthreadtypes.h.25.6892b1493314fcf446bbc76e7362acba
+                           .group:0000000000000000 wm4.types.h.186.489a4ed8f2d29cd358843490f54ddea5
+                           .group:0000000000000000 wm4.pthreadtypesarch.h.25.6063cba99664c916e22d3a912bcc348a
+                           .group:0000000000000000 wm4.struct_mutex.h.20.ed51f515172b9be99e450ba83eb5dd99
+                           .group:0000000000000000 wm4.struct_rwlock.h.21.0254880f2904e3833fb8ae683e0f0330
                            .group:0000000000000000 wm4.alloca.h.19.edefa922a76c1cbaaf1e416903ba2d1c
                            .group:0000000000000000 wm4.alloca.h.29.156e12058824cc23d961c4d3b13031f6
-                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
-                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
-                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
-                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
-                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
-                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
-                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdio.h.24.5c1b97eef3c86b7a2549420f69f4f128
+                           .group:0000000000000000 wm4.libcheaderstart.h.31.87b3c285aeba93fe355ad19123070832
+                           .group:0000000000000000 wm4.stdio.h.31.e39a94e203ad4e1d978c0fc68ce016ee
+                           .group:0000000000000000 wm4.stddef.h.231.8136eebbab3406dbf57a7ec475dd5d83
                            .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
-                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
-                           .group:0000000000000000 wm4.stdio.h.80.17b7dd1ca72d8a61987532cb1d80194a
-                           .group:0000000000000000 wm4.stdio_lim.h.23.557290a6cddeba0587f574f29e3a5fb9
-                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
-                           .group:0000000000000000 wm4.stdio.h.26.cae64f7ada9bb8327a89dba6a5e93655
-                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
-                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
-                           .group:0000000000000000 wm4.string2.h.45.00535b99420fc3014c2da41d6645330d
-                           .group:0000000000000000 wm4.string3.h.31.0c4b9301b754a2db05eaafef869657d2
+                           .group:0000000000000000 wm4.struct_FILE.h.19.0888ac70396abe1031c03d393554032f
+                           .group:0000000000000000 wm4.stdio.h.53.139e45cf040c0964b2932c0c1bdaf6b2
+                           .group:0000000000000000 wm4.stdio_lim.h.19.e4b00b560d878dcfbc6635b3406640c5
+                           .group:0000000000000000 wm4.stdio.h.141.d7a290e19ca077c9e4aa7c43ede17a73
+                           .group:0000000000000000 wm4.stdio.h.20.b0caa08e5723aa5941367be0e5d2ec59
+                           .group:0000000000000000 wm4.stdio2.h.20.f45a0373b68e1296c4aa8cc09d66a9df
+                           .group:0000000000000000 wm4.string.h.23.93403f89af7dba8212345449bb14b09d
+                           .group:0000000000000000 wm4.string.h.31.e39a94e203ad4e1d978c0fc68ce016ee
+                           .group:0000000000000000 wm4.strings.h.19.a259f126920b1bb5ef76bc62b3984a3c
                            .group:0000000000000000 wm4.jinclude.h.67.b19f941ec97c4845fa4609292c7e2db4
                            .group:0000000000000000 wm4.jmorecfg.h.33.3b4c5f9cc07b3737823b06caf24d5b05
                            .group:0000000000000000 wm4.jpeglib.h.40.4f111c27252a38df39328d65454e82f4
@@ -370,6 +395,7 @@ DEFINED SYMBOLS
                            .group:0000000000000000 wm4.jerror.h.25.1dbd8674e70ab5215bc0037320e5c2a2
 
 UNDEFINED SYMBOLS
+_GLOBAL_OFFSET_TABLE_
 jinit_c_master_control
 jinit_forward_dct
 jinit_arith_encoder

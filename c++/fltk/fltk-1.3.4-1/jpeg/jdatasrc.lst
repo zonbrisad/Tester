@@ -1,17 +1,12 @@
    1              		.file	"jdatasrc.c"
    2              		.text
    3              	.Ltext0:
-   4              		.section	.text.unlikely.init_source,"ax",@progbits
-   5              	.LCOLDB0:
-   6              		.section	.text.init_source,"ax",@progbits
-   7              	.LHOTB0:
-   8              		.p2align 4,,15
-   9              		.section	.text.unlikely.init_source
-  10              	.Ltext_cold0:
-  11              		.section	.text.init_source
-  13              	init_source:
-  14              	.LFB61:
-  15              		.file 1 "fltk-1.3.4-1/jpeg/jdatasrc.c"
+   4              		.section	.text.init_source,"ax",@progbits
+   5              		.p2align 4
+   7              	init_source:
+   8              	.LVL0:
+   9              	.LFB51:
+  10              		.file 1 "fltk-1.3.4-1/jpeg/jdatasrc.c"
    1:fltk-1.3.4-1/jpeg/jdatasrc.c **** /*
    2:fltk-1.3.4-1/jpeg/jdatasrc.c ****  * jdatasrc.c
    3:fltk-1.3.4-1/jpeg/jdatasrc.c ****  *
@@ -58,43 +53,54 @@
   44:fltk-1.3.4-1/jpeg/jdatasrc.c **** METHODDEF(void)
   45:fltk-1.3.4-1/jpeg/jdatasrc.c **** init_source (j_decompress_ptr cinfo)
   46:fltk-1.3.4-1/jpeg/jdatasrc.c **** {
-  16              		.loc 1 46 0
-  17              		.cfi_startproc
-  18              	.LVL0:
+  11              		.loc 1 46 1 view -0
+  12              		.cfi_startproc
+  13              		.loc 1 46 1 is_stmt 0 view .LVU1
+  14 0000 F30F1EFA 		endbr64
   47:fltk-1.3.4-1/jpeg/jdatasrc.c ****   my_src_ptr src = (my_src_ptr) cinfo->src;
-  19              		.loc 1 47 0
-  20 0000 488B4728 		movq	40(%rdi), %rax
-  21              	.LVL1:
+  15              		.loc 1 47 3 is_stmt 1 view .LVU2
+  16              		.loc 1 47 14 is_stmt 0 view .LVU3
+  17 0004 488B4728 		movq	40(%rdi), %rax
+  18              	.LVL1:
   48:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
   49:fltk-1.3.4-1/jpeg/jdatasrc.c ****   /* We reset the empty-input-file flag for each image,
   50:fltk-1.3.4-1/jpeg/jdatasrc.c ****    * but we don't clear the input buffer.
   51:fltk-1.3.4-1/jpeg/jdatasrc.c ****    * This is correct behavior for reading a series of images from one source.
   52:fltk-1.3.4-1/jpeg/jdatasrc.c ****    */
   53:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->start_of_file = TRUE;
-  22              		.loc 1 53 0
-  23 0004 C7404801 		movl	$1, 72(%rax)
-  23      000000
-  24 000b C3       		ret
-  25              		.cfi_endproc
-  26              	.LFE61:
-  28              		.section	.text.unlikely.init_source
-  29              	.LCOLDE0:
-  30              		.section	.text.init_source
-  31              	.LHOTE0:
-  32              		.section	.text.unlikely.fill_mem_input_buffer,"ax",@progbits
-  33              	.LCOLDB1:
-  34              		.section	.text.fill_mem_input_buffer,"ax",@progbits
-  35              	.LHOTB1:
-  36              		.p2align 4,,15
-  38              	fill_mem_input_buffer:
-  39              	.LFB64:
+  19              		.loc 1 53 3 is_stmt 1 view .LVU4
+  20              		.loc 1 53 22 is_stmt 0 view .LVU5
+  21 0008 C7404801 		movl	$1, 72(%rax)
+  21      000000
   54:fltk-1.3.4-1/jpeg/jdatasrc.c **** }
+  22              		.loc 1 54 1 view .LVU6
+  23 000f C3       		ret
+  24              		.cfi_endproc
+  25              	.LFE51:
+  27              		.section	.text.init_mem_source,"ax",@progbits
+  28              		.p2align 4
+  30              	init_mem_source:
+  31              	.LVL2:
+  32              	.LFB52:
   55:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
   56:fltk-1.3.4-1/jpeg/jdatasrc.c **** METHODDEF(void)
   57:fltk-1.3.4-1/jpeg/jdatasrc.c **** init_mem_source (j_decompress_ptr cinfo)
   58:fltk-1.3.4-1/jpeg/jdatasrc.c **** {
+  33              		.loc 1 58 1 is_stmt 1 view -0
+  34              		.cfi_startproc
+  35              		.loc 1 58 1 is_stmt 0 view .LVU8
+  36 0000 F30F1EFA 		endbr64
   59:fltk-1.3.4-1/jpeg/jdatasrc.c ****   /* no work necessary here */
   60:fltk-1.3.4-1/jpeg/jdatasrc.c **** }
+  37              		.loc 1 60 1 is_stmt 1 view .LVU9
+  38 0004 C3       		ret
+  39              		.cfi_endproc
+  40              	.LFE52:
+  42              		.section	.text.fill_mem_input_buffer,"ax",@progbits
+  43              		.p2align 4
+  45              	fill_mem_input_buffer:
+  46              	.LVL3:
+  47              	.LFB54:
   61:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
   62:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
   63:fltk-1.3.4-1/jpeg/jdatasrc.c **** /*
@@ -158,10 +164,12 @@
  121:fltk-1.3.4-1/jpeg/jdatasrc.c **** METHODDEF(boolean)
  122:fltk-1.3.4-1/jpeg/jdatasrc.c **** fill_mem_input_buffer (j_decompress_ptr cinfo)
  123:fltk-1.3.4-1/jpeg/jdatasrc.c **** {
-  40              		.loc 1 123 0
-  41              		.cfi_startproc
-  42              	.LVL2:
+  48              		.loc 1 123 1 view -0
+  49              		.cfi_startproc
+  50              		.loc 1 123 1 is_stmt 0 view .LVU11
+  51 0000 F30F1EFA 		endbr64
  124:fltk-1.3.4-1/jpeg/jdatasrc.c ****   static const JOCTET mybuffer[4] = {
+  52              		.loc 1 124 3 is_stmt 1 view .LVU12
  125:fltk-1.3.4-1/jpeg/jdatasrc.c ****     (JOCTET) 0xFF, (JOCTET) JPEG_EOI, 0, 0
  126:fltk-1.3.4-1/jpeg/jdatasrc.c ****   };
  127:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
@@ -170,60 +178,61 @@
  130:fltk-1.3.4-1/jpeg/jdatasrc.c ****    * is treated as an error.
  131:fltk-1.3.4-1/jpeg/jdatasrc.c ****    */
  132:fltk-1.3.4-1/jpeg/jdatasrc.c ****   WARNMS(cinfo, JWRN_JPEG_EOF);
-  43              		.loc 1 132 0
-  44 0000 488B07   		movq	(%rdi), %rax
+  53              		.loc 1 132 3 view .LVU13
+  54 0004 488B07   		movq	(%rdi), %rax
  123:fltk-1.3.4-1/jpeg/jdatasrc.c ****   static const JOCTET mybuffer[4] = {
-  45              		.loc 1 123 0
-  46 0003 53       		pushq	%rbx
-  47              		.cfi_def_cfa_offset 16
-  48              		.cfi_offset 3, -16
+  55              		.loc 1 123 1 is_stmt 0 view .LVU14
+  56 0007 53       		pushq	%rbx
+  57              		.cfi_def_cfa_offset 16
+  58              		.cfi_offset 3, -16
  123:fltk-1.3.4-1/jpeg/jdatasrc.c ****   static const JOCTET mybuffer[4] = {
-  49              		.loc 1 123 0
-  50 0004 4889FB   		movq	%rdi, %rbx
-  51              		.loc 1 132 0
-  52 0007 BEFFFFFF 		movl	$-1, %esi
-  52      FF
-  53 000c C740287B 		movl	$123, 40(%rax)
-  53      000000
-  54 0013 488B07   		movq	(%rdi), %rax
-  55 0016 FF5008   		call	*8(%rax)
-  56              	.LVL3:
+  59              		.loc 1 123 1 view .LVU15
+  60 0008 4889FB   		movq	%rdi, %rbx
+  61              		.loc 1 132 3 view .LVU16
+  62 000b BEFFFFFF 		movl	$-1, %esi
+  62      FF
+  63 0010 C740287B 		movl	$123, 40(%rax)
+  63      000000
+  64 0017 488B07   		movq	(%rdi), %rax
+  65 001a FF5008   		call	*8(%rax)
+  66              	.LVL4:
  133:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
  134:fltk-1.3.4-1/jpeg/jdatasrc.c ****   /* Insert a fake EOI marker */
  135:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
  136:fltk-1.3.4-1/jpeg/jdatasrc.c ****   cinfo->src->next_input_byte = mybuffer;
-  57              		.loc 1 136 0
-  58 0019 488B4328 		movq	40(%rbx), %rax
-  59 001d 48C70000 		movq	$mybuffer.4262, (%rax)
-  59      000000
+  67              		.loc 1 136 3 is_stmt 1 view .LVU17
+  68              		.loc 1 136 8 is_stmt 0 view .LVU18
+  69 001d 488B4328 		movq	40(%rbx), %rax
+  70              		.loc 1 136 31 view .LVU19
+  71 0021 488D1500 		leaq	mybuffer.4134(%rip), %rdx
+  71      000000
+  72 0028 488910   		movq	%rdx, (%rax)
  137:fltk-1.3.4-1/jpeg/jdatasrc.c ****   cinfo->src->bytes_in_buffer = 2;
-  60              		.loc 1 137 0
-  61 0024 488B4328 		movq	40(%rbx), %rax
-  62 0028 48C74008 		movq	$2, 8(%rax)
-  62      02000000 
+  73              		.loc 1 137 3 is_stmt 1 view .LVU20
+  74              		.loc 1 137 8 is_stmt 0 view .LVU21
+  75 002b 488B4328 		movq	40(%rbx), %rax
+  76              		.loc 1 137 31 view .LVU22
+  77 002f 48C74008 		movq	$2, 8(%rax)
+  77      02000000 
  138:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
  139:fltk-1.3.4-1/jpeg/jdatasrc.c ****   return TRUE;
+  78              		.loc 1 139 3 is_stmt 1 view .LVU23
  140:fltk-1.3.4-1/jpeg/jdatasrc.c **** }
-  63              		.loc 1 140 0
-  64 0030 B8010000 		movl	$1, %eax
-  64      00
-  65 0035 5B       		popq	%rbx
-  66              		.cfi_def_cfa_offset 8
-  67              	.LVL4:
-  68 0036 C3       		ret
-  69              		.cfi_endproc
-  70              	.LFE64:
-  72              		.section	.text.unlikely.fill_mem_input_buffer
-  73              	.LCOLDE1:
-  74              		.section	.text.fill_mem_input_buffer
-  75              	.LHOTE1:
-  76              		.section	.text.unlikely.skip_input_data,"ax",@progbits
-  77              	.LCOLDB2:
-  78              		.section	.text.skip_input_data,"ax",@progbits
-  79              	.LHOTB2:
-  80              		.p2align 4,,15
-  82              	skip_input_data:
-  83              	.LFB65:
+  79              		.loc 1 140 1 is_stmt 0 view .LVU24
+  80 0037 B8010000 		movl	$1, %eax
+  80      00
+  81 003c 5B       		popq	%rbx
+  82              		.cfi_def_cfa_offset 8
+  83              	.LVL5:
+  84              		.loc 1 140 1 view .LVU25
+  85 003d C3       		ret
+  86              		.cfi_endproc
+  87              	.LFE54:
+  89              		.section	.text.skip_input_data,"ax",@progbits
+  90              		.p2align 4
+  92              	skip_input_data:
+  93              	.LVL6:
+  94              	.LFB55:
  141:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
  142:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
  143:fltk-1.3.4-1/jpeg/jdatasrc.c **** /*
@@ -241,100 +250,600 @@
  155:fltk-1.3.4-1/jpeg/jdatasrc.c **** METHODDEF(void)
  156:fltk-1.3.4-1/jpeg/jdatasrc.c **** skip_input_data (j_decompress_ptr cinfo, long num_bytes)
  157:fltk-1.3.4-1/jpeg/jdatasrc.c **** {
-  84              		.loc 1 157 0
-  85              		.cfi_startproc
-  86              	.LVL5:
+  95              		.loc 1 157 1 is_stmt 1 view -0
+  96              		.cfi_startproc
+  97              		.loc 1 157 1 is_stmt 0 view .LVU27
+  98 0000 F30F1EFA 		endbr64
  158:fltk-1.3.4-1/jpeg/jdatasrc.c ****   struct jpeg_source_mgr * src = cinfo->src;
+  99              		.loc 1 158 3 is_stmt 1 view .LVU28
+ 100              	.LVL7:
  159:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
  160:fltk-1.3.4-1/jpeg/jdatasrc.c ****   /* Just a dumb implementation for now.  Could use fseek() except
  161:fltk-1.3.4-1/jpeg/jdatasrc.c ****    * it doesn't work on pipes.  Not clear that being smart is worth
  162:fltk-1.3.4-1/jpeg/jdatasrc.c ****    * any trouble anyway --- large skips are infrequent.
  163:fltk-1.3.4-1/jpeg/jdatasrc.c ****    */
  164:fltk-1.3.4-1/jpeg/jdatasrc.c ****   if (num_bytes > 0) {
-  87              		.loc 1 164 0
-  88 0000 4885F6   		testq	%rsi, %rsi
-  89 0003 7E3C     		jle	.L11
+ 101              		.loc 1 164 3 view .LVU29
+ 102              		.loc 1 164 6 is_stmt 0 view .LVU30
+ 103 0004 4885F6   		testq	%rsi, %rsi
+ 104 0007 7E47     		jle	.L12
  157:fltk-1.3.4-1/jpeg/jdatasrc.c ****   struct jpeg_source_mgr * src = cinfo->src;
-  90              		.loc 1 157 0
-  91 0005 4154     		pushq	%r12
-  92              		.cfi_def_cfa_offset 16
-  93              		.cfi_offset 12, -16
-  94              	.LVL6:
-  95 0007 55       		pushq	%rbp
-  96              		.cfi_def_cfa_offset 24
-  97              		.cfi_offset 6, -24
-  98 0008 4989FC   		movq	%rdi, %r12
-  99 000b 53       		pushq	%rbx
- 100              		.cfi_def_cfa_offset 32
- 101              		.cfi_offset 3, -32
+ 105              		.loc 1 157 1 view .LVU31
+ 106 0009 4154     		pushq	%r12
+ 107              		.cfi_def_cfa_offset 16
+ 108              		.cfi_offset 12, -16
+ 109              	.LVL8:
+ 157:fltk-1.3.4-1/jpeg/jdatasrc.c ****   struct jpeg_source_mgr * src = cinfo->src;
+ 110              		.loc 1 157 1 view .LVU32
+ 111 000b 4989FC   		movq	%rdi, %r12
+ 112 000e 55       		pushq	%rbp
+ 113              		.cfi_def_cfa_offset 24
+ 114              		.cfi_offset 6, -24
+ 115 000f 53       		pushq	%rbx
+ 116              		.cfi_def_cfa_offset 32
+ 117              		.cfi_offset 3, -32
  158:fltk-1.3.4-1/jpeg/jdatasrc.c ****   struct jpeg_source_mgr * src = cinfo->src;
- 102              		.loc 1 158 0
- 103 000c 488B6F28 		movq	40(%rdi), %rbp
- 104 0010 4889F3   		movq	%rsi, %rbx
+ 118              		.loc 1 158 28 view .LVU33
+ 119 0010 488B6F28 		movq	40(%rdi), %rbp
  165:fltk-1.3.4-1/jpeg/jdatasrc.c ****     while (num_bytes > (long) src->bytes_in_buffer) {
- 105              		.loc 1 165 0
- 106 0013 488B4508 		movq	8(%rbp), %rax
- 107 0017 4839C6   		cmpq	%rax, %rsi
- 108 001a 7E16     		jle	.L6
- 109              	.LVL7:
- 110 001c 0F1F4000 		.p2align 4,,10
- 111              		.p2align 3
- 112              	.L7:
+ 120              		.loc 1 165 11 is_stmt 1 view .LVU34
+ 121 0014 4889F3   		movq	%rsi, %rbx
+ 122              		.loc 1 165 34 is_stmt 0 view .LVU35
+ 123 0017 488B5508 		movq	8(%rbp), %rdx
+ 124              		.loc 1 165 24 view .LVU36
+ 125 001b 4889D0   		movq	%rdx, %rax
+ 126              		.loc 1 165 11 view .LVU37
+ 127 001e 4839D6   		cmpq	%rdx, %rsi
+ 128 0021 7E1A     		jle	.L8
+ 129              	.LVL9:
+ 130              		.p2align 4,,10
+ 131 0023 0F1F4400 		.p2align 3
+ 131      00
+ 132              	.L9:
  166:fltk-1.3.4-1/jpeg/jdatasrc.c ****       num_bytes -= (long) src->bytes_in_buffer;
- 113              		.loc 1 166 0
- 114 0020 4829C3   		subq	%rax, %rbx
- 115              	.LVL8:
+ 133              		.loc 1 166 7 is_stmt 1 view .LVU38
+ 134              		.loc 1 166 17 is_stmt 0 view .LVU39
+ 135 0028 4829C3   		subq	%rax, %rbx
+ 136              	.LVL10:
  167:fltk-1.3.4-1/jpeg/jdatasrc.c ****       (void) (*src->fill_input_buffer) (cinfo);
- 116              		.loc 1 167 0
- 117 0023 4C89E7   		movq	%r12, %rdi
- 118 0026 FF5518   		call	*24(%rbp)
- 119              	.LVL9:
+ 137              		.loc 1 167 7 is_stmt 1 view .LVU40
+ 138              		.loc 1 167 15 is_stmt 0 view .LVU41
+ 139 002b 4C89E7   		movq	%r12, %rdi
+ 140 002e FF5518   		call	*24(%rbp)
+ 141              	.LVL11:
  165:fltk-1.3.4-1/jpeg/jdatasrc.c ****     while (num_bytes > (long) src->bytes_in_buffer) {
- 120              		.loc 1 165 0
- 121 0029 488B4508 		movq	8(%rbp), %rax
- 122 002d 4839D8   		cmpq	%rbx, %rax
- 123 0030 7CEE     		jl	.L7
- 124              	.L6:
+ 142              		.loc 1 165 11 is_stmt 1 view .LVU42
+ 165:fltk-1.3.4-1/jpeg/jdatasrc.c ****     while (num_bytes > (long) src->bytes_in_buffer) {
+ 143              		.loc 1 165 34 is_stmt 0 view .LVU43
+ 144 0031 488B4508 		movq	8(%rbp), %rax
+ 165:fltk-1.3.4-1/jpeg/jdatasrc.c ****     while (num_bytes > (long) src->bytes_in_buffer) {
+ 145              		.loc 1 165 24 view .LVU44
+ 146 0035 4889C2   		movq	%rax, %rdx
+ 165:fltk-1.3.4-1/jpeg/jdatasrc.c ****     while (num_bytes > (long) src->bytes_in_buffer) {
+ 147              		.loc 1 165 11 view .LVU45
+ 148 0038 4839D8   		cmpq	%rbx, %rax
+ 149 003b 7CEB     		jl	.L9
+ 150              	.L8:
  168:fltk-1.3.4-1/jpeg/jdatasrc.c ****       /* note we assume that fill_input_buffer will never return FALSE,
  169:fltk-1.3.4-1/jpeg/jdatasrc.c ****        * so suspension need not be handled.
  170:fltk-1.3.4-1/jpeg/jdatasrc.c ****        */
  171:fltk-1.3.4-1/jpeg/jdatasrc.c ****     }
  172:fltk-1.3.4-1/jpeg/jdatasrc.c ****     src->next_input_byte += (size_t) num_bytes;
- 125              		.loc 1 172 0
- 126 0032 48015D00 		addq	%rbx, 0(%rbp)
+ 151              		.loc 1 172 5 is_stmt 1 view .LVU46
  173:fltk-1.3.4-1/jpeg/jdatasrc.c ****     src->bytes_in_buffer -= (size_t) num_bytes;
- 127              		.loc 1 173 0
- 128 0036 4829D8   		subq	%rbx, %rax
- 129 0039 48894508 		movq	%rax, 8(%rbp)
+ 152              		.loc 1 173 26 is_stmt 0 view .LVU47
+ 153 003d 4829DA   		subq	%rbx, %rdx
+ 172:fltk-1.3.4-1/jpeg/jdatasrc.c ****     src->bytes_in_buffer -= (size_t) num_bytes;
+ 154              		.loc 1 172 26 view .LVU48
+ 155 0040 48015D00 		addq	%rbx, 0(%rbp)
+ 156              		.loc 1 173 5 is_stmt 1 view .LVU49
+ 157              		.loc 1 173 26 is_stmt 0 view .LVU50
+ 158 0044 48895508 		movq	%rdx, 8(%rbp)
  174:fltk-1.3.4-1/jpeg/jdatasrc.c ****   }
  175:fltk-1.3.4-1/jpeg/jdatasrc.c **** }
- 130              		.loc 1 175 0
- 131 003d 5B       		popq	%rbx
- 132              		.cfi_restore 3
- 133              		.cfi_def_cfa_offset 24
- 134              	.LVL10:
- 135 003e 5D       		popq	%rbp
- 136              		.cfi_restore 6
- 137              		.cfi_def_cfa_offset 16
- 138 003f 415C     		popq	%r12
- 139              		.cfi_restore 12
- 140              		.cfi_def_cfa_offset 8
- 141              	.LVL11:
- 142              	.L11:
- 143 0041 F3C3     		rep ret
- 144              		.cfi_endproc
- 145              	.LFE65:
- 147              		.section	.text.unlikely.skip_input_data
- 148              	.LCOLDE2:
- 149              		.section	.text.skip_input_data
- 150              	.LHOTE2:
- 151              		.section	.text.unlikely.term_source,"ax",@progbits
- 152              	.LCOLDB3:
- 153              		.section	.text.term_source,"ax",@progbits
- 154              	.LHOTB3:
- 155              		.p2align 4,,15
- 157              	term_source:
- 158              	.LFB66:
+ 159              		.loc 1 175 1 view .LVU51
+ 160 0048 5B       		popq	%rbx
+ 161              		.cfi_def_cfa_offset 24
+ 162              	.LVL12:
+ 163              		.loc 1 175 1 view .LVU52
+ 164 0049 5D       		popq	%rbp
+ 165              		.cfi_def_cfa_offset 16
+ 166 004a 415C     		popq	%r12
+ 167              		.cfi_def_cfa_offset 8
+ 168              	.LVL13:
+ 169              		.loc 1 175 1 view .LVU53
+ 170 004c C3       		ret
+ 171              	.LVL14:
+ 172 004d 0F1F00   		.p2align 4,,10
+ 173              		.p2align 3
+ 174              	.L12:
+ 175              		.cfi_restore 3
+ 176              		.cfi_restore 6
+ 177              		.cfi_restore 12
+ 178              		.loc 1 175 1 view .LVU54
+ 179 0050 C3       		ret
+ 180              		.cfi_endproc
+ 181              	.LFE55:
+ 183              		.section	.text.fill_input_buffer,"ax",@progbits
+ 184              		.p2align 4
+ 186              	fill_input_buffer:
+ 187              	.LVL15:
+ 188              	.LFB53:
+  98:fltk-1.3.4-1/jpeg/jdatasrc.c ****   my_src_ptr src = (my_src_ptr) cinfo->src;
+ 189              		.loc 1 98 1 is_stmt 1 view -0
+ 190              		.cfi_startproc
+  98:fltk-1.3.4-1/jpeg/jdatasrc.c ****   my_src_ptr src = (my_src_ptr) cinfo->src;
+ 191              		.loc 1 98 1 is_stmt 0 view .LVU56
+ 192 0000 F30F1EFA 		endbr64
+  99:fltk-1.3.4-1/jpeg/jdatasrc.c ****   size_t nbytes;
+ 193              		.loc 1 99 3 is_stmt 1 view .LVU57
+  98:fltk-1.3.4-1/jpeg/jdatasrc.c ****   my_src_ptr src = (my_src_ptr) cinfo->src;
+ 194              		.loc 1 98 1 is_stmt 0 view .LVU58
+ 195 0004 55       		pushq	%rbp
+ 196              		.cfi_def_cfa_offset 16
+ 197              		.cfi_offset 6, -16
+ 198 0005 4889FD   		movq	%rdi, %rbp
+ 199              	.LBB4:
+ 200              	.LBB5:
+ 201              		.file 2 "/usr/include/x86_64-linux-gnu/bits/stdio2.h"
+   1:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** /* Checking macros for stdio functions.
+   2:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    Copyright (C) 2004-2020 Free Software Foundation, Inc.
+   3:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    This file is part of the GNU C Library.
+   4:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+   5:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    The GNU C Library is free software; you can redistribute it and/or
+   6:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    modify it under the terms of the GNU Lesser General Public
+   7:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    License as published by the Free Software Foundation; either
+   8:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    version 2.1 of the License, or (at your option) any later version.
+   9:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  10:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    The GNU C Library is distributed in the hope that it will be useful,
+  11:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    but WITHOUT ANY WARRANTY; without even the implied warranty of
+  12:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  13:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    Lesser General Public License for more details.
+  14:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  15:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    You should have received a copy of the GNU Lesser General Public
+  16:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    License along with the GNU C Library; if not, see
+  17:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    <https://www.gnu.org/licenses/>.  */
+  18:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  19:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #ifndef _BITS_STDIO2_H
+  20:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #define _BITS_STDIO2_H 1
+  21:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  22:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #ifndef _STDIO_H
+  23:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # error "Never include <bits/stdio2.h> directly; use <stdio.h> instead."
+  24:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
+  25:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  26:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __sprintf_chk (char *__restrict __s, int __flag, size_t __slen,
+  27:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  const char *__restrict __format, ...) __THROW;
+  28:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vsprintf_chk (char *__restrict __s, int __flag, size_t __slen,
+  29:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   const char *__restrict __format,
+  30:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   __gnuc_va_list __ap) __THROW;
+  31:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  32:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #ifdef __va_arg_pack
+  33:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+  34:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (sprintf (char *__restrict __s, const char *__restrict __fmt, ...))
+  35:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+  36:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __builtin___sprintf_chk (__s, __USE_FORTIFY_LEVEL - 1,
+  37:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				  __bos (__s), __fmt, __va_arg_pack ());
+  38:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+  39:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #elif !defined __cplusplus
+  40:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # define sprintf(str, ...) \
+  41:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __builtin___sprintf_chk (str, __USE_FORTIFY_LEVEL - 1, __bos (str), \
+  42:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   __VA_ARGS__)
+  43:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
+  44:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  45:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+  46:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (vsprintf (char *__restrict __s, const char *__restrict __fmt,
+  47:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		 __gnuc_va_list __ap))
+  48:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+  49:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __builtin___vsprintf_chk (__s, __USE_FORTIFY_LEVEL - 1,
+  50:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				   __bos (__s), __fmt, __ap);
+  51:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+  52:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  53:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #if defined __USE_ISOC99 || defined __USE_UNIX98
+  54:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  55:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __snprintf_chk (char *__restrict __s, size_t __n, int __flag,
+  56:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   size_t __slen, const char *__restrict __format,
+  57:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   ...) __THROW;
+  58:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vsnprintf_chk (char *__restrict __s, size_t __n, int __flag,
+  59:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			    size_t __slen, const char *__restrict __format,
+  60:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			    __gnuc_va_list __ap) __THROW;
+  61:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  62:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # ifdef __va_arg_pack
+  63:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+  64:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (snprintf (char *__restrict __s, size_t __n,
+  65:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		 const char *__restrict __fmt, ...))
+  66:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+  67:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+  68:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				   __bos (__s), __fmt, __va_arg_pack ());
+  69:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+  70:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # elif !defined __cplusplus
+  71:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  define snprintf(str, len, ...) \
+  72:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __builtin___snprintf_chk (str, len, __USE_FORTIFY_LEVEL - 1, __bos (str), \
+  73:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			    __VA_ARGS__)
+  74:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # endif
+  75:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  76:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+  77:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (vsnprintf (char *__restrict __s, size_t __n,
+  78:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		  const char *__restrict __fmt, __gnuc_va_list __ap))
+  79:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+  80:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __builtin___vsnprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
+  81:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				    __bos (__s), __fmt, __ap);
+  82:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+  83:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  84:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
+  85:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  86:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #if __USE_FORTIFY_LEVEL > 1
+  87:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  88:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __fprintf_chk (FILE *__restrict __stream, int __flag,
+  89:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  const char *__restrict __format, ...);
+  90:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __printf_chk (int __flag, const char *__restrict __format, ...);
+  91:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vfprintf_chk (FILE *__restrict __stream, int __flag,
+  92:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   const char *__restrict __format, __gnuc_va_list __ap);
+  93:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vprintf_chk (int __flag, const char *__restrict __format,
+  94:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  __gnuc_va_list __ap);
+  95:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+  96:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # ifdef __va_arg_pack
+  97:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+  98:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** fprintf (FILE *__restrict __stream, const char *__restrict __fmt, ...)
+  99:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 100:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __fprintf_chk (__stream, __USE_FORTIFY_LEVEL - 1, __fmt,
+ 101:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			__va_arg_pack ());
+ 102:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 103:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 104:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+ 105:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** printf (const char *__restrict __fmt, ...)
+ 106:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 107:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __printf_chk (__USE_FORTIFY_LEVEL - 1, __fmt, __va_arg_pack ());
+ 108:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 109:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # elif !defined __cplusplus
+ 110:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  define printf(...) \
+ 111:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __printf_chk (__USE_FORTIFY_LEVEL - 1, __VA_ARGS__)
+ 112:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  define fprintf(stream, ...) \
+ 113:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __fprintf_chk (stream, __USE_FORTIFY_LEVEL - 1, __VA_ARGS__)
+ 114:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # endif
+ 115:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 116:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+ 117:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** vprintf (const char *__restrict __fmt, __gnuc_va_list __ap)
+ 118:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 119:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #ifdef __USE_EXTERN_INLINES
+ 120:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __vfprintf_chk (stdout, __USE_FORTIFY_LEVEL - 1, __fmt, __ap);
+ 121:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #else
+ 122:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __vprintf_chk (__USE_FORTIFY_LEVEL - 1, __fmt, __ap);
+ 123:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
+ 124:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 125:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 126:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+ 127:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** vfprintf (FILE *__restrict __stream,
+ 128:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 	  const char *__restrict __fmt, __gnuc_va_list __ap)
+ 129:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 130:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __vfprintf_chk (__stream, __USE_FORTIFY_LEVEL - 1, __fmt, __ap);
+ 131:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 132:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 133:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # ifdef __USE_XOPEN2K8
+ 134:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __dprintf_chk (int __fd, int __flag, const char *__restrict __fmt,
+ 135:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  ...) __attribute__ ((__format__ (__printf__, 3, 4)));
+ 136:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vdprintf_chk (int __fd, int __flag,
+ 137:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   const char *__restrict __fmt, __gnuc_va_list __arg)
+ 138:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****      __attribute__ ((__format__ (__printf__, 3, 0)));
+ 139:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 140:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  ifdef __va_arg_pack
+ 141:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+ 142:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** dprintf (int __fd, const char *__restrict __fmt, ...)
+ 143:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 144:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __dprintf_chk (__fd, __USE_FORTIFY_LEVEL - 1, __fmt,
+ 145:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			__va_arg_pack ());
+ 146:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 147:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  elif !defined __cplusplus
+ 148:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #   define dprintf(fd, ...) \
+ 149:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __dprintf_chk (fd, __USE_FORTIFY_LEVEL - 1, __VA_ARGS__)
+ 150:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  endif
+ 151:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 152:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+ 153:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** vdprintf (int __fd, const char *__restrict __fmt, __gnuc_va_list __ap)
+ 154:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 155:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __vdprintf_chk (__fd, __USE_FORTIFY_LEVEL - 1, __fmt, __ap);
+ 156:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 157:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # endif
+ 158:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 159:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # ifdef __USE_GNU
+ 160:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 161:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __asprintf_chk (char **__restrict __ptr, int __flag,
+ 162:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   const char *__restrict __fmt, ...)
+ 163:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****      __THROW __attribute__ ((__format__ (__printf__, 3, 4))) __wur;
+ 164:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vasprintf_chk (char **__restrict __ptr, int __flag,
+ 165:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			    const char *__restrict __fmt, __gnuc_va_list __arg)
+ 166:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****      __THROW __attribute__ ((__format__ (__printf__, 3, 0))) __wur;
+ 167:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __obstack_printf_chk (struct obstack *__restrict __obstack,
+ 168:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				 int __flag, const char *__restrict __format,
+ 169:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				 ...)
+ 170:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****      __THROW __attribute__ ((__format__ (__printf__, 3, 4)));
+ 171:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __obstack_vprintf_chk (struct obstack *__restrict __obstack,
+ 172:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				  int __flag,
+ 173:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				  const char *__restrict __format,
+ 174:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				  __gnuc_va_list __args)
+ 175:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****      __THROW __attribute__ ((__format__ (__printf__, 3, 0)));
+ 176:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 177:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  ifdef __va_arg_pack
+ 178:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+ 179:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (asprintf (char **__restrict __ptr, const char *__restrict __fmt, ...))
+ 180:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 181:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __asprintf_chk (__ptr, __USE_FORTIFY_LEVEL - 1, __fmt,
+ 182:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			 __va_arg_pack ());
+ 183:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 184:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 185:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+ 186:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (__asprintf (char **__restrict __ptr, const char *__restrict __fmt,
+ 187:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		   ...))
+ 188:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 189:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __asprintf_chk (__ptr, __USE_FORTIFY_LEVEL - 1, __fmt,
+ 190:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			 __va_arg_pack ());
+ 191:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 192:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 193:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+ 194:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (obstack_printf (struct obstack *__restrict __obstack,
+ 195:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		       const char *__restrict __fmt, ...))
+ 196:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 197:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __obstack_printf_chk (__obstack, __USE_FORTIFY_LEVEL - 1, __fmt,
+ 198:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			       __va_arg_pack ());
+ 199:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 200:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  elif !defined __cplusplus
+ 201:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #   define asprintf(ptr, ...) \
+ 202:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __asprintf_chk (ptr, __USE_FORTIFY_LEVEL - 1, __VA_ARGS__)
+ 203:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #   define __asprintf(ptr, ...) \
+ 204:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __asprintf_chk (ptr, __USE_FORTIFY_LEVEL - 1, __VA_ARGS__)
+ 205:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #   define obstack_printf(obstack, ...) \
+ 206:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __obstack_printf_chk (obstack, __USE_FORTIFY_LEVEL - 1, __VA_ARGS__)
+ 207:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  endif
+ 208:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 209:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+ 210:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (vasprintf (char **__restrict __ptr, const char *__restrict __fmt,
+ 211:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		  __gnuc_va_list __ap))
+ 212:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 213:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __vasprintf_chk (__ptr, __USE_FORTIFY_LEVEL - 1, __fmt, __ap);
+ 214:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 215:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 216:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
+ 217:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (obstack_vprintf (struct obstack *__restrict __obstack,
+ 218:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			const char *__restrict __fmt, __gnuc_va_list __ap))
+ 219:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 220:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __obstack_vprintf_chk (__obstack, __USE_FORTIFY_LEVEL - 1, __fmt,
+ 221:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				__ap);
+ 222:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 223:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 224:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # endif
+ 225:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 226:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
+ 227:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 228:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #if __GLIBC_USE (DEPRECATED_GETS)
+ 229:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern char *__gets_chk (char *__str, size_t) __wur;
+ 230:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern char *__REDIRECT (__gets_warn, (char *__str), gets)
+ 231:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****      __wur __warnattr ("please use fgets or getline instead, gets can't "
+ 232:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		       "specify buffer size");
+ 233:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 234:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function __wur char *
+ 235:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** gets (char *__str)
+ 236:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 237:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   if (__bos (__str) != (size_t) -1)
+ 238:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****     return __gets_chk (__str, __bos (__str));
+ 239:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __gets_warn (__str);
+ 240:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 241:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
+ 242:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 243:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern char *__fgets_chk (char *__restrict __s, size_t __size, int __n,
+ 244:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  FILE *__restrict __stream) __wur;
+ 245:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern char *__REDIRECT (__fgets_alias,
+ 246:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			 (char *__restrict __s, int __n,
+ 247:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  FILE *__restrict __stream), fgets) __wur;
+ 248:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern char *__REDIRECT (__fgets_chk_warn,
+ 249:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			 (char *__restrict __s, size_t __size, int __n,
+ 250:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  FILE *__restrict __stream), __fgets_chk)
+ 251:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****      __wur __warnattr ("fgets called with bigger size than length "
+ 252:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		       "of destination buffer");
+ 253:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 254:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function __wur char *
+ 255:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** fgets (char *__restrict __s, int __n, FILE *__restrict __stream)
+ 256:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 257:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   if (__bos (__s) != (size_t) -1)
+ 258:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****     {
+ 259:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****       if (!__builtin_constant_p (__n) || __n <= 0)
+ 260:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 	return __fgets_chk (__s, __bos (__s), __n, __stream);
+ 261:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 262:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****       if ((size_t) __n > __bos (__s))
+ 263:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 	return __fgets_chk_warn (__s, __bos (__s), __n, __stream);
+ 264:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****     }
+ 265:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __fgets_alias (__s, __n, __stream);
+ 266:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
+ 267:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 268:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern size_t __fread_chk (void *__restrict __ptr, size_t __ptrlen,
+ 269:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   size_t __size, size_t __n,
+ 270:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   FILE *__restrict __stream) __wur;
+ 271:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern size_t __REDIRECT (__fread_alias,
+ 272:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  (void *__restrict __ptr, size_t __size,
+ 273:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   size_t __n, FILE *__restrict __stream),
+ 274:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  fread) __wur;
+ 275:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern size_t __REDIRECT (__fread_chk_warn,
+ 276:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  (void *__restrict __ptr, size_t __ptrlen,
+ 277:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   size_t __size, size_t __n,
+ 278:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   FILE *__restrict __stream),
+ 279:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  __fread_chk)
+ 280:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****      __wur __warnattr ("fread called with bigger size * nmemb than length "
+ 281:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		       "of destination buffer");
+ 282:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 283:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function __wur size_t
+ 284:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** fread (void *__restrict __ptr, size_t __size, size_t __n,
+ 285:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****        FILE *__restrict __stream)
+ 286:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
+ 287:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   if (__bos0 (__ptr) != (size_t) -1)
+ 288:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****     {
+ 289:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****       if (!__builtin_constant_p (__size)
+ 290:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 	  || !__builtin_constant_p (__n)
+ 291:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 	  || (__size | __n) >= (((size_t) 1) << (8 * sizeof (size_t) / 2)))
+ 292:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 	return __fread_chk (__ptr, __bos0 (__ptr), __size, __n, __stream);
+ 293:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
+ 294:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****       if (__size * __n > __bos0 (__ptr))
+ 295:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 	return __fread_chk_warn (__ptr, __bos0 (__ptr), __size, __n, __stream);
+ 296:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****     }
+ 297:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __fread_alias (__ptr, __size, __n, __stream);
+ 202              		.loc 2 297 10 view .LVU59
+ 203 0008 BA001000 		movl	$4096, %edx
+ 203      00
+ 204 000d BE010000 		movl	$1, %esi
+ 204      00
+ 205              	.LBE5:
+ 206              	.LBE4:
+  98:fltk-1.3.4-1/jpeg/jdatasrc.c ****   my_src_ptr src = (my_src_ptr) cinfo->src;
+ 207              		.loc 1 98 1 view .LVU60
+ 208 0012 53       		pushq	%rbx
+ 209              		.cfi_def_cfa_offset 24
+ 210              		.cfi_offset 3, -24
+ 211 0013 4883EC08 		subq	$8, %rsp
+ 212              		.cfi_def_cfa_offset 32
+  99:fltk-1.3.4-1/jpeg/jdatasrc.c ****   size_t nbytes;
+ 213              		.loc 1 99 14 view .LVU61
+ 214 0017 488B5F28 		movq	40(%rdi), %rbx
+ 215              	.LVL16:
+ 100:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
+ 216              		.loc 1 100 3 is_stmt 1 view .LVU62
+ 102:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
+ 217              		.loc 1 102 3 view .LVU63
+ 218              	.LBB7:
+ 219              	.LBI4:
+ 284:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****        FILE *__restrict __stream)
+ 220              		.loc 2 284 1 view .LVU64
+ 221              	.LBB6:
+ 287:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****     {
+ 222              		.loc 2 287 3 view .LVU65
+ 223              		.loc 2 297 3 view .LVU66
+ 224              		.loc 2 297 10 is_stmt 0 view .LVU67
+ 225 001b 488B4B38 		movq	56(%rbx), %rcx
+ 226 001f 488B7B40 		movq	64(%rbx), %rdi
+ 227              	.LVL17:
+ 228              		.loc 2 297 10 view .LVU68
+ 229 0023 E8000000 		call	fread@PLT
+ 229      00
+ 230              	.LVL18:
+ 231              		.loc 2 297 10 view .LVU69
+ 232              	.LBE6:
+ 233              	.LBE7:
+ 104:fltk-1.3.4-1/jpeg/jdatasrc.c ****     if (src->start_of_file)	/* Treat empty input file as fatal error */
+ 234              		.loc 1 104 3 is_stmt 1 view .LVU70
+ 104:fltk-1.3.4-1/jpeg/jdatasrc.c ****     if (src->start_of_file)	/* Treat empty input file as fatal error */
+ 235              		.loc 1 104 6 is_stmt 0 view .LVU71
+ 236 0028 4885C0   		testq	%rax, %rax
+ 237 002b 7549     		jne	.L16
+ 105:fltk-1.3.4-1/jpeg/jdatasrc.c ****       ERREXIT(cinfo, JERR_INPUT_EMPTY);
+ 238              		.loc 1 105 5 is_stmt 1 view .LVU72
+ 105:fltk-1.3.4-1/jpeg/jdatasrc.c ****       ERREXIT(cinfo, JERR_INPUT_EMPTY);
+ 239              		.loc 1 105 8 is_stmt 0 view .LVU73
+ 240 002d 8B5348   		movl	72(%rbx), %edx
+ 241 0030 488B4500 		movq	0(%rbp), %rax
+ 242              	.LVL19:
+ 105:fltk-1.3.4-1/jpeg/jdatasrc.c ****       ERREXIT(cinfo, JERR_INPUT_EMPTY);
+ 243              		.loc 1 105 8 view .LVU74
+ 244 0034 85D2     		testl	%edx, %edx
+ 245 0036 7414     		je	.L17
+ 106:fltk-1.3.4-1/jpeg/jdatasrc.c ****     WARNMS(cinfo, JWRN_JPEG_EOF);
+ 246              		.loc 1 106 7 is_stmt 1 view .LVU75
+ 247 0038 C740282B 		movl	$43, 40(%rax)
+ 247      000000
+ 248 003f 488B4500 		movq	0(%rbp), %rax
+ 249 0043 4889EF   		movq	%rbp, %rdi
+ 250 0046 FF10     		call	*(%rax)
+ 251              	.LVL20:
+ 252 0048 488B4500 		movq	0(%rbp), %rax
+ 253              	.L17:
+ 107:fltk-1.3.4-1/jpeg/jdatasrc.c ****     /* Insert a fake EOI marker */
+ 254              		.loc 1 107 5 view .LVU76
+ 255 004c C740287B 		movl	$123, 40(%rax)
+ 255      000000
+ 256 0053 488B4500 		movq	0(%rbp), %rax
+ 257 0057 BEFFFFFF 		movl	$-1, %esi
+ 257      FF
+ 258 005c 4889EF   		movq	%rbp, %rdi
+ 259 005f FF5008   		call	*8(%rax)
+ 260              	.LVL21:
+ 109:fltk-1.3.4-1/jpeg/jdatasrc.c ****     src->buffer[1] = (JOCTET) JPEG_EOI;
+ 261              		.loc 1 109 5 view .LVU77
+ 109:fltk-1.3.4-1/jpeg/jdatasrc.c ****     src->buffer[1] = (JOCTET) JPEG_EOI;
+ 262              		.loc 1 109 8 is_stmt 0 view .LVU78
+ 263 0062 488B4340 		movq	64(%rbx), %rax
+ 109:fltk-1.3.4-1/jpeg/jdatasrc.c ****     src->buffer[1] = (JOCTET) JPEG_EOI;
+ 264              		.loc 1 109 20 view .LVU79
+ 265 0066 C600FF   		movb	$-1, (%rax)
+ 110:fltk-1.3.4-1/jpeg/jdatasrc.c ****     nbytes = 2;
+ 266              		.loc 1 110 5 is_stmt 1 view .LVU80
+ 110:fltk-1.3.4-1/jpeg/jdatasrc.c ****     nbytes = 2;
+ 267              		.loc 1 110 8 is_stmt 0 view .LVU81
+ 268 0069 488B4340 		movq	64(%rbx), %rax
+ 110:fltk-1.3.4-1/jpeg/jdatasrc.c ****     nbytes = 2;
+ 269              		.loc 1 110 20 view .LVU82
+ 270 006d C64001D9 		movb	$-39, 1(%rax)
+ 111:fltk-1.3.4-1/jpeg/jdatasrc.c ****   }
+ 271              		.loc 1 111 5 is_stmt 1 view .LVU83
+ 272              	.LVL22:
+ 111:fltk-1.3.4-1/jpeg/jdatasrc.c ****   }
+ 273              		.loc 1 111 12 is_stmt 0 view .LVU84
+ 274 0071 B8020000 		movl	$2, %eax
+ 274      00
+ 275              	.LVL23:
+ 276              	.L16:
+ 114:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->pub.bytes_in_buffer = nbytes;
+ 277              		.loc 1 114 3 is_stmt 1 view .LVU85
+ 114:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->pub.bytes_in_buffer = nbytes;
+ 278              		.loc 1 114 28 is_stmt 0 view .LVU86
+ 279 0076 488B5340 		movq	64(%rbx), %rdx
+ 115:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->start_of_file = FALSE;
+ 280              		.loc 1 115 28 view .LVU87
+ 281 007a 48894308 		movq	%rax, 8(%rbx)
+ 119:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
+ 282              		.loc 1 119 1 view .LVU88
+ 283 007e B8010000 		movl	$1, %eax
+ 283      00
+ 284              	.LVL24:
+ 116:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
+ 285              		.loc 1 116 22 view .LVU89
+ 286 0083 C7434800 		movl	$0, 72(%rbx)
+ 286      000000
+ 114:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->pub.bytes_in_buffer = nbytes;
+ 287              		.loc 1 114 28 view .LVU90
+ 288 008a 488913   		movq	%rdx, (%rbx)
+ 115:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->start_of_file = FALSE;
+ 289              		.loc 1 115 3 is_stmt 1 view .LVU91
+ 116:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
+ 290              		.loc 1 116 3 view .LVU92
+ 118:fltk-1.3.4-1/jpeg/jdatasrc.c **** }
+ 291              		.loc 1 118 3 view .LVU93
+ 119:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
+ 292              		.loc 1 119 1 is_stmt 0 view .LVU94
+ 293 008d 4883C408 		addq	$8, %rsp
+ 294              		.cfi_def_cfa_offset 24
+ 295 0091 5B       		popq	%rbx
+ 296              		.cfi_def_cfa_offset 16
+ 297              	.LVL25:
+ 119:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
+ 298              		.loc 1 119 1 view .LVU95
+ 299 0092 5D       		popq	%rbp
+ 300              		.cfi_def_cfa_offset 8
+ 301              	.LVL26:
+ 119:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
+ 302              		.loc 1 119 1 view .LVU96
+ 303 0093 C3       		ret
+ 304              		.cfi_endproc
+ 305              	.LFE53:
+ 307              		.section	.text.term_source,"ax",@progbits
+ 308              		.p2align 4
+ 310              	term_source:
+ 311              	.LFB60:
+ 312              		.cfi_startproc
+ 313 0000 F30F1EFA 		endbr64
+ 314 0004 C3       		ret
+ 315              		.cfi_endproc
+ 316              	.LFE60:
+ 318              		.section	.text.jpeg_stdio_src,"ax",@progbits
+ 319              		.p2align 4
+ 320              		.globl	jpeg_stdio_src
+ 322              	jpeg_stdio_src:
+ 323              	.LVL27:
+ 324              	.LFB57:
  176:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
  177:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
  178:fltk-1.3.4-1/jpeg/jdatasrc.c **** /*
@@ -358,470 +867,6 @@
  196:fltk-1.3.4-1/jpeg/jdatasrc.c **** METHODDEF(void)
  197:fltk-1.3.4-1/jpeg/jdatasrc.c **** term_source (j_decompress_ptr cinfo)
  198:fltk-1.3.4-1/jpeg/jdatasrc.c **** {
- 159              		.loc 1 198 0
- 160              		.cfi_startproc
- 161              	.LVL12:
- 162 0000 F3C3     		rep ret
- 163              		.cfi_endproc
- 164              	.LFE66:
- 166              		.section	.text.unlikely.term_source
- 167              	.LCOLDE3:
- 168              		.section	.text.term_source
- 169              	.LHOTE3:
- 170              		.section	.text.unlikely.fill_input_buffer,"ax",@progbits
- 171              	.LCOLDB4:
- 172              		.section	.text.fill_input_buffer,"ax",@progbits
- 173              	.LHOTB4:
- 174              		.p2align 4,,15
- 176              	fill_input_buffer:
- 177              	.LFB63:
-  98:fltk-1.3.4-1/jpeg/jdatasrc.c ****   my_src_ptr src = (my_src_ptr) cinfo->src;
- 178              		.loc 1 98 0
- 179              		.cfi_startproc
- 180              	.LVL13:
-  98:fltk-1.3.4-1/jpeg/jdatasrc.c ****   my_src_ptr src = (my_src_ptr) cinfo->src;
- 181              		.loc 1 98 0
- 182 0000 55       		pushq	%rbp
- 183              		.cfi_def_cfa_offset 16
- 184              		.cfi_offset 6, -16
- 185 0001 53       		pushq	%rbx
- 186              		.cfi_def_cfa_offset 24
- 187              		.cfi_offset 3, -24
- 188 0002 4889FD   		movq	%rdi, %rbp
- 189              	.LBB4:
- 190              	.LBB5:
- 191              		.file 2 "/usr/include/x86_64-linux-gnu/bits/stdio2.h"
-   1:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** /* Checking macros for stdio functions.
-   2:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    Copyright (C) 2004-2016 Free Software Foundation, Inc.
-   3:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    This file is part of the GNU C Library.
-   4:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
-   5:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    The GNU C Library is free software; you can redistribute it and/or
-   6:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    modify it under the terms of the GNU Lesser General Public
-   7:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    License as published by the Free Software Foundation; either
-   8:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    version 2.1 of the License, or (at your option) any later version.
-   9:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
-  10:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    The GNU C Library is distributed in the hope that it will be useful,
-  11:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    but WITHOUT ANY WARRANTY; without even the implied warranty of
-  12:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-  13:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    Lesser General Public License for more details.
-  14:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
-  15:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    You should have received a copy of the GNU Lesser General Public
-  16:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    License along with the GNU C Library; if not, see
-  17:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****    <http://www.gnu.org/licenses/>.  */
-  18:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
-  19:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #ifndef _STDIO_H
-  20:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # error "Never include <bits/stdio2.h> directly; use <stdio.h> instead."
-  21:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
-  22:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
-  23:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __sprintf_chk (char *__restrict __s, int __flag, size_t __slen,
-  24:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  const char *__restrict __format, ...) __THROW;
-  25:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vsprintf_chk (char *__restrict __s, int __flag, size_t __slen,
-  26:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   const char *__restrict __format,
-  27:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   _G_va_list __ap) __THROW;
-  28:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
-  29:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #ifdef __va_arg_pack
-  30:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
-  31:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (sprintf (char *__restrict __s, const char *__restrict __fmt, ...))
-  32:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
-  33:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __builtin___sprintf_chk (__s, __USE_FORTIFY_LEVEL - 1,
-  34:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				  __bos (__s), __fmt, __va_arg_pack ());
-  35:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
-  36:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #elif !defined __cplusplus
-  37:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # define sprintf(str, ...) \
-  38:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __builtin___sprintf_chk (str, __USE_FORTIFY_LEVEL - 1, __bos (str), \
-  39:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   __VA_ARGS__)
-  40:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
-  41:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
-  42:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
-  43:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (vsprintf (char *__restrict __s, const char *__restrict __fmt,
-  44:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		 _G_va_list __ap))
-  45:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
-  46:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __builtin___vsprintf_chk (__s, __USE_FORTIFY_LEVEL - 1,
-  47:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				   __bos (__s), __fmt, __ap);
-  48:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
-  49:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
-  50:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #if defined __USE_ISOC99 || defined __USE_UNIX98
-  51:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
-  52:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __snprintf_chk (char *__restrict __s, size_t __n, int __flag,
-  53:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   size_t __slen, const char *__restrict __format,
-  54:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   ...) __THROW;
-  55:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vsnprintf_chk (char *__restrict __s, size_t __n, int __flag,
-  56:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			    size_t __slen, const char *__restrict __format,
-  57:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			    _G_va_list __ap) __THROW;
-  58:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
-  59:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # ifdef __va_arg_pack
-  60:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
-  61:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (snprintf (char *__restrict __s, size_t __n,
-  62:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		 const char *__restrict __fmt, ...))
-  63:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
-  64:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __builtin___snprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
-  65:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				   __bos (__s), __fmt, __va_arg_pack ());
-  66:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
-  67:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # elif !defined __cplusplus
-  68:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  define snprintf(str, len, ...) \
-  69:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __builtin___snprintf_chk (str, len, __USE_FORTIFY_LEVEL - 1, __bos (str), \
-  70:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			    __VA_ARGS__)
-  71:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # endif
-  72:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
-  73:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
-  74:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (vsnprintf (char *__restrict __s, size_t __n,
-  75:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		  const char *__restrict __fmt, _G_va_list __ap))
-  76:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
-  77:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __builtin___vsnprintf_chk (__s, __n, __USE_FORTIFY_LEVEL - 1,
-  78:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				    __bos (__s), __fmt, __ap);
-  79:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
-  80:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
-  81:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
-  82:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
-  83:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #if __USE_FORTIFY_LEVEL > 1
-  84:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
-  85:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __fprintf_chk (FILE *__restrict __stream, int __flag,
-  86:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  const char *__restrict __format, ...);
-  87:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __printf_chk (int __flag, const char *__restrict __format, ...);
-  88:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vfprintf_chk (FILE *__restrict __stream, int __flag,
-  89:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   const char *__restrict __format, _G_va_list __ap);
-  90:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vprintf_chk (int __flag, const char *__restrict __format,
-  91:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  _G_va_list __ap);
-  92:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
-  93:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # ifdef __va_arg_pack
-  94:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
-  95:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** fprintf (FILE *__restrict __stream, const char *__restrict __fmt, ...)
-  96:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
-  97:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __fprintf_chk (__stream, __USE_FORTIFY_LEVEL - 1, __fmt,
-  98:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			__va_arg_pack ());
-  99:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
- 100:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
- 101:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
- 102:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** printf (const char *__restrict __fmt, ...)
- 103:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
- 104:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __printf_chk (__USE_FORTIFY_LEVEL - 1, __fmt, __va_arg_pack ());
- 105:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
- 106:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # elif !defined __cplusplus
- 107:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  define printf(...) \
- 108:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __printf_chk (__USE_FORTIFY_LEVEL - 1, __VA_ARGS__)
- 109:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  define fprintf(stream, ...) \
- 110:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __fprintf_chk (stream, __USE_FORTIFY_LEVEL - 1, __VA_ARGS__)
- 111:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # endif
- 112:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
- 113:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
- 114:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** vprintf (const char *__restrict __fmt, _G_va_list __ap)
- 115:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
- 116:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #ifdef __USE_EXTERN_INLINES
- 117:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __vfprintf_chk (stdout, __USE_FORTIFY_LEVEL - 1, __fmt, __ap);
- 118:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #else
- 119:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __vprintf_chk (__USE_FORTIFY_LEVEL - 1, __fmt, __ap);
- 120:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
- 121:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
- 122:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
- 123:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
- 124:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** vfprintf (FILE *__restrict __stream,
- 125:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 	  const char *__restrict __fmt, _G_va_list __ap)
- 126:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
- 127:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __vfprintf_chk (__stream, __USE_FORTIFY_LEVEL - 1, __fmt, __ap);
- 128:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
- 129:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
- 130:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # ifdef __USE_XOPEN2K8
- 131:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __dprintf_chk (int __fd, int __flag, const char *__restrict __fmt,
- 132:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  ...) __attribute__ ((__format__ (__printf__, 3, 4)));
- 133:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vdprintf_chk (int __fd, int __flag,
- 134:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   const char *__restrict __fmt, _G_va_list __arg)
- 135:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****      __attribute__ ((__format__ (__printf__, 3, 0)));
- 136:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
- 137:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  ifdef __va_arg_pack
- 138:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
- 139:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** dprintf (int __fd, const char *__restrict __fmt, ...)
- 140:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
- 141:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __dprintf_chk (__fd, __USE_FORTIFY_LEVEL - 1, __fmt,
- 142:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			__va_arg_pack ());
- 143:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
- 144:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  elif !defined __cplusplus
- 145:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #   define dprintf(fd, ...) \
- 146:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __dprintf_chk (fd, __USE_FORTIFY_LEVEL - 1, __VA_ARGS__)
- 147:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  endif
- 148:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
- 149:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
- 150:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** vdprintf (int __fd, const char *__restrict __fmt, _G_va_list __ap)
- 151:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
- 152:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __vdprintf_chk (__fd, __USE_FORTIFY_LEVEL - 1, __fmt, __ap);
- 153:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
- 154:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # endif
- 155:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
- 156:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # ifdef __USE_GNU
- 157:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
- 158:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __asprintf_chk (char **__restrict __ptr, int __flag,
- 159:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   const char *__restrict __fmt, ...)
- 160:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****      __THROW __attribute__ ((__format__ (__printf__, 3, 4))) __wur;
- 161:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __vasprintf_chk (char **__restrict __ptr, int __flag,
- 162:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			    const char *__restrict __fmt, _G_va_list __arg)
- 163:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****      __THROW __attribute__ ((__format__ (__printf__, 3, 0))) __wur;
- 164:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __obstack_printf_chk (struct obstack *__restrict __obstack,
- 165:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				 int __flag, const char *__restrict __format,
- 166:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				 ...)
- 167:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****      __THROW __attribute__ ((__format__ (__printf__, 3, 4)));
- 168:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern int __obstack_vprintf_chk (struct obstack *__restrict __obstack,
- 169:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				  int __flag,
- 170:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				  const char *__restrict __format,
- 171:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				  _G_va_list __args)
- 172:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****      __THROW __attribute__ ((__format__ (__printf__, 3, 0)));
- 173:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
- 174:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  ifdef __va_arg_pack
- 175:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
- 176:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (asprintf (char **__restrict __ptr, const char *__restrict __fmt, ...))
- 177:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
- 178:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __asprintf_chk (__ptr, __USE_FORTIFY_LEVEL - 1, __fmt,
- 179:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			 __va_arg_pack ());
- 180:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
- 181:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
- 182:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
- 183:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (__asprintf (char **__restrict __ptr, const char *__restrict __fmt,
- 184:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		   ...))
- 185:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
- 186:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __asprintf_chk (__ptr, __USE_FORTIFY_LEVEL - 1, __fmt,
- 187:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			 __va_arg_pack ());
- 188:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
- 189:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
- 190:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
- 191:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (obstack_printf (struct obstack *__restrict __obstack,
- 192:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		       const char *__restrict __fmt, ...))
- 193:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
- 194:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __obstack_printf_chk (__obstack, __USE_FORTIFY_LEVEL - 1, __fmt,
- 195:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			       __va_arg_pack ());
- 196:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
- 197:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  elif !defined __cplusplus
- 198:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #   define asprintf(ptr, ...) \
- 199:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __asprintf_chk (ptr, __USE_FORTIFY_LEVEL - 1, __VA_ARGS__)
- 200:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #   define __asprintf(ptr, ...) \
- 201:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __asprintf_chk (ptr, __USE_FORTIFY_LEVEL - 1, __VA_ARGS__)
- 202:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #   define obstack_printf(obstack, ...) \
- 203:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   __obstack_printf_chk (obstack, __USE_FORTIFY_LEVEL - 1, __VA_ARGS__)
- 204:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #  endif
- 205:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
- 206:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
- 207:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (vasprintf (char **__restrict __ptr, const char *__restrict __fmt,
- 208:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		  _G_va_list __ap))
- 209:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
- 210:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __vasprintf_chk (__ptr, __USE_FORTIFY_LEVEL - 1, __fmt, __ap);
- 211:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
- 212:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
- 213:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function int
- 214:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __NTH (obstack_vprintf (struct obstack *__restrict __obstack,
- 215:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			const char *__restrict __fmt, _G_va_list __ap))
- 216:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
- 217:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __obstack_vprintf_chk (__obstack, __USE_FORTIFY_LEVEL - 1, __fmt,
- 218:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 				__ap);
- 219:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
- 220:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
- 221:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** # endif
- 222:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
- 223:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
- 224:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
- 225:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #if !defined __USE_ISOC11 \
- 226:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****     || (defined __cplusplus && __cplusplus <= 201103L && !defined __USE_GNU)
- 227:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern char *__gets_chk (char *__str, size_t) __wur;
- 228:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern char *__REDIRECT (__gets_warn, (char *__str), gets)
- 229:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****      __wur __warnattr ("please use fgets or getline instead, gets can't "
- 230:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		       "specify buffer size");
- 231:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
- 232:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function __wur char *
- 233:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** gets (char *__str)
- 234:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
- 235:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   if (__bos (__str) != (size_t) -1)
- 236:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****     return __gets_chk (__str, __bos (__str));
- 237:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __gets_warn (__str);
- 238:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
- 239:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** #endif
- 240:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
- 241:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern char *__fgets_chk (char *__restrict __s, size_t __size, int __n,
- 242:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  FILE *__restrict __stream) __wur;
- 243:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern char *__REDIRECT (__fgets_alias,
- 244:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			 (char *__restrict __s, int __n,
- 245:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  FILE *__restrict __stream), fgets) __wur;
- 246:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern char *__REDIRECT (__fgets_chk_warn,
- 247:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			 (char *__restrict __s, size_t __size, int __n,
- 248:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  FILE *__restrict __stream), __fgets_chk)
- 249:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****      __wur __warnattr ("fgets called with bigger size than length "
- 250:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		       "of destination buffer");
- 251:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
- 252:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function __wur char *
- 253:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** fgets (char *__restrict __s, int __n, FILE *__restrict __stream)
- 254:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
- 255:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   if (__bos (__s) != (size_t) -1)
- 256:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****     {
- 257:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****       if (!__builtin_constant_p (__n) || __n <= 0)
- 258:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 	return __fgets_chk (__s, __bos (__s), __n, __stream);
- 259:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
- 260:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****       if ((size_t) __n > __bos (__s))
- 261:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 	return __fgets_chk_warn (__s, __bos (__s), __n, __stream);
- 262:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****     }
- 263:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __fgets_alias (__s, __n, __stream);
- 264:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** }
- 265:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
- 266:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern size_t __fread_chk (void *__restrict __ptr, size_t __ptrlen,
- 267:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   size_t __size, size_t __n,
- 268:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   FILE *__restrict __stream) __wur;
- 269:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern size_t __REDIRECT (__fread_alias,
- 270:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  (void *__restrict __ptr, size_t __size,
- 271:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   size_t __n, FILE *__restrict __stream),
- 272:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  fread) __wur;
- 273:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** extern size_t __REDIRECT (__fread_chk_warn,
- 274:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  (void *__restrict __ptr, size_t __ptrlen,
- 275:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   size_t __size, size_t __n,
- 276:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			   FILE *__restrict __stream),
- 277:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 			  __fread_chk)
- 278:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****      __wur __warnattr ("fread called with bigger size * nmemb than length "
- 279:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 		       "of destination buffer");
- 280:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
- 281:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** __fortify_function __wur size_t
- 282:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** fread (void *__restrict __ptr, size_t __size, size_t __n,
- 283:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****        FILE *__restrict __stream)
- 284:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** {
- 285:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   if (__bos0 (__ptr) != (size_t) -1)
- 286:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****     {
- 287:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****       if (!__builtin_constant_p (__size)
- 288:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 	  || !__builtin_constant_p (__n)
- 289:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 	  || (__size | __n) >= (((size_t) 1) << (8 * sizeof (size_t) / 2)))
- 290:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 	return __fread_chk (__ptr, __bos0 (__ptr), __size, __n, __stream);
- 291:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 
- 292:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****       if (__size * __n > __bos0 (__ptr))
- 293:/usr/include/x86_64-linux-gnu/bits/stdio2.h **** 	return __fread_chk_warn (__ptr, __bos0 (__ptr), __size, __n, __stream);
- 294:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****     }
- 295:/usr/include/x86_64-linux-gnu/bits/stdio2.h ****   return __fread_alias (__ptr, __size, __n, __stream);
- 192              		.loc 2 295 0
- 193 0005 BA001000 		movl	$4096, %edx
- 193      00
- 194 000a BE010000 		movl	$1, %esi
- 194      00
- 195              	.LBE5:
- 196              	.LBE4:
-  98:fltk-1.3.4-1/jpeg/jdatasrc.c ****   my_src_ptr src = (my_src_ptr) cinfo->src;
- 197              		.loc 1 98 0
- 198 000f 4883EC08 		subq	$8, %rsp
- 199              		.cfi_def_cfa_offset 32
-  99:fltk-1.3.4-1/jpeg/jdatasrc.c ****   size_t nbytes;
- 200              		.loc 1 99 0
- 201 0013 488B5F28 		movq	40(%rdi), %rbx
- 202              	.LVL14:
- 203              	.LBB7:
- 204              	.LBB6:
- 205              		.loc 2 295 0
- 206 0017 488B4B38 		movq	56(%rbx), %rcx
- 207 001b 488B7B40 		movq	64(%rbx), %rdi
- 208              	.LVL15:
- 209 001f E8000000 		call	fread
- 209      00
- 210              	.LVL16:
- 211              	.LBE6:
- 212              	.LBE7:
- 104:fltk-1.3.4-1/jpeg/jdatasrc.c ****     if (src->start_of_file)	/* Treat empty input file as fatal error */
- 213              		.loc 1 104 0
- 214 0024 4885C0   		testq	%rax, %rax
- 215 0027 7535     		jne	.L15
- 105:fltk-1.3.4-1/jpeg/jdatasrc.c ****       ERREXIT(cinfo, JERR_INPUT_EMPTY);
- 216              		.loc 1 105 0
- 217 0029 8B4348   		movl	72(%rbx), %eax
- 218 002c 85C0     		testl	%eax, %eax
- 219 002e 7550     		jne	.L18
- 220              	.L16:
- 107:fltk-1.3.4-1/jpeg/jdatasrc.c ****     /* Insert a fake EOI marker */
- 221              		.loc 1 107 0
- 222 0030 488B4500 		movq	0(%rbp), %rax
- 223 0034 BEFFFFFF 		movl	$-1, %esi
- 223      FF
- 224 0039 4889EF   		movq	%rbp, %rdi
- 225 003c C740287B 		movl	$123, 40(%rax)
- 225      000000
- 226 0043 488B4500 		movq	0(%rbp), %rax
- 227 0047 FF5008   		call	*8(%rax)
- 228              	.LVL17:
- 109:fltk-1.3.4-1/jpeg/jdatasrc.c ****     src->buffer[1] = (JOCTET) JPEG_EOI;
- 229              		.loc 1 109 0
- 230 004a 488B4340 		movq	64(%rbx), %rax
- 231 004e C600FF   		movb	$-1, (%rax)
- 110:fltk-1.3.4-1/jpeg/jdatasrc.c ****     nbytes = 2;
- 232              		.loc 1 110 0
- 233 0051 488B4340 		movq	64(%rbx), %rax
- 234 0055 C64001D9 		movb	$-39, 1(%rax)
- 235              	.LVL18:
- 111:fltk-1.3.4-1/jpeg/jdatasrc.c ****   }
- 236              		.loc 1 111 0
- 237 0059 B8020000 		movl	$2, %eax
- 237      00
- 238              	.LVL19:
- 239              	.L15:
- 114:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->pub.bytes_in_buffer = nbytes;
- 240              		.loc 1 114 0
- 241 005e 488B5340 		movq	64(%rbx), %rdx
- 115:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->start_of_file = FALSE;
- 242              		.loc 1 115 0
- 243 0062 48894308 		movq	%rax, 8(%rbx)
- 119:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
- 244              		.loc 1 119 0
- 245 0066 B8010000 		movl	$1, %eax
- 245      00
- 246              	.LVL20:
- 116:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
- 247              		.loc 1 116 0
- 248 006b C7434800 		movl	$0, 72(%rbx)
- 248      000000
- 114:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->pub.bytes_in_buffer = nbytes;
- 249              		.loc 1 114 0
- 250 0072 488913   		movq	%rdx, (%rbx)
- 119:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
- 251              		.loc 1 119 0
- 252 0075 4883C408 		addq	$8, %rsp
- 253              		.cfi_remember_state
- 254              		.cfi_def_cfa_offset 24
- 255 0079 5B       		popq	%rbx
- 256              		.cfi_def_cfa_offset 16
- 257              	.LVL21:
- 258 007a 5D       		popq	%rbp
- 259              		.cfi_def_cfa_offset 8
- 260              	.LVL22:
- 261 007b C3       		ret
- 262              	.LVL23:
- 263 007c 0F1F4000 		.p2align 4,,10
- 264              		.p2align 3
- 265              	.L18:
- 266              		.cfi_restore_state
- 106:fltk-1.3.4-1/jpeg/jdatasrc.c ****     WARNMS(cinfo, JWRN_JPEG_EOF);
- 267              		.loc 1 106 0
- 268 0080 488B4500 		movq	0(%rbp), %rax
- 269 0084 4889EF   		movq	%rbp, %rdi
- 270 0087 C740282B 		movl	$43, 40(%rax)
- 270      000000
- 271 008e 488B4500 		movq	0(%rbp), %rax
- 272 0092 FF10     		call	*(%rax)
- 273              	.LVL24:
- 274 0094 EB9A     		jmp	.L16
- 275              		.cfi_endproc
- 276              	.LFE63:
- 278              		.section	.text.unlikely.fill_input_buffer
- 279              	.LCOLDE4:
- 280              		.section	.text.fill_input_buffer
- 281              	.LHOTE4:
- 282              		.section	.text.unlikely.init_mem_source,"ax",@progbits
- 283              	.LCOLDB5:
- 284              		.section	.text.init_mem_source,"ax",@progbits
- 285              	.LHOTB5:
- 286              		.p2align 4,,15
- 288              	init_mem_source:
- 289              	.LFB70:
- 290              		.cfi_startproc
- 291 0000 F3C3     		rep ret
- 292              		.cfi_endproc
- 293              	.LFE70:
- 295              		.section	.text.unlikely.init_mem_source
- 296              	.LCOLDE5:
- 297              		.section	.text.init_mem_source
- 298              	.LHOTE5:
- 299              		.section	.text.unlikely.jpeg_stdio_src,"ax",@progbits
- 300              	.LCOLDB6:
- 301              		.section	.text.jpeg_stdio_src,"ax",@progbits
- 302              	.LHOTB6:
- 303              		.p2align 4,,15
- 304              		.globl	jpeg_stdio_src
- 306              	jpeg_stdio_src:
- 307              	.LFB67:
  199:fltk-1.3.4-1/jpeg/jdatasrc.c ****   /* no work necessary here */
  200:fltk-1.3.4-1/jpeg/jdatasrc.c **** }
  201:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
@@ -835,21 +880,12 @@
  209:fltk-1.3.4-1/jpeg/jdatasrc.c **** GLOBAL(void)
  210:fltk-1.3.4-1/jpeg/jdatasrc.c **** jpeg_stdio_src (j_decompress_ptr cinfo, FILE * infile)
  211:fltk-1.3.4-1/jpeg/jdatasrc.c **** {
- 308              		.loc 1 211 0
- 309              		.cfi_startproc
- 310              	.LVL25:
- 311              		.loc 1 211 0
- 312 0000 4154     		pushq	%r12
- 313              		.cfi_def_cfa_offset 16
- 314              		.cfi_offset 12, -16
- 315 0002 55       		pushq	%rbp
- 316              		.cfi_def_cfa_offset 24
- 317              		.cfi_offset 6, -24
- 318 0003 4889F5   		movq	%rsi, %rbp
- 319 0006 53       		pushq	%rbx
- 320              		.cfi_def_cfa_offset 32
- 321              		.cfi_offset 3, -32
+ 325              		.loc 1 211 1 is_stmt 1 view -0
+ 326              		.cfi_startproc
+ 327              		.loc 1 211 1 is_stmt 0 view .LVU98
+ 328 0000 F30F1EFA 		endbr64
  212:fltk-1.3.4-1/jpeg/jdatasrc.c ****   my_src_ptr src;
+ 329              		.loc 1 212 3 is_stmt 1 view .LVU99
  213:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
  214:fltk-1.3.4-1/jpeg/jdatasrc.c ****   /* The source object and input buffer are made permanent so that a series
  215:fltk-1.3.4-1/jpeg/jdatasrc.c ****    * of JPEG images can be read from the same file by calling jpeg_stdio_src
@@ -859,12 +895,26 @@
  219:fltk-1.3.4-1/jpeg/jdatasrc.c ****    * manager serially with the same JPEG object.  Caveat programmer.
  220:fltk-1.3.4-1/jpeg/jdatasrc.c ****    */
  221:fltk-1.3.4-1/jpeg/jdatasrc.c ****   if (cinfo->src == NULL) {	/* first time for this JPEG object? */
- 322              		.loc 1 221 0
- 323 0007 488B4728 		movq	40(%rdi), %rax
- 324 000b 4885C0   		testq	%rax, %rax
- 325 000e 7440     		je	.L23
- 326              	.LVL26:
- 327              	.L21:
+ 330              		.loc 1 221 3 view .LVU100
+ 211:fltk-1.3.4-1/jpeg/jdatasrc.c ****   my_src_ptr src;
+ 331              		.loc 1 211 1 is_stmt 0 view .LVU101
+ 332 0004 4154     		pushq	%r12
+ 333              		.cfi_def_cfa_offset 16
+ 334              		.cfi_offset 12, -16
+ 335 0006 55       		pushq	%rbp
+ 336              		.cfi_def_cfa_offset 24
+ 337              		.cfi_offset 6, -24
+ 338 0007 4889F5   		movq	%rsi, %rbp
+ 339 000a 53       		pushq	%rbx
+ 340              		.cfi_def_cfa_offset 32
+ 341              		.cfi_offset 3, -32
+ 342              		.loc 1 221 12 view .LVU102
+ 343 000b 488B4728 		movq	40(%rdi), %rax
+ 344              		.loc 1 221 6 view .LVU103
+ 345 000f 4885C0   		testq	%rax, %rax
+ 346 0012 7454     		je	.L23
+ 347              	.LVL28:
+ 348              	.L21:
  222:fltk-1.3.4-1/jpeg/jdatasrc.c ****     cinfo->src = (struct jpeg_source_mgr *)
  223:fltk-1.3.4-1/jpeg/jdatasrc.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
  224:fltk-1.3.4-1/jpeg/jdatasrc.c **** 				  SIZEOF(my_source_mgr));
@@ -875,99 +925,142 @@
  229:fltk-1.3.4-1/jpeg/jdatasrc.c ****   }
  230:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
  231:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src = (my_src_ptr) cinfo->src;
+ 349              		.loc 1 231 3 is_stmt 1 view .LVU104
  232:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->pub.init_source = init_source;
- 328              		.loc 1 232 0
- 329 0010 48C74010 		movq	$init_source, 16(%rax)
- 329      00000000 
- 330              	.LVL27:
+ 350              		.loc 1 232 3 view .LVU105
  233:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->pub.fill_input_buffer = fill_input_buffer;
- 331              		.loc 1 233 0
- 332 0018 48C74018 		movq	$fill_input_buffer, 24(%rax)
- 332      00000000 
  234:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->pub.skip_input_data = skip_input_data;
- 333              		.loc 1 234 0
- 334 0020 48C74020 		movq	$skip_input_data, 32(%rax)
- 334      00000000 
+ 351              		.loc 1 234 28 is_stmt 0 view .LVU106
+ 352 0014 488D1500 		leaq	skip_input_data(%rip), %rdx
+ 352      000000
+ 232:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->pub.init_source = init_source;
+ 353              		.loc 1 232 24 view .LVU107
+ 354 001b 488D0D00 		leaq	init_source(%rip), %rcx
+ 354      000000
  235:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->pub.resync_to_restart = jpeg_resync_to_restart; /* use default method */
- 335              		.loc 1 235 0
- 336 0028 48C74028 		movq	$jpeg_resync_to_restart, 40(%rax)
- 336      00000000 
  236:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->pub.term_source = term_source;
- 337              		.loc 1 236 0
- 338 0030 48C74030 		movq	$term_source, 48(%rax)
- 338      00000000 
  237:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->infile = infile;
- 339              		.loc 1 237 0
- 340 0038 48896838 		movq	%rbp, 56(%rax)
+ 355              		.loc 1 237 15 view .LVU108
+ 356 0022 48896838 		movq	%rbp, 56(%rax)
+ 357              	.LVL29:
+ 234:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->pub.resync_to_restart = jpeg_resync_to_restart; /* use default method */
+ 358              		.loc 1 234 28 view .LVU109
+ 359 0026 48895020 		movq	%rdx, 32(%rax)
+ 235:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->pub.resync_to_restart = jpeg_resync_to_restart; /* use default method */
+ 360              		.loc 1 235 30 view .LVU110
+ 361 002a 488B1500 		movq	jpeg_resync_to_restart@GOTPCREL(%rip), %rdx
+ 361      000000
+ 236:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->infile = infile;
+ 362              		.loc 1 236 24 view .LVU111
+ 363 0031 488D3500 		leaq	term_source(%rip), %rsi
+ 363      000000
+ 232:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->pub.fill_input_buffer = fill_input_buffer;
+ 364              		.loc 1 232 24 view .LVU112
+ 365 0038 48894810 		movq	%rcx, 16(%rax)
+ 233:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->pub.skip_input_data = skip_input_data;
+ 366              		.loc 1 233 3 is_stmt 1 view .LVU113
+ 233:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->pub.skip_input_data = skip_input_data;
+ 367              		.loc 1 233 30 is_stmt 0 view .LVU114
+ 368 003c 488D0D00 		leaq	fill_input_buffer(%rip), %rcx
+ 368      000000
+ 369 0043 48894818 		movq	%rcx, 24(%rax)
+ 234:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->pub.resync_to_restart = jpeg_resync_to_restart; /* use default method */
+ 370              		.loc 1 234 3 is_stmt 1 view .LVU115
+ 235:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->pub.term_source = term_source;
+ 371              		.loc 1 235 3 view .LVU116
+ 235:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->pub.term_source = term_source;
+ 372              		.loc 1 235 30 is_stmt 0 view .LVU117
+ 373 0047 48895028 		movq	%rdx, 40(%rax)
+ 236:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->infile = infile;
+ 374              		.loc 1 236 3 is_stmt 1 view .LVU118
+ 236:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->infile = infile;
+ 375              		.loc 1 236 24 is_stmt 0 view .LVU119
+ 376 004b 48897030 		movq	%rsi, 48(%rax)
+ 377              		.loc 1 237 3 is_stmt 1 view .LVU120
  238:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->pub.bytes_in_buffer = 0; /* forces fill_input_buffer on first read */
- 341              		.loc 1 238 0
- 342 003c 48C74008 		movq	$0, 8(%rax)
- 342      00000000 
+ 378              		.loc 1 238 3 view .LVU121
+ 379              		.loc 1 238 28 is_stmt 0 view .LVU122
+ 380 004f 48C74008 		movq	$0, 8(%rax)
+ 380      00000000 
  239:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->pub.next_input_byte = NULL; /* until buffer loaded */
- 343              		.loc 1 239 0
- 344 0044 48C70000 		movq	$0, (%rax)
- 344      000000
+ 381              		.loc 1 239 3 is_stmt 1 view .LVU123
+ 382              		.loc 1 239 28 is_stmt 0 view .LVU124
+ 383 0057 48C70000 		movq	$0, (%rax)
+ 383      000000
  240:fltk-1.3.4-1/jpeg/jdatasrc.c **** }
- 345              		.loc 1 240 0
- 346 004b 5B       		popq	%rbx
- 347              		.cfi_remember_state
- 348              		.cfi_def_cfa_offset 24
- 349 004c 5D       		popq	%rbp
- 350              		.cfi_def_cfa_offset 16
- 351              	.LVL28:
- 352 004d 415C     		popq	%r12
- 353              		.cfi_def_cfa_offset 8
- 354 004f C3       		ret
- 355              	.LVL29:
- 356              		.p2align 4,,10
- 357              		.p2align 3
- 358              	.L23:
- 359              		.cfi_restore_state
+ 384              		.loc 1 240 1 view .LVU125
+ 385 005e 5B       		popq	%rbx
+ 386              		.cfi_remember_state
+ 387              		.cfi_def_cfa_offset 24
+ 388 005f 5D       		popq	%rbp
+ 389              		.cfi_def_cfa_offset 16
+ 390              	.LVL30:
+ 391              		.loc 1 240 1 view .LVU126
+ 392 0060 415C     		popq	%r12
+ 393              		.cfi_def_cfa_offset 8
+ 394 0062 C3       		ret
+ 395              	.LVL31:
+ 396              		.p2align 4,,10
+ 397 0063 0F1F4400 		.p2align 3
+ 397      00
+ 398              	.L23:
+ 399              		.cfi_restore_state
  223:fltk-1.3.4-1/jpeg/jdatasrc.c **** 				  SIZEOF(my_source_mgr));
- 360              		.loc 1 223 0
- 361 0050 488B4708 		movq	8(%rdi), %rax
- 362 0054 4889FB   		movq	%rdi, %rbx
- 363 0057 BA500000 		movl	$80, %edx
- 363      00
- 364 005c 31F6     		xorl	%esi, %esi
- 365              	.LVL30:
- 366 005e FF10     		call	*(%rax)
- 367              	.LVL31:
- 368 0060 4989C4   		movq	%rax, %r12
+ 400              		.loc 1 223 8 view .LVU127
+ 401 0068 488B4708 		movq	8(%rdi), %rax
+ 402 006c 4889FB   		movq	%rdi, %rbx
  222:fltk-1.3.4-1/jpeg/jdatasrc.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
- 369              		.loc 1 222 0
- 370 0063 48894328 		movq	%rax, 40(%rbx)
- 371              	.LVL32:
+ 403              		.loc 1 222 5 is_stmt 1 view .LVU128
+ 223:fltk-1.3.4-1/jpeg/jdatasrc.c **** 				  SIZEOF(my_source_mgr));
+ 404              		.loc 1 223 8 is_stmt 0 view .LVU129
+ 405 006f BA500000 		movl	$80, %edx
+ 405      00
+ 406 0074 31F6     		xorl	%esi, %esi
+ 407              	.LVL32:
+ 223:fltk-1.3.4-1/jpeg/jdatasrc.c **** 				  SIZEOF(my_source_mgr));
+ 408              		.loc 1 223 8 view .LVU130
+ 409 0076 FF10     		call	*(%rax)
+ 410              	.LVL33:
  227:fltk-1.3.4-1/jpeg/jdatasrc.c **** 				  INPUT_BUF_SIZE * SIZEOF(JOCTET));
- 372              		.loc 1 227 0
- 373 0067 488B4308 		movq	8(%rbx), %rax
- 374              	.LVL33:
- 375 006b BA001000 		movl	$4096, %edx
- 375      00
- 376 0070 31F6     		xorl	%esi, %esi
- 377 0072 4889DF   		movq	%rbx, %rdi
- 378 0075 FF10     		call	*(%rax)
- 379              	.LVL34:
+ 411              		.loc 1 227 8 view .LVU131
+ 412 0078 BA001000 		movl	$4096, %edx
+ 412      00
+ 413 007d 31F6     		xorl	%esi, %esi
+ 414 007f 4889DF   		movq	%rbx, %rdi
+ 222:fltk-1.3.4-1/jpeg/jdatasrc.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
+ 415              		.loc 1 222 16 view .LVU132
+ 416 0082 48894328 		movq	%rax, 40(%rbx)
+ 225:fltk-1.3.4-1/jpeg/jdatasrc.c ****     src->buffer = (JOCTET *)
+ 417              		.loc 1 225 5 is_stmt 1 view .LVU133
+ 223:fltk-1.3.4-1/jpeg/jdatasrc.c **** 				  SIZEOF(my_source_mgr));
+ 418              		.loc 1 223 8 is_stmt 0 view .LVU134
+ 419 0086 4989C4   		movq	%rax, %r12
+ 420              	.LVL34:
  226:fltk-1.3.4-1/jpeg/jdatasrc.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
- 380              		.loc 1 226 0
- 381 0077 49894424 		movq	%rax, 64(%r12)
- 381      40
- 382 007c 488B4328 		movq	40(%rbx), %rax
- 383 0080 EB8E     		jmp	.L21
- 384              		.cfi_endproc
- 385              	.LFE67:
- 387              		.section	.text.unlikely.jpeg_stdio_src
- 388              	.LCOLDE6:
- 389              		.section	.text.jpeg_stdio_src
- 390              	.LHOTE6:
- 391              		.section	.text.unlikely.jpeg_mem_src,"ax",@progbits
- 392              	.LCOLDB7:
- 393              		.section	.text.jpeg_mem_src,"ax",@progbits
- 394              	.LHOTB7:
- 395              		.p2align 4,,15
- 396              		.globl	jpeg_mem_src
- 398              	jpeg_mem_src:
- 399              	.LFB68:
+ 421              		.loc 1 226 5 is_stmt 1 view .LVU135
+ 227:fltk-1.3.4-1/jpeg/jdatasrc.c **** 				  INPUT_BUF_SIZE * SIZEOF(JOCTET));
+ 422              		.loc 1 227 8 is_stmt 0 view .LVU136
+ 423 0089 488B4308 		movq	8(%rbx), %rax
+ 424              	.LVL35:
+ 227:fltk-1.3.4-1/jpeg/jdatasrc.c **** 				  INPUT_BUF_SIZE * SIZEOF(JOCTET));
+ 425              		.loc 1 227 8 view .LVU137
+ 426 008d FF10     		call	*(%rax)
+ 427              	.LVL36:
+ 226:fltk-1.3.4-1/jpeg/jdatasrc.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
+ 428              		.loc 1 226 17 view .LVU138
+ 429 008f 49894424 		movq	%rax, 64(%r12)
+ 429      40
+ 430 0094 488B4328 		movq	40(%rbx), %rax
+ 431 0098 E977FFFF 		jmp	.L21
+ 431      FF
+ 432              		.cfi_endproc
+ 433              	.LFE57:
+ 435              		.section	.text.jpeg_mem_src,"ax",@progbits
+ 436              		.p2align 4
+ 437              		.globl	jpeg_mem_src
+ 439              	jpeg_mem_src:
+ 440              	.LVL37:
+ 441              	.LFB58:
  241:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
  242:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
  243:fltk-1.3.4-1/jpeg/jdatasrc.c **** /*
@@ -979,34 +1072,36 @@
  249:fltk-1.3.4-1/jpeg/jdatasrc.c **** jpeg_mem_src (j_decompress_ptr cinfo,
  250:fltk-1.3.4-1/jpeg/jdatasrc.c **** 	      unsigned char * inbuffer, unsigned long insize)
  251:fltk-1.3.4-1/jpeg/jdatasrc.c **** {
- 400              		.loc 1 251 0
- 401              		.cfi_startproc
- 402              	.LVL35:
+ 442              		.loc 1 251 1 is_stmt 1 view -0
+ 443              		.cfi_startproc
+ 444              		.loc 1 251 1 is_stmt 0 view .LVU140
+ 445 0000 F30F1EFA 		endbr64
  252:fltk-1.3.4-1/jpeg/jdatasrc.c ****   struct jpeg_source_mgr * src;
+ 446              		.loc 1 252 3 is_stmt 1 view .LVU141
  253:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
  254:fltk-1.3.4-1/jpeg/jdatasrc.c ****   if (inbuffer == NULL || insize == 0)	/* Treat empty input as fatal error */
- 403              		.loc 1 254 0
- 404 0000 4885F6   		testq	%rsi, %rsi
+ 447              		.loc 1 254 3 view .LVU142
  251:fltk-1.3.4-1/jpeg/jdatasrc.c ****   struct jpeg_source_mgr * src;
- 405              		.loc 1 251 0
- 406 0003 4154     		pushq	%r12
- 407              		.cfi_def_cfa_offset 16
- 408              		.cfi_offset 12, -16
- 409 0005 4989D4   		movq	%rdx, %r12
- 410 0008 55       		pushq	%rbp
- 411              		.cfi_def_cfa_offset 24
- 412              		.cfi_offset 6, -24
- 413 0009 4889F5   		movq	%rsi, %rbp
- 414 000c 53       		pushq	%rbx
- 415              		.cfi_def_cfa_offset 32
- 416              		.cfi_offset 3, -32
+ 448              		.loc 1 251 1 is_stmt 0 view .LVU143
+ 449 0004 4154     		pushq	%r12
+ 450              		.cfi_def_cfa_offset 16
+ 451              		.cfi_offset 12, -16
+ 452 0006 4989D4   		movq	%rdx, %r12
+ 453 0009 55       		pushq	%rbp
+ 454              		.cfi_def_cfa_offset 24
+ 455              		.cfi_offset 6, -24
+ 456 000a 4889F5   		movq	%rsi, %rbp
+ 457 000d 53       		pushq	%rbx
+ 458              		.cfi_def_cfa_offset 32
+ 459              		.cfi_offset 3, -32
  251:fltk-1.3.4-1/jpeg/jdatasrc.c ****   struct jpeg_source_mgr * src;
- 417              		.loc 1 251 0
- 418 000d 4889FB   		movq	%rdi, %rbx
- 419              		.loc 1 254 0
- 420 0010 7446     		je	.L28
- 421 0012 4885D2   		testq	%rdx, %rdx
- 422 0015 7441     		je	.L28
+ 460              		.loc 1 251 1 view .LVU144
+ 461 000e 4889FB   		movq	%rdi, %rbx
+ 462              		.loc 1 254 6 view .LVU145
+ 463 0011 4885F6   		testq	%rsi, %rsi
+ 464 0014 745A     		je	.L28
+ 465 0016 4885D2   		testq	%rdx, %rdx
+ 466 0019 7455     		je	.L28
  255:fltk-1.3.4-1/jpeg/jdatasrc.c ****     ERREXIT(cinfo, JERR_INPUT_EMPTY);
  256:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
  257:fltk-1.3.4-1/jpeg/jdatasrc.c ****   /* The source object is made permanent so that a series of JPEG images
@@ -1014,183 +1109,234 @@
  259:fltk-1.3.4-1/jpeg/jdatasrc.c ****    * the first one.
  260:fltk-1.3.4-1/jpeg/jdatasrc.c ****    */
  261:fltk-1.3.4-1/jpeg/jdatasrc.c ****   if (cinfo->src == NULL) {	/* first time for this JPEG object? */
- 423              		.loc 1 261 0
- 424 0017 488B4328 		movq	40(%rbx), %rax
- 425 001b 4885C0   		testq	%rax, %rax
- 426 001e 7453     		je	.L33
- 427              	.LVL36:
- 428              	.L27:
+ 467              		.loc 1 261 3 is_stmt 1 view .LVU146
+ 468              		.loc 1 261 12 is_stmt 0 view .LVU147
+ 469 001b 488B4328 		movq	40(%rbx), %rax
+ 470              		.loc 1 261 6 view .LVU148
+ 471 001f 4885C0   		testq	%rax, %rax
+ 472 0022 7467     		je	.L33
+ 473              	.LVL38:
+ 474              	.L27:
  262:fltk-1.3.4-1/jpeg/jdatasrc.c ****     cinfo->src = (struct jpeg_source_mgr *)
  263:fltk-1.3.4-1/jpeg/jdatasrc.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
  264:fltk-1.3.4-1/jpeg/jdatasrc.c **** 				  SIZEOF(struct jpeg_source_mgr));
  265:fltk-1.3.4-1/jpeg/jdatasrc.c ****   }
  266:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
  267:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src = cinfo->src;
+ 475              		.loc 1 267 3 is_stmt 1 view .LVU149
  268:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->init_source = init_mem_source;
- 429              		.loc 1 268 0
- 430 0020 48C74010 		movq	$init_mem_source, 16(%rax)
- 430      00000000 
- 431              	.LVL37:
+ 476              		.loc 1 268 3 view .LVU150
+ 477              		.loc 1 268 20 is_stmt 0 view .LVU151
+ 478 0024 488D0D00 		leaq	init_mem_source(%rip), %rcx
+ 478      000000
  269:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->fill_input_buffer = fill_mem_input_buffer;
- 432              		.loc 1 269 0
- 433 0028 48C74018 		movq	$fill_mem_input_buffer, 24(%rax)
- 433      00000000 
  270:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->skip_input_data = skip_input_data;
- 434              		.loc 1 270 0
- 435 0030 48C74020 		movq	$skip_input_data, 32(%rax)
- 435      00000000 
  271:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->resync_to_restart = jpeg_resync_to_restart; /* use default method */
- 436              		.loc 1 271 0
- 437 0038 48C74028 		movq	$jpeg_resync_to_restart, 40(%rax)
- 437      00000000 
+ 479              		.loc 1 271 26 view .LVU152
+ 480 002b 488B1500 		movq	jpeg_resync_to_restart@GOTPCREL(%rip), %rdx
+ 480      000000
  272:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->term_source = term_source;
- 438              		.loc 1 272 0
- 439 0040 48C74030 		movq	$term_source, 48(%rax)
- 439      00000000 
  273:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->bytes_in_buffer = (size_t) insize;
- 440              		.loc 1 273 0
- 441 0048 4C896008 		movq	%r12, 8(%rax)
+ 481              		.loc 1 273 24 view .LVU153
+ 482 0032 4C896008 		movq	%r12, 8(%rax)
+ 483              	.LVL39:
+ 270:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->resync_to_restart = jpeg_resync_to_restart; /* use default method */
+ 484              		.loc 1 270 24 view .LVU154
+ 485 0036 488D3500 		leaq	skip_input_data(%rip), %rsi
+ 485      000000
+ 268:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->fill_input_buffer = fill_mem_input_buffer;
+ 486              		.loc 1 268 20 view .LVU155
+ 487 003d 48894810 		movq	%rcx, 16(%rax)
+ 269:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->skip_input_data = skip_input_data;
+ 488              		.loc 1 269 3 is_stmt 1 view .LVU156
+ 272:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->bytes_in_buffer = (size_t) insize;
+ 489              		.loc 1 272 20 is_stmt 0 view .LVU157
+ 490 0041 488D3D00 		leaq	term_source(%rip), %rdi
+ 490      000000
+ 269:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->skip_input_data = skip_input_data;
+ 491              		.loc 1 269 26 view .LVU158
+ 492 0048 488D0D00 		leaq	fill_mem_input_buffer(%rip), %rcx
+ 492      000000
+ 493 004f 48894818 		movq	%rcx, 24(%rax)
+ 270:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->resync_to_restart = jpeg_resync_to_restart; /* use default method */
+ 494              		.loc 1 270 3 is_stmt 1 view .LVU159
+ 270:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->resync_to_restart = jpeg_resync_to_restart; /* use default method */
+ 495              		.loc 1 270 24 is_stmt 0 view .LVU160
+ 496 0053 48897020 		movq	%rsi, 32(%rax)
+ 271:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->term_source = term_source;
+ 497              		.loc 1 271 3 is_stmt 1 view .LVU161
+ 271:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->term_source = term_source;
+ 498              		.loc 1 271 26 is_stmt 0 view .LVU162
+ 499 0057 48895028 		movq	%rdx, 40(%rax)
+ 272:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->bytes_in_buffer = (size_t) insize;
+ 500              		.loc 1 272 3 is_stmt 1 view .LVU163
+ 272:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->bytes_in_buffer = (size_t) insize;
+ 501              		.loc 1 272 20 is_stmt 0 view .LVU164
+ 502 005b 48897830 		movq	%rdi, 48(%rax)
+ 503              		.loc 1 273 3 is_stmt 1 view .LVU165
  274:fltk-1.3.4-1/jpeg/jdatasrc.c ****   src->next_input_byte = (JOCTET *) inbuffer;
- 442              		.loc 1 274 0
- 443 004c 488928   		movq	%rbp, (%rax)
+ 504              		.loc 1 274 3 view .LVU166
+ 505              		.loc 1 274 24 is_stmt 0 view .LVU167
+ 506 005f 488928   		movq	%rbp, (%rax)
  275:fltk-1.3.4-1/jpeg/jdatasrc.c **** }
- 444              		.loc 1 275 0
- 445 004f 5B       		popq	%rbx
- 446              		.cfi_remember_state
- 447              		.cfi_def_cfa_offset 24
- 448              	.LVL38:
- 449 0050 5D       		popq	%rbp
- 450              		.cfi_def_cfa_offset 16
- 451              	.LVL39:
- 452 0051 415C     		popq	%r12
- 453              		.cfi_def_cfa_offset 8
- 454              	.LVL40:
- 455 0053 C3       		ret
- 456              	.LVL41:
- 457              		.p2align 4,,10
- 458 0054 0F1F4000 		.p2align 3
- 459              	.L28:
- 460              		.cfi_restore_state
+ 507              		.loc 1 275 1 view .LVU168
+ 508 0062 5B       		popq	%rbx
+ 509              		.cfi_remember_state
+ 510              		.cfi_def_cfa_offset 24
+ 511              	.LVL40:
+ 512              		.loc 1 275 1 view .LVU169
+ 513 0063 5D       		popq	%rbp
+ 514              		.cfi_def_cfa_offset 16
+ 515              	.LVL41:
+ 516              		.loc 1 275 1 view .LVU170
+ 517 0064 415C     		popq	%r12
+ 518              		.cfi_def_cfa_offset 8
+ 519              	.LVL42:
+ 520              		.loc 1 275 1 view .LVU171
+ 521 0066 C3       		ret
+ 522              	.LVL43:
+ 523 0067 660F1F84 		.p2align 4,,10
+ 523      00000000 
+ 523      00
+ 524              		.p2align 3
+ 525              	.L28:
+ 526              		.cfi_restore_state
  255:fltk-1.3.4-1/jpeg/jdatasrc.c **** 
- 461              		.loc 1 255 0
- 462 0058 488B03   		movq	(%rbx), %rax
- 463 005b 4889DF   		movq	%rbx, %rdi
- 464 005e C740282B 		movl	$43, 40(%rax)
- 464      000000
- 465 0065 488B03   		movq	(%rbx), %rax
- 466 0068 FF10     		call	*(%rax)
- 467              	.LVL42:
+ 527              		.loc 1 255 5 is_stmt 1 view .LVU172
+ 528 0070 488B03   		movq	(%rbx), %rax
+ 529 0073 4889DF   		movq	%rbx, %rdi
+ 530 0076 C740282B 		movl	$43, 40(%rax)
+ 530      000000
+ 531 007d 488B03   		movq	(%rbx), %rax
+ 532 0080 FF10     		call	*(%rax)
+ 533              	.LVL44:
  261:fltk-1.3.4-1/jpeg/jdatasrc.c ****     cinfo->src = (struct jpeg_source_mgr *)
- 468              		.loc 1 261 0
- 469 006a 488B4328 		movq	40(%rbx), %rax
- 470 006e 4885C0   		testq	%rax, %rax
- 471 0071 75AD     		jne	.L27
- 472              	.L33:
- 263:fltk-1.3.4-1/jpeg/jdatasrc.c **** 				  SIZEOF(struct jpeg_source_mgr));
- 473              		.loc 1 263 0
- 474 0073 488B4308 		movq	8(%rbx), %rax
- 475 0077 BA380000 		movl	$56, %edx
- 475      00
- 476 007c 31F6     		xorl	%esi, %esi
- 477 007e 4889DF   		movq	%rbx, %rdi
- 478 0081 FF10     		call	*(%rax)
- 479              	.LVL43:
+ 534              		.loc 1 261 3 view .LVU173
+ 261:fltk-1.3.4-1/jpeg/jdatasrc.c ****     cinfo->src = (struct jpeg_source_mgr *)
+ 535              		.loc 1 261 12 is_stmt 0 view .LVU174
+ 536 0082 488B4328 		movq	40(%rbx), %rax
+ 261:fltk-1.3.4-1/jpeg/jdatasrc.c ****     cinfo->src = (struct jpeg_source_mgr *)
+ 537              		.loc 1 261 6 view .LVU175
+ 538 0086 4885C0   		testq	%rax, %rax
+ 539 0089 7599     		jne	.L27
+ 540              	.L33:
  262:fltk-1.3.4-1/jpeg/jdatasrc.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
- 480              		.loc 1 262 0
- 481 0083 48894328 		movq	%rax, 40(%rbx)
- 482 0087 EB97     		jmp	.L27
- 483              		.cfi_endproc
- 484              	.LFE68:
- 486              		.section	.text.unlikely.jpeg_mem_src
- 487              	.LCOLDE7:
- 488              		.section	.text.jpeg_mem_src
- 489              	.LHOTE7:
- 490              		.section	.rodata.mybuffer.4262,"a",@progbits
- 493              	mybuffer.4262:
- 494 0000 FF       		.byte	-1
- 495 0001 D9       		.byte	-39
- 496 0002 00       		.byte	0
- 497 0003 00       		.byte	0
- 498              		.text
- 499              	.Letext0:
- 500              		.section	.text.unlikely.init_source
- 501              	.Letext_cold0:
- 502              		.file 3 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
- 503              		.file 4 "/usr/include/x86_64-linux-gnu/bits/types.h"
- 504              		.file 5 "/usr/include/stdio.h"
- 505              		.file 6 "/usr/include/libio.h"
- 506              		.file 7 "fltk-1.3.4-1/jpeg/jmorecfg.h"
- 507              		.file 8 "fltk-1.3.4-1/jpeg/jpeglib.h"
- 508              		.file 9 "fltk-1.3.4-1/jpeg/jerror.h"
+ 541              		.loc 1 262 5 is_stmt 1 view .LVU176
+ 263:fltk-1.3.4-1/jpeg/jdatasrc.c **** 				  SIZEOF(struct jpeg_source_mgr));
+ 542              		.loc 1 263 8 is_stmt 0 view .LVU177
+ 543 008b 488B4308 		movq	8(%rbx), %rax
+ 544 008f BA380000 		movl	$56, %edx
+ 544      00
+ 545 0094 31F6     		xorl	%esi, %esi
+ 546 0096 4889DF   		movq	%rbx, %rdi
+ 547 0099 FF10     		call	*(%rax)
+ 548              	.LVL45:
+ 262:fltk-1.3.4-1/jpeg/jdatasrc.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
+ 549              		.loc 1 262 16 view .LVU178
+ 550 009b 48894328 		movq	%rax, 40(%rbx)
+ 551 009f EB83     		jmp	.L27
+ 552              		.cfi_endproc
+ 553              	.LFE58:
+ 555              		.section	.rodata.mybuffer.4134,"a"
+ 558              	mybuffer.4134:
+ 559 0000 FFD900   		.string	"\377\331"
+ 560 0003 00       		.string	""
+ 561              		.text
+ 562              	.Letext0:
+ 563              		.file 3 "/usr/lib/gcc/x86_64-linux-gnu/9/include/stddef.h"
+ 564              		.file 4 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 565              		.file 5 "/usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h"
+ 566              		.file 6 "/usr/include/x86_64-linux-gnu/bits/types/FILE.h"
+ 567              		.file 7 "/usr/include/stdio.h"
+ 568              		.file 8 "/usr/include/x86_64-linux-gnu/bits/sys_errlist.h"
+ 569              		.file 9 "fltk-1.3.4-1/jpeg/jmorecfg.h"
+ 570              		.file 10 "fltk-1.3.4-1/jpeg/jpeglib.h"
+ 571              		.file 11 "fltk-1.3.4-1/jpeg/jerror.h"
+ 11512              		.section	.note.gnu.property,"a"
+ 11513              		.align 8
+ 11514 0000 04000000 		.long	 1f - 0f
+ 11515 0004 10000000 		.long	 4f - 1f
+ 11516 0008 05000000 		.long	 5
+ 11517              	0:
+ 11518 000c 474E5500 		.string	 "GNU"
+ 11519              	1:
+ 11520              		.align 8
+ 11521 0010 020000C0 		.long	 0xc0000002
+ 11522 0014 04000000 		.long	 3f - 2f
+ 11523              	2:
+ 11524 0018 03000000 		.long	 0x3
+ 11525              	3:
+ 11526 001c 00000000 		.align 8
+ 11527              	4:
 DEFINED SYMBOLS
                             *ABS*:0000000000000000 jdatasrc.c
-     /tmp/ccCtLrAt.s:13     .text.init_source:0000000000000000 init_source
-     /tmp/ccCtLrAt.s:38     .text.fill_mem_input_buffer:0000000000000000 fill_mem_input_buffer
-     /tmp/ccCtLrAt.s:493    .rodata.mybuffer.4262:0000000000000000 mybuffer.4262
-     /tmp/ccCtLrAt.s:82     .text.skip_input_data:0000000000000000 skip_input_data
-     /tmp/ccCtLrAt.s:157    .text.term_source:0000000000000000 term_source
-     /tmp/ccCtLrAt.s:176    .text.fill_input_buffer:0000000000000000 fill_input_buffer
-     /tmp/ccCtLrAt.s:288    .text.init_mem_source:0000000000000000 init_mem_source
-     /tmp/ccCtLrAt.s:306    .text.jpeg_stdio_src:0000000000000000 jpeg_stdio_src
-     /tmp/ccCtLrAt.s:398    .text.jpeg_mem_src:0000000000000000 jpeg_mem_src
-                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
-                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+     /tmp/ccN7cLR3.s:7      .text.init_source:0000000000000000 init_source
+     /tmp/ccN7cLR3.s:30     .text.init_mem_source:0000000000000000 init_mem_source
+     /tmp/ccN7cLR3.s:45     .text.fill_mem_input_buffer:0000000000000000 fill_mem_input_buffer
+     /tmp/ccN7cLR3.s:558    .rodata.mybuffer.4134:0000000000000000 mybuffer.4134
+     /tmp/ccN7cLR3.s:92     .text.skip_input_data:0000000000000000 skip_input_data
+     /tmp/ccN7cLR3.s:186    .text.fill_input_buffer:0000000000000000 fill_input_buffer
+     /tmp/ccN7cLR3.s:310    .text.term_source:0000000000000000 term_source
+     /tmp/ccN7cLR3.s:322    .text.jpeg_stdio_src:0000000000000000 jpeg_stdio_src
+     /tmp/ccN7cLR3.s:439    .text.jpeg_mem_src:0000000000000000 jpeg_mem_src
+                           .group:0000000000000000 wm4.0.a6b23a418548ac0bda5d8549c4a2ec91
+                           .group:0000000000000000 wm4.stdcpredef.h.19.8dc41bed5d9037ff9622e015fb5f0ce3
                            .group:0000000000000000 wm4.jconfig.h.10.247fc3ff67998f3074970b1373c70333
-                           .group:0000000000000000 wm4.features.h.19.24da27e0a4d0d521fd057013d982b8b5
-                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
-                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
-                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
-                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
-                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
-                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
-                           .group:0000000000000000 wm4.waitflags.h.25.e401b8bcfee800b540b27abd7cc78de9
+                           .group:0000000000000000 wm4.features.h.19.5b5f5a19624a0527f479fdc52d54808f
+                           .group:0000000000000000 wm4.cdefs.h.19.98d80eddbb3f64f4f30cd9aee9c5593c
+                           .group:0000000000000000 wm4.wordsize.h.4.baf119258a1e53d8dba67ceac44ab6bc
+                           .group:0000000000000000 wm4.cdefs.h.475.fb75d2e4416aa349344e6f45f683bf28
+                           .group:0000000000000000 wm4.stubs64.h.10.6ce4c34010988db072c080326a6b6319
+                           .group:0000000000000000 wm4.libcheaderstart.h.37.d9274df4cc0172452960ad9644fa5579
+                           .group:0000000000000000 wm4.stdlib.h.28.2cffa49d94c5d85f4538f55f7b59771d
+                           .group:0000000000000000 wm4.stddef.h.181.13772e73e5434e8cc4fafaaddad2b5da
+                           .group:0000000000000000 wm4.waitflags.h.25.41934de4af99038521c2782f418699b1
                            .group:0000000000000000 wm4.waitstatus.h.28.93f167f49d64e2b9b99f98d1162a93bf
-                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
-                           .group:0000000000000000 wm4.endian.h.41.24cced64aef71195a51d4daa8e4f4a95
-                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
-                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
-                           .group:0000000000000000 wm4.byteswap.h.38.11ee5fdc0f6cc53a16c505b9233cecef
-                           .group:0000000000000000 wm4.endian.h.63.97272d7c64d5db8020003b32e9289502
-                           .group:0000000000000000 wm4.waitstatus.h.99.408b6270fa6eb71377201a241ef15f79
-                           .group:0000000000000000 wm4.stdlib.h.50.84aeca2ac6f37d40e1e9b3cef757ba2d
-                           .group:0000000000000000 wm4.types.h.23.f6dcbaa72f8f71361acef09804d45a5e
-                           .group:0000000000000000 wm4.time.h.53.beb46e650cd406cb917b6b96b45e640a
-                           .group:0000000000000000 wm4.stddef.h.238.847b6907dabda77be90a9ab7ad789e2e
-                           .group:0000000000000000 wm4.types.h.187.bd5a05039b505b3620e6973f1b2ffeb1
+                           .group:0000000000000000 wm4.stdlib.h.43.9fa4f727a2f1cb8d2450a574c9195553
+                           .group:0000000000000000 wm4.floatn.h.20.80c7cf8a8dfad237004b28d051d5afda
+                           .group:0000000000000000 wm4.floatncommon.h.34.7e1840d7dfb19e9bdb51aeb077d76637
+                           .group:0000000000000000 wm4.stdlib.h.71.2927e068ec678159b4f68ec2f089f7e6
+                           .group:0000000000000000 wm4.types.h.109.56eb9ae966b255288cc544f18746a7ff
+                           .group:0000000000000000 wm4.typesizes.h.24.2c64f817c0dc4b6fb2a2c619d717be26
+                           .group:0000000000000000 wm4.time64.h.24.a8166ae916ec910dab0d8987098d42ee
+                           .group:0000000000000000 wm4.types.h.40.18f72bab8242c2bb4c532a2aa95b5f00
+                           .group:0000000000000000 wm4.stddef.h.231.0adce5c8c1fd8096aaff50981b3d1f0f
+                           .group:0000000000000000 wm4.endian.h.20.efabd1018df5d7b4052c27dc6bdd5ce5
+                           .group:0000000000000000 wm4.endianness.h.2.2c6a211f7909f3af5e9e9cfa3b6b63c8
+                           .group:0000000000000000 wm4.endian.h.40.9e5d395adda2f4eb53ae69b69b664084
+                           .group:0000000000000000 wm4.endian.h.27.4c4f94262c4eaee2982fe00ed1b4f173
+                           .group:0000000000000000 wm4.byteswap.h.24.5363c019348146aada5aeadf51456576
+                           .group:0000000000000000 wm4.endian.h.39.30a606dbd99b6c3df61c1f06dbdabd4e
                            .group:0000000000000000 wm4.select.h.28.eb2f3debdbcffd1442ebddaebc4fb6ff
-                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
-                           .group:0000000000000000 wm4.select.h.36.f76c3b9e55c871743863013cc4cc14c9
-                           .group:0000000000000000 wm4.time.h.66.e70ce69790c975f0efb369340c432e0b
-                           .group:0000000000000000 wm4.time.h.25.ae5284cdff565e87a9198d819340325d
-                           .group:0000000000000000 wm4.select.h.49.e9d2041e5035cc68ebd1a20f7dbc8514
+                           .group:0000000000000000 wm4.__sigset_t.h.2.6b1ab6ff3d7b8fd9c0c42b0d80afbd80
+                           .group:0000000000000000 wm4.select.h.44.887a4ff60aa97fcd9c1be017735e1675
                            .group:0000000000000000 wm4.select2.h.27.f95f2ab0ffee66dc1b6575014894b21a
-                           .group:0000000000000000 wm4.sysmacros.h.20.8a0c33ff175cd9b434a86c0aaa36f0a2
-                           .group:0000000000000000 wm4.types.h.229.67b3f66bd74b06b451caec392a72a945
-                           .group:0000000000000000 wm4.pthreadtypes.h.25.6892b1493314fcf446bbc76e7362acba
+                           .group:0000000000000000 wm4.types.h.186.489a4ed8f2d29cd358843490f54ddea5
+                           .group:0000000000000000 wm4.pthreadtypesarch.h.25.6063cba99664c916e22d3a912bcc348a
+                           .group:0000000000000000 wm4.struct_mutex.h.20.ed51f515172b9be99e450ba83eb5dd99
+                           .group:0000000000000000 wm4.struct_rwlock.h.21.0254880f2904e3833fb8ae683e0f0330
                            .group:0000000000000000 wm4.alloca.h.19.edefa922a76c1cbaaf1e416903ba2d1c
                            .group:0000000000000000 wm4.alloca.h.29.156e12058824cc23d961c4d3b13031f6
-                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
-                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
-                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
-                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
-                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
-                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
-                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdio.h.24.5c1b97eef3c86b7a2549420f69f4f128
+                           .group:0000000000000000 wm4.libcheaderstart.h.31.87b3c285aeba93fe355ad19123070832
+                           .group:0000000000000000 wm4.stdio.h.31.e39a94e203ad4e1d978c0fc68ce016ee
+                           .group:0000000000000000 wm4.stddef.h.231.8136eebbab3406dbf57a7ec475dd5d83
                            .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
-                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
-                           .group:0000000000000000 wm4.stdio.h.80.17b7dd1ca72d8a61987532cb1d80194a
-                           .group:0000000000000000 wm4.stdio_lim.h.23.557290a6cddeba0587f574f29e3a5fb9
-                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
-                           .group:0000000000000000 wm4.stdio.h.26.cae64f7ada9bb8327a89dba6a5e93655
-                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
-                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
-                           .group:0000000000000000 wm4.string2.h.45.00535b99420fc3014c2da41d6645330d
-                           .group:0000000000000000 wm4.string3.h.31.0c4b9301b754a2db05eaafef869657d2
+                           .group:0000000000000000 wm4.struct_FILE.h.19.0888ac70396abe1031c03d393554032f
+                           .group:0000000000000000 wm4.stdio.h.53.139e45cf040c0964b2932c0c1bdaf6b2
+                           .group:0000000000000000 wm4.stdio_lim.h.19.e4b00b560d878dcfbc6635b3406640c5
+                           .group:0000000000000000 wm4.stdio.h.141.d7a290e19ca077c9e4aa7c43ede17a73
+                           .group:0000000000000000 wm4.stdio.h.20.b0caa08e5723aa5941367be0e5d2ec59
+                           .group:0000000000000000 wm4.stdio2.h.20.f45a0373b68e1296c4aa8cc09d66a9df
+                           .group:0000000000000000 wm4.string.h.23.93403f89af7dba8212345449bb14b09d
+                           .group:0000000000000000 wm4.string.h.31.e39a94e203ad4e1d978c0fc68ce016ee
+                           .group:0000000000000000 wm4.strings.h.19.a259f126920b1bb5ef76bc62b3984a3c
                            .group:0000000000000000 wm4.jinclude.h.67.b19f941ec97c4845fa4609292c7e2db4
                            .group:0000000000000000 wm4.jmorecfg.h.33.892d1896c42f78d6ec3a036162b3403e
                            .group:0000000000000000 wm4.jpeglib.h.40.4f111c27252a38df39328d65454e82f4
                            .group:0000000000000000 wm4.jerror.h.25.1dbd8674e70ab5215bc0037320e5c2a2
 
 UNDEFINED SYMBOLS
+_GLOBAL_OFFSET_TABLE_
 fread
 jpeg_resync_to_restart

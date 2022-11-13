@@ -162,12 +162,14 @@ keys = { Qt.Key_Enter:("\n", "Enter"),
          Qt.Key_Tab:(Ascii.TAB, "Tab")
 } 
 
+
 def get_description(key: QKeyEvent) -> str:
     for a,b in keys.items():
         if key.key() == a:
             return b[1]
 
     return key.text()
+
 
 def get_key(key: QKeyEvent) -> str:
     for a,b in keys.items():
@@ -197,6 +199,7 @@ errors = {
     QSerialPort.TimeoutError:"Timeout",
     QSerialPort.UnknownError:"Unknown",  
 }
+
 
 class State(enum.Enum):
     DISCONNECTED = 0
@@ -446,7 +449,6 @@ class TerminalWin(QTextEdit):
         self.sp.send_string(get_key(e))
         
 
-
 class SerialPort:
     def __init__(self) -> None:
         self.clear()
@@ -471,8 +473,6 @@ class SerialPort:
             else:
                 logging.error("Could not write data.")
             
-
-
 
 class MainForm(QMainWindow):
     def __init__(self, parent=None):

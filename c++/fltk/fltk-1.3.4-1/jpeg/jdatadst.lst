@@ -1,17 +1,12 @@
    1              		.file	"jdatadst.c"
    2              		.text
    3              	.Ltext0:
-   4              		.section	.text.unlikely.init_destination,"ax",@progbits
-   5              	.LCOLDB0:
-   6              		.section	.text.init_destination,"ax",@progbits
-   7              	.LHOTB0:
-   8              		.p2align 4,,15
-   9              		.section	.text.unlikely.init_destination
-  10              	.Ltext_cold0:
-  11              		.section	.text.init_destination
-  13              	init_destination:
-  14              	.LFB61:
-  15              		.file 1 "fltk-1.3.4-1/jpeg/jdatadst.c"
+   4              		.section	.text.init_destination,"ax",@progbits
+   5              		.p2align 4
+   7              	init_destination:
+   8              	.LVL0:
+   9              	.LFB51:
+  10              		.file 1 "fltk-1.3.4-1/jpeg/jdatadst.c"
    1:fltk-1.3.4-1/jpeg/jdatadst.c **** /*
    2:fltk-1.3.4-1/jpeg/jdatadst.c ****  * jdatadst.c
    3:fltk-1.3.4-1/jpeg/jdatadst.c ****  *
@@ -77,85 +72,84 @@
   63:fltk-1.3.4-1/jpeg/jdatadst.c **** METHODDEF(void)
   64:fltk-1.3.4-1/jpeg/jdatadst.c **** init_destination (j_compress_ptr cinfo)
   65:fltk-1.3.4-1/jpeg/jdatadst.c **** {
-  16              		.loc 1 65 0
-  17              		.cfi_startproc
-  18              	.LVL0:
-  19 0000 53       		pushq	%rbx
-  20              		.cfi_def_cfa_offset 16
-  21              		.cfi_offset 3, -16
+  11              		.loc 1 65 1 view -0
+  12              		.cfi_startproc
+  13              		.loc 1 65 1 is_stmt 0 view .LVU1
+  14 0000 F30F1EFA 		endbr64
   66:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
+  15              		.loc 1 66 3 is_stmt 1 view .LVU2
   67:fltk-1.3.4-1/jpeg/jdatadst.c **** 
   68:fltk-1.3.4-1/jpeg/jdatadst.c ****   /* Allocate the output buffer --- it will be released when done with image */
   69:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->buffer = (JOCTET *)
   70:fltk-1.3.4-1/jpeg/jdatadst.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
-  22              		.loc 1 70 0
-  23 0001 488B4708 		movq	8(%rdi), %rax
-  24 0005 BA001000 		movl	$4096, %edx
+  16              		.loc 1 70 8 is_stmt 0 view .LVU3
+  17 0004 488B4708 		movq	8(%rdi), %rax
+  65:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
+  18              		.loc 1 65 1 view .LVU4
+  19 0008 53       		pushq	%rbx
+  20              		.cfi_def_cfa_offset 16
+  21              		.cfi_offset 3, -16
+  22              		.loc 1 70 8 view .LVU5
+  23 0009 BA001000 		movl	$4096, %edx
+  23      00
+  24 000e BE010000 		movl	$1, %esi
   24      00
   66:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
-  25              		.loc 1 66 0
-  26 000a 488B5F28 		movq	40(%rdi), %rbx
+  25              		.loc 1 66 15 view .LVU6
+  26 0013 488B5F28 		movq	40(%rdi), %rbx
   27              	.LVL1:
-  28              		.loc 1 70 0
-  29 000e BE010000 		movl	$1, %esi
-  29      00
-  30 0013 FF10     		call	*(%rax)
+  69:fltk-1.3.4-1/jpeg/jdatadst.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+  28              		.loc 1 69 3 is_stmt 1 view .LVU7
+  29              		.loc 1 70 8 is_stmt 0 view .LVU8
+  30 0017 FF10     		call	*(%rax)
   31              	.LVL2:
+  69:fltk-1.3.4-1/jpeg/jdatadst.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
+  32              		.loc 1 69 16 view .LVU9
+  33 0019 48894330 		movq	%rax, 48(%rbx)
   71:fltk-1.3.4-1/jpeg/jdatadst.c **** 				  OUTPUT_BUF_SIZE * SIZEOF(JOCTET));
   72:fltk-1.3.4-1/jpeg/jdatadst.c **** 
   73:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.next_output_byte = dest->buffer;
+  34              		.loc 1 73 3 is_stmt 1 view .LVU10
+  35              		.loc 1 73 30 is_stmt 0 view .LVU11
+  36 001d 488903   		movq	%rax, (%rbx)
   74:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.free_in_buffer = OUTPUT_BUF_SIZE;
-  32              		.loc 1 74 0
-  33 0015 48C74308 		movq	$4096, 8(%rbx)
-  33      00100000 
-  69:fltk-1.3.4-1/jpeg/jdatadst.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_IMAGE,
-  34              		.loc 1 69 0
-  35 001d 48894330 		movq	%rax, 48(%rbx)
-  73:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.free_in_buffer = OUTPUT_BUF_SIZE;
-  36              		.loc 1 73 0
-  37 0021 488903   		movq	%rax, (%rbx)
+  37              		.loc 1 74 3 is_stmt 1 view .LVU12
+  38              		.loc 1 74 28 is_stmt 0 view .LVU13
+  39 0020 48C74308 		movq	$4096, 8(%rbx)
+  39      00100000 
   75:fltk-1.3.4-1/jpeg/jdatadst.c **** }
-  38              		.loc 1 75 0
-  39 0024 5B       		popq	%rbx
-  40              		.cfi_def_cfa_offset 8
-  41              	.LVL3:
-  42 0025 C3       		ret
-  43              		.cfi_endproc
-  44              	.LFE61:
-  46              		.section	.text.unlikely.init_destination
-  47              	.LCOLDE0:
-  48              		.section	.text.init_destination
-  49              	.LHOTE0:
-  50              		.section	.text.unlikely.init_mem_destination,"ax",@progbits
-  51              	.LCOLDB1:
-  52              		.section	.text.init_mem_destination,"ax",@progbits
-  53              	.LHOTB1:
-  54              		.p2align 4,,15
-  56              	init_mem_destination:
-  57              	.LFB62:
+  40              		.loc 1 75 1 view .LVU14
+  41 0028 5B       		popq	%rbx
+  42              		.cfi_def_cfa_offset 8
+  43              	.LVL3:
+  44              		.loc 1 75 1 view .LVU15
+  45 0029 C3       		ret
+  46              		.cfi_endproc
+  47              	.LFE51:
+  49              		.section	.text.init_mem_destination,"ax",@progbits
+  50              		.p2align 4
+  52              	init_mem_destination:
+  53              	.LVL4:
+  54              	.LFB52:
   76:fltk-1.3.4-1/jpeg/jdatadst.c **** 
   77:fltk-1.3.4-1/jpeg/jdatadst.c **** METHODDEF(void)
   78:fltk-1.3.4-1/jpeg/jdatadst.c **** init_mem_destination (j_compress_ptr cinfo)
   79:fltk-1.3.4-1/jpeg/jdatadst.c **** {
-  58              		.loc 1 79 0
-  59              		.cfi_startproc
-  60              	.LVL4:
-  61 0000 F3C3     		rep ret
-  62              		.cfi_endproc
-  63              	.LFE62:
-  65              		.section	.text.unlikely.init_mem_destination
-  66              	.LCOLDE1:
-  67              		.section	.text.init_mem_destination
-  68              	.LHOTE1:
-  69              		.section	.text.unlikely.term_mem_destination,"ax",@progbits
-  70              	.LCOLDB2:
-  71              		.section	.text.term_mem_destination,"ax",@progbits
-  72              	.LHOTB2:
-  73              		.p2align 4,,15
-  75              	term_mem_destination:
-  76              	.LFB66:
+  55              		.loc 1 79 1 is_stmt 1 view -0
+  56              		.cfi_startproc
+  57              		.loc 1 79 1 is_stmt 0 view .LVU17
+  58 0000 F30F1EFA 		endbr64
   80:fltk-1.3.4-1/jpeg/jdatadst.c ****   /* no work necessary here */
   81:fltk-1.3.4-1/jpeg/jdatadst.c **** }
+  59              		.loc 1 81 1 is_stmt 1 view .LVU18
+  60 0004 C3       		ret
+  61              		.cfi_endproc
+  62              	.LFE52:
+  64              		.section	.text.term_mem_destination,"ax",@progbits
+  65              		.p2align 4
+  67              	term_mem_destination:
+  68              	.LVL5:
+  69              	.LFB56:
   82:fltk-1.3.4-1/jpeg/jdatadst.c **** 
   83:fltk-1.3.4-1/jpeg/jdatadst.c **** 
   84:fltk-1.3.4-1/jpeg/jdatadst.c **** /*
@@ -256,461 +250,541 @@
  179:fltk-1.3.4-1/jpeg/jdatadst.c **** METHODDEF(void)
  180:fltk-1.3.4-1/jpeg/jdatadst.c **** term_mem_destination (j_compress_ptr cinfo)
  181:fltk-1.3.4-1/jpeg/jdatadst.c **** {
-  77              		.loc 1 181 0
-  78              		.cfi_startproc
-  79              	.LVL5:
+  70              		.loc 1 181 1 view -0
+  71              		.cfi_startproc
+  72              		.loc 1 181 1 is_stmt 0 view .LVU20
+  73 0000 F30F1EFA 		endbr64
  182:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_mem_dest_ptr dest = (my_mem_dest_ptr) cinfo->dest;
-  80              		.loc 1 182 0
-  81 0000 488B4728 		movq	40(%rdi), %rax
-  82              	.LVL6:
+  74              		.loc 1 182 3 is_stmt 1 view .LVU21
+  75              		.loc 1 182 19 is_stmt 0 view .LVU22
+  76 0004 488B4728 		movq	40(%rdi), %rax
+  77              	.LVL6:
  183:fltk-1.3.4-1/jpeg/jdatadst.c **** 
  184:fltk-1.3.4-1/jpeg/jdatadst.c ****   *dest->outbuffer = dest->buffer;
-  83              		.loc 1 184 0
-  84 0004 488B5028 		movq	40(%rax), %rdx
-  85 0008 488B4840 		movq	64(%rax), %rcx
-  86 000c 48890A   		movq	%rcx, (%rdx)
+  78              		.loc 1 184 3 is_stmt 1 view .LVU23
+  79              		.loc 1 184 8 is_stmt 0 view .LVU24
+  80 0008 488B5028 		movq	40(%rax), %rdx
+  81              		.loc 1 184 26 view .LVU25
+  82 000c 488B4840 		movq	64(%rax), %rcx
+  83              		.loc 1 184 20 view .LVU26
+  84 0010 48890A   		movq	%rcx, (%rdx)
  185:fltk-1.3.4-1/jpeg/jdatadst.c ****   *dest->outsize = dest->bufsize - dest->pub.free_in_buffer;
-  87              		.loc 1 185 0
-  88 000f 488B5048 		movq	72(%rax), %rdx
-  89 0013 482B5008 		subq	8(%rax), %rdx
-  90 0017 488B4830 		movq	48(%rax), %rcx
-  91 001b 488911   		movq	%rdx, (%rcx)
-  92 001e C3       		ret
-  93              		.cfi_endproc
-  94              	.LFE66:
-  96              		.section	.text.unlikely.term_mem_destination
-  97              	.LCOLDE2:
-  98              		.section	.text.term_mem_destination
-  99              	.LHOTE2:
- 100              		.section	.text.unlikely.empty_output_buffer,"ax",@progbits
- 101              	.LCOLDB3:
- 102              		.section	.text.empty_output_buffer,"ax",@progbits
- 103              	.LHOTB3:
- 104              		.p2align 4,,15
- 106              	empty_output_buffer:
- 107              	.LFB63:
- 109:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
- 108              		.loc 1 109 0
- 109              		.cfi_startproc
- 110              	.LVL7:
- 111 0000 55       		pushq	%rbp
- 112              		.cfi_def_cfa_offset 16
- 113              		.cfi_offset 6, -16
- 114 0001 53       		pushq	%rbx
- 115              		.cfi_def_cfa_offset 24
- 116              		.cfi_offset 3, -24
- 117 0002 4889FD   		movq	%rdi, %rbp
- 112:fltk-1.3.4-1/jpeg/jdatadst.c ****       (size_t) OUTPUT_BUF_SIZE)
- 118              		.loc 1 112 0
- 119 0005 BA001000 		movl	$4096, %edx
- 119      00
- 120 000a BE010000 		movl	$1, %esi
- 120      00
- 109:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
- 121              		.loc 1 109 0
- 122 000f 4883EC08 		subq	$8, %rsp
- 123              		.cfi_def_cfa_offset 32
- 110:fltk-1.3.4-1/jpeg/jdatadst.c **** 
- 124              		.loc 1 110 0
- 125 0013 488B5F28 		movq	40(%rdi), %rbx
- 126              	.LVL8:
- 112:fltk-1.3.4-1/jpeg/jdatadst.c ****       (size_t) OUTPUT_BUF_SIZE)
- 127              		.loc 1 112 0
- 128 0017 488B4B28 		movq	40(%rbx), %rcx
- 129 001b 488B7B30 		movq	48(%rbx), %rdi
- 130              	.LVL9:
- 131 001f E8000000 		call	fwrite
- 131      00
- 132              	.LVL10:
- 133 0024 483D0010 		cmpq	$4096, %rax
- 133      0000
- 134 002a 7414     		je	.L6
- 114:fltk-1.3.4-1/jpeg/jdatadst.c **** 
- 135              		.loc 1 114 0
- 136 002c 488B4500 		movq	0(%rbp), %rax
- 137 0030 4889EF   		movq	%rbp, %rdi
- 138 0033 C7402826 		movl	$38, 40(%rax)
- 138      000000
- 139 003a 488B4500 		movq	0(%rbp), %rax
- 140 003e FF10     		call	*(%rax)
- 141              	.LVL11:
- 142              	.L6:
- 116:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.free_in_buffer = OUTPUT_BUF_SIZE;
- 143              		.loc 1 116 0
- 144 0040 488B4330 		movq	48(%rbx), %rax
- 117:fltk-1.3.4-1/jpeg/jdatadst.c **** 
- 145              		.loc 1 117 0
- 146 0044 48C74308 		movq	$4096, 8(%rbx)
- 146      00100000 
- 116:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.free_in_buffer = OUTPUT_BUF_SIZE;
- 147              		.loc 1 116 0
- 148 004c 488903   		movq	%rax, (%rbx)
- 120:fltk-1.3.4-1/jpeg/jdatadst.c **** 
- 149              		.loc 1 120 0
- 150 004f 4883C408 		addq	$8, %rsp
- 151              		.cfi_def_cfa_offset 24
- 152 0053 B8010000 		movl	$1, %eax
- 152      00
- 153 0058 5B       		popq	%rbx
- 154              		.cfi_def_cfa_offset 16
- 155              	.LVL12:
- 156 0059 5D       		popq	%rbp
- 157              		.cfi_def_cfa_offset 8
- 158              	.LVL13:
- 159 005a C3       		ret
- 160              		.cfi_endproc
- 161              	.LFE63:
- 163              		.section	.text.unlikely.empty_output_buffer
- 164              	.LCOLDE3:
- 165              		.section	.text.empty_output_buffer
- 166              	.LHOTE3:
- 167              		.section	.text.unlikely.empty_mem_output_buffer,"ax",@progbits
- 168              	.LCOLDB4:
- 169              		.section	.text.empty_mem_output_buffer,"ax",@progbits
- 170              	.LHOTB4:
- 171              		.p2align 4,,15
- 173              	empty_mem_output_buffer:
- 174              	.LFB64:
- 124:fltk-1.3.4-1/jpeg/jdatadst.c ****   size_t nextsize;
- 175              		.loc 1 124 0
- 176              		.cfi_startproc
- 177              	.LVL14:
- 178 0000 4156     		pushq	%r14
- 179              		.cfi_def_cfa_offset 16
- 180              		.cfi_offset 14, -16
- 181 0002 4155     		pushq	%r13
- 182              		.cfi_def_cfa_offset 24
- 183              		.cfi_offset 13, -24
- 184 0004 4989FE   		movq	%rdi, %r14
- 185 0007 4154     		pushq	%r12
- 186              		.cfi_def_cfa_offset 32
- 187              		.cfi_offset 12, -32
- 188 0009 55       		pushq	%rbp
- 189              		.cfi_def_cfa_offset 40
- 190              		.cfi_offset 6, -40
- 191 000a 53       		pushq	%rbx
- 192              		.cfi_def_cfa_offset 48
- 193              		.cfi_offset 3, -48
- 127:fltk-1.3.4-1/jpeg/jdatadst.c **** 
- 194              		.loc 1 127 0
- 195 000b 488B5F28 		movq	40(%rdi), %rbx
- 196              	.LVL15:
- 130:fltk-1.3.4-1/jpeg/jdatadst.c ****   nextbuffer = (JOCTET *) malloc(nextsize);
- 197              		.loc 1 130 0
- 198 000f 4C8B6348 		movq	72(%rbx), %r12
- 199 0013 4F8D2C24 		leaq	(%r12,%r12), %r13
- 200              	.LVL16:
- 131:fltk-1.3.4-1/jpeg/jdatadst.c **** 
- 201              		.loc 1 131 0
- 202 0017 4C89EF   		movq	%r13, %rdi
- 203              	.LVL17:
- 204 001a E8000000 		call	malloc
- 204      00
- 205              	.LVL18:
- 133:fltk-1.3.4-1/jpeg/jdatadst.c ****     ERREXIT1(cinfo, JERR_OUT_OF_MEMORY, 10);
- 206              		.loc 1 133 0
- 207 001f 4885C0   		testq	%rax, %rax
- 131:fltk-1.3.4-1/jpeg/jdatadst.c **** 
- 208              		.loc 1 131 0
- 209 0022 4889C5   		movq	%rax, %rbp
- 210              	.LVL19:
- 133:fltk-1.3.4-1/jpeg/jdatadst.c ****     ERREXIT1(cinfo, JERR_OUT_OF_MEMORY, 10);
- 211              		.loc 1 133 0
- 212 0025 7449     		je	.L19
- 213              	.LVL20:
- 214              	.L13:
- 215              	.LBB4:
- 216              	.LBB5:
- 217              		.file 2 "/usr/include/x86_64-linux-gnu/bits/string3.h"
-   1:/usr/include/x86_64-linux-gnu/bits/string3.h **** /* Copyright (C) 2004-2016 Free Software Foundation, Inc.
-   2:/usr/include/x86_64-linux-gnu/bits/string3.h ****    This file is part of the GNU C Library.
-   3:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
-   4:/usr/include/x86_64-linux-gnu/bits/string3.h ****    The GNU C Library is free software; you can redistribute it and/or
-   5:/usr/include/x86_64-linux-gnu/bits/string3.h ****    modify it under the terms of the GNU Lesser General Public
-   6:/usr/include/x86_64-linux-gnu/bits/string3.h ****    License as published by the Free Software Foundation; either
-   7:/usr/include/x86_64-linux-gnu/bits/string3.h ****    version 2.1 of the License, or (at your option) any later version.
-   8:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
-   9:/usr/include/x86_64-linux-gnu/bits/string3.h ****    The GNU C Library is distributed in the hope that it will be useful,
-  10:/usr/include/x86_64-linux-gnu/bits/string3.h ****    but WITHOUT ANY WARRANTY; without even the implied warranty of
-  11:/usr/include/x86_64-linux-gnu/bits/string3.h ****    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-  12:/usr/include/x86_64-linux-gnu/bits/string3.h ****    Lesser General Public License for more details.
-  13:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
-  14:/usr/include/x86_64-linux-gnu/bits/string3.h ****    You should have received a copy of the GNU Lesser General Public
-  15:/usr/include/x86_64-linux-gnu/bits/string3.h ****    License along with the GNU C Library; if not, see
-  16:/usr/include/x86_64-linux-gnu/bits/string3.h ****    <http://www.gnu.org/licenses/>.  */
-  17:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
-  18:/usr/include/x86_64-linux-gnu/bits/string3.h **** #ifndef _STRING_H
-  19:/usr/include/x86_64-linux-gnu/bits/string3.h **** # error "Never use <bits/string3.h> directly; include <string.h> instead."
-  20:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
-  21:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
-  22:/usr/include/x86_64-linux-gnu/bits/string3.h **** #if !__GNUC_PREREQ (5,0)
-  23:/usr/include/x86_64-linux-gnu/bits/string3.h **** __warndecl (__warn_memset_zero_len,
-  24:/usr/include/x86_64-linux-gnu/bits/string3.h **** 	    "memset used with constant zero length parameter; this could be due to transposed parameters")
-  25:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
-  26:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
-  27:/usr/include/x86_64-linux-gnu/bits/string3.h **** #ifndef __cplusplus
-  28:/usr/include/x86_64-linux-gnu/bits/string3.h **** /* XXX This is temporarily.  We should not redefine any of the symbols
-  29:/usr/include/x86_64-linux-gnu/bits/string3.h ****    and instead integrate the error checking into the original
-  30:/usr/include/x86_64-linux-gnu/bits/string3.h ****    definitions.  */
-  31:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memcpy
-  32:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memmove
-  33:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memset
-  34:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strcat
-  35:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strcpy
-  36:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strncat
-  37:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strncpy
-  38:/usr/include/x86_64-linux-gnu/bits/string3.h **** # ifdef __USE_GNU
-  39:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef mempcpy
-  40:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef stpcpy
-  41:/usr/include/x86_64-linux-gnu/bits/string3.h **** # endif
-  42:/usr/include/x86_64-linux-gnu/bits/string3.h **** # ifdef __USE_MISC
-  43:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef bcopy
-  44:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef bzero
-  45:/usr/include/x86_64-linux-gnu/bits/string3.h **** # endif
-  46:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
-  47:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
-  48:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
-  49:/usr/include/x86_64-linux-gnu/bits/string3.h **** __fortify_function void *
-  50:/usr/include/x86_64-linux-gnu/bits/string3.h **** __NTH (memcpy (void *__restrict __dest, const void *__restrict __src,
-  51:/usr/include/x86_64-linux-gnu/bits/string3.h **** 	       size_t __len))
-  52:/usr/include/x86_64-linux-gnu/bits/string3.h **** {
-  53:/usr/include/x86_64-linux-gnu/bits/string3.h ****   return __builtin___memcpy_chk (__dest, __src, __len, __bos0 (__dest));
- 218              		.loc 2 53 0
- 219 0027 488B7340 		movq	64(%rbx), %rsi
- 220 002b 4889EF   		movq	%rbp, %rdi
- 221 002e 4C89E2   		movq	%r12, %rdx
- 222 0031 E8000000 		call	memcpy
- 222      00
- 223              	.LVL21:
- 224              	.LBE5:
- 225              	.LBE4:
- 138:fltk-1.3.4-1/jpeg/jdatadst.c ****     free(dest->newbuffer);
- 226              		.loc 1 138 0
- 227 0036 488B7B38 		movq	56(%rbx), %rdi
- 228 003a 4885FF   		testq	%rdi, %rdi
- 229 003d 7405     		je	.L14
- 139:fltk-1.3.4-1/jpeg/jdatadst.c **** 
- 230              		.loc 1 139 0
- 231 003f E8000000 		call	free
- 231      00
- 232              	.LVL22:
- 233              	.L14:
- 143:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.free_in_buffer = dest->bufsize;
- 234              		.loc 1 143 0
- 235 0044 488B4348 		movq	72(%rbx), %rax
- 141:fltk-1.3.4-1/jpeg/jdatadst.c **** 
- 236              		.loc 1 141 0
- 237 0048 48896B38 		movq	%rbp, 56(%rbx)
- 146:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->bufsize = nextsize;
- 238              		.loc 1 146 0
- 239 004c 48896B40 		movq	%rbp, 64(%rbx)
- 147:fltk-1.3.4-1/jpeg/jdatadst.c **** 
- 240              		.loc 1 147 0
- 241 0050 4C896B48 		movq	%r13, 72(%rbx)
- 143:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.free_in_buffer = dest->bufsize;
- 242              		.loc 1 143 0
- 243 0054 488D5405 		leaq	0(%rbp,%rax), %rdx
- 243      00
- 144:fltk-1.3.4-1/jpeg/jdatadst.c **** 
- 244              		.loc 1 144 0
- 245 0059 48894308 		movq	%rax, 8(%rbx)
- 150:fltk-1.3.4-1/jpeg/jdatadst.c **** 
- 246              		.loc 1 150 0
- 247 005d B8010000 		movl	$1, %eax
- 247      00
- 143:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.free_in_buffer = dest->bufsize;
- 248              		.loc 1 143 0
- 249 0062 488913   		movq	%rdx, (%rbx)
- 150:fltk-1.3.4-1/jpeg/jdatadst.c **** 
- 250              		.loc 1 150 0
- 251 0065 5B       		popq	%rbx
- 252              		.cfi_remember_state
- 253              		.cfi_def_cfa_offset 40
- 254              	.LVL23:
- 255 0066 5D       		popq	%rbp
- 256              		.cfi_def_cfa_offset 32
- 257              	.LVL24:
- 258 0067 415C     		popq	%r12
- 259              		.cfi_def_cfa_offset 24
- 260 0069 415D     		popq	%r13
- 261              		.cfi_def_cfa_offset 16
- 262              	.LVL25:
- 263 006b 415E     		popq	%r14
- 264              		.cfi_def_cfa_offset 8
- 265              	.LVL26:
- 266 006d C3       		ret
- 267              	.LVL27:
- 268 006e 6690     		.p2align 4,,10
- 269              		.p2align 3
- 270              	.L19:
- 271              		.cfi_restore_state
- 134:fltk-1.3.4-1/jpeg/jdatadst.c **** 
- 272              		.loc 1 134 0
- 273 0070 498B06   		movq	(%r14), %rax
- 274              	.LVL28:
- 275 0073 4C89F7   		movq	%r14, %rdi
- 276 0076 C7402838 		movl	$56, 40(%rax)
- 276      000000
- 277 007d 498B06   		movq	(%r14), %rax
- 278 0080 C7402C0A 		movl	$10, 44(%rax)
- 278      000000
- 279 0087 498B06   		movq	(%r14), %rax
- 280 008a FF10     		call	*(%rax)
- 281              	.LVL29:
- 282 008c 4C8B6348 		movq	72(%rbx), %r12
- 283 0090 EB95     		jmp	.L13
- 284              		.cfi_endproc
- 285              	.LFE64:
- 287              		.section	.text.unlikely.empty_mem_output_buffer
- 288              	.LCOLDE4:
- 289              		.section	.text.empty_mem_output_buffer
- 290              	.LHOTE4:
- 291              		.section	.text.unlikely.term_destination,"ax",@progbits
- 292              	.LCOLDB5:
- 293              		.section	.text.term_destination,"ax",@progbits
- 294              	.LHOTB5:
- 295              		.p2align 4,,15
- 297              	term_destination:
- 298              	.LFB65:
- 164:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
- 299              		.loc 1 164 0
- 300              		.cfi_startproc
- 301              	.LVL30:
- 302 0000 4154     		pushq	%r12
- 303              		.cfi_def_cfa_offset 16
- 304              		.cfi_offset 12, -16
- 305 0002 55       		pushq	%rbp
- 306              		.cfi_def_cfa_offset 24
- 307              		.cfi_offset 6, -24
- 166:fltk-1.3.4-1/jpeg/jdatadst.c **** 
- 308              		.loc 1 166 0
- 309 0003 BA001000 		movl	$4096, %edx
- 309      00
- 164:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
- 310              		.loc 1 164 0
- 311 0008 53       		pushq	%rbx
- 312              		.cfi_def_cfa_offset 32
- 313              		.cfi_offset 3, -32
- 165:fltk-1.3.4-1/jpeg/jdatadst.c ****   size_t datacount = OUTPUT_BUF_SIZE - dest->pub.free_in_buffer;
- 314              		.loc 1 165 0
- 315 0009 488B5F28 		movq	40(%rdi), %rbx
- 316              	.LVL31:
- 164:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
- 317              		.loc 1 164 0
- 318 000d 4989FC   		movq	%rdi, %r12
- 169:fltk-1.3.4-1/jpeg/jdatadst.c ****     if (JFWRITE(dest->outfile, dest->buffer, datacount) != datacount)
- 319              		.loc 1 169 0
- 320 0010 482B5308 		subq	8(%rbx), %rdx
- 321              	.LVL32:
- 322 0014 7542     		jne	.L26
- 323              	.LVL33:
- 324              	.L22:
- 173:fltk-1.3.4-1/jpeg/jdatadst.c ****   /* Make sure we wrote the output file OK */
- 325              		.loc 1 173 0
- 326 0016 488B7B28 		movq	40(%rbx), %rdi
- 327 001a E8000000 		call	fflush
- 327      00
- 328              	.LVL34:
- 175:fltk-1.3.4-1/jpeg/jdatadst.c ****     ERREXIT(cinfo, JERR_FILE_WRITE);
- 329              		.loc 1 175 0
- 330 001f 488B7B28 		movq	40(%rbx), %rdi
- 331 0023 E8000000 		call	ferror
- 331      00
- 332              	.LVL35:
- 333 0028 85C0     		testl	%eax, %eax
- 334 002a 750C     		jne	.L27
- 177:fltk-1.3.4-1/jpeg/jdatadst.c **** 
- 335              		.loc 1 177 0
- 336 002c 5B       		popq	%rbx
- 337              		.cfi_remember_state
- 338              		.cfi_def_cfa_offset 24
- 339              	.LVL36:
- 340 002d 5D       		popq	%rbp
- 341              		.cfi_def_cfa_offset 16
- 342 002e 415C     		popq	%r12
- 343              		.cfi_def_cfa_offset 8
- 344              	.LVL37:
- 345 0030 C3       		ret
- 346              	.LVL38:
- 347              		.p2align 4,,10
- 348 0031 0F1F8000 		.p2align 3
- 348      000000
- 349              	.L27:
- 350              		.cfi_restore_state
- 351              	.LBB8:
- 352              	.LBB9:
- 176:fltk-1.3.4-1/jpeg/jdatadst.c **** }
- 353              		.loc 1 176 0
- 354 0038 498B0424 		movq	(%r12), %rax
- 355 003c 4C89E7   		movq	%r12, %rdi
- 356 003f C7402826 		movl	$38, 40(%rax)
- 356      000000
- 357 0046 498B0424 		movq	(%r12), %rax
- 358              	.LBE9:
- 359              	.LBE8:
- 177:fltk-1.3.4-1/jpeg/jdatadst.c **** 
- 360              		.loc 1 177 0
- 361 004a 5B       		popq	%rbx
- 362              		.cfi_remember_state
- 363              		.cfi_def_cfa_offset 24
- 364              	.LVL39:
- 365 004b 5D       		popq	%rbp
- 366              		.cfi_def_cfa_offset 16
- 367 004c 415C     		popq	%r12
- 368              		.cfi_def_cfa_offset 8
- 369              	.LVL40:
- 370              	.LBB11:
- 371              	.LBB10:
- 176:fltk-1.3.4-1/jpeg/jdatadst.c **** }
- 372              		.loc 1 176 0
- 373 004e 488B00   		movq	(%rax), %rax
- 374 0051 FFE0     		jmp	*%rax
- 375              	.LVL41:
- 376              		.p2align 4,,10
- 377 0053 0F1F4400 		.p2align 3
- 377      00
- 378              	.L26:
- 379              		.cfi_restore_state
- 380              	.LBE10:
- 381              	.LBE11:
- 170:fltk-1.3.4-1/jpeg/jdatadst.c ****       ERREXIT(cinfo, JERR_FILE_WRITE);
- 382              		.loc 1 170 0
- 383 0058 488B4B28 		movq	40(%rbx), %rcx
- 384 005c 488B7B30 		movq	48(%rbx), %rdi
- 385              	.LVL42:
- 386 0060 4889D5   		movq	%rdx, %rbp
- 387 0063 BE010000 		movl	$1, %esi
- 387      00
- 388 0068 E8000000 		call	fwrite
- 388      00
- 389              	.LVL43:
- 390 006d 4839C5   		cmpq	%rax, %rbp
- 391 0070 74A4     		je	.L22
- 171:fltk-1.3.4-1/jpeg/jdatadst.c ****   }
- 392              		.loc 1 171 0
- 393 0072 498B0424 		movq	(%r12), %rax
- 394 0076 4C89E7   		movq	%r12, %rdi
- 395 0079 C7402826 		movl	$38, 40(%rax)
- 395      000000
- 396 0080 498B0424 		movq	(%r12), %rax
- 397 0084 FF10     		call	*(%rax)
- 398              	.LVL44:
- 399 0086 EB8E     		jmp	.L22
- 400              		.cfi_endproc
- 401              	.LFE65:
- 403              		.section	.text.unlikely.term_destination
- 404              	.LCOLDE5:
- 405              		.section	.text.term_destination
- 406              	.LHOTE5:
- 407              		.section	.text.unlikely.jpeg_stdio_dest,"ax",@progbits
- 408              	.LCOLDB6:
- 409              		.section	.text.jpeg_stdio_dest,"ax",@progbits
- 410              	.LHOTB6:
- 411              		.p2align 4,,15
- 412              		.globl	jpeg_stdio_dest
- 414              	jpeg_stdio_dest:
- 415              	.LFB67:
+  85              		.loc 1 185 3 is_stmt 1 view .LVU27
+  86              		.loc 1 185 8 is_stmt 0 view .LVU28
+  87 0013 488B4830 		movq	48(%rax), %rcx
+  88              		.loc 1 185 34 view .LVU29
+  89 0017 488B5048 		movq	72(%rax), %rdx
+  90 001b 482B5008 		subq	8(%rax), %rdx
+  91              		.loc 1 185 18 view .LVU30
+  92 001f 488911   		movq	%rdx, (%rcx)
  186:fltk-1.3.4-1/jpeg/jdatadst.c **** }
+  93              		.loc 1 186 1 view .LVU31
+  94 0022 C3       		ret
+  95              		.cfi_endproc
+  96              	.LFE56:
+  98              		.section	.text.empty_output_buffer,"ax",@progbits
+  99              		.p2align 4
+ 101              	empty_output_buffer:
+ 102              	.LVL7:
+ 103              	.LFB53:
+ 109:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
+ 104              		.loc 1 109 1 is_stmt 1 view -0
+ 105              		.cfi_startproc
+ 109:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
+ 106              		.loc 1 109 1 is_stmt 0 view .LVU33
+ 107 0000 F30F1EFA 		endbr64
+ 110:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 108              		.loc 1 110 3 is_stmt 1 view .LVU34
+ 109:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
+ 109              		.loc 1 109 1 is_stmt 0 view .LVU35
+ 110 0004 55       		pushq	%rbp
+ 111              		.cfi_def_cfa_offset 16
+ 112              		.cfi_offset 6, -16
+ 113 0005 4889FD   		movq	%rdi, %rbp
+ 112:fltk-1.3.4-1/jpeg/jdatadst.c ****       (size_t) OUTPUT_BUF_SIZE)
+ 114              		.loc 1 112 7 view .LVU36
+ 115 0008 BA001000 		movl	$4096, %edx
+ 115      00
+ 116 000d BE010000 		movl	$1, %esi
+ 116      00
+ 109:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
+ 117              		.loc 1 109 1 view .LVU37
+ 118 0012 53       		pushq	%rbx
+ 119              		.cfi_def_cfa_offset 24
+ 120              		.cfi_offset 3, -24
+ 121 0013 4883EC08 		subq	$8, %rsp
+ 122              		.cfi_def_cfa_offset 32
+ 110:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 123              		.loc 1 110 15 view .LVU38
+ 124 0017 488B5F28 		movq	40(%rdi), %rbx
+ 125              	.LVL8:
+ 112:fltk-1.3.4-1/jpeg/jdatadst.c ****       (size_t) OUTPUT_BUF_SIZE)
+ 126              		.loc 1 112 3 is_stmt 1 view .LVU39
+ 112:fltk-1.3.4-1/jpeg/jdatadst.c ****       (size_t) OUTPUT_BUF_SIZE)
+ 127              		.loc 1 112 7 is_stmt 0 view .LVU40
+ 128 001b 488B4B28 		movq	40(%rbx), %rcx
+ 129 001f 488B7B30 		movq	48(%rbx), %rdi
+ 130              	.LVL9:
+ 112:fltk-1.3.4-1/jpeg/jdatadst.c ****       (size_t) OUTPUT_BUF_SIZE)
+ 131              		.loc 1 112 7 view .LVU41
+ 132 0023 E8000000 		call	fwrite@PLT
+ 132      00
+ 133              	.LVL10:
+ 112:fltk-1.3.4-1/jpeg/jdatadst.c ****       (size_t) OUTPUT_BUF_SIZE)
+ 134              		.loc 1 112 6 view .LVU42
+ 135 0028 483D0010 		cmpq	$4096, %rax
+ 135      0000
+ 136 002e 7414     		je	.L7
+ 114:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 137              		.loc 1 114 5 is_stmt 1 view .LVU43
+ 138 0030 488B4500 		movq	0(%rbp), %rax
+ 139 0034 4889EF   		movq	%rbp, %rdi
+ 140 0037 C7402826 		movl	$38, 40(%rax)
+ 140      000000
+ 141 003e 488B4500 		movq	0(%rbp), %rax
+ 142 0042 FF10     		call	*(%rax)
+ 143              	.LVL11:
+ 144              	.L7:
+ 116:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.free_in_buffer = OUTPUT_BUF_SIZE;
+ 145              		.loc 1 116 3 view .LVU44
+ 116:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.free_in_buffer = OUTPUT_BUF_SIZE;
+ 146              		.loc 1 116 30 is_stmt 0 view .LVU45
+ 147 0044 488B4330 		movq	48(%rbx), %rax
+ 117:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 148              		.loc 1 117 28 view .LVU46
+ 149 0048 48C74308 		movq	$4096, 8(%rbx)
+ 149      00100000 
+ 116:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.free_in_buffer = OUTPUT_BUF_SIZE;
+ 150              		.loc 1 116 30 view .LVU47
+ 151 0050 488903   		movq	%rax, (%rbx)
+ 117:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 152              		.loc 1 117 3 is_stmt 1 view .LVU48
+ 119:fltk-1.3.4-1/jpeg/jdatadst.c **** }
+ 153              		.loc 1 119 3 view .LVU49
+ 120:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 154              		.loc 1 120 1 is_stmt 0 view .LVU50
+ 155 0053 4883C408 		addq	$8, %rsp
+ 156              		.cfi_def_cfa_offset 24
+ 157 0057 B8010000 		movl	$1, %eax
+ 157      00
+ 158 005c 5B       		popq	%rbx
+ 159              		.cfi_def_cfa_offset 16
+ 160              	.LVL12:
+ 120:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 161              		.loc 1 120 1 view .LVU51
+ 162 005d 5D       		popq	%rbp
+ 163              		.cfi_def_cfa_offset 8
+ 164              	.LVL13:
+ 120:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 165              		.loc 1 120 1 view .LVU52
+ 166 005e C3       		ret
+ 167              		.cfi_endproc
+ 168              	.LFE53:
+ 170              		.section	.text.empty_mem_output_buffer,"ax",@progbits
+ 171              		.p2align 4
+ 173              	empty_mem_output_buffer:
+ 174              	.LVL14:
+ 175              	.LFB54:
+ 124:fltk-1.3.4-1/jpeg/jdatadst.c ****   size_t nextsize;
+ 176              		.loc 1 124 1 is_stmt 1 view -0
+ 177              		.cfi_startproc
+ 124:fltk-1.3.4-1/jpeg/jdatadst.c ****   size_t nextsize;
+ 178              		.loc 1 124 1 is_stmt 0 view .LVU54
+ 179 0000 F30F1EFA 		endbr64
+ 125:fltk-1.3.4-1/jpeg/jdatadst.c ****   JOCTET * nextbuffer;
+ 180              		.loc 1 125 3 is_stmt 1 view .LVU55
+ 126:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_mem_dest_ptr dest = (my_mem_dest_ptr) cinfo->dest;
+ 181              		.loc 1 126 3 view .LVU56
+ 127:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 182              		.loc 1 127 3 view .LVU57
+ 124:fltk-1.3.4-1/jpeg/jdatadst.c ****   size_t nextsize;
+ 183              		.loc 1 124 1 is_stmt 0 view .LVU58
+ 184 0004 4156     		pushq	%r14
+ 185              		.cfi_def_cfa_offset 16
+ 186              		.cfi_offset 14, -16
+ 187 0006 4155     		pushq	%r13
+ 188              		.cfi_def_cfa_offset 24
+ 189              		.cfi_offset 13, -24
+ 190 0008 4154     		pushq	%r12
+ 191              		.cfi_def_cfa_offset 32
+ 192              		.cfi_offset 12, -32
+ 193 000a 4989FC   		movq	%rdi, %r12
+ 194 000d 55       		pushq	%rbp
+ 195              		.cfi_def_cfa_offset 40
+ 196              		.cfi_offset 6, -40
+ 197 000e 53       		pushq	%rbx
+ 198              		.cfi_def_cfa_offset 48
+ 199              		.cfi_offset 3, -48
+ 127:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 200              		.loc 1 127 19 view .LVU59
+ 201 000f 488B5F28 		movq	40(%rdi), %rbx
+ 202              	.LVL15:
+ 130:fltk-1.3.4-1/jpeg/jdatadst.c ****   nextbuffer = (JOCTET *) malloc(nextsize);
+ 203              		.loc 1 130 3 is_stmt 1 view .LVU60
+ 130:fltk-1.3.4-1/jpeg/jdatadst.c ****   nextbuffer = (JOCTET *) malloc(nextsize);
+ 204              		.loc 1 130 18 is_stmt 0 view .LVU61
+ 205 0013 4C8B6B48 		movq	72(%rbx), %r13
+ 130:fltk-1.3.4-1/jpeg/jdatadst.c ****   nextbuffer = (JOCTET *) malloc(nextsize);
+ 206              		.loc 1 130 12 view .LVU62
+ 207 0017 4F8D742D 		leaq	(%r13,%r13), %r14
+ 207      00
+ 208              	.LVL16:
+ 131:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 209              		.loc 1 131 3 is_stmt 1 view .LVU63
+ 131:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 210              		.loc 1 131 27 is_stmt 0 view .LVU64
+ 211 001c 4C89F7   		movq	%r14, %rdi
+ 212              	.LVL17:
+ 131:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 213              		.loc 1 131 27 view .LVU65
+ 214 001f E8000000 		call	malloc@PLT
+ 214      00
+ 215              	.LVL18:
+ 216 0024 4889C5   		movq	%rax, %rbp
+ 217              	.LVL19:
+ 133:fltk-1.3.4-1/jpeg/jdatadst.c ****     ERREXIT1(cinfo, JERR_OUT_OF_MEMORY, 10);
+ 218              		.loc 1 133 3 is_stmt 1 view .LVU66
+ 133:fltk-1.3.4-1/jpeg/jdatadst.c ****     ERREXIT1(cinfo, JERR_OUT_OF_MEMORY, 10);
+ 219              		.loc 1 133 6 is_stmt 0 view .LVU67
+ 220 0027 4885C0   		testq	%rax, %rax
+ 221 002a 7447     		je	.L19
+ 222              	.LVL20:
+ 223              	.L13:
+ 136:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 224              		.loc 1 136 3 is_stmt 1 view .LVU68
+ 225              	.LBB4:
+ 226              	.LBI4:
+ 227              		.file 2 "/usr/include/x86_64-linux-gnu/bits/string_fortified.h"
+   1:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** /* Copyright (C) 2004-2020 Free Software Foundation, Inc.
+   2:/usr/include/x86_64-linux-gnu/bits/string_fortified.h ****    This file is part of the GNU C Library.
+   3:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** 
+   4:/usr/include/x86_64-linux-gnu/bits/string_fortified.h ****    The GNU C Library is free software; you can redistribute it and/or
+   5:/usr/include/x86_64-linux-gnu/bits/string_fortified.h ****    modify it under the terms of the GNU Lesser General Public
+   6:/usr/include/x86_64-linux-gnu/bits/string_fortified.h ****    License as published by the Free Software Foundation; either
+   7:/usr/include/x86_64-linux-gnu/bits/string_fortified.h ****    version 2.1 of the License, or (at your option) any later version.
+   8:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** 
+   9:/usr/include/x86_64-linux-gnu/bits/string_fortified.h ****    The GNU C Library is distributed in the hope that it will be useful,
+  10:/usr/include/x86_64-linux-gnu/bits/string_fortified.h ****    but WITHOUT ANY WARRANTY; without even the implied warranty of
+  11:/usr/include/x86_64-linux-gnu/bits/string_fortified.h ****    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  12:/usr/include/x86_64-linux-gnu/bits/string_fortified.h ****    Lesser General Public License for more details.
+  13:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** 
+  14:/usr/include/x86_64-linux-gnu/bits/string_fortified.h ****    You should have received a copy of the GNU Lesser General Public
+  15:/usr/include/x86_64-linux-gnu/bits/string_fortified.h ****    License along with the GNU C Library; if not, see
+  16:/usr/include/x86_64-linux-gnu/bits/string_fortified.h ****    <https://www.gnu.org/licenses/>.  */
+  17:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** 
+  18:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** #ifndef _BITS_STRING_FORTIFIED_H
+  19:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** #define _BITS_STRING_FORTIFIED_H 1
+  20:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** 
+  21:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** #ifndef _STRING_H
+  22:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** # error "Never use <bits/string_fortified.h> directly; include <string.h> instead."
+  23:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** #endif
+  24:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** 
+  25:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** #if !__GNUC_PREREQ (5,0)
+  26:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** __warndecl (__warn_memset_zero_len,
+  27:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** 	    "memset used with constant zero length parameter; this could be due to transposed parameters")
+  28:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** #endif
+  29:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** 
+  30:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** __fortify_function void *
+  31:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** __NTH (memcpy (void *__restrict __dest, const void *__restrict __src,
+ 228              		.loc 2 31 1 view .LVU69
+ 229              	.LBB5:
+  32:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** 	       size_t __len))
+  33:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** {
+  34:/usr/include/x86_64-linux-gnu/bits/string_fortified.h ****   return __builtin___memcpy_chk (__dest, __src, __len, __bos0 (__dest));
+ 230              		.loc 2 34 3 view .LVU70
+ 231              		.loc 2 34 10 is_stmt 0 view .LVU71
+ 232 002c 488B7340 		movq	64(%rbx), %rsi
+ 233 0030 4889EF   		movq	%rbp, %rdi
+ 234 0033 4C89EA   		movq	%r13, %rdx
+ 235 0036 E8000000 		call	memcpy@PLT
+ 235      00
+ 236              	.LVL21:
+ 237              		.loc 2 34 10 view .LVU72
+ 238              	.LBE5:
+ 239              	.LBE4:
+ 138:fltk-1.3.4-1/jpeg/jdatadst.c ****     free(dest->newbuffer);
+ 240              		.loc 1 138 3 is_stmt 1 view .LVU73
+ 138:fltk-1.3.4-1/jpeg/jdatadst.c ****     free(dest->newbuffer);
+ 241              		.loc 1 138 11 is_stmt 0 view .LVU74
+ 242 003b 488B7B38 		movq	56(%rbx), %rdi
+ 138:fltk-1.3.4-1/jpeg/jdatadst.c ****     free(dest->newbuffer);
+ 243              		.loc 1 138 6 view .LVU75
+ 244 003f 4885FF   		testq	%rdi, %rdi
+ 245 0042 7405     		je	.L14
+ 139:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 246              		.loc 1 139 5 is_stmt 1 view .LVU76
+ 247 0044 E8000000 		call	free@PLT
+ 247      00
+ 248              	.LVL22:
+ 249              	.L14:
+ 141:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 250              		.loc 1 141 3 view .LVU77
+ 143:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.free_in_buffer = dest->bufsize;
+ 251              		.loc 1 143 49 is_stmt 0 view .LVU78
+ 252 0049 488B4348 		movq	72(%rbx), %rax
+ 141:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 253              		.loc 1 141 19 view .LVU79
+ 254 004d 48896B38 		movq	%rbp, 56(%rbx)
+ 143:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.free_in_buffer = dest->bufsize;
+ 255              		.loc 1 143 3 is_stmt 1 view .LVU80
+ 146:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->bufsize = nextsize;
+ 256              		.loc 1 146 16 is_stmt 0 view .LVU81
+ 257 0051 48896B40 		movq	%rbp, 64(%rbx)
+ 143:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.free_in_buffer = dest->bufsize;
+ 258              		.loc 1 143 43 view .LVU82
+ 259 0055 488D5405 		leaq	0(%rbp,%rax), %rdx
+ 259      00
+ 144:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 260              		.loc 1 144 28 view .LVU83
+ 261 005a 48894308 		movq	%rax, 8(%rbx)
+ 150:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 262              		.loc 1 150 1 view .LVU84
+ 263 005e B8010000 		movl	$1, %eax
+ 263      00
+ 143:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.free_in_buffer = dest->bufsize;
+ 264              		.loc 1 143 43 view .LVU85
+ 265 0063 488913   		movq	%rdx, (%rbx)
+ 144:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 266              		.loc 1 144 3 is_stmt 1 view .LVU86
+ 146:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->bufsize = nextsize;
+ 267              		.loc 1 146 3 view .LVU87
+ 147:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 268              		.loc 1 147 3 view .LVU88
+ 147:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 269              		.loc 1 147 17 is_stmt 0 view .LVU89
+ 270 0066 4C897348 		movq	%r14, 72(%rbx)
+ 149:fltk-1.3.4-1/jpeg/jdatadst.c **** }
+ 271              		.loc 1 149 3 is_stmt 1 view .LVU90
+ 150:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 272              		.loc 1 150 1 is_stmt 0 view .LVU91
+ 273 006a 5B       		popq	%rbx
+ 274              		.cfi_remember_state
+ 275              		.cfi_def_cfa_offset 40
+ 276              	.LVL23:
+ 150:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 277              		.loc 1 150 1 view .LVU92
+ 278 006b 5D       		popq	%rbp
+ 279              		.cfi_def_cfa_offset 32
+ 280              	.LVL24:
+ 150:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 281              		.loc 1 150 1 view .LVU93
+ 282 006c 415C     		popq	%r12
+ 283              		.cfi_def_cfa_offset 24
+ 284              	.LVL25:
+ 150:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 285              		.loc 1 150 1 view .LVU94
+ 286 006e 415D     		popq	%r13
+ 287              		.cfi_def_cfa_offset 16
+ 288 0070 415E     		popq	%r14
+ 289              		.cfi_def_cfa_offset 8
+ 290              	.LVL26:
+ 150:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 291              		.loc 1 150 1 view .LVU95
+ 292 0072 C3       		ret
+ 293              	.LVL27:
+ 294              	.L19:
+ 295              		.cfi_restore_state
+ 134:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 296              		.loc 1 134 5 is_stmt 1 view .LVU96
+ 297 0073 498B0424 		movq	(%r12), %rax
+ 298              	.LVL28:
+ 134:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 299              		.loc 1 134 5 is_stmt 0 view .LVU97
+ 300 0077 4C89E7   		movq	%r12, %rdi
+ 301 007a C7402838 		movl	$56, 40(%rax)
+ 301      000000
+ 302 0081 498B0424 		movq	(%r12), %rax
+ 303 0085 C7402C0A 		movl	$10, 44(%rax)
+ 303      000000
+ 304 008c 498B0424 		movq	(%r12), %rax
+ 305 0090 FF10     		call	*(%rax)
+ 306              	.LVL29:
+ 307 0092 4C8B6B48 		movq	72(%rbx), %r13
+ 308 0096 EB94     		jmp	.L13
+ 309              		.cfi_endproc
+ 310              	.LFE54:
+ 312              		.section	.text.term_destination,"ax",@progbits
+ 313              		.p2align 4
+ 315              	term_destination:
+ 316              	.LVL30:
+ 317              	.LFB55:
+ 164:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
+ 318              		.loc 1 164 1 is_stmt 1 view -0
+ 319              		.cfi_startproc
+ 164:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
+ 320              		.loc 1 164 1 is_stmt 0 view .LVU99
+ 321 0000 F30F1EFA 		endbr64
+ 165:fltk-1.3.4-1/jpeg/jdatadst.c ****   size_t datacount = OUTPUT_BUF_SIZE - dest->pub.free_in_buffer;
+ 322              		.loc 1 165 3 is_stmt 1 view .LVU100
+ 164:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
+ 323              		.loc 1 164 1 is_stmt 0 view .LVU101
+ 324 0004 4154     		pushq	%r12
+ 325              		.cfi_def_cfa_offset 16
+ 326              		.cfi_offset 12, -16
+ 166:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 327              		.loc 1 166 10 view .LVU102
+ 328 0006 B8001000 		movl	$4096, %eax
+ 328      00
+ 164:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
+ 329              		.loc 1 164 1 view .LVU103
+ 330 000b 55       		pushq	%rbp
+ 331              		.cfi_def_cfa_offset 24
+ 332              		.cfi_offset 6, -24
+ 333 000c 4889FD   		movq	%rdi, %rbp
+ 334 000f 53       		pushq	%rbx
+ 335              		.cfi_def_cfa_offset 32
+ 336              		.cfi_offset 3, -32
+ 165:fltk-1.3.4-1/jpeg/jdatadst.c ****   size_t datacount = OUTPUT_BUF_SIZE - dest->pub.free_in_buffer;
+ 337              		.loc 1 165 15 view .LVU104
+ 338 0010 488B5F28 		movq	40(%rdi), %rbx
+ 339              	.LVL31:
+ 166:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 340              		.loc 1 166 3 is_stmt 1 view .LVU105
+ 169:fltk-1.3.4-1/jpeg/jdatadst.c ****     if (JFWRITE(dest->outfile, dest->buffer, datacount) != datacount)
+ 341              		.loc 1 169 3 view .LVU106
+ 342 0014 488B7B28 		movq	40(%rbx), %rdi
+ 343              	.LVL32:
+ 169:fltk-1.3.4-1/jpeg/jdatadst.c ****     if (JFWRITE(dest->outfile, dest->buffer, datacount) != datacount)
+ 344              		.loc 1 169 6 is_stmt 0 view .LVU107
+ 345 0018 482B4308 		subq	8(%rbx), %rax
+ 346              	.LVL33:
+ 169:fltk-1.3.4-1/jpeg/jdatadst.c ****     if (JFWRITE(dest->outfile, dest->buffer, datacount) != datacount)
+ 347              		.loc 1 169 6 view .LVU108
+ 348 001c 753A     		jne	.L29
+ 349              	.LVL34:
+ 350              	.L21:
+ 173:fltk-1.3.4-1/jpeg/jdatadst.c ****   /* Make sure we wrote the output file OK */
+ 351              		.loc 1 173 3 is_stmt 1 view .LVU109
+ 352 001e E8000000 		call	fflush@PLT
+ 352      00
+ 353              	.LVL35:
+ 175:fltk-1.3.4-1/jpeg/jdatadst.c ****     ERREXIT(cinfo, JERR_FILE_WRITE);
+ 354              		.loc 1 175 3 view .LVU110
+ 175:fltk-1.3.4-1/jpeg/jdatadst.c ****     ERREXIT(cinfo, JERR_FILE_WRITE);
+ 355              		.loc 1 175 7 is_stmt 0 view .LVU111
+ 356 0023 488B7B28 		movq	40(%rbx), %rdi
+ 357 0027 E8000000 		call	ferror@PLT
+ 357      00
+ 358              	.LVL36:
+ 175:fltk-1.3.4-1/jpeg/jdatadst.c ****     ERREXIT(cinfo, JERR_FILE_WRITE);
+ 359              		.loc 1 175 6 view .LVU112
+ 360 002c 85C0     		testl	%eax, %eax
+ 361 002e 7420     		je	.L20
+ 362              	.LVL37:
+ 363              	.LBB8:
+ 364              	.LBI8:
+ 163:fltk-1.3.4-1/jpeg/jdatadst.c **** {
+ 365              		.loc 1 163 1 is_stmt 1 view .LVU113
+ 366              	.LBB9:
+ 176:fltk-1.3.4-1/jpeg/jdatadst.c **** }
+ 367              		.loc 1 176 5 view .LVU114
+ 368 0030 488B4500 		movq	0(%rbp), %rax
+ 369 0034 4889EF   		movq	%rbp, %rdi
+ 370 0037 C7402826 		movl	$38, 40(%rax)
+ 370      000000
+ 371 003e 488B4500 		movq	0(%rbp), %rax
+ 372              	.LBE9:
+ 373              	.LBE8:
+ 177:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 374              		.loc 1 177 1 is_stmt 0 view .LVU115
+ 375 0042 5B       		popq	%rbx
+ 376              		.cfi_remember_state
+ 377              		.cfi_def_cfa_offset 24
+ 378              	.LVL38:
+ 177:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 379              		.loc 1 177 1 view .LVU116
+ 380 0043 5D       		popq	%rbp
+ 381              		.cfi_def_cfa_offset 16
+ 382              	.LVL39:
+ 383              	.LBB12:
+ 384              	.LBB10:
+ 176:fltk-1.3.4-1/jpeg/jdatadst.c **** }
+ 385              		.loc 1 176 5 view .LVU117
+ 386 0044 488B00   		movq	(%rax), %rax
+ 387              	.LBE10:
+ 388              	.LBE12:
+ 177:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 389              		.loc 1 177 1 view .LVU118
+ 390 0047 415C     		popq	%r12
+ 391              		.cfi_def_cfa_offset 8
+ 392              	.LBB13:
+ 393              	.LBB11:
+ 176:fltk-1.3.4-1/jpeg/jdatadst.c **** }
+ 394              		.loc 1 176 5 view .LVU119
+ 395 0049 FFE0     		jmp	*%rax
+ 396              	.LVL40:
+ 397 004b 0F1F4400 		.p2align 4,,10
+ 397      00
+ 398              		.p2align 3
+ 399              	.L20:
+ 400              		.cfi_restore_state
+ 176:fltk-1.3.4-1/jpeg/jdatadst.c **** }
+ 401              		.loc 1 176 5 view .LVU120
+ 402              	.LBE11:
+ 403              	.LBE13:
+ 177:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 404              		.loc 1 177 1 view .LVU121
+ 405 0050 5B       		popq	%rbx
+ 406              		.cfi_remember_state
+ 407              		.cfi_def_cfa_offset 24
+ 408              	.LVL41:
+ 177:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 409              		.loc 1 177 1 view .LVU122
+ 410 0051 5D       		popq	%rbp
+ 411              		.cfi_def_cfa_offset 16
+ 412              	.LVL42:
+ 177:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 413              		.loc 1 177 1 view .LVU123
+ 414 0052 415C     		popq	%r12
+ 415              		.cfi_def_cfa_offset 8
+ 416 0054 C3       		ret
+ 417              	.LVL43:
+ 418              		.p2align 4,,10
+ 419 0055 0F1F00   		.p2align 3
+ 420              	.L29:
+ 421              		.cfi_restore_state
+ 170:fltk-1.3.4-1/jpeg/jdatadst.c ****       ERREXIT(cinfo, JERR_FILE_WRITE);
+ 422              		.loc 1 170 9 view .LVU124
+ 423 0058 4C8B4330 		movq	48(%rbx), %r8
+ 424 005c 4889F9   		movq	%rdi, %rcx
+ 425 005f 4889C2   		movq	%rax, %rdx
+ 426 0062 BE010000 		movl	$1, %esi
+ 426      00
+ 427 0067 4989C4   		movq	%rax, %r12
+ 170:fltk-1.3.4-1/jpeg/jdatadst.c ****       ERREXIT(cinfo, JERR_FILE_WRITE);
+ 428              		.loc 1 170 5 is_stmt 1 view .LVU125
+ 170:fltk-1.3.4-1/jpeg/jdatadst.c ****       ERREXIT(cinfo, JERR_FILE_WRITE);
+ 429              		.loc 1 170 9 is_stmt 0 view .LVU126
+ 430 006a 4C89C7   		movq	%r8, %rdi
+ 431 006d E8000000 		call	fwrite@PLT
+ 431      00
+ 432              	.LVL44:
+ 170:fltk-1.3.4-1/jpeg/jdatadst.c ****       ERREXIT(cinfo, JERR_FILE_WRITE);
+ 433              		.loc 1 170 8 view .LVU127
+ 434 0072 4C39E0   		cmpq	%r12, %rax
+ 435 0075 7414     		je	.L28
+ 171:fltk-1.3.4-1/jpeg/jdatadst.c ****   }
+ 436              		.loc 1 171 7 is_stmt 1 view .LVU128
+ 437 0077 488B4500 		movq	0(%rbp), %rax
+ 438 007b 4889EF   		movq	%rbp, %rdi
+ 439 007e C7402826 		movl	$38, 40(%rax)
+ 439      000000
+ 440 0085 488B4500 		movq	0(%rbp), %rax
+ 441 0089 FF10     		call	*(%rax)
+ 442              	.LVL45:
+ 443              	.L28:
+ 171:fltk-1.3.4-1/jpeg/jdatadst.c ****   }
+ 444              		.loc 1 171 7 is_stmt 0 view .LVU129
+ 445 008b 488B7B28 		movq	40(%rbx), %rdi
+ 446 008f EB8D     		jmp	.L21
+ 447              		.cfi_endproc
+ 448              	.LFE55:
+ 450              		.section	.text.jpeg_stdio_dest,"ax",@progbits
+ 451              		.p2align 4
+ 452              		.globl	jpeg_stdio_dest
+ 454              	jpeg_stdio_dest:
+ 455              	.LVL46:
+ 456              	.LFB57:
  187:fltk-1.3.4-1/jpeg/jdatadst.c **** 
  188:fltk-1.3.4-1/jpeg/jdatadst.c **** 
  189:fltk-1.3.4-1/jpeg/jdatadst.c **** /*
@@ -722,19 +796,12 @@
  195:fltk-1.3.4-1/jpeg/jdatadst.c **** GLOBAL(void)
  196:fltk-1.3.4-1/jpeg/jdatadst.c **** jpeg_stdio_dest (j_compress_ptr cinfo, FILE * outfile)
  197:fltk-1.3.4-1/jpeg/jdatadst.c **** {
- 416              		.loc 1 197 0
- 417              		.cfi_startproc
- 418              	.LVL45:
- 419 0000 55       		pushq	%rbp
- 420              		.cfi_def_cfa_offset 16
- 421              		.cfi_offset 6, -16
- 422 0001 53       		pushq	%rbx
- 423              		.cfi_def_cfa_offset 24
- 424              		.cfi_offset 3, -24
- 425 0002 4889F5   		movq	%rsi, %rbp
- 426 0005 4883EC08 		subq	$8, %rsp
- 427              		.cfi_def_cfa_offset 32
+ 457              		.loc 1 197 1 is_stmt 1 view -0
+ 458              		.cfi_startproc
+ 459              		.loc 1 197 1 is_stmt 0 view .LVU131
+ 460 0000 F30F1EFA 		endbr64
  198:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest;
+ 461              		.loc 1 198 3 is_stmt 1 view .LVU132
  199:fltk-1.3.4-1/jpeg/jdatadst.c **** 
  200:fltk-1.3.4-1/jpeg/jdatadst.c ****   /* The destination object is made permanent so that multiple JPEG images
  201:fltk-1.3.4-1/jpeg/jdatadst.c ****    * can be written to the same file without re-executing jpeg_stdio_dest.
@@ -743,78 +810,110 @@
  204:fltk-1.3.4-1/jpeg/jdatadst.c ****    * sizes may be different.  Caveat programmer.
  205:fltk-1.3.4-1/jpeg/jdatadst.c ****    */
  206:fltk-1.3.4-1/jpeg/jdatadst.c ****   if (cinfo->dest == NULL) {	/* first time for this JPEG object? */
- 428              		.loc 1 206 0
- 429 0009 488B4728 		movq	40(%rdi), %rax
- 430 000d 4885C0   		testq	%rax, %rax
- 431 0010 7426     		je	.L31
- 432              	.LVL46:
- 433              	.L29:
+ 462              		.loc 1 206 3 view .LVU133
+ 197:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_dest_ptr dest;
+ 463              		.loc 1 197 1 is_stmt 0 view .LVU134
+ 464 0004 55       		pushq	%rbp
+ 465              		.cfi_def_cfa_offset 16
+ 466              		.cfi_offset 6, -16
+ 467 0005 4889F5   		movq	%rsi, %rbp
+ 468 0008 53       		pushq	%rbx
+ 469              		.cfi_def_cfa_offset 24
+ 470              		.cfi_offset 3, -24
+ 471 0009 4883EC08 		subq	$8, %rsp
+ 472              		.cfi_def_cfa_offset 32
+ 473              		.loc 1 206 12 view .LVU135
+ 474 000d 488B4728 		movq	40(%rdi), %rax
+ 475              		.loc 1 206 6 view .LVU136
+ 476 0011 4885C0   		testq	%rax, %rax
+ 477 0014 7432     		je	.L33
+ 478              	.LVL47:
+ 479              	.L31:
  207:fltk-1.3.4-1/jpeg/jdatadst.c ****     cinfo->dest = (struct jpeg_destination_mgr *)
  208:fltk-1.3.4-1/jpeg/jdatadst.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
  209:fltk-1.3.4-1/jpeg/jdatadst.c **** 				  SIZEOF(my_destination_mgr));
  210:fltk-1.3.4-1/jpeg/jdatadst.c ****   }
  211:fltk-1.3.4-1/jpeg/jdatadst.c **** 
  212:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest = (my_dest_ptr) cinfo->dest;
+ 480              		.loc 1 212 3 is_stmt 1 view .LVU137
  213:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.init_destination = init_destination;
- 434              		.loc 1 213 0
- 435 0012 48C74010 		movq	$init_destination, 16(%rax)
- 435      00000000 
- 436              	.LVL47:
+ 481              		.loc 1 213 3 view .LVU138
+ 482              		.loc 1 213 30 is_stmt 0 view .LVU139
+ 483 0016 488D0D00 		leaq	init_destination(%rip), %rcx
+ 483      000000
  214:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.empty_output_buffer = empty_output_buffer;
- 437              		.loc 1 214 0
- 438 001a 48C74018 		movq	$empty_output_buffer, 24(%rax)
- 438      00000000 
+ 484              		.loc 1 214 33 view .LVU140
+ 485 001d 488D1500 		leaq	empty_output_buffer(%rip), %rdx
+ 485      000000
  215:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.term_destination = term_destination;
- 439              		.loc 1 215 0
- 440 0022 48C74020 		movq	$term_destination, 32(%rax)
- 440      00000000 
  216:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->outfile = outfile;
- 441              		.loc 1 216 0
- 442 002a 48896828 		movq	%rbp, 40(%rax)
+ 486              		.loc 1 216 17 view .LVU141
+ 487 0024 48896828 		movq	%rbp, 40(%rax)
+ 488              	.LVL48:
+ 213:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.empty_output_buffer = empty_output_buffer;
+ 489              		.loc 1 213 30 view .LVU142
+ 490 0028 48894810 		movq	%rcx, 16(%rax)
+ 214:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.empty_output_buffer = empty_output_buffer;
+ 491              		.loc 1 214 3 is_stmt 1 view .LVU143
+ 215:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.term_destination = term_destination;
+ 492              		.loc 1 215 30 is_stmt 0 view .LVU144
+ 493 002c 488D0D00 		leaq	term_destination(%rip), %rcx
+ 493      000000
+ 214:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.empty_output_buffer = empty_output_buffer;
+ 494              		.loc 1 214 33 view .LVU145
+ 495 0033 48895018 		movq	%rdx, 24(%rax)
+ 215:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.term_destination = term_destination;
+ 496              		.loc 1 215 3 is_stmt 1 view .LVU146
+ 215:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.term_destination = term_destination;
+ 497              		.loc 1 215 30 is_stmt 0 view .LVU147
+ 498 0037 48894820 		movq	%rcx, 32(%rax)
+ 499              		.loc 1 216 3 is_stmt 1 view .LVU148
  217:fltk-1.3.4-1/jpeg/jdatadst.c **** }
- 443              		.loc 1 217 0
- 444 002e 4883C408 		addq	$8, %rsp
- 445              		.cfi_remember_state
- 446              		.cfi_def_cfa_offset 24
- 447 0032 5B       		popq	%rbx
- 448              		.cfi_def_cfa_offset 16
- 449 0033 5D       		popq	%rbp
- 450              		.cfi_def_cfa_offset 8
- 451              	.LVL48:
- 452 0034 C3       		ret
- 453              	.LVL49:
- 454              		.p2align 4,,10
- 455 0035 0F1F00   		.p2align 3
- 456              	.L31:
- 457              		.cfi_restore_state
+ 500              		.loc 1 217 1 is_stmt 0 view .LVU149
+ 501 003b 4883C408 		addq	$8, %rsp
+ 502              		.cfi_remember_state
+ 503              		.cfi_def_cfa_offset 24
+ 504 003f 5B       		popq	%rbx
+ 505              		.cfi_def_cfa_offset 16
+ 506 0040 5D       		popq	%rbp
+ 507              		.cfi_def_cfa_offset 8
+ 508              	.LVL49:
+ 509              		.loc 1 217 1 view .LVU150
+ 510 0041 C3       		ret
+ 511              	.LVL50:
+ 512              		.p2align 4,,10
+ 513 0042 660F1F44 		.p2align 3
+ 513      0000
+ 514              	.L33:
+ 515              		.cfi_restore_state
  208:fltk-1.3.4-1/jpeg/jdatadst.c **** 				  SIZEOF(my_destination_mgr));
- 458              		.loc 1 208 0
- 459 0038 488B4708 		movq	8(%rdi), %rax
- 460 003c 4889FB   		movq	%rdi, %rbx
- 461 003f BA380000 		movl	$56, %edx
- 461      00
- 462 0044 31F6     		xorl	%esi, %esi
- 463              	.LVL50:
- 464 0046 FF10     		call	*(%rax)
- 465              	.LVL51:
+ 516              		.loc 1 208 8 view .LVU151
+ 517 0048 488B4708 		movq	8(%rdi), %rax
+ 518 004c 4889FB   		movq	%rdi, %rbx
  207:fltk-1.3.4-1/jpeg/jdatadst.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
- 466              		.loc 1 207 0
- 467 0048 48894328 		movq	%rax, 40(%rbx)
- 468 004c EBC4     		jmp	.L29
- 469              		.cfi_endproc
- 470              	.LFE67:
- 472              		.section	.text.unlikely.jpeg_stdio_dest
- 473              	.LCOLDE6:
- 474              		.section	.text.jpeg_stdio_dest
- 475              	.LHOTE6:
- 476              		.section	.text.unlikely.jpeg_mem_dest,"ax",@progbits
- 477              	.LCOLDB7:
- 478              		.section	.text.jpeg_mem_dest,"ax",@progbits
- 479              	.LHOTB7:
- 480              		.p2align 4,,15
- 481              		.globl	jpeg_mem_dest
- 483              	jpeg_mem_dest:
- 484              	.LFB68:
+ 519              		.loc 1 207 5 is_stmt 1 view .LVU152
+ 208:fltk-1.3.4-1/jpeg/jdatadst.c **** 				  SIZEOF(my_destination_mgr));
+ 520              		.loc 1 208 8 is_stmt 0 view .LVU153
+ 521 004f BA380000 		movl	$56, %edx
+ 521      00
+ 522 0054 31F6     		xorl	%esi, %esi
+ 523              	.LVL51:
+ 208:fltk-1.3.4-1/jpeg/jdatadst.c **** 				  SIZEOF(my_destination_mgr));
+ 524              		.loc 1 208 8 view .LVU154
+ 525 0056 FF10     		call	*(%rax)
+ 526              	.LVL52:
+ 207:fltk-1.3.4-1/jpeg/jdatadst.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
+ 527              		.loc 1 207 17 view .LVU155
+ 528 0058 48894328 		movq	%rax, 40(%rbx)
+ 529 005c EBB8     		jmp	.L31
+ 530              		.cfi_endproc
+ 531              	.LFE57:
+ 533              		.section	.text.jpeg_mem_dest,"ax",@progbits
+ 534              		.p2align 4
+ 535              		.globl	jpeg_mem_dest
+ 537              	jpeg_mem_dest:
+ 538              	.LVL53:
+ 539              	.LFB58:
  218:fltk-1.3.4-1/jpeg/jdatadst.c **** 
  219:fltk-1.3.4-1/jpeg/jdatadst.c **** 
  220:fltk-1.3.4-1/jpeg/jdatadst.c **** /*
@@ -835,285 +934,340 @@
  235:fltk-1.3.4-1/jpeg/jdatadst.c **** jpeg_mem_dest (j_compress_ptr cinfo,
  236:fltk-1.3.4-1/jpeg/jdatadst.c **** 	       unsigned char ** outbuffer, unsigned long * outsize)
  237:fltk-1.3.4-1/jpeg/jdatadst.c **** {
- 485              		.loc 1 237 0
- 486              		.cfi_startproc
- 487              	.LVL52:
- 488 0000 4155     		pushq	%r13
- 489              		.cfi_def_cfa_offset 16
- 490              		.cfi_offset 13, -16
- 491 0002 4154     		pushq	%r12
- 492              		.cfi_def_cfa_offset 24
- 493              		.cfi_offset 12, -24
- 494 0004 4989FD   		movq	%rdi, %r13
- 495 0007 55       		pushq	%rbp
- 496              		.cfi_def_cfa_offset 32
- 497              		.cfi_offset 6, -32
- 498 0008 53       		pushq	%rbx
- 499              		.cfi_def_cfa_offset 40
- 500              		.cfi_offset 3, -40
- 501 0009 4989F4   		movq	%rsi, %r12
- 502 000c 4889D5   		movq	%rdx, %rbp
- 503 000f 4883EC08 		subq	$8, %rsp
- 504              		.cfi_def_cfa_offset 48
+ 540              		.loc 1 237 1 is_stmt 1 view -0
+ 541              		.cfi_startproc
+ 542              		.loc 1 237 1 is_stmt 0 view .LVU157
+ 543 0000 F30F1EFA 		endbr64
  238:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_mem_dest_ptr dest;
+ 544              		.loc 1 238 3 is_stmt 1 view .LVU158
  239:fltk-1.3.4-1/jpeg/jdatadst.c **** 
  240:fltk-1.3.4-1/jpeg/jdatadst.c ****   if (outbuffer == NULL || outsize == NULL)	/* sanity check */
- 505              		.loc 1 240 0
- 506 0013 4885F6   		testq	%rsi, %rsi
- 507 0016 0F849400 		je	.L39
- 507      0000
- 508 001c 4885D2   		testq	%rdx, %rdx
- 509 001f 0F848B00 		je	.L39
- 509      0000
- 510              	.LVL53:
- 511              	.L33:
+ 545              		.loc 1 240 3 view .LVU159
+ 237:fltk-1.3.4-1/jpeg/jdatadst.c ****   my_mem_dest_ptr dest;
+ 546              		.loc 1 237 1 is_stmt 0 view .LVU160
+ 547 0004 4155     		pushq	%r13
+ 548              		.cfi_def_cfa_offset 16
+ 549              		.cfi_offset 13, -16
+ 550 0006 4989FD   		movq	%rdi, %r13
+ 551 0009 4154     		pushq	%r12
+ 552              		.cfi_def_cfa_offset 24
+ 553              		.cfi_offset 12, -24
+ 554 000b 4989D4   		movq	%rdx, %r12
+ 555 000e 55       		pushq	%rbp
+ 556              		.cfi_def_cfa_offset 32
+ 557              		.cfi_offset 6, -32
+ 558 000f 4889F5   		movq	%rsi, %rbp
+ 559 0012 53       		pushq	%rbx
+ 560              		.cfi_def_cfa_offset 40
+ 561              		.cfi_offset 3, -40
+ 562 0013 4883EC08 		subq	$8, %rsp
+ 563              		.cfi_def_cfa_offset 48
+ 564              		.loc 1 240 6 view .LVU161
+ 565 0017 4885F6   		testq	%rsi, %rsi
+ 566 001a 0F84A000 		je	.L41
+ 566      0000
+ 567 0020 4885D2   		testq	%rdx, %rdx
+ 568 0023 0F849700 		je	.L41
+ 568      0000
  241:fltk-1.3.4-1/jpeg/jdatadst.c ****     ERREXIT(cinfo, JERR_BUFFER_SIZE);
  242:fltk-1.3.4-1/jpeg/jdatadst.c **** 
  243:fltk-1.3.4-1/jpeg/jdatadst.c ****   /* The destination object is made permanent so that multiple JPEG images
  244:fltk-1.3.4-1/jpeg/jdatadst.c ****    * can be written to the same buffer without re-executing jpeg_mem_dest.
  245:fltk-1.3.4-1/jpeg/jdatadst.c ****    */
  246:fltk-1.3.4-1/jpeg/jdatadst.c ****   if (cinfo->dest == NULL) {	/* first time for this JPEG object? */
- 512              		.loc 1 246 0
- 513 0025 498B5D28 		movq	40(%r13), %rbx
- 514 0029 4885DB   		testq	%rbx, %rbx
- 515 002c 0F849E00 		je	.L47
- 515      0000
- 516              	.L35:
- 517              	.LVL54:
+ 569              		.loc 1 246 3 is_stmt 1 view .LVU162
+ 570              		.loc 1 246 12 is_stmt 0 view .LVU163
+ 571 0029 498B5D28 		movq	40(%r13), %rbx
+ 572              		.loc 1 246 6 view .LVU164
+ 573 002d 4885DB   		testq	%rbx, %rbx
+ 574 0030 0F84AB00 		je	.L49
+ 574      0000
+ 575              	.LVL54:
+ 576              	.L37:
  247:fltk-1.3.4-1/jpeg/jdatadst.c ****     cinfo->dest = (struct jpeg_destination_mgr *)
  248:fltk-1.3.4-1/jpeg/jdatadst.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
  249:fltk-1.3.4-1/jpeg/jdatadst.c **** 				  SIZEOF(my_mem_destination_mgr));
  250:fltk-1.3.4-1/jpeg/jdatadst.c ****   }
  251:fltk-1.3.4-1/jpeg/jdatadst.c **** 
  252:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest = (my_mem_dest_ptr) cinfo->dest;
+ 577              		.loc 1 252 3 is_stmt 1 view .LVU165
  253:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.init_destination = init_mem_destination;
- 518              		.loc 1 253 0
- 519 0032 48C74310 		movq	$init_mem_destination, 16(%rbx)
- 519      00000000 
- 520              	.LVL55:
+ 578              		.loc 1 253 3 view .LVU166
+ 579              		.loc 1 253 30 is_stmt 0 view .LVU167
+ 580 0036 488D0500 		leaq	init_mem_destination(%rip), %rax
+ 580      000000
  254:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.empty_output_buffer = empty_mem_output_buffer;
- 521              		.loc 1 254 0
- 522 003a 48C74318 		movq	$empty_mem_output_buffer, 24(%rbx)
- 522      00000000 
  255:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.term_destination = term_mem_destination;
- 523              		.loc 1 255 0
- 524 0042 48C74320 		movq	$term_mem_destination, 32(%rbx)
- 524      00000000 
  256:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->outbuffer = outbuffer;
- 525              		.loc 1 256 0
- 526 004a 4C896328 		movq	%r12, 40(%rbx)
+ 581              		.loc 1 256 19 view .LVU168
+ 582 003d 48896B28 		movq	%rbp, 40(%rbx)
+ 583              	.LVL55:
+ 253:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.init_destination = init_mem_destination;
+ 584              		.loc 1 253 30 view .LVU169
+ 585 0041 48894310 		movq	%rax, 16(%rbx)
+ 254:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.empty_output_buffer = empty_mem_output_buffer;
+ 586              		.loc 1 254 3 is_stmt 1 view .LVU170
+ 254:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.empty_output_buffer = empty_mem_output_buffer;
+ 587              		.loc 1 254 33 is_stmt 0 view .LVU171
+ 588 0045 488D0500 		leaq	empty_mem_output_buffer(%rip), %rax
+ 588      000000
+ 589 004c 48894318 		movq	%rax, 24(%rbx)
+ 255:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->outbuffer = outbuffer;
+ 590              		.loc 1 255 3 is_stmt 1 view .LVU172
+ 255:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->outbuffer = outbuffer;
+ 591              		.loc 1 255 30 is_stmt 0 view .LVU173
+ 592 0050 488D0500 		leaq	term_mem_destination(%rip), %rax
+ 592      000000
+ 593 0057 48894320 		movq	%rax, 32(%rbx)
+ 594              		.loc 1 256 3 is_stmt 1 view .LVU174
  257:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->outsize = outsize;
- 527              		.loc 1 257 0
- 528 004e 48896B30 		movq	%rbp, 48(%rbx)
+ 595              		.loc 1 257 3 view .LVU175
+ 596              		.loc 1 257 17 is_stmt 0 view .LVU176
+ 597 005b 4C896330 		movq	%r12, 48(%rbx)
  258:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->newbuffer = NULL;
- 529              		.loc 1 258 0
- 530 0052 48C74338 		movq	$0, 56(%rbx)
- 530      00000000 
+ 598              		.loc 1 258 3 is_stmt 1 view .LVU177
+ 599              		.loc 1 258 19 is_stmt 0 view .LVU178
+ 600 005f 48C74338 		movq	$0, 56(%rbx)
+ 600      00000000 
  259:fltk-1.3.4-1/jpeg/jdatadst.c **** 
  260:fltk-1.3.4-1/jpeg/jdatadst.c ****   if (*outbuffer == NULL || *outsize == 0) {
- 531              		.loc 1 260 0
- 532 005a 498B0424 		movq	(%r12), %rax
- 533 005e 4885C0   		testq	%rax, %rax
- 534 0061 7407     		je	.L36
- 535              		.loc 1 260 0 is_stmt 0 discriminator 1
- 536 0063 48837D00 		cmpq	$0, 0(%rbp)
- 536      00
- 537 0068 7523     		jne	.L37
- 538              	.L36:
+ 601              		.loc 1 260 3 is_stmt 1 view .LVU179
+ 602              		.loc 1 260 7 is_stmt 0 view .LVU180
+ 603 0067 488B4500 		movq	0(%rbp), %rax
+ 604              		.loc 1 260 6 view .LVU181
+ 605 006b 4885C0   		testq	%rax, %rax
+ 606 006e 7407     		je	.L38
+ 607              		.loc 1 260 26 discriminator 1 view .LVU182
+ 608 0070 49833C24 		cmpq	$0, (%r12)
+ 608      00
+ 609 0075 7523     		jne	.L39
+ 610              	.L38:
  261:fltk-1.3.4-1/jpeg/jdatadst.c ****     /* Allocate initial buffer */
  262:fltk-1.3.4-1/jpeg/jdatadst.c ****     dest->newbuffer = *outbuffer = (unsigned char *) malloc(OUTPUT_BUF_SIZE);
- 539              		.loc 1 262 0 is_stmt 1
- 540 006a BF001000 		movl	$4096, %edi
- 540      00
- 541 006f E8000000 		call	malloc
- 541      00
- 542              	.LVL56:
+ 611              		.loc 1 262 5 is_stmt 1 view .LVU183
+ 612              		.loc 1 262 54 is_stmt 0 view .LVU184
+ 613 0077 BF001000 		movl	$4096, %edi
+ 613      00
+ 614 007c E8000000 		call	malloc@PLT
+ 614      00
+ 615              	.LVL56:
+ 616              		.loc 1 262 34 view .LVU185
+ 617 0081 48894500 		movq	%rax, 0(%rbp)
+ 618              		.loc 1 262 21 view .LVU186
+ 619 0085 48894338 		movq	%rax, 56(%rbx)
  263:fltk-1.3.4-1/jpeg/jdatadst.c ****     if (dest->newbuffer == NULL)
- 543              		.loc 1 263 0
- 544 0074 4885C0   		testq	%rax, %rax
- 262:fltk-1.3.4-1/jpeg/jdatadst.c ****     if (dest->newbuffer == NULL)
- 545              		.loc 1 262 0
- 546 0077 49890424 		movq	%rax, (%r12)
- 547 007b 48894338 		movq	%rax, 56(%rbx)
- 548              		.loc 1 263 0
- 549 007f 746F     		je	.L48
- 550              	.L38:
+ 620              		.loc 1 263 5 is_stmt 1 view .LVU187
+ 621              		.loc 1 263 8 is_stmt 0 view .LVU188
+ 622 0089 4885C0   		testq	%rax, %rax
+ 623 008c 746F     		je	.L50
+ 624              	.L40:
  264:fltk-1.3.4-1/jpeg/jdatadst.c ****       ERREXIT1(cinfo, JERR_OUT_OF_MEMORY, 10);
  265:fltk-1.3.4-1/jpeg/jdatadst.c ****     *outsize = OUTPUT_BUF_SIZE;
- 551              		.loc 1 265 0
- 552 0081 48C74500 		movq	$4096, 0(%rbp)
- 552      00100000 
- 553 0089 498B0424 		movq	(%r12), %rax
- 554              	.L37:
+ 625              		.loc 1 265 5 is_stmt 1 view .LVU189
+ 626              		.loc 1 265 14 is_stmt 0 view .LVU190
+ 627 008e 49C70424 		movq	$4096, (%r12)
+ 627      00100000 
+ 628 0096 488B4500 		movq	0(%rbp), %rax
+ 629              	.L39:
  266:fltk-1.3.4-1/jpeg/jdatadst.c ****   }
  267:fltk-1.3.4-1/jpeg/jdatadst.c **** 
  268:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.next_output_byte = dest->buffer = *outbuffer;
- 555              		.loc 1 268 0
- 556 008d 48894340 		movq	%rax, 64(%rbx)
- 557 0091 488903   		movq	%rax, (%rbx)
+ 630              		.loc 1 268 3 is_stmt 1 view .LVU191
+ 631              		.loc 1 268 45 is_stmt 0 view .LVU192
+ 632 009a 48894340 		movq	%rax, 64(%rbx)
+ 633              		.loc 1 268 30 view .LVU193
+ 634 009e 488903   		movq	%rax, (%rbx)
  269:fltk-1.3.4-1/jpeg/jdatadst.c ****   dest->pub.free_in_buffer = dest->bufsize = *outsize;
- 558              		.loc 1 269 0
- 559 0094 488B4500 		movq	0(%rbp), %rax
- 560 0098 48894348 		movq	%rax, 72(%rbx)
- 561 009c 48894308 		movq	%rax, 8(%rbx)
+ 635              		.loc 1 269 3 is_stmt 1 view .LVU194
+ 636              		.loc 1 269 46 is_stmt 0 view .LVU195
+ 637 00a1 498B0424 		movq	(%r12), %rax
+ 638              		.loc 1 269 44 view .LVU196
+ 639 00a5 48894348 		movq	%rax, 72(%rbx)
+ 640              		.loc 1 269 28 view .LVU197
+ 641 00a9 48894308 		movq	%rax, 8(%rbx)
  270:fltk-1.3.4-1/jpeg/jdatadst.c **** }
- 562              		.loc 1 270 0
- 563 00a0 4883C408 		addq	$8, %rsp
- 564              		.cfi_remember_state
- 565              		.cfi_def_cfa_offset 40
- 566 00a4 5B       		popq	%rbx
- 567              		.cfi_def_cfa_offset 32
- 568 00a5 5D       		popq	%rbp
- 569              		.cfi_def_cfa_offset 24
- 570              	.LVL57:
- 571 00a6 415C     		popq	%r12
- 572              		.cfi_def_cfa_offset 16
- 573              	.LVL58:
- 574 00a8 415D     		popq	%r13
- 575              		.cfi_def_cfa_offset 8
- 576              	.LVL59:
- 577 00aa C3       		ret
- 578              	.LVL60:
- 579 00ab 0F1F4400 		.p2align 4,,10
- 579      00
- 580              		.p2align 3
- 581              	.L39:
- 582              		.cfi_restore_state
+ 642              		.loc 1 270 1 view .LVU198
+ 643 00ad 4883C408 		addq	$8, %rsp
+ 644              		.cfi_remember_state
+ 645              		.cfi_def_cfa_offset 40
+ 646 00b1 5B       		popq	%rbx
+ 647              		.cfi_def_cfa_offset 32
+ 648 00b2 5D       		popq	%rbp
+ 649              		.cfi_def_cfa_offset 24
+ 650              	.LVL57:
+ 651              		.loc 1 270 1 view .LVU199
+ 652 00b3 415C     		popq	%r12
+ 653              		.cfi_def_cfa_offset 16
+ 654              	.LVL58:
+ 655              		.loc 1 270 1 view .LVU200
+ 656 00b5 415D     		popq	%r13
+ 657              		.cfi_def_cfa_offset 8
+ 658              	.LVL59:
+ 659              		.loc 1 270 1 view .LVU201
+ 660 00b7 C3       		ret
+ 661              	.LVL60:
+ 662 00b8 0F1F8400 		.p2align 4,,10
+ 662      00000000 
+ 663              		.p2align 3
+ 664              	.L41:
+ 665              		.cfi_restore_state
  241:fltk-1.3.4-1/jpeg/jdatadst.c **** 
- 583              		.loc 1 241 0
- 584 00b0 498B4500 		movq	0(%r13), %rax
- 585 00b4 4C89EF   		movq	%r13, %rdi
- 586              	.LVL61:
- 587 00b7 C7402818 		movl	$24, 40(%rax)
- 587      000000
- 588 00be 498B4500 		movq	0(%r13), %rax
- 589 00c2 FF10     		call	*(%rax)
- 590              	.LVL62:
- 591 00c4 E95CFFFF 		jmp	.L33
- 591      FF
- 592 00c9 0F1F8000 		.p2align 4,,10
- 592      000000
- 593              		.p2align 3
- 594              	.L47:
- 248:fltk-1.3.4-1/jpeg/jdatadst.c **** 				  SIZEOF(my_mem_destination_mgr));
- 595              		.loc 1 248 0
- 596 00d0 498B4508 		movq	8(%r13), %rax
- 597 00d4 BA500000 		movl	$80, %edx
- 597      00
- 598 00d9 31F6     		xorl	%esi, %esi
- 599 00db 4C89EF   		movq	%r13, %rdi
- 600 00de FF10     		call	*(%rax)
- 601              	.LVL63:
+ 666              		.loc 1 241 5 is_stmt 1 view .LVU202
+ 667 00c0 498B4500 		movq	0(%r13), %rax
+ 668 00c4 4C89EF   		movq	%r13, %rdi
+ 669              	.LVL61:
+ 241:fltk-1.3.4-1/jpeg/jdatadst.c **** 
+ 670              		.loc 1 241 5 is_stmt 0 view .LVU203
+ 671 00c7 C7402818 		movl	$24, 40(%rax)
+ 671      000000
+ 672 00ce 498B4500 		movq	0(%r13), %rax
+ 673 00d2 FF10     		call	*(%rax)
+ 674              	.LVL62:
+ 246:fltk-1.3.4-1/jpeg/jdatadst.c ****     cinfo->dest = (struct jpeg_destination_mgr *)
+ 675              		.loc 1 246 3 is_stmt 1 view .LVU204
+ 246:fltk-1.3.4-1/jpeg/jdatadst.c ****     cinfo->dest = (struct jpeg_destination_mgr *)
+ 676              		.loc 1 246 12 is_stmt 0 view .LVU205
+ 677 00d4 498B5D28 		movq	40(%r13), %rbx
+ 246:fltk-1.3.4-1/jpeg/jdatadst.c ****     cinfo->dest = (struct jpeg_destination_mgr *)
+ 678              		.loc 1 246 6 view .LVU206
+ 679 00d8 4885DB   		testq	%rbx, %rbx
+ 680 00db 0F8555FF 		jne	.L37
+ 680      FFFF
+ 681              	.L49:
  247:fltk-1.3.4-1/jpeg/jdatadst.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
- 602              		.loc 1 247 0
- 603 00e0 49894528 		movq	%rax, 40(%r13)
- 604 00e4 4889C3   		movq	%rax, %rbx
- 605 00e7 E946FFFF 		jmp	.L35
- 605      FF
- 606 00ec 0F1F4000 		.p2align 4,,10
- 607              		.p2align 3
- 608              	.L48:
+ 682              		.loc 1 247 5 is_stmt 1 view .LVU207
+ 248:fltk-1.3.4-1/jpeg/jdatadst.c **** 				  SIZEOF(my_mem_destination_mgr));
+ 683              		.loc 1 248 8 is_stmt 0 view .LVU208
+ 684 00e1 498B4508 		movq	8(%r13), %rax
+ 685 00e5 BA500000 		movl	$80, %edx
+ 685      00
+ 686 00ea 31F6     		xorl	%esi, %esi
+ 687 00ec 4C89EF   		movq	%r13, %rdi
+ 688 00ef FF10     		call	*(%rax)
+ 689              	.LVL63:
+ 247:fltk-1.3.4-1/jpeg/jdatadst.c ****       (*cinfo->mem->alloc_small) ((j_common_ptr) cinfo, JPOOL_PERMANENT,
+ 690              		.loc 1 247 17 view .LVU209
+ 691 00f1 49894528 		movq	%rax, 40(%r13)
+ 248:fltk-1.3.4-1/jpeg/jdatadst.c **** 				  SIZEOF(my_mem_destination_mgr));
+ 692              		.loc 1 248 8 view .LVU210
+ 693 00f5 4889C3   		movq	%rax, %rbx
+ 694 00f8 E939FFFF 		jmp	.L37
+ 694      FF
+ 695              	.L50:
  264:fltk-1.3.4-1/jpeg/jdatadst.c ****     *outsize = OUTPUT_BUF_SIZE;
- 609              		.loc 1 264 0
- 610 00f0 498B4500 		movq	0(%r13), %rax
- 611 00f4 4C89EF   		movq	%r13, %rdi
- 612 00f7 C7402838 		movl	$56, 40(%rax)
- 612      000000
- 613 00fe 498B4500 		movq	0(%r13), %rax
- 614 0102 C7402C0A 		movl	$10, 44(%rax)
- 614      000000
- 615 0109 498B4500 		movq	0(%r13), %rax
- 616 010d FF10     		call	*(%rax)
- 617              	.LVL64:
- 618 010f E96DFFFF 		jmp	.L38
- 618      FF
- 619              		.cfi_endproc
- 620              	.LFE68:
- 622              		.section	.text.unlikely.jpeg_mem_dest
- 623              	.LCOLDE7:
- 624              		.section	.text.jpeg_mem_dest
- 625              	.LHOTE7:
- 626              		.text
- 627              	.Letext0:
- 628              		.section	.text.unlikely.init_destination
- 629              	.Letext_cold0:
- 630              		.file 3 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
- 631              		.file 4 "/usr/include/x86_64-linux-gnu/bits/types.h"
- 632              		.file 5 "/usr/include/stdio.h"
- 633              		.file 6 "/usr/include/libio.h"
- 634              		.file 7 "fltk-1.3.4-1/jpeg/jmorecfg.h"
- 635              		.file 8 "fltk-1.3.4-1/jpeg/jpeglib.h"
- 636              		.file 9 "fltk-1.3.4-1/jpeg/jerror.h"
- 637              		.file 10 "/usr/include/stdlib.h"
+ 696              		.loc 1 264 7 is_stmt 1 view .LVU211
+ 697 00fd 498B4500 		movq	0(%r13), %rax
+ 698 0101 4C89EF   		movq	%r13, %rdi
+ 699 0104 C7402838 		movl	$56, 40(%rax)
+ 699      000000
+ 700 010b 498B4500 		movq	0(%r13), %rax
+ 701 010f C7402C0A 		movl	$10, 44(%rax)
+ 701      000000
+ 702 0116 498B4500 		movq	0(%r13), %rax
+ 703 011a FF10     		call	*(%rax)
+ 704              	.LVL64:
+ 705 011c E96DFFFF 		jmp	.L40
+ 705      FF
+ 706              		.cfi_endproc
+ 707              	.LFE58:
+ 709              		.text
+ 710              	.Letext0:
+ 711              		.file 3 "/usr/lib/gcc/x86_64-linux-gnu/9/include/stddef.h"
+ 712              		.file 4 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 713              		.file 5 "/usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h"
+ 714              		.file 6 "/usr/include/x86_64-linux-gnu/bits/types/FILE.h"
+ 715              		.file 7 "/usr/include/stdio.h"
+ 716              		.file 8 "/usr/include/x86_64-linux-gnu/bits/sys_errlist.h"
+ 717              		.file 9 "fltk-1.3.4-1/jpeg/jmorecfg.h"
+ 718              		.file 10 "fltk-1.3.4-1/jpeg/jpeglib.h"
+ 719              		.file 11 "fltk-1.3.4-1/jpeg/jerror.h"
+ 720              		.file 12 "/usr/include/stdlib.h"
+ 721              		.file 13 "<built-in>"
+ 11781              		.section	.note.gnu.property,"a"
+ 11782              		.align 8
+ 11783 0000 04000000 		.long	 1f - 0f
+ 11784 0004 10000000 		.long	 4f - 1f
+ 11785 0008 05000000 		.long	 5
+ 11786              	0:
+ 11787 000c 474E5500 		.string	 "GNU"
+ 11788              	1:
+ 11789              		.align 8
+ 11790 0010 020000C0 		.long	 0xc0000002
+ 11791 0014 04000000 		.long	 3f - 2f
+ 11792              	2:
+ 11793 0018 03000000 		.long	 0x3
+ 11794              	3:
+ 11795 001c 00000000 		.align 8
+ 11796              	4:
 DEFINED SYMBOLS
                             *ABS*:0000000000000000 jdatadst.c
-     /tmp/ccRU692u.s:13     .text.init_destination:0000000000000000 init_destination
-     /tmp/ccRU692u.s:56     .text.init_mem_destination:0000000000000000 init_mem_destination
-     /tmp/ccRU692u.s:75     .text.term_mem_destination:0000000000000000 term_mem_destination
-     /tmp/ccRU692u.s:106    .text.empty_output_buffer:0000000000000000 empty_output_buffer
-     /tmp/ccRU692u.s:173    .text.empty_mem_output_buffer:0000000000000000 empty_mem_output_buffer
-     /tmp/ccRU692u.s:297    .text.term_destination:0000000000000000 term_destination
-     /tmp/ccRU692u.s:414    .text.jpeg_stdio_dest:0000000000000000 jpeg_stdio_dest
-     /tmp/ccRU692u.s:483    .text.jpeg_mem_dest:0000000000000000 jpeg_mem_dest
-                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
-                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+     /tmp/ccS9X3Tc.s:7      .text.init_destination:0000000000000000 init_destination
+     /tmp/ccS9X3Tc.s:52     .text.init_mem_destination:0000000000000000 init_mem_destination
+     /tmp/ccS9X3Tc.s:67     .text.term_mem_destination:0000000000000000 term_mem_destination
+     /tmp/ccS9X3Tc.s:101    .text.empty_output_buffer:0000000000000000 empty_output_buffer
+     /tmp/ccS9X3Tc.s:173    .text.empty_mem_output_buffer:0000000000000000 empty_mem_output_buffer
+     /tmp/ccS9X3Tc.s:315    .text.term_destination:0000000000000000 term_destination
+     /tmp/ccS9X3Tc.s:454    .text.jpeg_stdio_dest:0000000000000000 jpeg_stdio_dest
+     /tmp/ccS9X3Tc.s:537    .text.jpeg_mem_dest:0000000000000000 jpeg_mem_dest
+                           .group:0000000000000000 wm4.0.a6b23a418548ac0bda5d8549c4a2ec91
+                           .group:0000000000000000 wm4.stdcpredef.h.19.8dc41bed5d9037ff9622e015fb5f0ce3
                            .group:0000000000000000 wm4.jconfig.h.10.247fc3ff67998f3074970b1373c70333
-                           .group:0000000000000000 wm4.features.h.19.24da27e0a4d0d521fd057013d982b8b5
-                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
-                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
-                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
-                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
-                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
-                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
-                           .group:0000000000000000 wm4.waitflags.h.25.e401b8bcfee800b540b27abd7cc78de9
+                           .group:0000000000000000 wm4.features.h.19.5b5f5a19624a0527f479fdc52d54808f
+                           .group:0000000000000000 wm4.cdefs.h.19.98d80eddbb3f64f4f30cd9aee9c5593c
+                           .group:0000000000000000 wm4.wordsize.h.4.baf119258a1e53d8dba67ceac44ab6bc
+                           .group:0000000000000000 wm4.cdefs.h.475.fb75d2e4416aa349344e6f45f683bf28
+                           .group:0000000000000000 wm4.stubs64.h.10.6ce4c34010988db072c080326a6b6319
+                           .group:0000000000000000 wm4.libcheaderstart.h.37.d9274df4cc0172452960ad9644fa5579
+                           .group:0000000000000000 wm4.stdlib.h.28.2cffa49d94c5d85f4538f55f7b59771d
+                           .group:0000000000000000 wm4.stddef.h.181.13772e73e5434e8cc4fafaaddad2b5da
+                           .group:0000000000000000 wm4.waitflags.h.25.41934de4af99038521c2782f418699b1
                            .group:0000000000000000 wm4.waitstatus.h.28.93f167f49d64e2b9b99f98d1162a93bf
-                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
-                           .group:0000000000000000 wm4.endian.h.41.24cced64aef71195a51d4daa8e4f4a95
-                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
-                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
-                           .group:0000000000000000 wm4.byteswap.h.38.11ee5fdc0f6cc53a16c505b9233cecef
-                           .group:0000000000000000 wm4.endian.h.63.97272d7c64d5db8020003b32e9289502
-                           .group:0000000000000000 wm4.waitstatus.h.99.408b6270fa6eb71377201a241ef15f79
-                           .group:0000000000000000 wm4.stdlib.h.50.84aeca2ac6f37d40e1e9b3cef757ba2d
-                           .group:0000000000000000 wm4.types.h.23.f6dcbaa72f8f71361acef09804d45a5e
-                           .group:0000000000000000 wm4.time.h.53.beb46e650cd406cb917b6b96b45e640a
-                           .group:0000000000000000 wm4.stddef.h.238.847b6907dabda77be90a9ab7ad789e2e
-                           .group:0000000000000000 wm4.types.h.187.bd5a05039b505b3620e6973f1b2ffeb1
+                           .group:0000000000000000 wm4.stdlib.h.43.9fa4f727a2f1cb8d2450a574c9195553
+                           .group:0000000000000000 wm4.floatn.h.20.80c7cf8a8dfad237004b28d051d5afda
+                           .group:0000000000000000 wm4.floatncommon.h.34.7e1840d7dfb19e9bdb51aeb077d76637
+                           .group:0000000000000000 wm4.stdlib.h.71.2927e068ec678159b4f68ec2f089f7e6
+                           .group:0000000000000000 wm4.types.h.109.56eb9ae966b255288cc544f18746a7ff
+                           .group:0000000000000000 wm4.typesizes.h.24.2c64f817c0dc4b6fb2a2c619d717be26
+                           .group:0000000000000000 wm4.time64.h.24.a8166ae916ec910dab0d8987098d42ee
+                           .group:0000000000000000 wm4.types.h.40.18f72bab8242c2bb4c532a2aa95b5f00
+                           .group:0000000000000000 wm4.stddef.h.231.0adce5c8c1fd8096aaff50981b3d1f0f
+                           .group:0000000000000000 wm4.endian.h.20.efabd1018df5d7b4052c27dc6bdd5ce5
+                           .group:0000000000000000 wm4.endianness.h.2.2c6a211f7909f3af5e9e9cfa3b6b63c8
+                           .group:0000000000000000 wm4.endian.h.40.9e5d395adda2f4eb53ae69b69b664084
+                           .group:0000000000000000 wm4.endian.h.27.4c4f94262c4eaee2982fe00ed1b4f173
+                           .group:0000000000000000 wm4.byteswap.h.24.5363c019348146aada5aeadf51456576
+                           .group:0000000000000000 wm4.endian.h.39.30a606dbd99b6c3df61c1f06dbdabd4e
                            .group:0000000000000000 wm4.select.h.28.eb2f3debdbcffd1442ebddaebc4fb6ff
-                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
-                           .group:0000000000000000 wm4.select.h.36.f76c3b9e55c871743863013cc4cc14c9
-                           .group:0000000000000000 wm4.time.h.66.e70ce69790c975f0efb369340c432e0b
-                           .group:0000000000000000 wm4.time.h.25.ae5284cdff565e87a9198d819340325d
-                           .group:0000000000000000 wm4.select.h.49.e9d2041e5035cc68ebd1a20f7dbc8514
+                           .group:0000000000000000 wm4.__sigset_t.h.2.6b1ab6ff3d7b8fd9c0c42b0d80afbd80
+                           .group:0000000000000000 wm4.select.h.44.887a4ff60aa97fcd9c1be017735e1675
                            .group:0000000000000000 wm4.select2.h.27.f95f2ab0ffee66dc1b6575014894b21a
-                           .group:0000000000000000 wm4.sysmacros.h.20.8a0c33ff175cd9b434a86c0aaa36f0a2
-                           .group:0000000000000000 wm4.types.h.229.67b3f66bd74b06b451caec392a72a945
-                           .group:0000000000000000 wm4.pthreadtypes.h.25.6892b1493314fcf446bbc76e7362acba
+                           .group:0000000000000000 wm4.types.h.186.489a4ed8f2d29cd358843490f54ddea5
+                           .group:0000000000000000 wm4.pthreadtypesarch.h.25.6063cba99664c916e22d3a912bcc348a
+                           .group:0000000000000000 wm4.struct_mutex.h.20.ed51f515172b9be99e450ba83eb5dd99
+                           .group:0000000000000000 wm4.struct_rwlock.h.21.0254880f2904e3833fb8ae683e0f0330
                            .group:0000000000000000 wm4.alloca.h.19.edefa922a76c1cbaaf1e416903ba2d1c
                            .group:0000000000000000 wm4.alloca.h.29.156e12058824cc23d961c4d3b13031f6
-                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
-                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
-                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
-                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
-                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
-                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
-                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdio.h.24.5c1b97eef3c86b7a2549420f69f4f128
+                           .group:0000000000000000 wm4.libcheaderstart.h.31.87b3c285aeba93fe355ad19123070832
+                           .group:0000000000000000 wm4.stdio.h.31.e39a94e203ad4e1d978c0fc68ce016ee
+                           .group:0000000000000000 wm4.stddef.h.231.8136eebbab3406dbf57a7ec475dd5d83
                            .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
-                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
-                           .group:0000000000000000 wm4.stdio.h.80.17b7dd1ca72d8a61987532cb1d80194a
-                           .group:0000000000000000 wm4.stdio_lim.h.23.557290a6cddeba0587f574f29e3a5fb9
-                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
-                           .group:0000000000000000 wm4.stdio.h.26.cae64f7ada9bb8327a89dba6a5e93655
-                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
-                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
-                           .group:0000000000000000 wm4.string2.h.45.00535b99420fc3014c2da41d6645330d
-                           .group:0000000000000000 wm4.string3.h.31.0c4b9301b754a2db05eaafef869657d2
+                           .group:0000000000000000 wm4.struct_FILE.h.19.0888ac70396abe1031c03d393554032f
+                           .group:0000000000000000 wm4.stdio.h.53.139e45cf040c0964b2932c0c1bdaf6b2
+                           .group:0000000000000000 wm4.stdio_lim.h.19.e4b00b560d878dcfbc6635b3406640c5
+                           .group:0000000000000000 wm4.stdio.h.141.d7a290e19ca077c9e4aa7c43ede17a73
+                           .group:0000000000000000 wm4.stdio.h.20.b0caa08e5723aa5941367be0e5d2ec59
+                           .group:0000000000000000 wm4.stdio2.h.20.f45a0373b68e1296c4aa8cc09d66a9df
+                           .group:0000000000000000 wm4.string.h.23.93403f89af7dba8212345449bb14b09d
+                           .group:0000000000000000 wm4.string.h.31.e39a94e203ad4e1d978c0fc68ce016ee
+                           .group:0000000000000000 wm4.strings.h.19.a259f126920b1bb5ef76bc62b3984a3c
                            .group:0000000000000000 wm4.jinclude.h.67.b19f941ec97c4845fa4609292c7e2db4
                            .group:0000000000000000 wm4.jmorecfg.h.33.892d1896c42f78d6ec3a036162b3403e
                            .group:0000000000000000 wm4.jpeglib.h.40.4f111c27252a38df39328d65454e82f4
                            .group:0000000000000000 wm4.jerror.h.25.1dbd8674e70ab5215bc0037320e5c2a2
 
 UNDEFINED SYMBOLS
+_GLOBAL_OFFSET_TABLE_
 fwrite
 malloc
 memcpy

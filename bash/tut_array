@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# shellcheck disable=2034
+# shellcheck disable=1090
+#---------------------------------------------------------------------
+#
+#  tut_array
+#
+#  [Description]
+#    Tutorial of BASH array
+#
+#  [Author]
+#    Peter Malmberg <peter.malmberg@gmail.com>
+#
+#  [Date]
+#    2022-11-13
+#
+#  [License]
+#    MIT
+#
+#---------------------------------------------------------------------
+# Generated with bashplates. [https://github.com/zonbrisad/bashplates]
+#---------------------------------------------------------------------
+#
+
+#set -o xtrace   # Display commands as they are executed
+#set -o pipefail # Exit script when pipe fails
+
+# Directory where script is located
+#scriptPath=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+
+#---------------------------------------------------------------------
+
+IFS=$' '
+
+# Initiate string
+HW="Hello World everybody"
+
+# Initiate array of strings
+NAMES=("Kalle" "Nisse" "Arne" "Bengt" "Urban")
+
+# Initiate array from stringvariable
+read -r -a HWA <<<"$HW"
+
+echo
+
+echo "All names concatenated to string: ${NAMES[*]}"
+echo
+
+echo "For loop through array."
+for x in "${NAMES[@]}"; do
+  echo "$x"
+done
+echo
+
+echo "For loop through indices of array"
+for x in "${!NAMES[@]}"; do
+  echo "$x  ${NAMES[$x]}"
+done
+echo
+
+K1=${NAMES[*]:2:2}
+echo "$K1"

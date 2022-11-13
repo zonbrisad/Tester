@@ -1,18 +1,13 @@
    1              		.file	"jfdctfst.c"
    2              		.text
    3              	.Ltext0:
-   4              		.section	.text.unlikely.jpeg_fdct_ifast,"ax",@progbits
-   5              	.LCOLDB0:
-   6              		.section	.text.jpeg_fdct_ifast,"ax",@progbits
-   7              	.LHOTB0:
-   8              		.p2align 4,,15
-   9              		.section	.text.unlikely.jpeg_fdct_ifast
-  10              	.Ltext_cold0:
-  11              		.section	.text.jpeg_fdct_ifast
-  12              		.globl	jpeg_fdct_ifast
-  14              	jpeg_fdct_ifast:
-  15              	.LFB61:
-  16              		.file 1 "fltk-1.3.4-1/jpeg/jfdctfst.c"
+   4              		.section	.text.jpeg_fdct_ifast,"ax",@progbits
+   5              		.p2align 4
+   6              		.globl	jpeg_fdct_ifast
+   8              	jpeg_fdct_ifast:
+   9              	.LVL0:
+  10              	.LFB51:
+  11              		.file 1 "fltk-1.3.4-1/jpeg/jfdctfst.c"
    1:fltk-1.3.4-1/jpeg/jfdctfst.c **** /*
    2:fltk-1.3.4-1/jpeg/jfdctfst.c ****  * jfdctfst.c
    3:fltk-1.3.4-1/jpeg/jfdctfst.c ****  *
@@ -129,59 +124,72 @@
  114:fltk-1.3.4-1/jpeg/jfdctfst.c **** GLOBAL(void)
  115:fltk-1.3.4-1/jpeg/jfdctfst.c **** jpeg_fdct_ifast (DCTELEM * data, JSAMPARRAY sample_data, JDIMENSION start_col)
  116:fltk-1.3.4-1/jpeg/jfdctfst.c **** {
-  17              		.loc 1 116 0
-  18              		.cfi_startproc
-  19              	.LVL0:
-  20 0000 4157     		pushq	%r15
-  21              		.cfi_def_cfa_offset 16
-  22              		.cfi_offset 15, -16
-  23 0002 488D8700 		leaq	256(%rdi), %rax
-  23      010000
-  24 0009 4156     		pushq	%r14
-  25              		.cfi_def_cfa_offset 24
-  26              		.cfi_offset 14, -24
-  27 000b 4155     		pushq	%r13
-  28              		.cfi_def_cfa_offset 32
-  29              		.cfi_offset 13, -32
-  30 000d 4154     		pushq	%r12
-  31              		.cfi_def_cfa_offset 40
-  32              		.cfi_offset 12, -40
+  12              		.loc 1 116 1 view -0
+  13              		.cfi_startproc
+  14              		.loc 1 116 1 is_stmt 0 view .LVU1
+  15 0000 F30F1EFA 		endbr64
  117:fltk-1.3.4-1/jpeg/jfdctfst.c ****   DCTELEM tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
+  16              		.loc 1 117 3 is_stmt 1 view .LVU2
  118:fltk-1.3.4-1/jpeg/jfdctfst.c ****   DCTELEM tmp10, tmp11, tmp12, tmp13;
+  17              		.loc 1 118 3 view .LVU3
  119:fltk-1.3.4-1/jpeg/jfdctfst.c ****   DCTELEM z1, z2, z3, z4, z5, z11, z13;
+  18              		.loc 1 119 3 view .LVU4
  120:fltk-1.3.4-1/jpeg/jfdctfst.c ****   DCTELEM *dataptr;
+  19              		.loc 1 120 3 view .LVU5
  121:fltk-1.3.4-1/jpeg/jfdctfst.c ****   JSAMPROW elemptr;
+  20              		.loc 1 121 3 view .LVU6
  122:fltk-1.3.4-1/jpeg/jfdctfst.c ****   int ctr;
+  21              		.loc 1 122 3 view .LVU7
  123:fltk-1.3.4-1/jpeg/jfdctfst.c ****   SHIFT_TEMPS
  124:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
  125:fltk-1.3.4-1/jpeg/jfdctfst.c ****   /* Pass 1: process rows. */
  126:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
  127:fltk-1.3.4-1/jpeg/jfdctfst.c ****   dataptr = data;
-  33              		.loc 1 127 0
-  34 000f 4989FB   		movq	%rdi, %r11
- 116:fltk-1.3.4-1/jpeg/jfdctfst.c ****   DCTELEM tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
-  35              		.loc 1 116 0
-  36 0012 55       		pushq	%rbp
-  37              		.cfi_def_cfa_offset 48
-  38              		.cfi_offset 6, -48
-  39 0013 53       		pushq	%rbx
-  40              		.cfi_def_cfa_offset 56
-  41              		.cfi_offset 3, -56
-  42 0014 89D2     		movl	%edx, %edx
-  43              		.loc 1 127 0
-  44 0016 48897C24 		movq	%rdi, -8(%rsp)
-  44      F8
-  45 001b 4889C7   		movq	%rax, %rdi
-  46              	.LVL1:
-  47 001e 6690     		.p2align 4,,10
-  48              		.p2align 3
-  49              	.L2:
+  22              		.loc 1 127 3 view .LVU8
+  23              	.LVL1:
  128:fltk-1.3.4-1/jpeg/jfdctfst.c ****   for (ctr = 0; ctr < DCTSIZE; ctr++) {
+  24              		.loc 1 128 3 view .LVU9
+  25              		.loc 1 128 17 view .LVU10
+ 116:fltk-1.3.4-1/jpeg/jfdctfst.c ****   DCTELEM tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
+  26              		.loc 1 116 1 is_stmt 0 view .LVU11
+  27 0004 4157     		pushq	%r15
+  28              		.cfi_def_cfa_offset 16
+  29              		.cfi_offset 15, -16
+ 127:fltk-1.3.4-1/jpeg/jfdctfst.c ****   for (ctr = 0; ctr < DCTSIZE; ctr++) {
+  30              		.loc 1 127 11 view .LVU12
+  31 0006 4989FA   		movq	%rdi, %r10
+  32 0009 4189D7   		movl	%edx, %r15d
+ 116:fltk-1.3.4-1/jpeg/jfdctfst.c ****   DCTELEM tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
+  33              		.loc 1 116 1 view .LVU13
+  34 000c 4156     		pushq	%r14
+  35              		.cfi_def_cfa_offset 24
+  36              		.cfi_offset 14, -24
+  37 000e 4C8DB700 		leaq	256(%rdi), %r14
+  37      010000
+  38 0015 4155     		pushq	%r13
+  39              		.cfi_def_cfa_offset 32
+  40              		.cfi_offset 13, -32
+  41 0017 4154     		pushq	%r12
+  42              		.cfi_def_cfa_offset 40
+  43              		.cfi_offset 12, -40
+  44 0019 55       		pushq	%rbp
+  45              		.cfi_def_cfa_offset 48
+  46              		.cfi_offset 6, -48
+  47 001a 53       		pushq	%rbx
+  48              		.cfi_def_cfa_offset 56
+  49              		.cfi_offset 3, -56
+ 127:fltk-1.3.4-1/jpeg/jfdctfst.c ****   for (ctr = 0; ctr < DCTSIZE; ctr++) {
+  50              		.loc 1 127 11 view .LVU14
+  51 001b 48897C24 		movq	%rdi, -8(%rsp)
+  51      F8
+  52              	.LVL2:
+  53              		.p2align 4,,10
+  54              		.p2align 3
+  55              	.L2:
  129:fltk-1.3.4-1/jpeg/jfdctfst.c ****     elemptr = sample_data[ctr] + start_col;
-  50              		.loc 1 129 0 discriminator 3
-  51 0020 4889D5   		movq	%rdx, %rbp
-  52 0023 48032E   		addq	(%rsi), %rbp
-  53              	.LVL2:
+  56              		.loc 1 129 5 is_stmt 1 discriminator 3 view .LVU15
+  57              		.loc 1 129 13 is_stmt 0 discriminator 3 view .LVU16
+  58 0020 4C8B1E   		movq	(%rsi), %r11
  130:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
  131:fltk-1.3.4-1/jpeg/jfdctfst.c ****     /* Load data into workspace */
  132:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp0 = GETJSAMPLE(elemptr[0]) + GETJSAMPLE(elemptr[7]);
@@ -229,222 +237,319 @@
  174:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[7] = z11 - z4;
  175:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
  176:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr += DCTSIZE;		/* advance pointer to next row */
-  54              		.loc 1 176 0 discriminator 3
-  55 0026 4983C320 		addq	$32, %r11
-  56              	.LVL3:
-  57 002a 4883C608 		addq	$8, %rsi
+  59              		.loc 1 176 13 discriminator 3 view .LVU17
+  60 0023 4983C220 		addq	$32, %r10
+  61              	.LVL3:
+  62              		.loc 1 176 13 discriminator 3 view .LVU18
+  63 0027 4883C608 		addq	$8, %rsi
+ 129:fltk-1.3.4-1/jpeg/jfdctfst.c ****     elemptr = sample_data[ctr] + start_col;
+  64              		.loc 1 129 13 discriminator 3 view .LVU19
+  65 002b 4D01FB   		addq	%r15, %r11
+  66              	.LVL4:
  132:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp7 = GETJSAMPLE(elemptr[0]) - GETJSAMPLE(elemptr[7]);
-  58              		.loc 1 132 0 discriminator 3
-  59 002e 0FB64507 		movzbl	7(%rbp), %eax
-  60 0032 440FB64D 		movzbl	0(%rbp), %r9d
-  60      00
+  67              		.loc 1 132 5 is_stmt 1 discriminator 3 view .LVU20
+ 132:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp7 = GETJSAMPLE(elemptr[0]) - GETJSAMPLE(elemptr[7]);
+  68              		.loc 1 132 37 is_stmt 0 discriminator 3 view .LVU21
+  69 002e 410FB643 		movzbl	7(%r11), %eax
+  69      07
+ 132:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp7 = GETJSAMPLE(elemptr[0]) - GETJSAMPLE(elemptr[7]);
+  70              		.loc 1 132 12 discriminator 3 view .LVU22
+  71 0033 410FB63B 		movzbl	(%r11), %edi
  134:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp6 = GETJSAMPLE(elemptr[1]) - GETJSAMPLE(elemptr[6]);
-  61              		.loc 1 134 0 discriminator 3
-  62 0037 0FB65D01 		movzbl	1(%rbp), %ebx
+  72              		.loc 1 134 12 discriminator 3 view .LVU23
+  73 0037 410FB653 		movzbl	1(%r11), %edx
+  73      01
  136:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp5 = GETJSAMPLE(elemptr[2]) - GETJSAMPLE(elemptr[5]);
-  63              		.loc 1 136 0 discriminator 3
-  64 003b 0FB64D02 		movzbl	2(%rbp), %ecx
- 138:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp4 = GETJSAMPLE(elemptr[3]) - GETJSAMPLE(elemptr[4]);
-  65              		.loc 1 138 0 discriminator 3
-  66 003f 440FB665 		movzbl	4(%rbp), %r12d
-  66      04
+  74              		.loc 1 136 12 discriminator 3 view .LVU24
+  75 003c 450FB64B 		movzbl	2(%r11), %r9d
+  75      02
  132:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp7 = GETJSAMPLE(elemptr[0]) - GETJSAMPLE(elemptr[7]);
-  67              		.loc 1 132 0 discriminator 3
-  68 0044 458D1401 		leal	(%r9,%rax), %r10d
-  69              	.LVL4:
+  76              		.loc 1 132 10 discriminator 3 view .LVU25
+  77 0041 448D0407 		leal	(%rdi,%rax), %r8d
+  78              	.LVL5:
  133:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp1 = GETJSAMPLE(elemptr[1]) + GETJSAMPLE(elemptr[6]);
-  70              		.loc 1 133 0 discriminator 3
-  71 0048 4129C1   		subl	%eax, %r9d
-  72              	.LVL5:
+  79              		.loc 1 133 5 is_stmt 1 discriminator 3 view .LVU26
+ 133:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp1 = GETJSAMPLE(elemptr[1]) + GETJSAMPLE(elemptr[6]);
+  80              		.loc 1 133 10 is_stmt 0 discriminator 3 view .LVU27
+  81 0045 29C7     		subl	%eax, %edi
+  82              	.LVL6:
  134:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp6 = GETJSAMPLE(elemptr[1]) - GETJSAMPLE(elemptr[6]);
-  73              		.loc 1 134 0 discriminator 3
-  74 004b 0FB64506 		movzbl	6(%rbp), %eax
-  75 004f 448D0403 		leal	(%rbx,%rax), %r8d
-  76              	.LVL6:
- 135:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp2 = GETJSAMPLE(elemptr[2]) + GETJSAMPLE(elemptr[5]);
-  77              		.loc 1 135 0 discriminator 3
-  78 0053 29C3     		subl	%eax, %ebx
-  79              	.LVL7:
- 136:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp5 = GETJSAMPLE(elemptr[2]) - GETJSAMPLE(elemptr[5]);
-  80              		.loc 1 136 0 discriminator 3
-  81 0055 0FB64505 		movzbl	5(%rbp), %eax
-  82 0059 448D2C01 		leal	(%rcx,%rax), %r13d
-  83              	.LVL8:
- 137:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp3 = GETJSAMPLE(elemptr[3]) + GETJSAMPLE(elemptr[4]);
-  84              		.loc 1 137 0 discriminator 3
-  85 005d 29C1     		subl	%eax, %ecx
-  86              	.LVL9:
+  83              		.loc 1 134 5 is_stmt 1 discriminator 3 view .LVU28
+ 134:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp6 = GETJSAMPLE(elemptr[1]) - GETJSAMPLE(elemptr[6]);
+  84              		.loc 1 134 37 is_stmt 0 discriminator 3 view .LVU29
+  85 0047 410FB643 		movzbl	6(%r11), %eax
+  85      06
  138:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp4 = GETJSAMPLE(elemptr[3]) - GETJSAMPLE(elemptr[4]);
-  87              		.loc 1 138 0 discriminator 3
-  88 005f 0FB64503 		movzbl	3(%rbp), %eax
-  89 0063 468D3420 		leal	(%rax,%r12), %r14d
-  90              	.LVL10:
- 158:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp11 = tmp5 + tmp6;
-  91              		.loc 1 158 0 discriminator 3
-  92 0067 4429E0   		subl	%r12d, %eax
-  93              	.LVL11:
-  94 006a 01C8     		addl	%ecx, %eax
-  95              	.LVL12:
- 166:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
-  96              		.loc 1 166 0 discriminator 3
-  97 006c 01D9     		addl	%ebx, %ecx
-  98              	.LVL13:
+  86              		.loc 1 138 37 discriminator 3 view .LVU30
+  87 004c 410FB65B 		movzbl	4(%r11), %ebx
+  87      04
+ 134:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp6 = GETJSAMPLE(elemptr[1]) - GETJSAMPLE(elemptr[6]);
+  88              		.loc 1 134 10 discriminator 3 view .LVU31
+  89 0051 8D0C02   		leal	(%rdx,%rax), %ecx
+  90              	.LVL7:
+ 135:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp2 = GETJSAMPLE(elemptr[2]) + GETJSAMPLE(elemptr[5]);
+  91              		.loc 1 135 5 is_stmt 1 discriminator 3 view .LVU32
+ 135:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp2 = GETJSAMPLE(elemptr[2]) + GETJSAMPLE(elemptr[5]);
+  92              		.loc 1 135 10 is_stmt 0 discriminator 3 view .LVU33
+  93 0054 29C2     		subl	%eax, %edx
+  94              	.LVL8:
+ 136:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp5 = GETJSAMPLE(elemptr[2]) - GETJSAMPLE(elemptr[5]);
+  95              		.loc 1 136 5 is_stmt 1 discriminator 3 view .LVU34
+ 136:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp5 = GETJSAMPLE(elemptr[2]) - GETJSAMPLE(elemptr[5]);
+  96              		.loc 1 136 37 is_stmt 0 discriminator 3 view .LVU35
+  97 0056 410FB643 		movzbl	5(%r11), %eax
+  97      05
+ 136:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp5 = GETJSAMPLE(elemptr[2]) - GETJSAMPLE(elemptr[5]);
+  98              		.loc 1 136 10 discriminator 3 view .LVU36
+  99 005b 418D2C01 		leal	(%r9,%rax), %ebp
+ 100              	.LVL9:
+ 137:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp3 = GETJSAMPLE(elemptr[3]) + GETJSAMPLE(elemptr[4]);
+ 101              		.loc 1 137 5 is_stmt 1 discriminator 3 view .LVU37
+ 137:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp3 = GETJSAMPLE(elemptr[3]) + GETJSAMPLE(elemptr[4]);
+ 102              		.loc 1 137 10 is_stmt 0 discriminator 3 view .LVU38
+ 103 005f 4129C1   		subl	%eax, %r9d
+ 104              	.LVL10:
+ 138:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp4 = GETJSAMPLE(elemptr[3]) - GETJSAMPLE(elemptr[4]);
+ 105              		.loc 1 138 5 is_stmt 1 discriminator 3 view .LVU39
+ 138:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp4 = GETJSAMPLE(elemptr[3]) - GETJSAMPLE(elemptr[4]);
+ 106              		.loc 1 138 12 is_stmt 0 discriminator 3 view .LVU40
+ 107 0062 410FB643 		movzbl	3(%r11), %eax
+ 107      03
+ 138:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp4 = GETJSAMPLE(elemptr[3]) - GETJSAMPLE(elemptr[4]);
+ 108              		.loc 1 138 10 discriminator 3 view .LVU41
+ 109 0067 448D2418 		leal	(%rax,%rbx), %r12d
+ 110              	.LVL11:
+ 139:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 111              		.loc 1 139 5 is_stmt 1 discriminator 3 view .LVU42
  143:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp13 = tmp0 - tmp3;
-  99              		.loc 1 143 0 discriminator 3
- 100 006e 438D2C32 		leal	(%r10,%r14), %ebp
- 101              	.LVL14:
+ 112              		.loc 1 143 5 discriminator 3 view .LVU43
+ 139:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 113              		.loc 1 139 10 is_stmt 0 discriminator 3 view .LVU44
+ 114 006b 29D8     		subl	%ebx, %eax
+ 115              	.LVL12:
+ 143:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp13 = tmp0 - tmp3;
+ 116              		.loc 1 143 11 discriminator 3 view .LVU45
+ 117 006d 478D1C20 		leal	(%r8,%r12), %r11d
+ 118              	.LVL13:
  144:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp11 = tmp1 + tmp2;
- 102              		.loc 1 144 0 discriminator 3
- 103 0072 4529F2   		subl	%r14d, %r10d
- 104              	.LVL15:
+ 119              		.loc 1 144 5 is_stmt 1 discriminator 3 view .LVU46
+ 144:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp11 = tmp1 + tmp2;
+ 120              		.loc 1 144 11 is_stmt 0 discriminator 3 view .LVU47
+ 121 0071 4529E0   		subl	%r12d, %r8d
+ 122              	.LVL14:
  145:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp12 = tmp1 - tmp2;
- 105              		.loc 1 145 0 discriminator 3
- 106 0075 478D3428 		leal	(%r8,%r13), %r14d
- 107              	.LVL16:
- 152:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[2] = tmp13 + z1;	/* phase 5 */
- 108              		.loc 1 152 0 discriminator 3
- 109 0079 4529E8   		subl	%r13d, %r8d
- 110              	.LVL17:
- 166:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
- 111              		.loc 1 166 0 discriminator 3
- 112 007c 4863C9   		movslq	%ecx, %rcx
- 152:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[2] = tmp13 + z1;	/* phase 5 */
- 113              		.loc 1 152 0 discriminator 3
- 114 007f 4501D0   		addl	%r10d, %r8d
- 115              	.LVL18:
+ 123              		.loc 1 145 5 is_stmt 1 discriminator 3 view .LVU48
+ 145:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp12 = tmp1 - tmp2;
+ 124              		.loc 1 145 11 is_stmt 0 discriminator 3 view .LVU49
+ 125 0074 448D2429 		leal	(%rcx,%rbp), %r12d
+ 126              	.LVL15:
+ 146:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 127              		.loc 1 146 5 is_stmt 1 discriminator 3 view .LVU50
  149:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[4] = tmp10 - tmp11;
- 116              		.loc 1 149 0 discriminator 3
- 117 0082 468DBC35 		leal	-1024(%rbp,%r14), %r15d
- 117      00FCFFFF 
- 150:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
- 118              		.loc 1 150 0 discriminator 3
- 119 008a 4429F5   		subl	%r14d, %ebp
- 120              	.LVL19:
+ 128              		.loc 1 149 5 discriminator 3 view .LVU51
+ 146:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 129              		.loc 1 146 11 is_stmt 0 discriminator 3 view .LVU52
+ 130 0078 29E9     		subl	%ebp, %ecx
+ 131              	.LVL16:
  152:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[2] = tmp13 + z1;	/* phase 5 */
- 121              		.loc 1 152 0 discriminator 3
- 122 008d 4D63C0   		movslq	%r8d, %r8
- 150:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
- 123              		.loc 1 150 0 discriminator 3
- 124 0090 41896BF0 		movl	%ebp, -16(%r11)
- 125              	.LVL20:
- 152:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[2] = tmp13 + z1;	/* phase 5 */
- 126              		.loc 1 152 0 discriminator 3
- 127 0094 4D69C0B5 		imulq	$181, %r8, %r8
- 127      000000
+ 132              		.loc 1 152 10 discriminator 3 view .LVU53
+ 133 007a 4401C1   		addl	%r8d, %ecx
+ 134              	.LVL17:
  149:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[4] = tmp10 - tmp11;
- 128              		.loc 1 149 0 discriminator 3
- 129 009b 45897BE0 		movl	%r15d, -32(%r11)
- 166:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
- 130              		.loc 1 166 0 discriminator 3
- 131 009f 4869C9B5 		imulq	$181, %rcx, %rcx
- 131      000000
+ 135              		.loc 1 149 32 discriminator 3 view .LVU54
+ 136 007d 478DAC23 		leal	-1024(%r11,%r12), %r13d
+ 136      00FCFFFF 
+ 150:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 137              		.loc 1 150 24 discriminator 3 view .LVU55
+ 138 0085 4529E3   		subl	%r12d, %r11d
+ 139              	.LVL18:
+ 158:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp11 = tmp5 + tmp6;
+ 140              		.loc 1 158 11 discriminator 3 view .LVU56
+ 141 0088 4401C8   		addl	%r9d, %eax
+ 142              	.LVL19:
  152:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[2] = tmp13 + z1;	/* phase 5 */
- 132              		.loc 1 152 0 discriminator 3
- 133 00a6 49C1F808 		sarq	$8, %r8
- 134              	.LVL21:
+ 143              		.loc 1 152 10 discriminator 3 view .LVU57
+ 144 008b 4863C9   		movslq	%ecx, %rcx
+ 150:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 145              		.loc 1 150 24 discriminator 3 view .LVU58
+ 146 008e 45895AF0 		movl	%r11d, -16(%r10)
+ 147              	.LVL20:
+ 152:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[2] = tmp13 + z1;	/* phase 5 */
+ 148              		.loc 1 152 10 discriminator 3 view .LVU59
+ 149 0092 4869C9B5 		imulq	$181, %rcx, %rcx
+ 149      000000
+ 149:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[4] = tmp10 - tmp11;
+ 150              		.loc 1 149 32 discriminator 3 view .LVU60
+ 151 0099 45896AE0 		movl	%r13d, -32(%r10)
+ 150:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 152              		.loc 1 150 5 is_stmt 1 discriminator 3 view .LVU61
+ 152:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[2] = tmp13 + z1;	/* phase 5 */
+ 153              		.loc 1 152 5 discriminator 3 view .LVU62
+ 152:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[2] = tmp13 + z1;	/* phase 5 */
+ 154              		.loc 1 152 10 is_stmt 0 discriminator 3 view .LVU63
+ 155 009d 48C1F908 		sarq	$8, %rcx
+ 156              	.LVL21:
  153:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[6] = tmp13 - z1;
- 135              		.loc 1 153 0 discriminator 3
- 136 00aa 438D2C02 		leal	(%r10,%r8), %ebp
+ 157              		.loc 1 153 5 is_stmt 1 discriminator 3 view .LVU64
+ 153:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[6] = tmp13 - z1;
+ 158              		.loc 1 153 24 is_stmt 0 discriminator 3 view .LVU65
+ 159 00a1 458D1C08 		leal	(%r8,%rcx), %r11d
  154:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
- 137              		.loc 1 154 0 discriminator 3
- 138 00ae 4529C2   		subl	%r8d, %r10d
- 139              	.LVL22:
+ 160              		.loc 1 154 24 discriminator 3 view .LVU66
+ 161 00a5 4129C8   		subl	%ecx, %r8d
+ 162              	.LVL22:
  163:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z2 = MULTIPLY(tmp10, FIX_0_541196100) + z5; /* c2-c6 */
- 140              		.loc 1 163 0 discriminator 3
- 141 00b1 4189C0   		movl	%eax, %r8d
- 142              	.LVL23:
+ 163              		.loc 1 163 10 discriminator 3 view .LVU67
+ 164 00a8 89C1     		movl	%eax, %ecx
+ 165              	.LVL23:
+ 164:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z4 = MULTIPLY(tmp12, FIX_1_306562965) + z5; /* c2+c6 */
+ 166              		.loc 1 164 10 discriminator 3 view .LVU68
+ 167 00aa 4898     		cltq
  154:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
- 143              		.loc 1 154 0 discriminator 3
- 144 00b4 458953F8 		movl	%r10d, -8(%r11)
+ 168              		.loc 1 154 24 discriminator 3 view .LVU69
+ 169 00ac 458942F8 		movl	%r8d, -8(%r10)
+ 164:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z4 = MULTIPLY(tmp12, FIX_1_306562965) + z5; /* c2+c6 */
+ 170              		.loc 1 164 10 discriminator 3 view .LVU70
+ 171 00b0 4869C08B 		imulq	$139, %rax, %rax
+ 171      000000
  160:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
- 145              		.loc 1 160 0 discriminator 3
- 146 00b8 458D1419 		leal	(%r9,%rbx), %r10d
- 147              	.LVL24:
- 164:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z4 = MULTIPLY(tmp12, FIX_1_306562965) + z5; /* c2+c6 */
- 148              		.loc 1 164 0 discriminator 3
- 149 00bc 4898     		cltq
- 150              	.LVL25:
- 151 00be 4869C08B 		imulq	$139, %rax, %rax
- 151      000000
+ 172              		.loc 1 160 11 discriminator 3 view .LVU71
+ 173 00b7 448D0417 		leal	(%rdi,%rdx), %r8d
+ 159:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp12 = tmp6 + tmp7;
+ 174              		.loc 1 159 11 discriminator 3 view .LVU72
+ 175 00bb 4401CA   		addl	%r9d, %edx
+ 176              	.LVL24:
+ 163:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z2 = MULTIPLY(tmp10, FIX_0_541196100) + z5; /* c2-c6 */
+ 177              		.loc 1 163 10 discriminator 3 view .LVU73
+ 178 00be 4429C1   		subl	%r8d, %ecx
  153:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[6] = tmp13 - z1;
- 152              		.loc 1 153 0 discriminator 3
- 153 00c5 41896BE8 		movl	%ebp, -24(%r11)
+ 179              		.loc 1 153 24 discriminator 3 view .LVU74
+ 180 00c1 45895AE8 		movl	%r11d, -24(%r10)
+ 154:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 181              		.loc 1 154 5 is_stmt 1 discriminator 3 view .LVU75
+ 158:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp11 = tmp5 + tmp6;
+ 182              		.loc 1 158 5 discriminator 3 view .LVU76
+ 159:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp12 = tmp6 + tmp7;
+ 183              		.loc 1 159 5 discriminator 3 view .LVU77
+ 184              	.LVL25:
+ 160:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 185              		.loc 1 160 5 discriminator 3 view .LVU78
+ 163:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z2 = MULTIPLY(tmp10, FIX_0_541196100) + z5; /* c2-c6 */
+ 186              		.loc 1 163 5 discriminator 3 view .LVU79
  166:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
- 154              		.loc 1 166 0 discriminator 3
- 155 00c9 48C1F908 		sarq	$8, %rcx
+ 187              		.loc 1 166 10 is_stmt 0 discriminator 3 view .LVU80
+ 188 00c5 4863D2   		movslq	%edx, %rdx
  163:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z2 = MULTIPLY(tmp10, FIX_0_541196100) + z5; /* c2-c6 */
- 156              		.loc 1 163 0 discriminator 3
- 157 00cd 4529D0   		subl	%r10d, %r8d
- 158              	.LVL26:
- 159 00d0 4D63C0   		movslq	%r8d, %r8
- 160 00d3 4D6BC062 		imulq	$98, %r8, %r8
+ 189              		.loc 1 163 10 discriminator 3 view .LVU81
+ 190 00c8 4863C9   		movslq	%ecx, %rcx
+ 166:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 191              		.loc 1 166 10 discriminator 3 view .LVU82
+ 192 00cb 4869D2B5 		imulq	$181, %rdx, %rdx
+ 192      000000
+ 163:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z2 = MULTIPLY(tmp10, FIX_0_541196100) + z5; /* c2-c6 */
+ 193              		.loc 1 163 10 discriminator 3 view .LVU83
+ 194 00d2 486BC962 		imulq	$98, %rcx, %rcx
  164:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z4 = MULTIPLY(tmp12, FIX_1_306562965) + z5; /* c2+c6 */
- 161              		.loc 1 164 0 discriminator 3
- 162 00d7 48C1F808 		sarq	$8, %rax
+ 195              		.loc 1 164 10 discriminator 3 view .LVU84
+ 196 00d6 48C1F808 		sarq	$8, %rax
+ 166:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 197              		.loc 1 166 10 discriminator 3 view .LVU85
+ 198 00da 48C1FA08 		sarq	$8, %rdx
  163:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z2 = MULTIPLY(tmp10, FIX_0_541196100) + z5; /* c2-c6 */
- 163              		.loc 1 163 0 discriminator 3
- 164 00db 49C1F808 		sarq	$8, %r8
+ 199              		.loc 1 163 10 discriminator 3 view .LVU86
+ 200 00de 48C1F908 		sarq	$8, %rcx
  164:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z4 = MULTIPLY(tmp12, FIX_1_306562965) + z5; /* c2+c6 */
- 165              		.loc 1 164 0 discriminator 3
- 166 00df 4401C0   		addl	%r8d, %eax
+ 201              		.loc 1 164 8 discriminator 3 view .LVU87
+ 202 00e2 01C8     		addl	%ecx, %eax
  163:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z2 = MULTIPLY(tmp10, FIX_0_541196100) + z5; /* c2-c6 */
- 167              		.loc 1 163 0 discriminator 3
- 168 00e2 4C89C5   		movq	%r8, %rbp
- 169              	.LVL27:
+ 203              		.loc 1 163 10 discriminator 3 view .LVU88
+ 204 00e4 4989CB   		movq	%rcx, %r11
+ 205              	.LVL26:
+ 164:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z4 = MULTIPLY(tmp12, FIX_1_306562965) + z5; /* c2+c6 */
+ 206              		.loc 1 164 5 is_stmt 1 discriminator 3 view .LVU89
  165:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z3 = MULTIPLY(tmp11, FIX_0_707106781); /* c4 */
- 170              		.loc 1 165 0 discriminator 3
- 171 00e5 4D63C2   		movslq	%r10d, %r8
- 172              	.LVL28:
- 173 00e8 4D69C04E 		imulq	$334, %r8, %r8
- 173      010000
+ 207              		.loc 1 165 5 discriminator 3 view .LVU90
+ 165:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z3 = MULTIPLY(tmp11, FIX_0_707106781); /* c4 */
+ 208              		.loc 1 165 10 is_stmt 0 discriminator 3 view .LVU91
+ 209 00e7 4963C8   		movslq	%r8d, %rcx
+ 210              	.LVL27:
+ 165:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z3 = MULTIPLY(tmp11, FIX_0_707106781); /* c4 */
+ 211              		.loc 1 165 10 discriminator 3 view .LVU92
+ 212 00ea 4869C94E 		imulq	$334, %rcx, %rcx
+ 212      010000
  168:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z13 = tmp7 - z3;
- 174              		.loc 1 168 0 discriminator 3
- 175 00ef 458D1409 		leal	(%r9,%rcx), %r10d
- 176              	.LVL29:
+ 213              		.loc 1 168 9 discriminator 3 view .LVU93
+ 214 00f1 448D0417 		leal	(%rdi,%rdx), %r8d
+ 215              	.LVL28:
  169:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
- 177              		.loc 1 169 0 discriminator 3
- 178 00f3 4129C9   		subl	%ecx, %r9d
- 179              	.LVL30:
+ 216              		.loc 1 169 9 discriminator 3 view .LVU94
+ 217 00f5 29D7     		subl	%edx, %edi
+ 218              	.LVL29:
  171:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[3] = z13 - z2;
- 180              		.loc 1 171 0 discriminator 3
- 181 00f6 428D0C08 		leal	(%rax,%r9), %ecx
+ 219              		.loc 1 171 22 discriminator 3 view .LVU95
+ 220 00f7 8D1438   		leal	(%rax,%rdi), %edx
  172:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[1] = z11 + z4;
- 182              		.loc 1 172 0 discriminator 3
- 183 00fa 4129C1   		subl	%eax, %r9d
- 184 00fd 45894BEC 		movl	%r9d, -20(%r11)
+ 221              		.loc 1 172 22 discriminator 3 view .LVU96
+ 222 00fa 29C7     		subl	%eax, %edi
  171:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[3] = z13 - z2;
- 185              		.loc 1 171 0 discriminator 3
- 186 0101 41894BF4 		movl	%ecx, -12(%r11)
+ 223              		.loc 1 171 22 discriminator 3 view .LVU97
+ 224 00fc 418952F4 		movl	%edx, -12(%r10)
  165:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z3 = MULTIPLY(tmp11, FIX_0_707106781); /* c4 */
- 187              		.loc 1 165 0 discriminator 3
- 188 0105 49C1F808 		sarq	$8, %r8
- 189 0109 4101E8   		addl	%ebp, %r8d
- 190              	.LVL31:
+ 225              		.loc 1 165 10 discriminator 3 view .LVU98
+ 226 0100 48C1F908 		sarq	$8, %rcx
+ 172:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[1] = z11 + z4;
+ 227              		.loc 1 172 22 discriminator 3 view .LVU99
+ 228 0104 41897AEC 		movl	%edi, -20(%r10)
+ 165:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z3 = MULTIPLY(tmp11, FIX_0_707106781); /* c4 */
+ 229              		.loc 1 165 8 discriminator 3 view .LVU100
+ 230 0108 4401D9   		addl	%r11d, %ecx
+ 231              	.LVL30:
+ 166:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 232              		.loc 1 166 5 is_stmt 1 discriminator 3 view .LVU101
+ 168:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z13 = tmp7 - z3;
+ 233              		.loc 1 168 5 discriminator 3 view .LVU102
+ 169:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 234              		.loc 1 169 5 discriminator 3 view .LVU103
+ 171:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[3] = z13 - z2;
+ 235              		.loc 1 171 5 discriminator 3 view .LVU104
+ 172:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[1] = z11 + z4;
+ 236              		.loc 1 172 5 discriminator 3 view .LVU105
  173:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[7] = z11 - z4;
- 191              		.loc 1 173 0 discriminator 3
- 192 010c 438D0410 		leal	(%r8,%r10), %eax
- 193              	.LVL32:
+ 237              		.loc 1 173 5 discriminator 3 view .LVU106
+ 173:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[7] = z11 - z4;
+ 238              		.loc 1 173 22 is_stmt 0 discriminator 3 view .LVU107
+ 239 010b 428D0401 		leal	(%rcx,%r8), %eax
+ 240              	.LVL31:
  174:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
- 194              		.loc 1 174 0 discriminator 3
- 195 0110 4529C2   		subl	%r8d, %r10d
- 196              	.LVL33:
- 197 0113 458953FC 		movl	%r10d, -4(%r11)
+ 241              		.loc 1 174 22 discriminator 3 view .LVU108
+ 242 010f 4129C8   		subl	%ecx, %r8d
+ 243              	.LVL32:
  173:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[7] = z11 - z4;
- 198              		.loc 1 173 0 discriminator 3
- 199 0117 418943E4 		movl	%eax, -28(%r11)
- 200              	.LVL34:
+ 244              		.loc 1 173 22 discriminator 3 view .LVU109
+ 245 0112 418942E4 		movl	%eax, -28(%r10)
+ 174:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 246              		.loc 1 174 5 is_stmt 1 discriminator 3 view .LVU110
+ 174:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 247              		.loc 1 174 22 is_stmt 0 discriminator 3 view .LVU111
+ 248 0116 458942FC 		movl	%r8d, -4(%r10)
+ 249              		.loc 1 176 5 is_stmt 1 discriminator 3 view .LVU112
+ 250              	.LVL33:
  128:fltk-1.3.4-1/jpeg/jfdctfst.c ****     elemptr = sample_data[ctr] + start_col;
- 201              		.loc 1 128 0 discriminator 3
- 202 011b 4939FB   		cmpq	%rdi, %r11
- 203 011e 0F85FCFE 		jne	.L2
- 203      FFFF
- 204 0124 488B7C24 		movq	-8(%rsp), %rdi
- 204      F8
- 205 0129 4C8D4F20 		leaq	32(%rdi), %r9
- 206              	.LVL35:
- 207 012d 0F1F00   		.p2align 4,,10
- 208              		.p2align 3
- 209              	.L3:
+ 251              		.loc 1 128 32 discriminator 3 view .LVU113
+ 128:fltk-1.3.4-1/jpeg/jfdctfst.c ****     elemptr = sample_data[ctr] + start_col;
+ 252              		.loc 1 128 17 discriminator 3 view .LVU114
+ 128:fltk-1.3.4-1/jpeg/jfdctfst.c ****     elemptr = sample_data[ctr] + start_col;
+ 253              		.loc 1 128 3 is_stmt 0 discriminator 3 view .LVU115
+ 254 011a 4D39F2   		cmpq	%r14, %r10
+ 255 011d 0F85FDFE 		jne	.L2
+ 255      FFFF
+ 256 0123 488B7C24 		movq	-8(%rsp), %rdi
+ 256      F8
+ 257 0128 4C8D4F20 		leaq	32(%rdi), %r9
+ 258              	.LVL34:
+ 259 012c 0F1F4000 		.p2align 4,,10
+ 260              		.p2align 3
+ 261              	.L3:
  177:fltk-1.3.4-1/jpeg/jfdctfst.c ****   }
  178:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
  179:fltk-1.3.4-1/jpeg/jfdctfst.c ****   /* Pass 2: process columns. */
@@ -452,10 +557,12 @@
  181:fltk-1.3.4-1/jpeg/jfdctfst.c ****   dataptr = data;
  182:fltk-1.3.4-1/jpeg/jfdctfst.c ****   for (ctr = DCTSIZE-1; ctr >= 0; ctr--) {
  183:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp0 = dataptr[DCTSIZE*0] + dataptr[DCTSIZE*7];
- 210              		.loc 1 183 0 discriminator 3
- 211 0130 8B87E000 		movl	224(%rdi), %eax
- 211      0000
- 212 0136 8B37     		movl	(%rdi), %esi
+ 262              		.loc 1 183 5 is_stmt 1 discriminator 3 view .LVU116
+ 263              		.loc 1 183 40 is_stmt 0 discriminator 3 view .LVU117
+ 264 0130 8B87E000 		movl	224(%rdi), %eax
+ 264      0000
+ 265              		.loc 1 183 19 discriminator 3 view .LVU118
+ 266 0136 8B37     		movl	(%rdi), %esi
  184:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp7 = dataptr[DCTSIZE*0] - dataptr[DCTSIZE*7];
  185:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp1 = dataptr[DCTSIZE*1] + dataptr[DCTSIZE*6];
  186:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp6 = dataptr[DCTSIZE*1] - dataptr[DCTSIZE*6];
@@ -499,318 +606,401 @@
  224:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*7] = z11 - z4;
  225:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
  226:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr++;			/* advance pointer to next column */
- 213              		.loc 1 226 0 discriminator 3
- 214 0138 4883C704 		addq	$4, %rdi
- 215              	.LVL36:
+ 267              		.loc 1 226 12 discriminator 3 view .LVU119
+ 268 0138 4883C704 		addq	$4, %rdi
+ 269              	.LVL35:
  185:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp6 = dataptr[DCTSIZE*1] - dataptr[DCTSIZE*6];
- 216              		.loc 1 185 0 discriminator 3
- 217 013c 448B471C 		movl	28(%rdi), %r8d
+ 270              		.loc 1 185 19 discriminator 3 view .LVU120
+ 271 013c 8B571C   		movl	28(%rdi), %edx
  187:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp5 = dataptr[DCTSIZE*2] - dataptr[DCTSIZE*5];
- 218              		.loc 1 187 0 discriminator 3
- 219 0140 8B573C   		movl	60(%rdi), %edx
- 189:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp4 = dataptr[DCTSIZE*3] - dataptr[DCTSIZE*4];
- 220              		.loc 1 189 0 discriminator 3
- 221 0143 448B5F7C 		movl	124(%rdi), %r11d
+ 272              		.loc 1 187 19 discriminator 3 view .LVU121
+ 273 013f 448B473C 		movl	60(%rdi), %r8d
  183:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp7 = dataptr[DCTSIZE*0] - dataptr[DCTSIZE*7];
- 222              		.loc 1 183 0 discriminator 3
- 223 0147 448D1406 		leal	(%rsi,%rax), %r10d
- 224              	.LVL37:
+ 274              		.loc 1 183 10 discriminator 3 view .LVU122
+ 275 0143 448D1406 		leal	(%rsi,%rax), %r10d
+ 276              	.LVL36:
  184:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp1 = dataptr[DCTSIZE*1] + dataptr[DCTSIZE*6];
- 225              		.loc 1 184 0 discriminator 3
- 226 014b 29C6     		subl	%eax, %esi
- 227              	.LVL38:
+ 277              		.loc 1 184 5 is_stmt 1 discriminator 3 view .LVU123
+ 184:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp1 = dataptr[DCTSIZE*1] + dataptr[DCTSIZE*6];
+ 278              		.loc 1 184 10 is_stmt 0 discriminator 3 view .LVU124
+ 279 0147 29C6     		subl	%eax, %esi
+ 280              	.LVL37:
  185:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp6 = dataptr[DCTSIZE*1] - dataptr[DCTSIZE*6];
- 228              		.loc 1 185 0 discriminator 3
- 229 014d 8B87BC00 		movl	188(%rdi), %eax
- 229      0000
- 230 0153 418D0C00 		leal	(%r8,%rax), %ecx
- 231              	.LVL39:
- 186:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp2 = dataptr[DCTSIZE*2] + dataptr[DCTSIZE*5];
- 232              		.loc 1 186 0 discriminator 3
- 233 0157 4129C0   		subl	%eax, %r8d
- 234              	.LVL40:
- 187:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp5 = dataptr[DCTSIZE*2] - dataptr[DCTSIZE*5];
- 235              		.loc 1 187 0 discriminator 3
- 236 015a 8B879C00 		movl	156(%rdi), %eax
- 236      0000
- 237 0160 8D2C02   		leal	(%rdx,%rax), %ebp
- 238              	.LVL41:
- 188:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp3 = dataptr[DCTSIZE*3] + dataptr[DCTSIZE*4];
- 239              		.loc 1 188 0 discriminator 3
- 240 0163 29C2     		subl	%eax, %edx
- 241              	.LVL42:
+ 281              		.loc 1 185 5 is_stmt 1 discriminator 3 view .LVU125
+ 185:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp6 = dataptr[DCTSIZE*1] - dataptr[DCTSIZE*6];
+ 282              		.loc 1 185 40 is_stmt 0 discriminator 3 view .LVU126
+ 283 0149 8B87BC00 		movl	188(%rdi), %eax
+ 283      0000
  189:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp4 = dataptr[DCTSIZE*3] - dataptr[DCTSIZE*4];
- 242              		.loc 1 189 0 discriminator 3
- 243 0165 8B475C   		movl	92(%rdi), %eax
- 244 0168 468D2418 		leal	(%rax,%r11), %r12d
- 245              	.LVL43:
- 208:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp11 = tmp5 + tmp6;
- 246              		.loc 1 208 0 discriminator 3
- 247 016c 4429D8   		subl	%r11d, %eax
- 248              	.LVL44:
- 249 016f 01D0     		addl	%edx, %eax
- 250              	.LVL45:
- 216:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
- 251              		.loc 1 216 0 discriminator 3
- 252 0171 4401C2   		addl	%r8d, %edx
- 253              	.LVL46:
+ 284              		.loc 1 189 40 discriminator 3 view .LVU127
+ 285 014f 448B5F7C 		movl	124(%rdi), %r11d
+ 185:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp6 = dataptr[DCTSIZE*1] - dataptr[DCTSIZE*6];
+ 286              		.loc 1 185 10 discriminator 3 view .LVU128
+ 287 0153 8D0C02   		leal	(%rdx,%rax), %ecx
+ 288              	.LVL38:
+ 186:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp2 = dataptr[DCTSIZE*2] + dataptr[DCTSIZE*5];
+ 289              		.loc 1 186 5 is_stmt 1 discriminator 3 view .LVU129
+ 186:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp2 = dataptr[DCTSIZE*2] + dataptr[DCTSIZE*5];
+ 290              		.loc 1 186 10 is_stmt 0 discriminator 3 view .LVU130
+ 291 0156 29C2     		subl	%eax, %edx
+ 292              	.LVL39:
+ 187:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp5 = dataptr[DCTSIZE*2] - dataptr[DCTSIZE*5];
+ 293              		.loc 1 187 5 is_stmt 1 discriminator 3 view .LVU131
+ 187:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp5 = dataptr[DCTSIZE*2] - dataptr[DCTSIZE*5];
+ 294              		.loc 1 187 40 is_stmt 0 discriminator 3 view .LVU132
+ 295 0158 8B879C00 		movl	156(%rdi), %eax
+ 295      0000
+ 187:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp5 = dataptr[DCTSIZE*2] - dataptr[DCTSIZE*5];
+ 296              		.loc 1 187 10 discriminator 3 view .LVU133
+ 297 015e 418D2C00 		leal	(%r8,%rax), %ebp
+ 298              	.LVL40:
+ 188:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp3 = dataptr[DCTSIZE*3] + dataptr[DCTSIZE*4];
+ 299              		.loc 1 188 5 is_stmt 1 discriminator 3 view .LVU134
+ 188:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp3 = dataptr[DCTSIZE*3] + dataptr[DCTSIZE*4];
+ 300              		.loc 1 188 10 is_stmt 0 discriminator 3 view .LVU135
+ 301 0162 4129C0   		subl	%eax, %r8d
+ 302              	.LVL41:
+ 189:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp4 = dataptr[DCTSIZE*3] - dataptr[DCTSIZE*4];
+ 303              		.loc 1 189 5 is_stmt 1 discriminator 3 view .LVU136
+ 189:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp4 = dataptr[DCTSIZE*3] - dataptr[DCTSIZE*4];
+ 304              		.loc 1 189 19 is_stmt 0 discriminator 3 view .LVU137
+ 305 0165 8B475C   		movl	92(%rdi), %eax
+ 189:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp4 = dataptr[DCTSIZE*3] - dataptr[DCTSIZE*4];
+ 306              		.loc 1 189 10 discriminator 3 view .LVU138
+ 307 0168 468D2418 		leal	(%rax,%r11), %r12d
+ 308              	.LVL42:
+ 190:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 309              		.loc 1 190 5 is_stmt 1 discriminator 3 view .LVU139
  194:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp13 = tmp0 - tmp3;
- 254              		.loc 1 194 0 discriminator 3
- 255 0174 438D1C22 		leal	(%r10,%r12), %ebx
- 256              	.LVL47:
+ 310              		.loc 1 194 5 discriminator 3 view .LVU140
+ 190:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 311              		.loc 1 190 10 is_stmt 0 discriminator 3 view .LVU141
+ 312 016c 4429D8   		subl	%r11d, %eax
+ 313              	.LVL43:
+ 194:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp13 = tmp0 - tmp3;
+ 314              		.loc 1 194 11 discriminator 3 view .LVU142
+ 315 016f 438D1C22 		leal	(%r10,%r12), %ebx
+ 316              	.LVL44:
  195:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp11 = tmp1 + tmp2;
- 257              		.loc 1 195 0 discriminator 3
- 258 0178 4529E2   		subl	%r12d, %r10d
- 259              	.LVL48:
+ 317              		.loc 1 195 5 is_stmt 1 discriminator 3 view .LVU143
+ 195:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp11 = tmp1 + tmp2;
+ 318              		.loc 1 195 11 is_stmt 0 discriminator 3 view .LVU144
+ 319 0173 4529E2   		subl	%r12d, %r10d
+ 320              	.LVL45:
  196:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp12 = tmp1 - tmp2;
- 260              		.loc 1 196 0 discriminator 3
- 261 017b 448D2429 		leal	(%rcx,%rbp), %r12d
- 262              	.LVL49:
- 202:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*2] = tmp13 + z1; /* phase 5 */
- 263              		.loc 1 202 0 discriminator 3
- 264 017f 29E9     		subl	%ebp, %ecx
- 265              	.LVL50:
- 216:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
- 266              		.loc 1 216 0 discriminator 3
- 267 0181 4863D2   		movslq	%edx, %rdx
- 202:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*2] = tmp13 + z1; /* phase 5 */
- 268              		.loc 1 202 0 discriminator 3
- 269 0184 4401D1   		addl	%r10d, %ecx
- 270              	.LVL51:
+ 321              		.loc 1 196 5 is_stmt 1 discriminator 3 view .LVU145
+ 196:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp12 = tmp1 - tmp2;
+ 322              		.loc 1 196 11 is_stmt 0 discriminator 3 view .LVU146
+ 323 0176 448D2429 		leal	(%rcx,%rbp), %r12d
+ 324              	.LVL46:
+ 197:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 325              		.loc 1 197 5 is_stmt 1 discriminator 3 view .LVU147
  199:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*4] = tmp10 - tmp11;
- 271              		.loc 1 199 0 discriminator 3
- 272 0187 468D2C23 		leal	(%rbx,%r12), %r13d
- 200:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
- 273              		.loc 1 200 0 discriminator 3
- 274 018b 4429E3   		subl	%r12d, %ebx
- 275              	.LVL52:
+ 326              		.loc 1 199 5 discriminator 3 view .LVU148
+ 197:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 327              		.loc 1 197 11 is_stmt 0 discriminator 3 view .LVU149
+ 328 017a 29E9     		subl	%ebp, %ecx
+ 329              	.LVL47:
  202:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*2] = tmp13 + z1; /* phase 5 */
- 276              		.loc 1 202 0 discriminator 3
- 277 018e 4863C9   		movslq	%ecx, %rcx
- 200:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
- 278              		.loc 1 200 0 discriminator 3
- 279 0191 895F7C   		movl	%ebx, 124(%rdi)
- 202:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*2] = tmp13 + z1; /* phase 5 */
- 280              		.loc 1 202 0 discriminator 3
- 281 0194 4869C9B5 		imulq	$181, %rcx, %rcx
- 281      000000
+ 330              		.loc 1 202 10 discriminator 3 view .LVU150
+ 331 017c 4401D1   		addl	%r10d, %ecx
+ 332              	.LVL48:
  199:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*4] = tmp10 - tmp11;
- 282              		.loc 1 199 0 discriminator 3
- 283 019b 44896FFC 		movl	%r13d, -4(%rdi)
- 284              	.LVL53:
- 216:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
- 285              		.loc 1 216 0 discriminator 3
- 286 019f 4869D2B5 		imulq	$181, %rdx, %rdx
- 286      000000
+ 333              		.loc 1 199 32 discriminator 3 view .LVU151
+ 334 017f 468D2C23 		leal	(%rbx,%r12), %r13d
+ 200:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 335              		.loc 1 200 32 discriminator 3 view .LVU152
+ 336 0183 4429E3   		subl	%r12d, %ebx
+ 337              	.LVL49:
+ 208:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp11 = tmp5 + tmp6;
+ 338              		.loc 1 208 11 discriminator 3 view .LVU153
+ 339 0186 4401C0   		addl	%r8d, %eax
+ 340              	.LVL50:
  202:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*2] = tmp13 + z1; /* phase 5 */
- 287              		.loc 1 202 0 discriminator 3
- 288 01a6 48C1F908 		sarq	$8, %rcx
- 289              	.LVL54:
+ 341              		.loc 1 202 10 discriminator 3 view .LVU154
+ 342 0189 4863C9   		movslq	%ecx, %rcx
+ 200:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 343              		.loc 1 200 32 discriminator 3 view .LVU155
+ 344 018c 895F7C   		movl	%ebx, 124(%rdi)
+ 202:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*2] = tmp13 + z1; /* phase 5 */
+ 345              		.loc 1 202 10 discriminator 3 view .LVU156
+ 346 018f 4869C9B5 		imulq	$181, %rcx, %rcx
+ 346      000000
+ 199:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*4] = tmp10 - tmp11;
+ 347              		.loc 1 199 32 discriminator 3 view .LVU157
+ 348 0196 44896FFC 		movl	%r13d, -4(%rdi)
+ 349              	.LVL51:
+ 200:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 350              		.loc 1 200 5 is_stmt 1 discriminator 3 view .LVU158
+ 202:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*2] = tmp13 + z1; /* phase 5 */
+ 351              		.loc 1 202 5 discriminator 3 view .LVU159
+ 202:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*2] = tmp13 + z1; /* phase 5 */
+ 352              		.loc 1 202 10 is_stmt 0 discriminator 3 view .LVU160
+ 353 019a 48C1F908 		sarq	$8, %rcx
+ 354              	.LVL52:
  203:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*6] = tmp13 - z1;
- 290              		.loc 1 203 0 discriminator 3
- 291 01aa 418D1C0A 		leal	(%r10,%rcx), %ebx
+ 355              		.loc 1 203 5 is_stmt 1 discriminator 3 view .LVU161
+ 203:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*6] = tmp13 - z1;
+ 356              		.loc 1 203 32 is_stmt 0 discriminator 3 view .LVU162
+ 357 019e 418D1C0A 		leal	(%r10,%rcx), %ebx
  204:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
- 292              		.loc 1 204 0 discriminator 3
- 293 01ae 4129CA   		subl	%ecx, %r10d
- 294              	.LVL55:
+ 358              		.loc 1 204 32 discriminator 3 view .LVU163
+ 359 01a2 4129CA   		subl	%ecx, %r10d
+ 360              	.LVL53:
  213:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z2 = MULTIPLY(tmp10, FIX_0_541196100) + z5; /* c2-c6 */
- 295              		.loc 1 213 0 discriminator 3
- 296 01b1 89C1     		movl	%eax, %ecx
- 297              	.LVL56:
+ 361              		.loc 1 213 10 discriminator 3 view .LVU164
+ 362 01a5 89C1     		movl	%eax, %ecx
+ 363              	.LVL54:
+ 214:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z4 = MULTIPLY(tmp12, FIX_1_306562965) + z5; /* c2+c6 */
+ 364              		.loc 1 214 10 discriminator 3 view .LVU165
+ 365 01a7 4898     		cltq
  204:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
- 298              		.loc 1 204 0 discriminator 3
- 299 01b3 448997BC 		movl	%r10d, 188(%rdi)
- 299      000000
- 300              	.LVL57:
+ 366              		.loc 1 204 32 discriminator 3 view .LVU166
+ 367 01a9 448997BC 		movl	%r10d, 188(%rdi)
+ 367      000000
+ 368              	.LVL55:
+ 214:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z4 = MULTIPLY(tmp12, FIX_1_306562965) + z5; /* c2+c6 */
+ 369              		.loc 1 214 10 discriminator 3 view .LVU167
+ 370 01b0 4869C08B 		imulq	$139, %rax, %rax
+ 370      000000
  210:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
- 301              		.loc 1 210 0 discriminator 3
- 302 01ba 468D1406 		leal	(%rsi,%r8), %r10d
- 303              	.LVL58:
- 214:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z4 = MULTIPLY(tmp12, FIX_1_306562965) + z5; /* c2+c6 */
- 304              		.loc 1 214 0 discriminator 3
- 305 01be 4898     		cltq
- 306              	.LVL59:
- 307 01c0 4869C08B 		imulq	$139, %rax, %rax
- 307      000000
+ 371              		.loc 1 210 11 discriminator 3 view .LVU168
+ 372 01b7 448D1416 		leal	(%rsi,%rdx), %r10d
+ 209:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp12 = tmp6 + tmp7;
+ 373              		.loc 1 209 11 discriminator 3 view .LVU169
+ 374 01bb 4401C2   		addl	%r8d, %edx
+ 375              	.LVL56:
+ 213:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z2 = MULTIPLY(tmp10, FIX_0_541196100) + z5; /* c2-c6 */
+ 376              		.loc 1 213 10 discriminator 3 view .LVU170
+ 377 01be 4429D1   		subl	%r10d, %ecx
  216:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
- 308              		.loc 1 216 0 discriminator 3
- 309 01c7 48C1FA08 		sarq	$8, %rdx
+ 378              		.loc 1 216 10 discriminator 3 view .LVU171
+ 379 01c1 4863D2   		movslq	%edx, %rdx
+ 215:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z3 = MULTIPLY(tmp11, FIX_0_707106781); /* c4 */
+ 380              		.loc 1 215 10 discriminator 3 view .LVU172
+ 381 01c4 4D63D2   		movslq	%r10d, %r10
  203:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*6] = tmp13 - z1;
- 310              		.loc 1 203 0 discriminator 3
- 311 01cb 895F3C   		movl	%ebx, 60(%rdi)
- 312              	.LVL60:
+ 382              		.loc 1 203 32 discriminator 3 view .LVU173
+ 383 01c7 895F3C   		movl	%ebx, 60(%rdi)
+ 204:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 384              		.loc 1 204 5 is_stmt 1 discriminator 3 view .LVU174
+ 208:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp11 = tmp5 + tmp6;
+ 385              		.loc 1 208 5 discriminator 3 view .LVU175
+ 209:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp12 = tmp6 + tmp7;
+ 386              		.loc 1 209 5 discriminator 3 view .LVU176
+ 387              	.LVL57:
+ 210:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 388              		.loc 1 210 5 discriminator 3 view .LVU177
  213:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z2 = MULTIPLY(tmp10, FIX_0_541196100) + z5; /* c2-c6 */
- 313              		.loc 1 213 0 discriminator 3
- 314 01ce 4429D1   		subl	%r10d, %ecx
- 315              	.LVL61:
+ 389              		.loc 1 213 5 discriminator 3 view .LVU178
+ 213:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z2 = MULTIPLY(tmp10, FIX_0_541196100) + z5; /* c2-c6 */
+ 390              		.loc 1 213 10 is_stmt 0 discriminator 3 view .LVU179
+ 391 01ca 4863C9   		movslq	%ecx, %rcx
  215:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z3 = MULTIPLY(tmp11, FIX_0_707106781); /* c4 */
- 316              		.loc 1 215 0 discriminator 3
- 317 01d1 4D63D2   		movslq	%r10d, %r10
+ 392              		.loc 1 215 10 discriminator 3 view .LVU180
+ 393 01cd 4D69D24E 		imulq	$334, %r10, %r10
+ 393      010000
+ 213:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z2 = MULTIPLY(tmp10, FIX_0_541196100) + z5; /* c2-c6 */
+ 394              		.loc 1 213 10 discriminator 3 view .LVU181
+ 395 01d4 486BC962 		imulq	$98, %rcx, %rcx
+ 214:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z4 = MULTIPLY(tmp12, FIX_1_306562965) + z5; /* c2+c6 */
+ 396              		.loc 1 214 10 discriminator 3 view .LVU182
+ 397 01d8 48C1F808 		sarq	$8, %rax
+ 216:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 398              		.loc 1 216 10 discriminator 3 view .LVU183
+ 399 01dc 4869D2B5 		imulq	$181, %rdx, %rdx
+ 399      000000
+ 215:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z3 = MULTIPLY(tmp11, FIX_0_707106781); /* c4 */
+ 400              		.loc 1 215 10 discriminator 3 view .LVU184
+ 401 01e3 49C1FA08 		sarq	$8, %r10
+ 213:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z2 = MULTIPLY(tmp10, FIX_0_541196100) + z5; /* c2-c6 */
+ 402              		.loc 1 213 10 discriminator 3 view .LVU185
+ 403 01e7 48C1F908 		sarq	$8, %rcx
+ 404              	.LVL58:
+ 214:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z4 = MULTIPLY(tmp12, FIX_1_306562965) + z5; /* c2+c6 */
+ 405              		.loc 1 214 5 is_stmt 1 discriminator 3 view .LVU186
+ 216:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 406              		.loc 1 216 10 is_stmt 0 discriminator 3 view .LVU187
+ 407 01eb 48C1FA08 		sarq	$8, %rdx
+ 214:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z4 = MULTIPLY(tmp12, FIX_1_306562965) + z5; /* c2+c6 */
+ 408              		.loc 1 214 8 discriminator 3 view .LVU188
+ 409 01ef 01C8     		addl	%ecx, %eax
+ 410              	.LVL59:
+ 215:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z3 = MULTIPLY(tmp11, FIX_0_707106781); /* c4 */
+ 411              		.loc 1 215 5 is_stmt 1 discriminator 3 view .LVU189
+ 215:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z3 = MULTIPLY(tmp11, FIX_0_707106781); /* c4 */
+ 412              		.loc 1 215 8 is_stmt 0 discriminator 3 view .LVU190
+ 413 01f1 4401D1   		addl	%r10d, %ecx
+ 414              	.LVL60:
+ 216:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 415              		.loc 1 216 5 is_stmt 1 discriminator 3 view .LVU191
  218:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z13 = tmp7 - z3;
- 318              		.loc 1 218 0 discriminator 3
- 319 01d4 448D0416 		leal	(%rsi,%rdx), %r8d
- 320              	.LVL62:
- 213:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z2 = MULTIPLY(tmp10, FIX_0_541196100) + z5; /* c2-c6 */
- 321              		.loc 1 213 0 discriminator 3
- 322 01d8 4863C9   		movslq	%ecx, %rcx
+ 416              		.loc 1 218 5 discriminator 3 view .LVU192
+ 218:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z13 = tmp7 - z3;
+ 417              		.loc 1 218 9 is_stmt 0 discriminator 3 view .LVU193
+ 418 01f4 448D0416 		leal	(%rsi,%rdx), %r8d
+ 419              	.LVL61:
  219:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
- 323              		.loc 1 219 0 discriminator 3
- 324 01db 29D6     		subl	%edx, %esi
- 325              	.LVL63:
- 213:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z2 = MULTIPLY(tmp10, FIX_0_541196100) + z5; /* c2-c6 */
- 326              		.loc 1 213 0 discriminator 3
- 327 01dd 486BC962 		imulq	$98, %rcx, %rcx
- 214:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z4 = MULTIPLY(tmp12, FIX_1_306562965) + z5; /* c2+c6 */
- 328              		.loc 1 214 0 discriminator 3
- 329 01e1 48C1F808 		sarq	$8, %rax
- 215:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z3 = MULTIPLY(tmp11, FIX_0_707106781); /* c4 */
- 330              		.loc 1 215 0 discriminator 3
- 331 01e5 4D69D24E 		imulq	$334, %r10, %r10
- 331      010000
- 332              	.LVL64:
- 213:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z2 = MULTIPLY(tmp10, FIX_0_541196100) + z5; /* c2-c6 */
- 333              		.loc 1 213 0 discriminator 3
- 334 01ec 48C1F908 		sarq	$8, %rcx
- 335              	.LVL65:
- 215:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z3 = MULTIPLY(tmp11, FIX_0_707106781); /* c4 */
- 336              		.loc 1 215 0 discriminator 3
- 337 01f0 49C1FA08 		sarq	$8, %r10
- 214:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z4 = MULTIPLY(tmp12, FIX_1_306562965) + z5; /* c2+c6 */
- 338              		.loc 1 214 0 discriminator 3
- 339 01f4 01C8     		addl	%ecx, %eax
- 340              	.LVL66:
- 215:fltk-1.3.4-1/jpeg/jfdctfst.c ****     z3 = MULTIPLY(tmp11, FIX_0_707106781); /* c4 */
- 341              		.loc 1 215 0 discriminator 3
- 342 01f6 4401D1   		addl	%r10d, %ecx
- 343              	.LVL67:
+ 420              		.loc 1 219 5 is_stmt 1 discriminator 3 view .LVU194
+ 219:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 421              		.loc 1 219 9 is_stmt 0 discriminator 3 view .LVU195
+ 422 01f8 29D6     		subl	%edx, %esi
+ 423              	.LVL62:
  221:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*3] = z13 - z2;
- 344              		.loc 1 221 0 discriminator 3
- 345 01f9 8D1430   		leal	(%rax,%rsi), %edx
- 346              	.LVL68:
- 222:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*1] = z11 + z4;
- 347              		.loc 1 222 0 discriminator 3
- 348 01fc 29C6     		subl	%eax, %esi
- 349              	.LVL69:
- 223:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*7] = z11 - z4;
- 350              		.loc 1 223 0 discriminator 3
- 351 01fe 428D0401 		leal	(%rcx,%r8), %eax
- 352              	.LVL70:
- 224:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
- 353              		.loc 1 224 0 discriminator 3
- 354 0202 4129C8   		subl	%ecx, %r8d
- 355              	.LVL71:
- 222:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*1] = z11 + z4;
- 356              		.loc 1 222 0 discriminator 3
- 357 0205 89775C   		movl	%esi, 92(%rdi)
- 358              	.LVL72:
+ 424              		.loc 1 221 5 is_stmt 1 discriminator 3 view .LVU196
  221:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*3] = z13 - z2;
- 359              		.loc 1 221 0 discriminator 3
- 360 0208 89979C00 		movl	%edx, 156(%rdi)
- 360      0000
- 224:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
- 361              		.loc 1 224 0 discriminator 3
- 362 020e 448987DC 		movl	%r8d, 220(%rdi)
- 362      000000
+ 425              		.loc 1 221 30 is_stmt 0 discriminator 3 view .LVU197
+ 426 01fa 8D1430   		leal	(%rax,%rsi), %edx
+ 427              	.LVL63:
+ 222:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*1] = z11 + z4;
+ 428              		.loc 1 222 30 discriminator 3 view .LVU198
+ 429 01fd 29C6     		subl	%eax, %esi
+ 430              	.LVL64:
  223:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*7] = z11 - z4;
- 363              		.loc 1 223 0 discriminator 3
- 364 0215 89471C   		movl	%eax, 28(%rdi)
- 365              	.LVL73:
+ 431              		.loc 1 223 30 discriminator 3 view .LVU199
+ 432 01ff 428D0401 		leal	(%rcx,%r8), %eax
+ 433              	.LVL65:
+ 224:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 434              		.loc 1 224 30 discriminator 3 view .LVU200
+ 435 0203 4129C8   		subl	%ecx, %r8d
+ 436              	.LVL66:
+ 221:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*3] = z13 - z2;
+ 437              		.loc 1 221 30 discriminator 3 view .LVU201
+ 438 0206 89979C00 		movl	%edx, 156(%rdi)
+ 438      0000
+ 222:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*1] = z11 + z4;
+ 439              		.loc 1 222 5 is_stmt 1 discriminator 3 view .LVU202
+ 222:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*1] = z11 + z4;
+ 440              		.loc 1 222 30 is_stmt 0 discriminator 3 view .LVU203
+ 441 020c 89775C   		movl	%esi, 92(%rdi)
+ 442              	.LVL67:
+ 223:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*7] = z11 - z4;
+ 443              		.loc 1 223 5 is_stmt 1 discriminator 3 view .LVU204
+ 223:fltk-1.3.4-1/jpeg/jfdctfst.c ****     dataptr[DCTSIZE*7] = z11 - z4;
+ 444              		.loc 1 223 30 is_stmt 0 discriminator 3 view .LVU205
+ 445 020f 89471C   		movl	%eax, 28(%rdi)
+ 224:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 446              		.loc 1 224 5 is_stmt 1 discriminator 3 view .LVU206
+ 224:fltk-1.3.4-1/jpeg/jfdctfst.c **** 
+ 447              		.loc 1 224 30 is_stmt 0 discriminator 3 view .LVU207
+ 448 0212 448987DC 		movl	%r8d, 220(%rdi)
+ 448      000000
+ 449              		.loc 1 226 5 is_stmt 1 discriminator 3 view .LVU208
+ 450              	.LVL68:
  182:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp0 = dataptr[DCTSIZE*0] + dataptr[DCTSIZE*7];
- 366              		.loc 1 182 0 discriminator 3
- 367 0218 4C39CF   		cmpq	%r9, %rdi
- 368 021b 0F850FFF 		jne	.L3
- 368      FFFF
+ 451              		.loc 1 182 35 discriminator 3 view .LVU209
+ 182:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp0 = dataptr[DCTSIZE*0] + dataptr[DCTSIZE*7];
+ 452              		.loc 1 182 25 discriminator 3 view .LVU210
+ 182:fltk-1.3.4-1/jpeg/jfdctfst.c ****     tmp0 = dataptr[DCTSIZE*0] + dataptr[DCTSIZE*7];
+ 453              		.loc 1 182 3 is_stmt 0 discriminator 3 view .LVU211
+ 454 0219 4C39CF   		cmpq	%r9, %rdi
+ 455 021c 0F850EFF 		jne	.L3
+ 455      FFFF
  227:fltk-1.3.4-1/jpeg/jfdctfst.c ****   }
  228:fltk-1.3.4-1/jpeg/jfdctfst.c **** }
- 369              		.loc 1 228 0
- 370 0221 5B       		popq	%rbx
- 371              		.cfi_def_cfa_offset 48
- 372              	.LVL74:
- 373 0222 5D       		popq	%rbp
- 374              		.cfi_def_cfa_offset 40
- 375              	.LVL75:
- 376 0223 415C     		popq	%r12
- 377              		.cfi_def_cfa_offset 32
- 378 0225 415D     		popq	%r13
- 379              		.cfi_def_cfa_offset 24
- 380 0227 415E     		popq	%r14
- 381              		.cfi_def_cfa_offset 16
- 382 0229 415F     		popq	%r15
- 383              		.cfi_def_cfa_offset 8
- 384 022b C3       		ret
- 385              		.cfi_endproc
- 386              	.LFE61:
- 388              		.section	.text.unlikely.jpeg_fdct_ifast
- 389              	.LCOLDE0:
- 390              		.section	.text.jpeg_fdct_ifast
- 391              	.LHOTE0:
- 392              		.text
- 393              	.Letext0:
- 394              		.section	.text.unlikely.jpeg_fdct_ifast
- 395              	.Letext_cold0:
- 396              		.file 2 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
- 397              		.file 3 "/usr/include/x86_64-linux-gnu/bits/types.h"
- 398              		.file 4 "/usr/include/libio.h"
- 399              		.file 5 "fltk-1.3.4-1/jpeg/jmorecfg.h"
- 400              		.file 6 "fltk-1.3.4-1/jpeg/jpeglib.h"
- 401              		.file 7 "fltk-1.3.4-1/jpeg/jdct.h"
- 402              		.file 8 "/usr/include/stdio.h"
+ 456              		.loc 1 228 1 view .LVU212
+ 457 0222 5B       		popq	%rbx
+ 458              		.cfi_def_cfa_offset 48
+ 459 0223 5D       		popq	%rbp
+ 460              		.cfi_def_cfa_offset 40
+ 461              	.LVL69:
+ 462              		.loc 1 228 1 view .LVU213
+ 463 0224 415C     		popq	%r12
+ 464              		.cfi_def_cfa_offset 32
+ 465 0226 415D     		popq	%r13
+ 466              		.cfi_def_cfa_offset 24
+ 467 0228 415E     		popq	%r14
+ 468              		.cfi_def_cfa_offset 16
+ 469 022a 415F     		popq	%r15
+ 470              		.cfi_def_cfa_offset 8
+ 471              	.LVL70:
+ 472              		.loc 1 228 1 view .LVU214
+ 473 022c C3       		ret
+ 474              		.cfi_endproc
+ 475              	.LFE51:
+ 477              		.text
+ 478              	.Letext0:
+ 479              		.file 2 "/usr/lib/gcc/x86_64-linux-gnu/9/include/stddef.h"
+ 480              		.file 3 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 481              		.file 4 "/usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h"
+ 482              		.file 5 "/usr/include/x86_64-linux-gnu/bits/types/FILE.h"
+ 483              		.file 6 "/usr/include/stdio.h"
+ 484              		.file 7 "/usr/include/x86_64-linux-gnu/bits/sys_errlist.h"
+ 485              		.file 8 "fltk-1.3.4-1/jpeg/jmorecfg.h"
+ 486              		.file 9 "fltk-1.3.4-1/jpeg/jpeglib.h"
+ 487              		.file 10 "fltk-1.3.4-1/jpeg/jpegint.h"
+ 488              		.file 11 "fltk-1.3.4-1/jpeg/jdct.h"
+ 8347              		.section	.note.gnu.property,"a"
+ 8348              		.align 8
+ 8349 0000 04000000 		.long	 1f - 0f
+ 8350 0004 10000000 		.long	 4f - 1f
+ 8351 0008 05000000 		.long	 5
+ 8352              	0:
+ 8353 000c 474E5500 		.string	 "GNU"
+ 8354              	1:
+ 8355              		.align 8
+ 8356 0010 020000C0 		.long	 0xc0000002
+ 8357 0014 04000000 		.long	 3f - 2f
+ 8358              	2:
+ 8359 0018 03000000 		.long	 0x3
+ 8360              	3:
+ 8361 001c 00000000 		.align 8
+ 8362              	4:
 DEFINED SYMBOLS
                             *ABS*:0000000000000000 jfdctfst.c
-     /tmp/ccncnnus.s:14     .text.jpeg_fdct_ifast:0000000000000000 jpeg_fdct_ifast
-                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
-                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+     /tmp/ccIaxPr1.s:8      .text.jpeg_fdct_ifast:0000000000000000 jpeg_fdct_ifast
+                           .group:0000000000000000 wm4.0.a6b23a418548ac0bda5d8549c4a2ec91
+                           .group:0000000000000000 wm4.stdcpredef.h.19.8dc41bed5d9037ff9622e015fb5f0ce3
                            .group:0000000000000000 wm4.jconfig.h.10.247fc3ff67998f3074970b1373c70333
-                           .group:0000000000000000 wm4.features.h.19.24da27e0a4d0d521fd057013d982b8b5
-                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
-                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
-                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
-                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
-                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
-                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
-                           .group:0000000000000000 wm4.waitflags.h.25.e401b8bcfee800b540b27abd7cc78de9
+                           .group:0000000000000000 wm4.features.h.19.5b5f5a19624a0527f479fdc52d54808f
+                           .group:0000000000000000 wm4.cdefs.h.19.98d80eddbb3f64f4f30cd9aee9c5593c
+                           .group:0000000000000000 wm4.wordsize.h.4.baf119258a1e53d8dba67ceac44ab6bc
+                           .group:0000000000000000 wm4.cdefs.h.475.fb75d2e4416aa349344e6f45f683bf28
+                           .group:0000000000000000 wm4.stubs64.h.10.6ce4c34010988db072c080326a6b6319
+                           .group:0000000000000000 wm4.libcheaderstart.h.37.d9274df4cc0172452960ad9644fa5579
+                           .group:0000000000000000 wm4.stdlib.h.28.2cffa49d94c5d85f4538f55f7b59771d
+                           .group:0000000000000000 wm4.stddef.h.181.13772e73e5434e8cc4fafaaddad2b5da
+                           .group:0000000000000000 wm4.waitflags.h.25.41934de4af99038521c2782f418699b1
                            .group:0000000000000000 wm4.waitstatus.h.28.93f167f49d64e2b9b99f98d1162a93bf
-                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
-                           .group:0000000000000000 wm4.endian.h.41.24cced64aef71195a51d4daa8e4f4a95
-                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
-                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
-                           .group:0000000000000000 wm4.byteswap.h.38.11ee5fdc0f6cc53a16c505b9233cecef
-                           .group:0000000000000000 wm4.endian.h.63.97272d7c64d5db8020003b32e9289502
-                           .group:0000000000000000 wm4.waitstatus.h.99.408b6270fa6eb71377201a241ef15f79
-                           .group:0000000000000000 wm4.stdlib.h.50.84aeca2ac6f37d40e1e9b3cef757ba2d
-                           .group:0000000000000000 wm4.types.h.23.f6dcbaa72f8f71361acef09804d45a5e
-                           .group:0000000000000000 wm4.time.h.53.beb46e650cd406cb917b6b96b45e640a
-                           .group:0000000000000000 wm4.stddef.h.238.847b6907dabda77be90a9ab7ad789e2e
-                           .group:0000000000000000 wm4.types.h.187.bd5a05039b505b3620e6973f1b2ffeb1
+                           .group:0000000000000000 wm4.stdlib.h.43.9fa4f727a2f1cb8d2450a574c9195553
+                           .group:0000000000000000 wm4.floatn.h.20.80c7cf8a8dfad237004b28d051d5afda
+                           .group:0000000000000000 wm4.floatncommon.h.34.7e1840d7dfb19e9bdb51aeb077d76637
+                           .group:0000000000000000 wm4.stdlib.h.71.2927e068ec678159b4f68ec2f089f7e6
+                           .group:0000000000000000 wm4.types.h.109.56eb9ae966b255288cc544f18746a7ff
+                           .group:0000000000000000 wm4.typesizes.h.24.2c64f817c0dc4b6fb2a2c619d717be26
+                           .group:0000000000000000 wm4.time64.h.24.a8166ae916ec910dab0d8987098d42ee
+                           .group:0000000000000000 wm4.types.h.40.18f72bab8242c2bb4c532a2aa95b5f00
+                           .group:0000000000000000 wm4.stddef.h.231.0adce5c8c1fd8096aaff50981b3d1f0f
+                           .group:0000000000000000 wm4.endian.h.20.efabd1018df5d7b4052c27dc6bdd5ce5
+                           .group:0000000000000000 wm4.endianness.h.2.2c6a211f7909f3af5e9e9cfa3b6b63c8
+                           .group:0000000000000000 wm4.endian.h.40.9e5d395adda2f4eb53ae69b69b664084
+                           .group:0000000000000000 wm4.endian.h.27.4c4f94262c4eaee2982fe00ed1b4f173
+                           .group:0000000000000000 wm4.byteswap.h.24.5363c019348146aada5aeadf51456576
+                           .group:0000000000000000 wm4.endian.h.39.30a606dbd99b6c3df61c1f06dbdabd4e
                            .group:0000000000000000 wm4.select.h.28.eb2f3debdbcffd1442ebddaebc4fb6ff
-                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
-                           .group:0000000000000000 wm4.select.h.36.f76c3b9e55c871743863013cc4cc14c9
-                           .group:0000000000000000 wm4.time.h.66.e70ce69790c975f0efb369340c432e0b
-                           .group:0000000000000000 wm4.time.h.25.ae5284cdff565e87a9198d819340325d
-                           .group:0000000000000000 wm4.select.h.49.e9d2041e5035cc68ebd1a20f7dbc8514
+                           .group:0000000000000000 wm4.__sigset_t.h.2.6b1ab6ff3d7b8fd9c0c42b0d80afbd80
+                           .group:0000000000000000 wm4.select.h.44.887a4ff60aa97fcd9c1be017735e1675
                            .group:0000000000000000 wm4.select2.h.27.f95f2ab0ffee66dc1b6575014894b21a
-                           .group:0000000000000000 wm4.sysmacros.h.20.8a0c33ff175cd9b434a86c0aaa36f0a2
-                           .group:0000000000000000 wm4.types.h.229.67b3f66bd74b06b451caec392a72a945
-                           .group:0000000000000000 wm4.pthreadtypes.h.25.6892b1493314fcf446bbc76e7362acba
+                           .group:0000000000000000 wm4.types.h.186.489a4ed8f2d29cd358843490f54ddea5
+                           .group:0000000000000000 wm4.pthreadtypesarch.h.25.6063cba99664c916e22d3a912bcc348a
+                           .group:0000000000000000 wm4.struct_mutex.h.20.ed51f515172b9be99e450ba83eb5dd99
+                           .group:0000000000000000 wm4.struct_rwlock.h.21.0254880f2904e3833fb8ae683e0f0330
                            .group:0000000000000000 wm4.alloca.h.19.edefa922a76c1cbaaf1e416903ba2d1c
                            .group:0000000000000000 wm4.alloca.h.29.156e12058824cc23d961c4d3b13031f6
-                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
-                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
-                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
-                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
-                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
-                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
-                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdio.h.24.5c1b97eef3c86b7a2549420f69f4f128
+                           .group:0000000000000000 wm4.libcheaderstart.h.31.87b3c285aeba93fe355ad19123070832
+                           .group:0000000000000000 wm4.stdio.h.31.e39a94e203ad4e1d978c0fc68ce016ee
+                           .group:0000000000000000 wm4.stddef.h.231.8136eebbab3406dbf57a7ec475dd5d83
                            .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
-                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
-                           .group:0000000000000000 wm4.stdio.h.80.17b7dd1ca72d8a61987532cb1d80194a
-                           .group:0000000000000000 wm4.stdio_lim.h.23.557290a6cddeba0587f574f29e3a5fb9
-                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
-                           .group:0000000000000000 wm4.stdio.h.26.cae64f7ada9bb8327a89dba6a5e93655
-                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
-                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
-                           .group:0000000000000000 wm4.string2.h.45.00535b99420fc3014c2da41d6645330d
-                           .group:0000000000000000 wm4.string3.h.31.0c4b9301b754a2db05eaafef869657d2
+                           .group:0000000000000000 wm4.struct_FILE.h.19.0888ac70396abe1031c03d393554032f
+                           .group:0000000000000000 wm4.stdio.h.53.139e45cf040c0964b2932c0c1bdaf6b2
+                           .group:0000000000000000 wm4.stdio_lim.h.19.e4b00b560d878dcfbc6635b3406640c5
+                           .group:0000000000000000 wm4.stdio.h.141.d7a290e19ca077c9e4aa7c43ede17a73
+                           .group:0000000000000000 wm4.stdio.h.20.b0caa08e5723aa5941367be0e5d2ec59
+                           .group:0000000000000000 wm4.stdio2.h.20.f45a0373b68e1296c4aa8cc09d66a9df
+                           .group:0000000000000000 wm4.string.h.23.93403f89af7dba8212345449bb14b09d
+                           .group:0000000000000000 wm4.string.h.31.e39a94e203ad4e1d978c0fc68ce016ee
+                           .group:0000000000000000 wm4.strings.h.19.a259f126920b1bb5ef76bc62b3984a3c
                            .group:0000000000000000 wm4.jinclude.h.67.b19f941ec97c4845fa4609292c7e2db4
                            .group:0000000000000000 wm4.jmorecfg.h.33.3b4c5f9cc07b3737823b06caf24d5b05
                            .group:0000000000000000 wm4.jpeglib.h.40.4f111c27252a38df39328d65454e82f4

@@ -1,23 +1,13 @@
    1              		.file	"pngwio.c"
    2              		.text
    3              	.Ltext0:
-   4              		.section	.rodata.str1.1,"aMS",@progbits,1
-   5              	.LC0:
-   6 0000 57726974 		.string	"Write Error"
-   6      65204572 
-   6      726F7200 
-   7              		.section	.text.unlikely.png_default_write_data,"ax",@progbits
-   8              	.LCOLDB1:
-   9              		.section	.text.png_default_write_data,"ax",@progbits
-  10              	.LHOTB1:
-  11              		.p2align 4,,15
-  12              		.section	.text.unlikely.png_default_write_data
-  13              	.Ltext_cold0:
-  14              		.section	.text.png_default_write_data
-  15              		.globl	png_default_write_data
-  17              	png_default_write_data:
-  18              	.LFB57:
-  19              		.file 1 "fltk-1.3.4-1/png/pngwio.c"
+   4              		.section	.text.png_default_flush,"ax",@progbits
+   5              		.p2align 4
+   6              		.globl	png_default_flush
+   8              	png_default_flush:
+   9              	.LVL0:
+  10              	.LFB44:
+  11              		.file 1 "fltk-1.3.4-1/png/pngwio.c"
    1:fltk-1.3.4-1/png/pngwio.c **** 
    2:fltk-1.3.4-1/png/pngwio.c **** /* pngwio.c - functions for data output
    3:fltk-1.3.4-1/png/pngwio.c ****  *
@@ -70,92 +60,16 @@
   50:fltk-1.3.4-1/png/pngwio.c **** void PNGCBAPI
   51:fltk-1.3.4-1/png/pngwio.c **** png_default_write_data(png_structp png_ptr, png_bytep data, png_size_t length)
   52:fltk-1.3.4-1/png/pngwio.c **** {
-  20              		.loc 1 52 0
-  21              		.cfi_startproc
-  22              	.LVL0:
   53:fltk-1.3.4-1/png/pngwio.c ****    png_size_t check;
   54:fltk-1.3.4-1/png/pngwio.c **** 
   55:fltk-1.3.4-1/png/pngwio.c ****    if (png_ptr == NULL)
-  23              		.loc 1 55 0
-  24 0000 4885FF   		testq	%rdi, %rdi
-  25 0003 742E     		je	.L8
-  52:fltk-1.3.4-1/png/pngwio.c ****    png_size_t check;
-  26              		.loc 1 52 0
-  27 0005 55       		pushq	%rbp
-  28              		.cfi_def_cfa_offset 16
-  29              		.cfi_offset 6, -16
-  30 0006 53       		pushq	%rbx
-  31              		.cfi_def_cfa_offset 24
-  32              		.cfi_offset 3, -24
-  33 0007 4889F8   		movq	%rdi, %rax
-  34 000a 4889D5   		movq	%rdx, %rbp
-  35 000d 4889F7   		movq	%rsi, %rdi
-  36              	.LVL1:
   56:fltk-1.3.4-1/png/pngwio.c ****       return;
   57:fltk-1.3.4-1/png/pngwio.c **** 
   58:fltk-1.3.4-1/png/pngwio.c ****    check = fwrite(data, 1, length, (png_FILE_p)(png_ptr->io_ptr));
-  37              		.loc 1 58 0
-  38 0010 BE010000 		movl	$1, %esi
-  38      00
-  39              	.LVL2:
-  52:fltk-1.3.4-1/png/pngwio.c ****    png_size_t check;
-  40              		.loc 1 52 0
-  41 0015 4883EC08 		subq	$8, %rsp
-  42              		.cfi_def_cfa_offset 32
-  43              		.loc 1 58 0
-  44 0019 488B8808 		movq	264(%rax), %rcx
-  44      010000
-  45 0020 4889C3   		movq	%rax, %rbx
-  46 0023 E8000000 		call	fwrite
-  46      00
-  47              	.LVL3:
   59:fltk-1.3.4-1/png/pngwio.c **** 
   60:fltk-1.3.4-1/png/pngwio.c ****    if (check != length)
-  48              		.loc 1 60 0
-  49 0028 4839C5   		cmpq	%rax, %rbp
-  50 002b 7508     		jne	.L10
   61:fltk-1.3.4-1/png/pngwio.c ****       png_error(png_ptr, "Write Error");
   62:fltk-1.3.4-1/png/pngwio.c **** }
-  51              		.loc 1 62 0
-  52 002d 4883C408 		addq	$8, %rsp
-  53              		.cfi_def_cfa_offset 24
-  54 0031 5B       		popq	%rbx
-  55              		.cfi_restore 3
-  56              		.cfi_def_cfa_offset 16
-  57              	.LVL4:
-  58 0032 5D       		popq	%rbp
-  59              		.cfi_restore 6
-  60              		.cfi_def_cfa_offset 8
-  61              	.LVL5:
-  62              	.L8:
-  63 0033 F3C3     		rep ret
-  64              	.LVL6:
-  65              	.L10:
-  66              		.cfi_def_cfa_offset 32
-  67              		.cfi_offset 3, -24
-  68              		.cfi_offset 6, -16
-  61:fltk-1.3.4-1/png/pngwio.c ****       png_error(png_ptr, "Write Error");
-  69              		.loc 1 61 0
-  70 0035 BE000000 		movl	$.LC0, %esi
-  70      00
-  71 003a 4889DF   		movq	%rbx, %rdi
-  72 003d E8000000 		call	png_error
-  72      00
-  73              	.LVL7:
-  74              		.cfi_endproc
-  75              	.LFE57:
-  77              		.section	.text.unlikely.png_default_write_data
-  78              	.LCOLDE1:
-  79              		.section	.text.png_default_write_data
-  80              	.LHOTE1:
-  81              		.section	.text.unlikely.png_default_flush,"ax",@progbits
-  82              	.LCOLDB2:
-  83              		.section	.text.png_default_flush,"ax",@progbits
-  84              	.LHOTB2:
-  85              		.p2align 4,,15
-  86              		.globl	png_default_flush
-  88              	png_default_flush:
-  89              	.LFB59:
   63:fltk-1.3.4-1/png/pngwio.c **** #endif
   64:fltk-1.3.4-1/png/pngwio.c **** 
   65:fltk-1.3.4-1/png/pngwio.c **** /* This function is called to output any data pending writing (normally
@@ -174,135 +88,258 @@
   78:fltk-1.3.4-1/png/pngwio.c **** void PNGCBAPI
   79:fltk-1.3.4-1/png/pngwio.c **** png_default_flush(png_structp png_ptr)
   80:fltk-1.3.4-1/png/pngwio.c **** {
-  90              		.loc 1 80 0
-  91              		.cfi_startproc
-  92              	.LVL8:
+  12              		.loc 1 80 1 view -0
+  13              		.cfi_startproc
+  14              		.loc 1 80 1 is_stmt 0 view .LVU1
+  15 0000 F30F1EFA 		endbr64
   81:fltk-1.3.4-1/png/pngwio.c ****    png_FILE_p io_ptr;
+  16              		.loc 1 81 4 is_stmt 1 view .LVU2
   82:fltk-1.3.4-1/png/pngwio.c **** 
   83:fltk-1.3.4-1/png/pngwio.c ****    if (png_ptr == NULL)
-  93              		.loc 1 83 0
-  94 0000 4885FF   		testq	%rdi, %rdi
-  95 0003 7413     		je	.L11
-  96              	.LVL9:
+  17              		.loc 1 83 4 view .LVU3
+  18              		.loc 1 83 7 is_stmt 0 view .LVU4
+  19 0004 4885FF   		testq	%rdi, %rdi
+  20 0007 740F     		je	.L1
   84:fltk-1.3.4-1/png/pngwio.c ****       return;
   85:fltk-1.3.4-1/png/pngwio.c **** 
   86:fltk-1.3.4-1/png/pngwio.c ****    io_ptr = png_voidcast(png_FILE_p, (png_ptr->io_ptr));
+  21              		.loc 1 86 4 is_stmt 1 view .LVU5
+  22              	.LVL1:
   87:fltk-1.3.4-1/png/pngwio.c ****    fflush(io_ptr);
-  97              		.loc 1 87 0
-  98 0005 488BBF08 		movq	264(%rdi), %rdi
-  98      010000
-  99              	.LVL10:
- 100 000c E9000000 		jmp	fflush
- 100      00
- 101              	.LVL11:
- 102              		.p2align 4,,10
- 103 0011 0F1F8000 		.p2align 3
- 103      000000
- 104              	.L11:
- 105 0018 F3C3     		rep ret
- 106              		.cfi_endproc
- 107              	.LFE59:
- 109              		.section	.text.unlikely.png_default_flush
- 110              	.LCOLDE2:
- 111              		.section	.text.png_default_flush
- 112              	.LHOTE2:
- 113              		.section	.rodata.str1.1
- 114              	.LC3:
- 115 000c 43616C6C 		.string	"Call to NULL write function"
- 115      20746F20 
- 115      4E554C4C 
- 115      20777269 
- 115      74652066 
- 116              		.section	.text.unlikely.png_write_data,"ax",@progbits
- 117              	.LCOLDB4:
- 118              		.section	.text.png_write_data,"ax",@progbits
- 119              	.LHOTB4:
- 120              		.p2align 4,,15
- 121              		.globl	png_write_data
- 123              	png_write_data:
- 124              	.LFB56:
-  34:fltk-1.3.4-1/png/pngwio.c ****    /* NOTE: write_data_fn must not change the buffer! */
- 125              		.loc 1 34 0
- 126              		.cfi_startproc
- 127              	.LVL12:
-  36:fltk-1.3.4-1/png/pngwio.c ****       (*(png_ptr->write_data_fn))(png_ptr, png_constcast(png_bytep,data),
- 128              		.loc 1 36 0
- 129 0000 488B87F8 		movq	248(%rdi), %rax
- 129      000000
- 130 0007 4885C0   		testq	%rax, %rax
- 131 000a 7402     		je	.L14
-  37:fltk-1.3.4-1/png/pngwio.c ****          length);
- 132              		.loc 1 37 0
- 133 000c FFE0     		jmp	*%rax
- 134              	.LVL13:
- 135              	.L14:
-  34:fltk-1.3.4-1/png/pngwio.c ****    /* NOTE: write_data_fn must not change the buffer! */
- 136              		.loc 1 34 0
- 137 000e 50       		pushq	%rax
- 138              		.cfi_def_cfa_offset 16
-  41:fltk-1.3.4-1/png/pngwio.c **** }
- 139              		.loc 1 41 0
- 140 000f BE000000 		movl	$.LC3, %esi
- 140      00
- 141              	.LVL14:
- 142 0014 E8000000 		call	png_error
- 142      00
- 143              	.LVL15:
- 144              		.cfi_endproc
- 145              	.LFE56:
- 147              		.section	.text.unlikely.png_write_data
- 148              	.LCOLDE4:
- 149              		.section	.text.png_write_data
- 150              	.LHOTE4:
- 151              		.section	.text.unlikely.png_flush,"ax",@progbits
- 152              	.LCOLDB5:
- 153              		.section	.text.png_flush,"ax",@progbits
- 154              	.LHOTB5:
- 155              		.p2align 4,,15
- 156              		.globl	png_flush
- 158              	png_flush:
- 159              	.LFB58:
-  72:fltk-1.3.4-1/png/pngwio.c ****    if (png_ptr->output_flush_fn != NULL)
- 160              		.loc 1 72 0
- 161              		.cfi_startproc
- 162              	.LVL16:
-  73:fltk-1.3.4-1/png/pngwio.c ****       (*(png_ptr->output_flush_fn))(png_ptr);
- 163              		.loc 1 73 0
- 164 0000 488B87A0 		movq	672(%rdi), %rax
- 164      020000
- 165 0007 4885C0   		testq	%rax, %rax
- 166 000a 7404     		je	.L16
-  74:fltk-1.3.4-1/png/pngwio.c **** }
- 167              		.loc 1 74 0
- 168 000c FFE0     		jmp	*%rax
- 169              	.LVL17:
- 170 000e 6690     		.p2align 4,,10
- 171              		.p2align 3
- 172              	.L16:
- 173 0010 F3C3     		rep ret
- 174              		.cfi_endproc
- 175              	.LFE58:
- 177              		.section	.text.unlikely.png_flush
- 178              	.LCOLDE5:
- 179              		.section	.text.png_flush
- 180              	.LHOTE5:
- 181              		.section	.rodata.str1.8,"aMS",@progbits,1
- 182              		.align 8
- 183              	.LC6:
- 184 0000 43616E27 		.string	"Can't set both read_data_fn and write_data_fn in the same structure"
- 184      74207365 
- 184      7420626F 
- 184      74682072 
- 184      6561645F 
- 185              		.section	.text.unlikely.png_set_write_fn,"ax",@progbits
- 186              	.LCOLDB7:
- 187              		.section	.text.png_set_write_fn,"ax",@progbits
- 188              	.LHOTB7:
- 189              		.p2align 4,,15
- 190              		.globl	png_set_write_fn
- 192              	png_set_write_fn:
- 193              	.LFB60:
+  23              		.loc 1 87 4 view .LVU6
+  24 0009 488BBF08 		movq	264(%rdi), %rdi
+  24      010000
+  25              	.LVL2:
+  26              		.loc 1 87 4 is_stmt 0 view .LVU7
+  27 0010 E9000000 		jmp	fflush@PLT
+  27      00
+  28              	.LVL3:
+  29              		.p2align 4,,10
+  30 0015 0F1F00   		.p2align 3
+  31              	.L1:
   88:fltk-1.3.4-1/png/pngwio.c **** }
+  32              		.loc 1 88 1 view .LVU8
+  33 0018 C3       		ret
+  34              		.cfi_endproc
+  35              	.LFE44:
+  37              		.section	.rodata.png_default_write_data.str1.1,"aMS",@progbits,1
+  38              	.LC0:
+  39 0000 57726974 		.string	"Write Error"
+  39      65204572 
+  39      726F7200 
+  40              		.section	.text.png_default_write_data,"ax",@progbits
+  41              		.p2align 4
+  42              		.globl	png_default_write_data
+  44              	png_default_write_data:
+  45              	.LVL4:
+  46              	.LFB42:
+  52:fltk-1.3.4-1/png/pngwio.c ****    png_size_t check;
+  47              		.loc 1 52 1 is_stmt 1 view -0
+  48              		.cfi_startproc
+  52:fltk-1.3.4-1/png/pngwio.c ****    png_size_t check;
+  49              		.loc 1 52 1 is_stmt 0 view .LVU10
+  50 0000 F30F1EFA 		endbr64
+  53:fltk-1.3.4-1/png/pngwio.c **** 
+  51              		.loc 1 53 4 is_stmt 1 view .LVU11
+  55:fltk-1.3.4-1/png/pngwio.c ****       return;
+  52              		.loc 1 55 4 view .LVU12
+  52:fltk-1.3.4-1/png/pngwio.c ****    png_size_t check;
+  53              		.loc 1 52 1 is_stmt 0 view .LVU13
+  54 0004 55       		pushq	%rbp
+  55              		.cfi_def_cfa_offset 16
+  56              		.cfi_offset 6, -16
+  57 0005 4889FD   		movq	%rdi, %rbp
+  58 0008 53       		pushq	%rbx
+  59              		.cfi_def_cfa_offset 24
+  60              		.cfi_offset 3, -24
+  61 0009 4883EC08 		subq	$8, %rsp
+  62              		.cfi_def_cfa_offset 32
+  55:fltk-1.3.4-1/png/pngwio.c ****       return;
+  63              		.loc 1 55 7 view .LVU14
+  64 000d 4885FF   		testq	%rdi, %rdi
+  65 0010 741C     		je	.L4
+  66              	.LBB4:
+  67              	.LBB5:
+  58:fltk-1.3.4-1/png/pngwio.c **** 
+  68              		.loc 1 58 12 view .LVU15
+  69 0012 488B8D08 		movq	264(%rbp), %rcx
+  69      010000
+  70 0019 4889F7   		movq	%rsi, %rdi
+  71              	.LVL5:
+  58:fltk-1.3.4-1/png/pngwio.c **** 
+  72              		.loc 1 58 12 view .LVU16
+  73 001c BE010000 		movl	$1, %esi
+  73      00
+  74              	.LVL6:
+  58:fltk-1.3.4-1/png/pngwio.c **** 
+  75              		.loc 1 58 12 view .LVU17
+  76 0021 4889D3   		movq	%rdx, %rbx
+  77              	.LVL7:
+  58:fltk-1.3.4-1/png/pngwio.c **** 
+  78              		.loc 1 58 12 view .LVU18
+  79              	.LBE5:
+  80              	.LBI4:
+  51:fltk-1.3.4-1/png/pngwio.c **** {
+  81              		.loc 1 51 1 is_stmt 1 view .LVU19
+  82              	.LBB6:
+  58:fltk-1.3.4-1/png/pngwio.c **** 
+  83              		.loc 1 58 4 view .LVU20
+  58:fltk-1.3.4-1/png/pngwio.c **** 
+  84              		.loc 1 58 12 is_stmt 0 view .LVU21
+  85 0024 E8000000 		call	fwrite@PLT
+  85      00
+  86              	.LVL8:
+  60:fltk-1.3.4-1/png/pngwio.c ****       png_error(png_ptr, "Write Error");
+  87              		.loc 1 60 4 is_stmt 1 view .LVU22
+  60:fltk-1.3.4-1/png/pngwio.c ****       png_error(png_ptr, "Write Error");
+  88              		.loc 1 60 7 is_stmt 0 view .LVU23
+  89 0029 4839C3   		cmpq	%rax, %rbx
+  90 002c 7507     		jne	.L10
+  91              	.LVL9:
+  92              	.L4:
+  60:fltk-1.3.4-1/png/pngwio.c ****       png_error(png_ptr, "Write Error");
+  93              		.loc 1 60 7 view .LVU24
+  94              	.LBE6:
+  95              	.LBE4:
+  62:fltk-1.3.4-1/png/pngwio.c **** #endif
+  96              		.loc 1 62 1 view .LVU25
+  97 002e 4883C408 		addq	$8, %rsp
+  98              		.cfi_remember_state
+  99              		.cfi_def_cfa_offset 24
+ 100 0032 5B       		popq	%rbx
+ 101              		.cfi_def_cfa_offset 16
+ 102 0033 5D       		popq	%rbp
+ 103              		.cfi_def_cfa_offset 8
+ 104              	.LVL10:
+  62:fltk-1.3.4-1/png/pngwio.c **** #endif
+ 105              		.loc 1 62 1 view .LVU26
+ 106 0034 C3       		ret
+ 107              	.LVL11:
+ 108              	.L10:
+ 109              		.cfi_restore_state
+ 110              	.LBB8:
+ 111              	.LBB7:
+  61:fltk-1.3.4-1/png/pngwio.c **** }
+ 112              		.loc 1 61 7 is_stmt 1 view .LVU27
+ 113 0035 488D3500 		leaq	.LC0(%rip), %rsi
+ 113      000000
+ 114 003c 4889EF   		movq	%rbp, %rdi
+ 115 003f E8000000 		call	png_error@PLT
+ 115      00
+ 116              	.LVL12:
+  61:fltk-1.3.4-1/png/pngwio.c **** }
+ 117              		.loc 1 61 7 is_stmt 0 view .LVU28
+ 118              	.LBE7:
+ 119              	.LBE8:
+ 120              		.cfi_endproc
+ 121              	.LFE42:
+ 123              		.section	.rodata.png_write_data.str1.1,"aMS",@progbits,1
+ 124              	.LC1:
+ 125 0000 43616C6C 		.string	"Call to NULL write function"
+ 125      20746F20 
+ 125      4E554C4C 
+ 125      20777269 
+ 125      74652066 
+ 126              		.section	.text.png_write_data,"ax",@progbits
+ 127              		.p2align 4
+ 128              		.globl	png_write_data
+ 130              	png_write_data:
+ 131              	.LVL13:
+ 132              	.LFB41:
+  34:fltk-1.3.4-1/png/pngwio.c ****    /* NOTE: write_data_fn must not change the buffer! */
+ 133              		.loc 1 34 1 is_stmt 1 view -0
+ 134              		.cfi_startproc
+  34:fltk-1.3.4-1/png/pngwio.c ****    /* NOTE: write_data_fn must not change the buffer! */
+ 135              		.loc 1 34 1 is_stmt 0 view .LVU30
+ 136 0000 F30F1EFA 		endbr64
+  36:fltk-1.3.4-1/png/pngwio.c ****       (*(png_ptr->write_data_fn))(png_ptr, png_constcast(png_bytep,data),
+ 137              		.loc 1 36 4 is_stmt 1 view .LVU31
+  36:fltk-1.3.4-1/png/pngwio.c ****       (*(png_ptr->write_data_fn))(png_ptr, png_constcast(png_bytep,data),
+ 138              		.loc 1 36 15 is_stmt 0 view .LVU32
+ 139 0004 488B87F8 		movq	248(%rdi), %rax
+ 139      000000
+  36:fltk-1.3.4-1/png/pngwio.c ****       (*(png_ptr->write_data_fn))(png_ptr, png_constcast(png_bytep,data),
+ 140              		.loc 1 36 7 view .LVU33
+ 141 000b 4885C0   		testq	%rax, %rax
+ 142 000e 7402     		je	.L12
+  37:fltk-1.3.4-1/png/pngwio.c ****          length);
+ 143              		.loc 1 37 7 is_stmt 1 view .LVU34
+  37:fltk-1.3.4-1/png/pngwio.c ****          length);
+ 144              		.loc 1 37 8 is_stmt 0 view .LVU35
+ 145 0010 FFE0     		jmp	*%rax
+ 146              	.LVL14:
+ 147              	.L12:
+  41:fltk-1.3.4-1/png/pngwio.c **** }
+ 148              		.loc 1 41 7 is_stmt 1 view .LVU36
+  34:fltk-1.3.4-1/png/pngwio.c ****    /* NOTE: write_data_fn must not change the buffer! */
+ 149              		.loc 1 34 1 is_stmt 0 view .LVU37
+ 150 0012 50       		pushq	%rax
+ 151              		.cfi_def_cfa_offset 16
+  41:fltk-1.3.4-1/png/pngwio.c **** }
+ 152              		.loc 1 41 7 view .LVU38
+ 153 0013 488D3500 		leaq	.LC1(%rip), %rsi
+ 153      000000
+ 154              	.LVL15:
+  41:fltk-1.3.4-1/png/pngwio.c **** }
+ 155              		.loc 1 41 7 view .LVU39
+ 156 001a E8000000 		call	png_error@PLT
+ 156      00
+ 157              	.LVL16:
+  41:fltk-1.3.4-1/png/pngwio.c **** }
+ 158              		.loc 1 41 7 view .LVU40
+ 159              		.cfi_endproc
+ 160              	.LFE41:
+ 162              		.section	.text.png_flush,"ax",@progbits
+ 163              		.p2align 4
+ 164              		.globl	png_flush
+ 166              	png_flush:
+ 167              	.LVL17:
+ 168              	.LFB43:
+  72:fltk-1.3.4-1/png/pngwio.c ****    if (png_ptr->output_flush_fn != NULL)
+ 169              		.loc 1 72 1 is_stmt 1 view -0
+ 170              		.cfi_startproc
+  72:fltk-1.3.4-1/png/pngwio.c ****    if (png_ptr->output_flush_fn != NULL)
+ 171              		.loc 1 72 1 is_stmt 0 view .LVU42
+ 172 0000 F30F1EFA 		endbr64
+  73:fltk-1.3.4-1/png/pngwio.c ****       (*(png_ptr->output_flush_fn))(png_ptr);
+ 173              		.loc 1 73 4 is_stmt 1 view .LVU43
+  73:fltk-1.3.4-1/png/pngwio.c ****       (*(png_ptr->output_flush_fn))(png_ptr);
+ 174              		.loc 1 73 15 is_stmt 0 view .LVU44
+ 175 0004 488B87A0 		movq	672(%rdi), %rax
+ 175      020000
+  73:fltk-1.3.4-1/png/pngwio.c ****       (*(png_ptr->output_flush_fn))(png_ptr);
+ 176              		.loc 1 73 7 view .LVU45
+ 177 000b 4885C0   		testq	%rax, %rax
+ 178 000e 7408     		je	.L15
+  74:fltk-1.3.4-1/png/pngwio.c **** }
+ 179              		.loc 1 74 7 is_stmt 1 view .LVU46
+  74:fltk-1.3.4-1/png/pngwio.c **** }
+ 180              		.loc 1 74 8 is_stmt 0 view .LVU47
+ 181 0010 FFE0     		jmp	*%rax
+ 182              	.LVL18:
+ 183              		.p2align 4,,10
+ 184 0012 660F1F44 		.p2align 3
+ 184      0000
+ 185              	.L15:
+  75:fltk-1.3.4-1/png/pngwio.c **** 
+ 186              		.loc 1 75 1 view .LVU48
+ 187 0018 C3       		ret
+ 188              		.cfi_endproc
+ 189              	.LFE43:
+ 191              		.section	.rodata.png_set_write_fn.str1.8,"aMS",@progbits,1
+ 192              		.align 8
+ 193              	.LC2:
+ 194 0000 43616E27 		.string	"Can't set both read_data_fn and write_data_fn in the same structure"
+ 194      74207365 
+ 194      7420626F 
+ 194      74682072 
+ 194      6561645F 
+ 195              		.section	.text.png_set_write_fn,"ax",@progbits
+ 196              		.p2align 4
+ 197              		.globl	png_set_write_fn
+ 199              	png_set_write_fn:
+ 200              	.LVL19:
+ 201              	.LFB45:
   89:fltk-1.3.4-1/png/pngwio.c **** #  endif
   90:fltk-1.3.4-1/png/pngwio.c **** #endif
   91:fltk-1.3.4-1/png/pngwio.c **** 
@@ -339,34 +376,39 @@
  122:fltk-1.3.4-1/png/pngwio.c **** png_set_write_fn(png_structrp png_ptr, png_voidp io_ptr,
  123:fltk-1.3.4-1/png/pngwio.c ****     png_rw_ptr write_data_fn, png_flush_ptr output_flush_fn)
  124:fltk-1.3.4-1/png/pngwio.c **** {
- 194              		.loc 1 124 0
- 195              		.cfi_startproc
- 196              	.LVL18:
+ 202              		.loc 1 124 1 is_stmt 1 view -0
+ 203              		.cfi_startproc
+ 204              		.loc 1 124 1 is_stmt 0 view .LVU50
+ 205 0000 F30F1EFA 		endbr64
  125:fltk-1.3.4-1/png/pngwio.c ****    if (png_ptr == NULL)
- 197              		.loc 1 125 0
- 198 0000 4885FF   		testq	%rdi, %rdi
- 199 0003 7453     		je	.L18
+ 206              		.loc 1 125 4 is_stmt 1 view .LVU51
+ 207              		.loc 1 125 7 is_stmt 0 view .LVU52
+ 208 0004 4885FF   		testq	%rdi, %rdi
+ 209 0007 7457     		je	.L17
  126:fltk-1.3.4-1/png/pngwio.c ****       return;
  127:fltk-1.3.4-1/png/pngwio.c **** 
  128:fltk-1.3.4-1/png/pngwio.c ****    png_ptr->io_ptr = io_ptr;
+ 210              		.loc 1 128 4 is_stmt 1 view .LVU53
  129:fltk-1.3.4-1/png/pngwio.c **** 
  130:fltk-1.3.4-1/png/pngwio.c **** #ifdef PNG_STDIO_SUPPORTED
  131:fltk-1.3.4-1/png/pngwio.c ****    if (write_data_fn != NULL)
  132:fltk-1.3.4-1/png/pngwio.c ****       png_ptr->write_data_fn = write_data_fn;
- 200              		.loc 1 132 0
- 201 0005 4885D2   		testq	%rdx, %rdx
- 202 0008 B8000000 		movl	$png_default_write_data, %eax
- 202      00
- 128:fltk-1.3.4-1/png/pngwio.c **** 
- 203              		.loc 1 128 0
- 204 000d 4889B708 		movq	%rsi, 264(%rdi)
- 204      010000
- 205              		.loc 1 132 0
- 206 0014 480F44D0 		cmove	%rax, %rdx
- 207              	.LVL19:
  133:fltk-1.3.4-1/png/pngwio.c **** 
  134:fltk-1.3.4-1/png/pngwio.c ****    else
  135:fltk-1.3.4-1/png/pngwio.c ****       png_ptr->write_data_fn = png_default_write_data;
+ 211              		.loc 1 135 30 is_stmt 0 view .LVU54
+ 212 0009 4885D2   		testq	%rdx, %rdx
+ 213 000c 488D0500 		leaq	png_default_write_data(%rip), %rax
+ 213      000000
+ 128:fltk-1.3.4-1/png/pngwio.c **** 
+ 214              		.loc 1 128 20 view .LVU55
+ 215 0013 4889B708 		movq	%rsi, 264(%rdi)
+ 215      010000
+ 131:fltk-1.3.4-1/png/pngwio.c ****       png_ptr->write_data_fn = write_data_fn;
+ 216              		.loc 1 131 4 is_stmt 1 view .LVU56
+ 217              		.loc 1 135 30 is_stmt 0 view .LVU57
+ 218 001a 480F44D0 		cmove	%rax, %rdx
+ 219              	.LVL20:
  136:fltk-1.3.4-1/png/pngwio.c **** #else
  137:fltk-1.3.4-1/png/pngwio.c ****    png_ptr->write_data_fn = write_data_fn;
  138:fltk-1.3.4-1/png/pngwio.c **** #endif
@@ -376,15 +418,15 @@
  142:fltk-1.3.4-1/png/pngwio.c **** 
  143:fltk-1.3.4-1/png/pngwio.c ****    if (output_flush_fn != NULL)
  144:fltk-1.3.4-1/png/pngwio.c ****       png_ptr->output_flush_fn = output_flush_fn;
- 208              		.loc 1 144 0
- 209 0018 4885C9   		testq	%rcx, %rcx
- 210 001b B8000000 		movl	$png_default_flush, %eax
- 210      00
- 211 0020 480F44C8 		cmove	%rax, %rcx
- 212              	.LVL20:
  145:fltk-1.3.4-1/png/pngwio.c **** 
  146:fltk-1.3.4-1/png/pngwio.c ****    else
  147:fltk-1.3.4-1/png/pngwio.c ****       png_ptr->output_flush_fn = png_default_flush;
+ 220              		.loc 1 147 32 view .LVU58
+ 221 001e 4885C9   		testq	%rcx, %rcx
+ 222 0021 488D0500 		leaq	png_default_flush(%rip), %rax
+ 222      000000
+ 223 0028 480F44C8 		cmove	%rax, %rcx
+ 224              	.LVL21:
  148:fltk-1.3.4-1/png/pngwio.c **** 
  149:fltk-1.3.4-1/png/pngwio.c **** #  else
  150:fltk-1.3.4-1/png/pngwio.c ****    png_ptr->output_flush_fn = output_flush_fn;
@@ -396,149 +438,184 @@
  156:fltk-1.3.4-1/png/pngwio.c **** #ifdef PNG_READ_SUPPORTED
  157:fltk-1.3.4-1/png/pngwio.c ****    /* It is an error to read while writing a png file */
  158:fltk-1.3.4-1/png/pngwio.c ****    if (png_ptr->read_data_fn != NULL)
- 213              		.loc 1 158 0
- 214 0024 4883BF00 		cmpq	$0, 256(%rdi)
- 214      01000000 
- 132:fltk-1.3.4-1/png/pngwio.c **** 
- 215              		.loc 1 132 0
- 216 002c 488997F8 		movq	%rdx, 248(%rdi)
- 216      000000
- 144:fltk-1.3.4-1/png/pngwio.c **** 
- 217              		.loc 1 144 0
- 218 0033 48898FA0 		movq	%rcx, 672(%rdi)
- 218      020000
- 219              		.loc 1 158 0
- 220 003a 741C     		je	.L18
+ 225              		.loc 1 158 7 view .LVU59
+ 226 002c 4883BF00 		cmpq	$0, 256(%rdi)
+ 226      01000000 
+ 227 0034 488997F8 		movq	%rdx, 248(%rdi)
+ 227      000000
+ 143:fltk-1.3.4-1/png/pngwio.c ****       png_ptr->output_flush_fn = output_flush_fn;
+ 228              		.loc 1 143 4 is_stmt 1 view .LVU60
+ 229 003b 48898FA0 		movq	%rcx, 672(%rdi)
+ 229      020000
+ 230              		.loc 1 158 4 view .LVU61
+ 231              		.loc 1 158 7 is_stmt 0 view .LVU62
+ 232 0042 741C     		je	.L17
  159:fltk-1.3.4-1/png/pngwio.c ****    {
  160:fltk-1.3.4-1/png/pngwio.c ****       png_ptr->read_data_fn = NULL;
- 221              		.loc 1 160 0
- 222 003c 48C78700 		movq	$0, 256(%rdi)
- 222      01000000 
- 222      000000
+ 233              		.loc 1 160 7 is_stmt 1 view .LVU63
+ 234              		.loc 1 160 29 is_stmt 0 view .LVU64
+ 235 0044 48C78700 		movq	$0, 256(%rdi)
+ 235      01000000 
+ 235      000000
  161:fltk-1.3.4-1/png/pngwio.c **** 
  162:fltk-1.3.4-1/png/pngwio.c ****       png_warning(png_ptr,
- 223              		.loc 1 162 0
- 224 0047 BE000000 		movl	$.LC6, %esi
- 224      00
- 225              	.LVL21:
- 226 004c E9000000 		jmp	png_warning
- 226      00
- 227              	.LVL22:
- 228              		.p2align 4,,10
- 229 0051 0F1F8000 		.p2align 3
- 229      000000
- 230              	.L18:
- 231 0058 F3C3     		rep ret
- 232              		.cfi_endproc
- 233              	.LFE60:
- 235              		.section	.text.unlikely.png_set_write_fn
- 236              	.LCOLDE7:
- 237              		.section	.text.png_set_write_fn
- 238              	.LHOTE7:
- 239              		.text
- 240              	.Letext0:
- 241              		.section	.text.unlikely.png_default_write_data
- 242              	.Letext_cold0:
- 243              		.file 2 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
- 244              		.file 3 "/usr/include/x86_64-linux-gnu/bits/types.h"
- 245              		.file 4 "/usr/include/stdio.h"
- 246              		.file 5 "/usr/include/libio.h"
- 247              		.file 6 "/usr/include/x86_64-linux-gnu/bits/setjmp.h"
- 248              		.file 7 "/usr/include/x86_64-linux-gnu/bits/sigset.h"
- 249              		.file 8 "/usr/include/setjmp.h"
- 250              		.file 9 "fltk-1.3.4-1/png/pngconf.h"
- 251              		.file 10 "fltk-1.3.4-1/png/png.h"
- 252              		.file 11 "fltk-1.3.4-1/png/pngstruct.h"
- 253              		.file 12 "fltk-1.3.4-1/png/pnginfo.h"
- 254              		.file 13 "/usr/include/x86_64-linux-gnu/zconf.h"
- 255              		.file 14 "/usr/include/zlib.h"
+ 236              		.loc 1 162 7 is_stmt 1 view .LVU65
+ 237 004f 488D3500 		leaq	.LC2(%rip), %rsi
+ 237      000000
+ 238              	.LVL22:
+ 239              		.loc 1 162 7 is_stmt 0 view .LVU66
+ 240 0056 E9000000 		jmp	png_warning@PLT
+ 240      00
+ 241              	.LVL23:
+ 242 005b 0F1F4400 		.p2align 4,,10
+ 242      00
+ 243              		.p2align 3
+ 244              	.L17:
+ 163:fltk-1.3.4-1/png/pngwio.c ****           "Can't set both read_data_fn and write_data_fn in the"
+ 164:fltk-1.3.4-1/png/pngwio.c ****           " same structure");
+ 165:fltk-1.3.4-1/png/pngwio.c ****    }
+ 166:fltk-1.3.4-1/png/pngwio.c **** #endif
+ 167:fltk-1.3.4-1/png/pngwio.c **** }
+ 245              		.loc 1 167 1 view .LVU67
+ 246 0060 C3       		ret
+ 247              		.cfi_endproc
+ 248              	.LFE45:
+ 250              		.text
+ 251              	.Letext0:
+ 252              		.file 2 "/usr/lib/gcc/x86_64-linux-gnu/9/include/stddef.h"
+ 253              		.file 3 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 254              		.file 4 "/usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h"
+ 255              		.file 5 "/usr/include/x86_64-linux-gnu/bits/types/FILE.h"
+ 256              		.file 6 "/usr/include/stdio.h"
+ 257              		.file 7 "/usr/include/x86_64-linux-gnu/bits/setjmp.h"
+ 258              		.file 8 "/usr/include/x86_64-linux-gnu/bits/types/__sigset_t.h"
+ 259              		.file 9 "/usr/include/setjmp.h"
+ 260              		.file 10 "/usr/include/time.h"
+ 261              		.file 11 "fltk-1.3.4-1/png/pngconf.h"
+ 262              		.file 12 "fltk-1.3.4-1/png/png.h"
+ 263              		.file 13 "fltk-1.3.4-1/png/pngstruct.h"
+ 264              		.file 14 "fltk-1.3.4-1/png/pnginfo.h"
+ 265              		.file 15 "/usr/include/zconf.h"
+ 266              		.file 16 "/usr/include/unistd.h"
+ 267              		.file 17 "/usr/include/x86_64-linux-gnu/bits/getopt_core.h"
+ 268              		.file 18 "/usr/include/zlib.h"
+ 269              		.file 19 "fltk-1.3.4-1/png/pngpriv.h"
+ 18727              		.section	.note.gnu.property,"a"
+ 18728              		.align 8
+ 18729 0000 04000000 		.long	 1f - 0f
+ 18730 0004 10000000 		.long	 4f - 1f
+ 18731 0008 05000000 		.long	 5
+ 18732              	0:
+ 18733 000c 474E5500 		.string	 "GNU"
+ 18734              	1:
+ 18735              		.align 8
+ 18736 0010 020000C0 		.long	 0xc0000002
+ 18737 0014 04000000 		.long	 3f - 2f
+ 18738              	2:
+ 18739 0018 03000000 		.long	 0x3
+ 18740              	3:
+ 18741 001c 00000000 		.align 8
+ 18742              	4:
 DEFINED SYMBOLS
                             *ABS*:0000000000000000 pngwio.c
-     /tmp/ccX6OQKP.s:17     .text.png_default_write_data:0000000000000000 png_default_write_data
-     /tmp/ccX6OQKP.s:88     .text.png_default_flush:0000000000000000 png_default_flush
-     /tmp/ccX6OQKP.s:123    .text.png_write_data:0000000000000000 png_write_data
-     /tmp/ccX6OQKP.s:158    .text.png_flush:0000000000000000 png_flush
-     /tmp/ccX6OQKP.s:192    .text.png_set_write_fn:0000000000000000 png_set_write_fn
-                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
-                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+     /tmp/ccpwwwmv.s:8      .text.png_default_flush:0000000000000000 png_default_flush
+     /tmp/ccpwwwmv.s:44     .text.png_default_write_data:0000000000000000 png_default_write_data
+     /tmp/ccpwwwmv.s:130    .text.png_write_data:0000000000000000 png_write_data
+     /tmp/ccpwwwmv.s:166    .text.png_flush:0000000000000000 png_flush
+     /tmp/ccpwwwmv.s:199    .text.png_set_write_fn:0000000000000000 png_set_write_fn
+     /tmp/ccpwwwmv.s:38     .rodata.png_default_write_data.str1.1:0000000000000000 .LC0
+     /tmp/ccpwwwmv.s:124    .rodata.png_write_data.str1.1:0000000000000000 .LC1
+     /tmp/ccpwwwmv.s:193    .rodata.png_set_write_fn.str1.8:0000000000000000 .LC2
+                           .group:0000000000000000 wm4.0.a6b23a418548ac0bda5d8549c4a2ec91
+                           .group:0000000000000000 wm4.stdcpredef.h.19.8dc41bed5d9037ff9622e015fb5f0ce3
                            .group:0000000000000000 wm4.pngpriv.h.26.ca3d1719773cd86007410b516123e125
-                           .group:0000000000000000 wm4.features.h.19.22780be97c2f806ec599b8b99aa89f7d
-                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
-                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
-                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
-                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
-                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
-                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
-                           .group:0000000000000000 wm4.stdlib.h.37.e081b308f911db94d3185af615f2b2e2
-                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
-                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
-                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
-                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
-                           .group:0000000000000000 wm4.endian.h.41.27d650ce666b76881e2a2a218ea61984
-                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
-                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
-                           .group:0000000000000000 wm4.string2.h.55.e4a4cfd7781cc64a4341475e67436ab1
-                           .group:0000000000000000 wm4.string3.h.31.2b75bd65145c50aeedb61673ce0d3293
+                           .group:0000000000000000 wm4.features.h.19.320b3bf3f3d04eccd55afd968f1ea5b2
+                           .group:0000000000000000 wm4.cdefs.h.19.98d80eddbb3f64f4f30cd9aee9c5593c
+                           .group:0000000000000000 wm4.wordsize.h.4.baf119258a1e53d8dba67ceac44ab6bc
+                           .group:0000000000000000 wm4.cdefs.h.475.fb75d2e4416aa349344e6f45f683bf28
+                           .group:0000000000000000 wm4.stubs64.h.10.6ce4c34010988db072c080326a6b6319
+                           .group:0000000000000000 wm4.libcheaderstart.h.37.d9274df4cc0172452960ad9644fa5579
+                           .group:0000000000000000 wm4.stdlib.h.28.2cffa49d94c5d85f4538f55f7b59771d
+                           .group:0000000000000000 wm4.stddef.h.181.13772e73e5434e8cc4fafaaddad2b5da
+                           .group:0000000000000000 wm4.floatn.h.20.80c7cf8a8dfad237004b28d051d5afda
+                           .group:0000000000000000 wm4.floatncommon.h.34.7e1840d7dfb19e9bdb51aeb077d76637
+                           .group:0000000000000000 wm4.stdlib.h.71.39700ac5536cfafa1b6db501afc46864
+                           .group:0000000000000000 wm4.string.h.23.93403f89af7dba8212345449bb14b09d
+                           .group:0000000000000000 wm4.libcheaderstart.h.31.87b3c285aeba93fe355ad19123070832
+                           .group:0000000000000000 wm4.string.h.31.e39a94e203ad4e1d978c0fc68ce016ee
+                           .group:0000000000000000 wm4.stddef.h.231.8136eebbab3406dbf57a7ec475dd5d83
                            .group:0000000000000000 wm4.pnglibconf.h.15.30e2eea90e566ac06da4f4de487193d7
                            .group:0000000000000000 wm4.pngpriv.h.130.f65d93453b5b5837849611ffe82d627a
                            .group:0000000000000000 wm4.png.h.412.12a95b2193a7d0bc2282b72c70a28ce1
-                           .group:0000000000000000 wm4.limits.h.23.f0fd92c175c1576df467c4d5fe2b091a
-                           .group:0000000000000000 wm4.posix1_lim.h.25.28c8eb2d22697e7711efefdec5344a02
+                           .group:0000000000000000 wm4.limits.h.23.3c23ae3e8f372a0298be6ce978307bc7
+                           .group:0000000000000000 wm4.limits.h.32.6a1c51cbc8834927c9b529a347d7b23f
+                           .group:0000000000000000 wm4.posix1_lim.h.32.858fce26e105c5c0f681b222378d5883
                            .group:0000000000000000 wm4.local_lim.h.25.97ee4129efb08ad296101237bcd3401b
-                           .group:0000000000000000 wm4.limits.h.2.9ff59823e8adcf4502d980ef41362326
+                           .group:0000000000000000 wm4.limits.h.3.0a3ae0fffe30e22dfdd77ac2c1b1fbdd
                            .group:0000000000000000 wm4.local_lim.h.42.9dc3935e0e3b94e23cda247e4e39bd8b
+                           .group:0000000000000000 wm4.posix2_lim.h.23.56b9c4f885cbac0b652f53ee56b244b1
                            .group:0000000000000000 wm4.limits.h.60.eb7066f861c8b8edc7a0a399744b0335
-                           .group:0000000000000000 wm4.stddef.h.39.d5a83c17f38162a5dd6f834eaf38f8ef
-                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
-                           .group:0000000000000000 wm4.stddef.h.161.19e15733342b50ead2919490b095303e
-                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
-                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
-                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
-                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
-                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stddef.h.39.1bfffcccc3897d82880a055878218da6
+                           .group:0000000000000000 wm4.stdio.h.24.5c1b97eef3c86b7a2549420f69f4f128
+                           .group:0000000000000000 wm4.stdio.h.31.e39a94e203ad4e1d978c0fc68ce016ee
+                           .group:0000000000000000 wm4.stddef.h.155.ba788add86a0e365f264484f110c3c29
                            .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
-                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
-                           .group:0000000000000000 wm4.stdio.h.120.80cbf0ec1718a5b27e6428218e29c72d
-                           .group:0000000000000000 wm4.stdio_lim.h.23.f8541119d1bcf759d7de9531671fd758
-                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
-                           .group:0000000000000000 wm4.stdio.h.26.e50fc3808d57d965ceefc6f6dd102eb7
-                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
-                           .group:0000000000000000 wm4.setjmp.h.67.51aa194c3c89a841663c00cb93fd90ff
-                           .group:0000000000000000 wm4.time.h.26.6a3cabd4f228e226db6723a3b0c81ba6
-                           .group:0000000000000000 wm4.time.h.40.99bfb90272c7e82357ef3c2f5c6fefc8
-                           .group:0000000000000000 wm4.time.h.53.f8af6908497bac0ca16faea86fb8cd87
+                           .group:0000000000000000 wm4.types.h.109.56eb9ae966b255288cc544f18746a7ff
+                           .group:0000000000000000 wm4.typesizes.h.24.2c64f817c0dc4b6fb2a2c619d717be26
+                           .group:0000000000000000 wm4.time64.h.24.a8166ae916ec910dab0d8987098d42ee
+                           .group:0000000000000000 wm4.struct_FILE.h.19.0888ac70396abe1031c03d393554032f
+                           .group:0000000000000000 wm4.stdio.h.93.0122ffbd02ddfe34dfaf44a2e3561c5b
+                           .group:0000000000000000 wm4.stdio_lim.h.19.86760ef34d2b7513aac6ce30cb73c6f8
+                           .group:0000000000000000 wm4.stdio.h.141.d7a290e19ca077c9e4aa7c43ede17a73
+                           .group:0000000000000000 wm4.stdio.h.20.38f8a7cea5a7dfe0d9ad992f7c8483f3
+                           .group:0000000000000000 wm4.__sigset_t.h.2.6b1ab6ff3d7b8fd9c0c42b0d80afbd80
+                           .group:0000000000000000 wm4.setjmp.h.62.5655e5632e7855e400222c83408ceb1d
+                           .group:0000000000000000 wm4.time.h.23.18ede267f3a48794bef4705df80339de
+                           .group:0000000000000000 wm4.time.h.24.57e6945634c11c9a0e367d020f81b7cf
+                           .group:0000000000000000 wm4.endian.h.20.efabd1018df5d7b4052c27dc6bdd5ce5
+                           .group:0000000000000000 wm4.endianness.h.2.2c6a211f7909f3af5e9e9cfa3b6b63c8
+                           .group:0000000000000000 wm4.endian.h.40.9e5d395adda2f4eb53ae69b69b664084
                            .group:0000000000000000 wm4.pngconf.h.86.6636b2584cb7be1618479e118d71e58c
                            .group:0000000000000000 wm4.png.h.506.fa53b6434c0b20c8e63094b04d7940c5
                            .group:0000000000000000 wm4.pngpriv.h.298.dc2c896ce0eddc5cfadee24e76e3c417
-                           .group:0000000000000000 wm4.float.h.29.1cf88a0527b6b1225d49fbee2b32acb7
+                           .group:0000000000000000 wm4.float.h.29.cae0b78251c51e3ff449cb238a29ed5b
                            .group:0000000000000000 wm4.math.h.26.671af5ac9cd425a35e0730f7b6d7cde2
-                           .group:0000000000000000 wm4.libmsimddeclstubs.h.34.75644856b74ba3d815155fe5fe7ecc56
-                           .group:0000000000000000 wm4.mathdef.h.23.67c0aa4a204f1f427459dfc651aba565
-                           .group:0000000000000000 wm4.math.h.55.cf380f99c57d42476a5252f30065036a
-                           .group:0000000000000000 wm4.math.h.84.742292806c6be54f49dc607928a827f7
-                           .group:0000000000000000 wm4.math.h.105.59ff0f83ebf6a04e70e145cef2d1185e
-                           .group:0000000000000000 wm4.math.h.152.48a142bc1575e748473ff86330dee044
+                           .group:0000000000000000 wm4.math.h.24.808d6e83a8b3b11b5fa9117392e0d6ca
+                           .group:0000000000000000 wm4.libmsimddeclstubs.h.34.4541d7d9ef23fb8c722872ed06b4fd48
+                           .group:0000000000000000 wm4.math.h.48.5dafc6157c80230c0414aa9de5e109ba
+                           .group:0000000000000000 wm4.fplogb.h.23.f264b61801f4cf347bed2d0fad7232d9
+                           .group:0000000000000000 wm4.math.h.193.2a53c39a04fb9ee53d2145d0dd51922b
+                           .group:0000000000000000 wm4.math.h.262.a3ec711e4bc2a8e48d58e73f7b61f7e6
+                           .group:0000000000000000 wm4.math.h.291.31c5ea429e9ba79c95bf28566b299669
+                           .group:0000000000000000 wm4.math.h.308.057dcf159b5c763b6f753ad19bd78a7c
+                           .group:0000000000000000 wm4.math.h.351.d4dfe6acabbee9531318a05b7f2a0ebb
+                           .group:0000000000000000 wm4.math.h.425.dd23fd9bd1a8b67c9cdacb96d25aa4cb
                            .group:0000000000000000 wm4.math.h.30.7cada3efe024725df2da4c705b6566be
                            .group:0000000000000000 wm4.pngpriv.h.481.f98e7c29eaaa759546a3f9808bc25c74
                            .group:0000000000000000 wm4.pngstruct.h.22.7b9573417641055ab8f42438aa8afadf
-                           .group:0000000000000000 wm4.zconf.h.9.bbc7b5783b51507f7721a5620139b4ee
-                           .group:0000000000000000 wm4.zconf.h.397.69c03305677a9a6792fe2a94f7c9f69b
-                           .group:0000000000000000 wm4.types.h.23.92678977f3921b8dce508274ac68f78d
-                           .group:0000000000000000 wm4.types.h.187.12f6c32afb936b45a5f241219964ce93
-                           .group:0000000000000000 wm4.stdarg.h.31.48e922dd0aaedfb616aafd8a7b7a4949
-                           .group:0000000000000000 wm4.unistd.h.23.c85a58a698f53edadcf64287ab24fecb
-                           .group:0000000000000000 wm4.posix_opt.h.20.9a8aece77957db1725bd2b9521e5f9c5
-                           .group:0000000000000000 wm4.unistd.h.213.4c582e35260d661b081322974b7c1e74
-                           .group:0000000000000000 wm4.unistd.h.284.7e168706bc8bd978e02fd1da439d9bc3
+                           .group:0000000000000000 wm4.zconf.h.9.5d696d5ff537aa9e4334014200af587a
+                           .group:0000000000000000 wm4.zconf.h.252.d660ed3b0952e518b3e109403eef37af
+                           .group:0000000000000000 wm4.zconf.h.420.b3ba5ae58b852c80eba061279e8960fb
+                           .group:0000000000000000 wm4.types.h.23.ad09b9000f4b9223ee132237184eff7f
+                           .group:0000000000000000 wm4.types.h.171.9aecc81dc8df45ffba0c25c0647ef29f
+                           .group:0000000000000000 wm4.pthreadtypesarch.h.25.6063cba99664c916e22d3a912bcc348a
+                           .group:0000000000000000 wm4.struct_mutex.h.20.ed51f515172b9be99e450ba83eb5dd99
+                           .group:0000000000000000 wm4.struct_rwlock.h.21.0254880f2904e3833fb8ae683e0f0330
+                           .group:0000000000000000 wm4.stdarg.h.31.250806951830a1b6a3066ee41cf22414
+                           .group:0000000000000000 wm4.unistd.h.23.9eac1fbc6e0a9aafe6a69df62b992db8
+                           .group:0000000000000000 wm4.posix_opt.h.20.25edad97e3613a63f1969894ab33449b
+                           .group:0000000000000000 wm4.unistd.h.210.b40c6c15db1d0b653f8dce03f258da9c
+                           .group:0000000000000000 wm4.unistd.h.281.99c6c81af9cf38eab36ea34a36ce096b
                            .group:0000000000000000 wm4.confname.h.27.6b00117a32f457cc72e5ac810a9adade
-                           .group:0000000000000000 wm4.zconf.h.457.505c3613686dd75e492569d7a56a6eb0
-                           .group:0000000000000000 wm4.zlib.h.40.5a15529ab8e285cee4b0ddab32502c27
+                           .group:0000000000000000 wm4.zconf.h.480.490915782eb343cae7cfb06f78d23c62
+                           .group:0000000000000000 wm4.zlib.h.40.096e6fa45bd4a30b5bc135e17c50b44d
                            .group:0000000000000000 wm4.pngstruct.h.44.bc957704556ff8ddcb697678a008ffae
                            .group:0000000000000000 wm4.pngpriv.h.853.4585af3e74cfb155d8486c5333b94adf
                            .group:0000000000000000 wm4.pngdebug.h.36.e9c57d5f35e3128225fb629498ec6fc8
 
 UNDEFINED SYMBOLS
+_GLOBAL_OFFSET_TABLE_
+fflush
 fwrite
 png_error
-fflush
 png_warning

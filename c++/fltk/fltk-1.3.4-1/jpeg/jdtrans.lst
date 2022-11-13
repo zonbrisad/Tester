@@ -1,18 +1,13 @@
    1              		.file	"jdtrans.c"
    2              		.text
    3              	.Ltext0:
-   4              		.section	.text.unlikely.jpeg_read_coefficients,"ax",@progbits
-   5              	.LCOLDB0:
-   6              		.section	.text.jpeg_read_coefficients,"ax",@progbits
-   7              	.LHOTB0:
-   8              		.p2align 4,,15
-   9              		.section	.text.unlikely.jpeg_read_coefficients
-  10              	.Ltext_cold0:
-  11              		.section	.text.jpeg_read_coefficients
-  12              		.globl	jpeg_read_coefficients
-  14              	jpeg_read_coefficients:
-  15              	.LFB61:
-  16              		.file 1 "fltk-1.3.4-1/jpeg/jdtrans.c"
+   4              		.section	.text.jpeg_read_coefficients,"ax",@progbits
+   5              		.p2align 4
+   6              		.globl	jpeg_read_coefficients
+   8              	jpeg_read_coefficients:
+   9              	.LVL0:
+  10              	.LFB51:
+  11              		.file 1 "fltk-1.3.4-1/jpeg/jdtrans.c"
    1:fltk-1.3.4-1/jpeg/jdtrans.c **** /*
    2:fltk-1.3.4-1/jpeg/jdtrans.c ****  * jdtrans.c
    3:fltk-1.3.4-1/jpeg/jdtrans.c ****  *
@@ -60,32 +55,37 @@
   45:fltk-1.3.4-1/jpeg/jdtrans.c **** GLOBAL(jvirt_barray_ptr *)
   46:fltk-1.3.4-1/jpeg/jdtrans.c **** jpeg_read_coefficients (j_decompress_ptr cinfo)
   47:fltk-1.3.4-1/jpeg/jdtrans.c **** {
-  17              		.loc 1 47 0
-  18              		.cfi_startproc
-  19              	.LVL0:
-  20 0000 53       		pushq	%rbx
-  21              		.cfi_def_cfa_offset 16
-  22              		.cfi_offset 3, -16
+  12              		.loc 1 47 1 view -0
+  13              		.cfi_startproc
+  14              		.loc 1 47 1 is_stmt 0 view .LVU1
+  15 0000 F30F1EFA 		endbr64
   48:fltk-1.3.4-1/jpeg/jdtrans.c ****   if (cinfo->global_state == DSTATE_READY) {
-  23              		.loc 1 48 0
-  24 0001 8B4724   		movl	36(%rdi), %eax
+  16              		.loc 1 48 3 is_stmt 1 view .LVU2
   47:fltk-1.3.4-1/jpeg/jdtrans.c ****   if (cinfo->global_state == DSTATE_READY) {
-  25              		.loc 1 47 0
-  26 0004 4889FB   		movq	%rdi, %rbx
-  27              		.loc 1 48 0
-  28 0007 3DCA0000 		cmpl	$202, %eax
-  28      00
-  29 000c 0F84CE00 		je	.L35
-  29      0000
+  17              		.loc 1 47 1 is_stmt 0 view .LVU3
+  18 0004 55       		pushq	%rbp
+  19              		.cfi_def_cfa_offset 16
+  20              		.cfi_offset 6, -16
+  21              		.loc 1 48 12 view .LVU4
+  22 0005 8B4724   		movl	36(%rdi), %eax
+  47:fltk-1.3.4-1/jpeg/jdtrans.c ****   if (cinfo->global_state == DSTATE_READY) {
+  23              		.loc 1 47 1 view .LVU5
+  24 0008 4889FD   		movq	%rdi, %rbp
+  25              		.loc 1 48 6 view .LVU6
+  26 000b 3DCA0000 		cmpl	$202, %eax
+  26      00
+  27 0010 745E     		je	.L36
   49:fltk-1.3.4-1/jpeg/jdtrans.c ****     /* First call: initialize active modules */
   50:fltk-1.3.4-1/jpeg/jdtrans.c ****     transdecode_master_selection(cinfo);
   51:fltk-1.3.4-1/jpeg/jdtrans.c ****     cinfo->global_state = DSTATE_RDCOEFS;
   52:fltk-1.3.4-1/jpeg/jdtrans.c ****   }
   53:fltk-1.3.4-1/jpeg/jdtrans.c ****   if (cinfo->global_state == DSTATE_RDCOEFS) {
-  30              		.loc 1 53 0
-  31 0012 3DD10000 		cmpl	$209, %eax
-  31      00
-  32 0017 7447     		je	.L36
+  28              		.loc 1 53 3 is_stmt 1 view .LVU7
+  29              		.loc 1 53 6 is_stmt 0 view .LVU8
+  30 0012 3DD10000 		cmpl	$209, %eax
+  30      00
+  31 0017 0F847B01 		je	.L37
+  31      0000
   54:fltk-1.3.4-1/jpeg/jdtrans.c ****     /* Absorb whole file into the coef buffer */
   55:fltk-1.3.4-1/jpeg/jdtrans.c ****     for (;;) {
   56:fltk-1.3.4-1/jpeg/jdtrans.c ****       int retcode;
@@ -115,165 +115,90 @@
   80:fltk-1.3.4-1/jpeg/jdtrans.c ****    * to the coefficients during a full buffered-image-mode decompression.
   81:fltk-1.3.4-1/jpeg/jdtrans.c ****    */
   82:fltk-1.3.4-1/jpeg/jdtrans.c ****   if ((cinfo->global_state == DSTATE_STOPPING ||
-  33              		.loc 1 82 0
-  34 0019 3DD20000 		cmpl	$210, %eax
+  32              		.loc 1 82 3 is_stmt 1 view .LVU9
+  33              		.loc 1 82 6 is_stmt 0 view .LVU10
+  34 001d 3DD20000 		cmpl	$210, %eax
   34      00
-  35 001e 7407     		je	.L15
-  36 0020 3DCF0000 		cmpl	$207, %eax
+  35 0022 7433     		je	.L17
+  36 0024 3DCF0000 		cmpl	$207, %eax
   36      00
-  37 0025 7519     		jne	.L16
+  37 0029 742C     		je	.L17
   38              	.LVL1:
-  39              	.L15:
+  39              	.L18:
   83:fltk-1.3.4-1/jpeg/jdtrans.c ****        cinfo->global_state == DSTATE_BUFIMAGE) && cinfo->buffered_image) {
-  40              		.loc 1 83 0
-  41 0027 8B4358   		movl	88(%rbx), %eax
-  42 002a 85C0     		testl	%eax, %eax
-  43 002c 7412     		je	.L16
   84:fltk-1.3.4-1/jpeg/jdtrans.c ****     return cinfo->coef->coef_arrays;
-  44              		.loc 1 84 0
-  45 002e 488B8350 		movq	592(%rbx), %rax
-  45      020000
   85:fltk-1.3.4-1/jpeg/jdtrans.c ****   }
   86:fltk-1.3.4-1/jpeg/jdtrans.c ****   /* Oops, improper usage */
   87:fltk-1.3.4-1/jpeg/jdtrans.c ****   ERREXIT1(cinfo, JERR_BAD_STATE, cinfo->global_state);
+  40              		.loc 1 87 3 is_stmt 1 view .LVU11
+  41 002b 488B4500 		movq	0(%rbp), %rax
+  42 002f 4889EF   		movq	%rbp, %rdi
+  43 0032 C7402815 		movl	$21, 40(%rax)
+  43      000000
+  44 0039 488B4500 		movq	0(%rbp), %rax
+  45 003d 8B5524   		movl	36(%rbp), %edx
+  46 0040 89502C   		movl	%edx, 44(%rax)
+  47 0043 488B4500 		movq	0(%rbp), %rax
+  48 0047 FF10     		call	*(%rax)
+  49              	.LVL2:
   88:fltk-1.3.4-1/jpeg/jdtrans.c ****   return NULL;			/* keep compiler happy */
+  50              		.loc 1 88 3 view .LVU12
+  51              		.loc 1 88 10 is_stmt 0 view .LVU13
+  52 0049 31C0     		xorl	%eax, %eax
   89:fltk-1.3.4-1/jpeg/jdtrans.c **** }
-  46              		.loc 1 89 0
-  47 0035 5B       		popq	%rbx
-  48              		.cfi_remember_state
-  49              		.cfi_def_cfa_offset 8
-  50              	.LVL2:
-  84:fltk-1.3.4-1/jpeg/jdtrans.c ****     return cinfo->coef->coef_arrays;
-  51              		.loc 1 84 0
-  52 0036 488B4020 		movq	32(%rax), %rax
-  53              		.loc 1 89 0
-  54 003a C3       		ret
-  55              	.LVL3:
-  56 003b 0F1F4400 		.p2align 4,,10
-  56      00
-  57              		.p2align 3
-  58              	.L16:
-  59              		.cfi_restore_state
-  87:fltk-1.3.4-1/jpeg/jdtrans.c ****   return NULL;			/* keep compiler happy */
-  60              		.loc 1 87 0
-  61 0040 488B03   		movq	(%rbx), %rax
-  62 0043 4889DF   		movq	%rbx, %rdi
-  63 0046 C7402815 		movl	$21, 40(%rax)
-  63      000000
-  64 004d 488B03   		movq	(%rbx), %rax
-  65 0050 8B5324   		movl	36(%rbx), %edx
-  66 0053 89502C   		movl	%edx, 44(%rax)
-  67 0056 488B03   		movq	(%rbx), %rax
-  68 0059 FF10     		call	*(%rax)
-  69              	.LVL4:
-  88:fltk-1.3.4-1/jpeg/jdtrans.c **** }
-  70              		.loc 1 88 0
-  71 005b 31C0     		xorl	%eax, %eax
-  72              		.loc 1 89 0
-  73 005d 5B       		popq	%rbx
-  74              		.cfi_remember_state
-  75              		.cfi_def_cfa_offset 8
-  76              	.LVL5:
-  77 005e C3       		ret
-  78              	.LVL6:
-  79 005f 90       		.p2align 4,,10
-  80              		.p2align 3
-  81              	.L36:
-  82              		.cfi_restore_state
-  83 0060 488B5710 		movq	16(%rdi), %rdx
-  84              		.p2align 4,,10
-  85 0064 0F1F4000 		.p2align 3
-  86              	.L10:
-  87              	.LBB6:
-  58:fltk-1.3.4-1/jpeg/jdtrans.c **** 	(*cinfo->progress->progress_monitor) ((j_common_ptr) cinfo);
-  88              		.loc 1 58 0
-  89 0068 4885D2   		testq	%rdx, %rdx
-  90 006b 7405     		je	.L11
-  91              	.L37:
-  59:fltk-1.3.4-1/jpeg/jdtrans.c ****       /* Absorb some more input */
-  92              		.loc 1 59 0
-  93 006d 4889DF   		movq	%rbx, %rdi
-  94 0070 FF12     		call	*(%rdx)
-  95              	.LVL7:
-  96              	.L11:
-  61:fltk-1.3.4-1/jpeg/jdtrans.c ****       if (retcode == JPEG_SUSPENDED)
-  97              		.loc 1 61 0
-  98 0072 488B8360 		movq	608(%rbx), %rax
-  98      020000
-  99 0079 4889DF   		movq	%rbx, %rdi
- 100 007c FF10     		call	*(%rax)
- 101              	.LVL8:
-  62:fltk-1.3.4-1/jpeg/jdtrans.c **** 	return NULL;
- 102              		.loc 1 62 0
- 103 007e 85C0     		testl	%eax, %eax
- 104 0080 7459     		je	.L19
- 105              	.L38:
-  64:fltk-1.3.4-1/jpeg/jdtrans.c **** 	break;
- 106              		.loc 1 64 0
- 107 0082 83F802   		cmpl	$2, %eax
- 108 0085 0F84FD00 		je	.L13
- 108      0000
-  67:fltk-1.3.4-1/jpeg/jdtrans.c **** 	  (retcode == JPEG_ROW_COMPLETED || retcode == JPEG_REACHED_SOS)) {
- 109              		.loc 1 67 0
- 110 008b 488B5310 		movq	16(%rbx), %rdx
- 111 008f 4885D2   		testq	%rdx, %rdx
- 112 0092 74DE     		je	.L11
-  67:fltk-1.3.4-1/jpeg/jdtrans.c **** 	  (retcode == JPEG_ROW_COMPLETED || retcode == JPEG_REACHED_SOS)) {
- 113              		.loc 1 67 0 is_stmt 0 discriminator 1
- 114 0094 83E0FD   		andl	$-3, %eax
- 115              	.LVL9:
- 116 0097 83F801   		cmpl	$1, %eax
- 117 009a 75CC     		jne	.L10
-  69:fltk-1.3.4-1/jpeg/jdtrans.c **** 	  /* startup underestimated number of scans; ratchet up one scan */
- 118              		.loc 1 69 0 is_stmt 1
- 119 009c 488B4208 		movq	8(%rdx), %rax
- 120 00a0 4883C001 		addq	$1, %rax
- 121 00a4 48894208 		movq	%rax, 8(%rdx)
- 122 00a8 488B5310 		movq	16(%rbx), %rdx
- 123 00ac 488B4A10 		movq	16(%rdx), %rcx
- 124 00b0 4839C8   		cmpq	%rcx, %rax
- 125 00b3 7CB3     		jl	.L10
-  71:fltk-1.3.4-1/jpeg/jdtrans.c **** 	}
- 126              		.loc 1 71 0
- 127 00b5 8B83B001 		movl	432(%rbx), %eax
- 127      0000
- 128 00bb 4801C1   		addq	%rax, %rcx
- 129 00be 48894A10 		movq	%rcx, 16(%rdx)
- 130 00c2 488B5310 		movq	16(%rbx), %rdx
-  58:fltk-1.3.4-1/jpeg/jdtrans.c **** 	(*cinfo->progress->progress_monitor) ((j_common_ptr) cinfo);
- 131              		.loc 1 58 0
- 132 00c6 4885D2   		testq	%rdx, %rdx
- 133 00c9 75A2     		jne	.L37
-  61:fltk-1.3.4-1/jpeg/jdtrans.c ****       if (retcode == JPEG_SUSPENDED)
- 134              		.loc 1 61 0
- 135 00cb 488B8360 		movq	608(%rbx), %rax
- 135      020000
- 136 00d2 4889DF   		movq	%rbx, %rdi
- 137 00d5 FF10     		call	*(%rax)
- 138              	.LVL10:
-  62:fltk-1.3.4-1/jpeg/jdtrans.c **** 	return NULL;
- 139              		.loc 1 62 0
- 140 00d7 85C0     		testl	%eax, %eax
- 141 00d9 75A7     		jne	.L38
- 142              	.L19:
-  63:fltk-1.3.4-1/jpeg/jdtrans.c ****       if (retcode == JPEG_REACHED_EOI)
- 143              		.loc 1 63 0
- 144 00db 31C0     		xorl	%eax, %eax
- 145              	.LVL11:
- 146              	.LBE6:
- 147              		.loc 1 89 0
- 148 00dd 5B       		popq	%rbx
- 149              		.cfi_remember_state
- 150              		.cfi_def_cfa_offset 8
- 151              	.LVL12:
- 152 00de C3       		ret
- 153              	.LVL13:
- 154 00df 90       		.p2align 4,,10
- 155              		.p2align 3
- 156              	.L35:
- 157              		.cfi_restore_state
- 158              	.LBB7:
- 159              	.LBB8:
+  53              		.loc 1 89 1 view .LVU14
+  54 004b 5D       		popq	%rbp
+  55              		.cfi_remember_state
+  56              		.cfi_def_cfa_offset 8
+  57              	.LVL3:
+  58              		.loc 1 89 1 view .LVU15
+  59 004c C3       		ret
+  60              	.LVL4:
+  61 004d 0F1F00   		.p2align 4,,10
+  62              		.p2align 3
+  63              	.L14:
+  64              		.cfi_restore_state
+  76:fltk-1.3.4-1/jpeg/jdtrans.c ****   }
+  65              		.loc 1 76 5 is_stmt 1 view .LVU16
+  76:fltk-1.3.4-1/jpeg/jdtrans.c ****   }
+  66              		.loc 1 76 25 is_stmt 0 view .LVU17
+  67 0050 C74524D2 		movl	$210, 36(%rbp)
+  67      000000
+  82:fltk-1.3.4-1/jpeg/jdtrans.c ****        cinfo->global_state == DSTATE_BUFIMAGE) && cinfo->buffered_image) {
+  68              		.loc 1 82 3 is_stmt 1 view .LVU18
+  69              	.LVL5:
+  70              	.L17:
+  83:fltk-1.3.4-1/jpeg/jdtrans.c ****     return cinfo->coef->coef_arrays;
+  71              		.loc 1 83 48 is_stmt 0 view .LVU19
+  72 0057 8B4558   		movl	88(%rbp), %eax
+  73 005a 85C0     		testl	%eax, %eax
+  74 005c 74CD     		je	.L18
+  84:fltk-1.3.4-1/jpeg/jdtrans.c ****   }
+  75              		.loc 1 84 5 is_stmt 1 view .LVU20
+  84:fltk-1.3.4-1/jpeg/jdtrans.c ****   }
+  76              		.loc 1 84 23 is_stmt 0 view .LVU21
+  77 005e 488B8550 		movq	592(%rbp), %rax
+  77      020000
+  78              		.loc 1 89 1 view .LVU22
+  79 0065 5D       		popq	%rbp
+  80              		.cfi_remember_state
+  81              		.cfi_def_cfa_offset 8
+  82              	.LVL6:
+  84:fltk-1.3.4-1/jpeg/jdtrans.c ****   }
+  83              		.loc 1 84 23 view .LVU23
+  84 0066 488B4020 		movq	32(%rax), %rax
+  85              		.loc 1 89 1 view .LVU24
+  86 006a C3       		ret
+  87              	.LVL7:
+  88 006b 0F1F4400 		.p2align 4,,10
+  88      00
+  89              		.p2align 3
+  90              	.L36:
+  91              		.cfi_restore_state
+  50:fltk-1.3.4-1/jpeg/jdtrans.c ****     cinfo->global_state = DSTATE_RDCOEFS;
+  92              		.loc 1 50 5 is_stmt 1 view .LVU25
+  93              	.LBB6:
+  94              	.LBI6:
   90:fltk-1.3.4-1/jpeg/jdtrans.c **** 
   91:fltk-1.3.4-1/jpeg/jdtrans.c **** 
   92:fltk-1.3.4-1/jpeg/jdtrans.c **** /*
@@ -283,92 +208,107 @@
   96:fltk-1.3.4-1/jpeg/jdtrans.c **** 
   97:fltk-1.3.4-1/jpeg/jdtrans.c **** LOCAL(void)
   98:fltk-1.3.4-1/jpeg/jdtrans.c **** transdecode_master_selection (j_decompress_ptr cinfo)
+  95              		.loc 1 98 1 view .LVU26
+  96              	.LBB7:
   99:fltk-1.3.4-1/jpeg/jdtrans.c **** {
  100:fltk-1.3.4-1/jpeg/jdtrans.c ****   /* This is effectively a buffered-image operation. */
  101:fltk-1.3.4-1/jpeg/jdtrans.c ****   cinfo->buffered_image = TRUE;
- 160              		.loc 1 101 0
- 161 00e0 C7475801 		movl	$1, 88(%rdi)
- 161      000000
+  97              		.loc 1 101 3 view .LVU27
+  98              		.loc 1 101 25 is_stmt 0 view .LVU28
+  99 0070 C7475801 		movl	$1, 88(%rdi)
+  99      000000
  102:fltk-1.3.4-1/jpeg/jdtrans.c **** 
  103:fltk-1.3.4-1/jpeg/jdtrans.c ****   /* Compute output image dimensions and related values. */
  104:fltk-1.3.4-1/jpeg/jdtrans.c ****   jpeg_core_output_dimensions(cinfo);
- 162              		.loc 1 104 0
- 163 00e7 E8000000 		call	jpeg_core_output_dimensions
- 163      00
- 164              	.LVL14:
+ 100              		.loc 1 104 3 is_stmt 1 view .LVU29
+ 101 0077 E8000000 		call	jpeg_core_output_dimensions@PLT
+ 101      00
+ 102              	.LVL8:
  105:fltk-1.3.4-1/jpeg/jdtrans.c **** 
  106:fltk-1.3.4-1/jpeg/jdtrans.c ****   /* Entropy decoding: either Huffman or arithmetic coding. */
  107:fltk-1.3.4-1/jpeg/jdtrans.c ****   if (cinfo->arith_code)
- 165              		.loc 1 107 0
- 166 00ec 448B8340 		movl	320(%rbx), %r8d
- 166      010000
+ 103              		.loc 1 107 3 view .LVU30
+ 104              		.loc 1 107 6 is_stmt 0 view .LVU31
+ 105 007c 448B8540 		movl	320(%rbp), %r8d
+ 105      010000
  108:fltk-1.3.4-1/jpeg/jdtrans.c ****     jinit_arith_decoder(cinfo);
- 167              		.loc 1 108 0
- 168 00f3 4889DF   		movq	%rbx, %rdi
+ 106              		.loc 1 108 5 view .LVU32
+ 107 0083 4889EF   		movq	%rbp, %rdi
  107:fltk-1.3.4-1/jpeg/jdtrans.c ****     jinit_arith_decoder(cinfo);
- 169              		.loc 1 107 0
- 170 00f6 4585C0   		testl	%r8d, %r8d
- 171 00f9 0F849900 		je	.L3
- 171      0000
- 172              		.loc 1 108 0
- 173 00ff E8000000 		call	jinit_arith_decoder
- 173      00
- 174              	.LVL15:
- 175              	.L4:
+ 108              		.loc 1 107 6 view .LVU33
+ 109 0086 4585C0   		testl	%r8d, %r8d
+ 110 0089 0F85F100 		jne	.L38
+ 110      0000
+ 111              	.LVL9:
  109:fltk-1.3.4-1/jpeg/jdtrans.c ****   else {
  110:fltk-1.3.4-1/jpeg/jdtrans.c ****     jinit_huff_decoder(cinfo);
+ 112              		.loc 1 110 5 is_stmt 1 view .LVU34
+ 113 008f E8000000 		call	jinit_huff_decoder@PLT
+ 113      00
+ 114              	.LVL10:
+ 115              	.L4:
  111:fltk-1.3.4-1/jpeg/jdtrans.c ****   }
  112:fltk-1.3.4-1/jpeg/jdtrans.c **** 
  113:fltk-1.3.4-1/jpeg/jdtrans.c ****   /* Always get a full-image coefficient buffer. */
  114:fltk-1.3.4-1/jpeg/jdtrans.c ****   jinit_d_coef_controller(cinfo, TRUE);
- 176              		.loc 1 114 0
- 177 0104 BE010000 		movl	$1, %esi
- 177      00
- 178 0109 4889DF   		movq	%rbx, %rdi
- 179 010c E8000000 		call	jinit_d_coef_controller
- 179      00
- 180              	.LVL16:
+ 116              		.loc 1 114 3 view .LVU35
+ 117 0094 BE010000 		movl	$1, %esi
+ 117      00
+ 118 0099 4889EF   		movq	%rbp, %rdi
+ 119 009c E8000000 		call	jinit_d_coef_controller@PLT
+ 119      00
+ 120              	.LVL11:
  115:fltk-1.3.4-1/jpeg/jdtrans.c **** 
  116:fltk-1.3.4-1/jpeg/jdtrans.c ****   /* We can now tell the memory manager to allocate virtual arrays. */
  117:fltk-1.3.4-1/jpeg/jdtrans.c ****   (*cinfo->mem->realize_virt_arrays) ((j_common_ptr) cinfo);
- 181              		.loc 1 117 0
- 182 0111 488B4308 		movq	8(%rbx), %rax
- 183 0115 4889DF   		movq	%rbx, %rdi
- 184 0118 FF5030   		call	*48(%rax)
- 185              	.LVL17:
+ 121              		.loc 1 117 3 view .LVU36
+ 122              		.loc 1 117 4 is_stmt 0 view .LVU37
+ 123 00a1 488B4508 		movq	8(%rbp), %rax
+ 124 00a5 4889EF   		movq	%rbp, %rdi
+ 125 00a8 FF5030   		call	*48(%rax)
+ 126              	.LVL12:
  118:fltk-1.3.4-1/jpeg/jdtrans.c **** 
  119:fltk-1.3.4-1/jpeg/jdtrans.c ****   /* Initialize input side of decompressor to consume first scan. */
  120:fltk-1.3.4-1/jpeg/jdtrans.c ****   (*cinfo->inputctl->start_input_pass) (cinfo);
- 186              		.loc 1 120 0
- 187 011b 488B8360 		movq	608(%rbx), %rax
- 187      020000
- 188 0122 4889DF   		movq	%rbx, %rdi
- 189 0125 FF5010   		call	*16(%rax)
- 190              	.LVL18:
+ 127              		.loc 1 120 3 is_stmt 1 view .LVU38
+ 128              		.loc 1 120 4 is_stmt 0 view .LVU39
+ 129 00ab 488B8560 		movq	608(%rbp), %rax
+ 129      020000
+ 130 00b2 4889EF   		movq	%rbp, %rdi
+ 131 00b5 FF5010   		call	*16(%rax)
+ 132              	.LVL13:
  121:fltk-1.3.4-1/jpeg/jdtrans.c **** 
  122:fltk-1.3.4-1/jpeg/jdtrans.c ****   /* Initialize progress monitoring. */
  123:fltk-1.3.4-1/jpeg/jdtrans.c ****   if (cinfo->progress != NULL) {
- 191              		.loc 1 123 0
- 192 0128 488B5310 		movq	16(%rbx), %rdx
- 193 012c 4885D2   		testq	%rdx, %rdx
- 194 012f 7447     		je	.L5
- 195              	.LBB9:
+ 133              		.loc 1 123 3 is_stmt 1 view .LVU40
+ 134              		.loc 1 123 12 is_stmt 0 view .LVU41
+ 135 00b8 488B5510 		movq	16(%rbp), %rdx
+ 136              		.loc 1 123 6 view .LVU42
+ 137 00bc 4885D2   		testq	%rdx, %rdx
+ 138 00bf 744C     		je	.L5
+ 139              	.LBB8:
  124:fltk-1.3.4-1/jpeg/jdtrans.c ****     int nscans;
+ 140              		.loc 1 124 5 is_stmt 1 view .LVU43
  125:fltk-1.3.4-1/jpeg/jdtrans.c ****     /* Estimate number of scans to set pass_limit. */
  126:fltk-1.3.4-1/jpeg/jdtrans.c ****     if (cinfo->progressive_mode) {
- 196              		.loc 1 126 0
- 197 0131 8BB33C01 		movl	316(%rbx), %esi
- 197      0000
- 198 0137 85F6     		testl	%esi, %esi
- 199 0139 746D     		je	.L6
- 200              	.LVL19:
- 201 013b 8B4338   		movl	56(%rbx), %eax
- 202 013e 8D444002 		leal	2(%rax,%rax,2), %eax
- 203 0142 4898     		cltq
- 204              	.LVL20:
- 205              	.L7:
+ 141              		.loc 1 126 5 view .LVU44
+ 142              		.loc 1 126 8 is_stmt 0 view .LVU45
+ 143 00c1 8BBD3C01 		movl	316(%rbp), %edi
+ 143      0000
+ 144 00c7 85FF     		testl	%edi, %edi
+ 145 00c9 0F84D900 		je	.L6
+ 145      0000
  127:fltk-1.3.4-1/jpeg/jdtrans.c ****       /* Arbitrarily estimate 2 interleaved DC scans + 3 AC scans/component. */
  128:fltk-1.3.4-1/jpeg/jdtrans.c ****       nscans = 2 + 3 * cinfo->num_components;
+ 146              		.loc 1 128 7 is_stmt 1 view .LVU46
+ 147              	.LVL14:
+ 148              		.loc 1 128 22 is_stmt 0 view .LVU47
+ 149 00cf 8B4538   		movl	56(%rbp), %eax
+ 150              		.loc 1 128 14 view .LVU48
+ 151 00d2 8D444002 		leal	2(%rax,%rax,2), %eax
+ 152 00d6 4863C8   		movslq	%eax, %rcx
+ 153              	.LVL15:
+ 154              	.L7:
  129:fltk-1.3.4-1/jpeg/jdtrans.c ****     } else if (cinfo->inputctl->has_multiple_scans) {
  130:fltk-1.3.4-1/jpeg/jdtrans.c ****       /* For a nonprogressive multiscan file, estimate 1 scan per component. */
  131:fltk-1.3.4-1/jpeg/jdtrans.c ****       nscans = cinfo->num_components;
@@ -376,155 +316,327 @@
  133:fltk-1.3.4-1/jpeg/jdtrans.c ****       nscans = 1;
  134:fltk-1.3.4-1/jpeg/jdtrans.c ****     }
  135:fltk-1.3.4-1/jpeg/jdtrans.c ****     cinfo->progress->pass_counter = 0L;
- 206              		.loc 1 135 0
- 207 0144 48C74208 		movq	$0, 8(%rdx)
- 207      00000000 
+ 155              		.loc 1 135 5 is_stmt 1 view .LVU49
+ 156              		.loc 1 135 35 is_stmt 0 view .LVU50
+ 157 00d9 48C74208 		movq	$0, 8(%rdx)
+ 157      00000000 
  136:fltk-1.3.4-1/jpeg/jdtrans.c ****     cinfo->progress->pass_limit = (long) cinfo->total_iMCU_rows * nscans;
- 208              		.loc 1 136 0
- 209 014c 8B8BB001 		movl	432(%rbx), %ecx
- 209      0000
- 210 0152 488B5310 		movq	16(%rbx), %rdx
- 211 0156 480FAFC1 		imulq	%rcx, %rax
- 212 015a 48894210 		movq	%rax, 16(%rdx)
+ 158              		.loc 1 136 5 is_stmt 1 view .LVU51
+ 159              		.loc 1 136 35 is_stmt 0 view .LVU52
+ 160 00e1 8B85B001 		movl	432(%rbp), %eax
+ 160      0000
+ 161              		.loc 1 136 10 view .LVU53
+ 162 00e7 488B5510 		movq	16(%rbp), %rdx
+ 163              		.loc 1 136 65 view .LVU54
+ 164 00eb 480FAFC1 		imulq	%rcx, %rax
+ 165              		.loc 1 136 33 view .LVU55
+ 166 00ef 48894210 		movq	%rax, 16(%rdx)
  137:fltk-1.3.4-1/jpeg/jdtrans.c ****     cinfo->progress->completed_passes = 0;
- 213              		.loc 1 137 0
- 214 015e 488B4310 		movq	16(%rbx), %rax
- 215 0162 C7401800 		movl	$0, 24(%rax)
- 215      000000
+ 167              		.loc 1 137 5 is_stmt 1 view .LVU56
+ 168              		.loc 1 137 10 is_stmt 0 view .LVU57
+ 169 00f3 488B4510 		movq	16(%rbp), %rax
+ 170              		.loc 1 137 39 view .LVU58
+ 171 00f7 C7401800 		movl	$0, 24(%rax)
+ 171      000000
  138:fltk-1.3.4-1/jpeg/jdtrans.c ****     cinfo->progress->total_passes = 1;
- 216              		.loc 1 138 0
- 217 0169 488B4310 		movq	16(%rbx), %rax
- 218 016d C7401C01 		movl	$1, 28(%rax)
- 218      000000
- 219 0174 488B5310 		movq	16(%rbx), %rdx
- 220              	.L5:
- 221              	.LVL21:
- 222              	.LBE9:
- 223              	.LBE8:
- 224              	.LBE7:
+ 172              		.loc 1 138 5 is_stmt 1 view .LVU59
+ 173              		.loc 1 138 10 is_stmt 0 view .LVU60
+ 174 00fe 488B4510 		movq	16(%rbp), %rax
+ 175              		.loc 1 138 35 view .LVU61
+ 176 0102 C7401C01 		movl	$1, 28(%rax)
+ 176      000000
+ 177 0109 488B5510 		movq	16(%rbp), %rdx
+ 178              	.L5:
+ 179              	.LVL16:
+ 180              		.loc 1 138 35 view .LVU62
+ 181              	.LBE8:
+ 182              	.LBE7:
+ 183              	.LBE6:
   51:fltk-1.3.4-1/jpeg/jdtrans.c ****   }
- 225              		.loc 1 51 0
- 226 0178 C74324D1 		movl	$209, 36(%rbx)
- 226      000000
- 227 017f E9E4FEFF 		jmp	.L10
- 227      FF
- 228              	.LVL22:
- 229              		.p2align 4,,10
- 230 0184 0F1F4000 		.p2align 3
- 231              	.L13:
-  76:fltk-1.3.4-1/jpeg/jdtrans.c ****   }
- 232              		.loc 1 76 0
- 233 0188 C74324D2 		movl	$210, 36(%rbx)
- 233      000000
- 234 018f E993FEFF 		jmp	.L15
- 234      FF
- 235              	.LVL23:
- 236              		.p2align 4,,10
- 237 0194 0F1F4000 		.p2align 3
- 238              	.L3:
- 239              	.LBB12:
- 240              	.LBB11:
- 110:fltk-1.3.4-1/jpeg/jdtrans.c ****   }
- 241              		.loc 1 110 0
- 242 0198 E8000000 		call	jinit_huff_decoder
- 242      00
- 243              	.LVL24:
- 244 019d E962FFFF 		jmp	.L4
- 244      FF
- 245              		.p2align 4,,10
- 246 01a2 660F1F44 		.p2align 3
+ 184              		.loc 1 51 5 is_stmt 1 view .LVU63
+  51:fltk-1.3.4-1/jpeg/jdtrans.c ****   }
+ 185              		.loc 1 51 25 is_stmt 0 view .LVU64
+ 186 010d C74524D1 		movl	$209, 36(%rbp)
+ 186      000000
+  53:fltk-1.3.4-1/jpeg/jdtrans.c ****     /* Absorb whole file into the coef buffer */
+ 187              		.loc 1 53 3 is_stmt 1 view .LVU65
+ 188              		.p2align 4,,10
+ 189 0114 0F1F4000 		.p2align 3
+ 190              	.L11:
+  55:fltk-1.3.4-1/jpeg/jdtrans.c ****       int retcode;
+ 191              		.loc 1 55 5 view .LVU66
+ 192              	.LBB12:
+  56:fltk-1.3.4-1/jpeg/jdtrans.c ****       /* Call progress monitor hook if present */
+ 193              		.loc 1 56 7 view .LVU67
+  58:fltk-1.3.4-1/jpeg/jdtrans.c **** 	(*cinfo->progress->progress_monitor) ((j_common_ptr) cinfo);
+ 194              		.loc 1 58 7 view .LVU68
+  58:fltk-1.3.4-1/jpeg/jdtrans.c **** 	(*cinfo->progress->progress_monitor) ((j_common_ptr) cinfo);
+ 195              		.loc 1 58 10 is_stmt 0 view .LVU69
+ 196 0118 4885D2   		testq	%rdx, %rdx
+ 197 011b 7405     		je	.L15
+ 198              	.L39:
+  59:fltk-1.3.4-1/jpeg/jdtrans.c ****       /* Absorb some more input */
+ 199              		.loc 1 59 2 is_stmt 1 view .LVU70
+  59:fltk-1.3.4-1/jpeg/jdtrans.c ****       /* Absorb some more input */
+ 200              		.loc 1 59 3 is_stmt 0 view .LVU71
+ 201 011d 4889EF   		movq	%rbp, %rdi
+ 202 0120 FF12     		call	*(%rdx)
+ 203              	.LVL17:
+ 204              	.L15:
+  61:fltk-1.3.4-1/jpeg/jdtrans.c ****       if (retcode == JPEG_SUSPENDED)
+ 205              		.loc 1 61 7 is_stmt 1 view .LVU72
+  61:fltk-1.3.4-1/jpeg/jdtrans.c ****       if (retcode == JPEG_SUSPENDED)
+ 206              		.loc 1 61 18 is_stmt 0 view .LVU73
+ 207 0122 488B8560 		movq	608(%rbp), %rax
+ 207      020000
+ 208 0129 4889EF   		movq	%rbp, %rdi
+ 209 012c FF10     		call	*(%rax)
+ 210              	.LVL18:
+  62:fltk-1.3.4-1/jpeg/jdtrans.c **** 	return NULL;
+ 211              		.loc 1 62 7 is_stmt 1 view .LVU74
+  62:fltk-1.3.4-1/jpeg/jdtrans.c **** 	return NULL;
+ 212              		.loc 1 62 10 is_stmt 0 view .LVU75
+ 213 012e 85C0     		testl	%eax, %eax
+ 214 0130 745E     		je	.L21
+  64:fltk-1.3.4-1/jpeg/jdtrans.c **** 	break;
+ 215              		.loc 1 64 7 is_stmt 1 view .LVU76
+  64:fltk-1.3.4-1/jpeg/jdtrans.c **** 	break;
+ 216              		.loc 1 64 10 is_stmt 0 view .LVU77
+ 217 0132 83F802   		cmpl	$2, %eax
+ 218 0135 0F8415FF 		je	.L14
+ 218      FFFF
+  67:fltk-1.3.4-1/jpeg/jdtrans.c **** 	  (retcode == JPEG_ROW_COMPLETED || retcode == JPEG_REACHED_SOS)) {
+ 219              		.loc 1 67 7 is_stmt 1 view .LVU78
+  67:fltk-1.3.4-1/jpeg/jdtrans.c **** 	  (retcode == JPEG_ROW_COMPLETED || retcode == JPEG_REACHED_SOS)) {
+ 220              		.loc 1 67 16 is_stmt 0 view .LVU79
+ 221 013b 488B5510 		movq	16(%rbp), %rdx
+  67:fltk-1.3.4-1/jpeg/jdtrans.c **** 	  (retcode == JPEG_ROW_COMPLETED || retcode == JPEG_REACHED_SOS)) {
+ 222              		.loc 1 67 10 view .LVU80
+ 223 013f 4885D2   		testq	%rdx, %rdx
+ 224 0142 74DE     		je	.L15
+  68:fltk-1.3.4-1/jpeg/jdtrans.c **** 	if (++cinfo->progress->pass_counter >= cinfo->progress->pass_limit) {
+ 225              		.loc 1 68 46 discriminator 1 view .LVU81
+ 226 0144 83E0FD   		andl	$-3, %eax
+ 227              	.LVL19:
+  67:fltk-1.3.4-1/jpeg/jdtrans.c **** 	  (retcode == JPEG_ROW_COMPLETED || retcode == JPEG_REACHED_SOS)) {
+ 228              		.loc 1 67 35 discriminator 1 view .LVU82
+ 229 0147 83F801   		cmpl	$1, %eax
+ 230 014a 75CC     		jne	.L11
+  69:fltk-1.3.4-1/jpeg/jdtrans.c **** 	  /* startup underestimated number of scans; ratchet up one scan */
+ 231              		.loc 1 69 2 is_stmt 1 view .LVU83
+  69:fltk-1.3.4-1/jpeg/jdtrans.c **** 	  /* startup underestimated number of scans; ratchet up one scan */
+ 232              		.loc 1 69 6 is_stmt 0 view .LVU84
+ 233 014c 488B4208 		movq	8(%rdx), %rax
+ 234 0150 4883C001 		addq	$1, %rax
+  69:fltk-1.3.4-1/jpeg/jdtrans.c **** 	  /* startup underestimated number of scans; ratchet up one scan */
+ 235              		.loc 1 69 5 view .LVU85
+ 236 0154 48894208 		movq	%rax, 8(%rdx)
+  69:fltk-1.3.4-1/jpeg/jdtrans.c **** 	  /* startup underestimated number of scans; ratchet up one scan */
+ 237              		.loc 1 69 46 view .LVU86
+ 238 0158 488B5510 		movq	16(%rbp), %rdx
+  69:fltk-1.3.4-1/jpeg/jdtrans.c **** 	  /* startup underestimated number of scans; ratchet up one scan */
+ 239              		.loc 1 69 56 view .LVU87
+ 240 015c 488B4A10 		movq	16(%rdx), %rcx
+  69:fltk-1.3.4-1/jpeg/jdtrans.c **** 	  /* startup underestimated number of scans; ratchet up one scan */
+ 241              		.loc 1 69 5 view .LVU88
+ 242 0160 4839C8   		cmpq	%rcx, %rax
+ 243 0163 7CB3     		jl	.L11
+  71:fltk-1.3.4-1/jpeg/jdtrans.c **** 	}
+ 244              		.loc 1 71 4 is_stmt 1 view .LVU89
+  71:fltk-1.3.4-1/jpeg/jdtrans.c **** 	}
+ 245              		.loc 1 71 35 is_stmt 0 view .LVU90
+ 246 0165 8B85B001 		movl	432(%rbp), %eax
  246      0000
- 247              	.L6:
- 248              	.LBB10:
+  71:fltk-1.3.4-1/jpeg/jdtrans.c **** 	}
+ 247              		.loc 1 71 32 view .LVU91
+ 248 016b 4801C1   		addq	%rax, %rcx
+ 249 016e 48894A10 		movq	%rcx, 16(%rdx)
+ 250 0172 488B5510 		movq	16(%rbp), %rdx
+ 251              	.LBE12:
+  55:fltk-1.3.4-1/jpeg/jdtrans.c ****       int retcode;
+ 252              		.loc 1 55 5 is_stmt 1 view .LVU92
+ 253              	.LBB13:
+  56:fltk-1.3.4-1/jpeg/jdtrans.c ****       /* Call progress monitor hook if present */
+ 254              		.loc 1 56 7 view .LVU93
+  58:fltk-1.3.4-1/jpeg/jdtrans.c **** 	(*cinfo->progress->progress_monitor) ((j_common_ptr) cinfo);
+ 255              		.loc 1 58 7 view .LVU94
+  58:fltk-1.3.4-1/jpeg/jdtrans.c **** 	(*cinfo->progress->progress_monitor) ((j_common_ptr) cinfo);
+ 256              		.loc 1 58 10 is_stmt 0 view .LVU95
+ 257 0176 4885D2   		testq	%rdx, %rdx
+ 258 0179 75A2     		jne	.L39
+ 259 017b EBA5     		jmp	.L15
+ 260              	.LVL20:
+ 261 017d 0F1F00   		.p2align 4,,10
+ 262              		.p2align 3
+ 263              	.L38:
+  58:fltk-1.3.4-1/jpeg/jdtrans.c **** 	(*cinfo->progress->progress_monitor) ((j_common_ptr) cinfo);
+ 264              		.loc 1 58 10 view .LVU96
+ 265              	.LBE13:
+ 266              	.LBB14:
+ 267              	.LBB10:
+ 108:fltk-1.3.4-1/jpeg/jdtrans.c ****   else {
+ 268              		.loc 1 108 5 is_stmt 1 view .LVU97
+ 269 0180 E8000000 		call	jinit_arith_decoder@PLT
+ 269      00
+ 270              	.LVL21:
+ 108:fltk-1.3.4-1/jpeg/jdtrans.c ****   else {
+ 271              		.loc 1 108 5 is_stmt 0 view .LVU98
+ 272 0185 E90AFFFF 		jmp	.L4
+ 272      FF
+ 273              	.LVL22:
+ 274 018a 660F1F44 		.p2align 4,,10
+ 274      0000
+ 275              		.p2align 3
+ 276              	.L21:
+ 108:fltk-1.3.4-1/jpeg/jdtrans.c ****   else {
+ 277              		.loc 1 108 5 view .LVU99
+ 278              	.LBE10:
+ 279              	.LBE14:
+ 280              	.LBB15:
+  63:fltk-1.3.4-1/jpeg/jdtrans.c ****       if (retcode == JPEG_REACHED_EOI)
+ 281              		.loc 1 63 9 view .LVU100
+ 282 0190 31C0     		xorl	%eax, %eax
+ 283              	.LVL23:
+  63:fltk-1.3.4-1/jpeg/jdtrans.c ****       if (retcode == JPEG_REACHED_EOI)
+ 284              		.loc 1 63 9 view .LVU101
+ 285              	.LBE15:
+  89:fltk-1.3.4-1/jpeg/jdtrans.c **** 
+ 286              		.loc 1 89 1 view .LVU102
+ 287 0192 5D       		popq	%rbp
+ 288              		.cfi_remember_state
+ 289              		.cfi_def_cfa_offset 8
+ 290              	.LVL24:
+  89:fltk-1.3.4-1/jpeg/jdtrans.c **** 
+ 291              		.loc 1 89 1 view .LVU103
+ 292 0193 C3       		ret
+ 293              	.LVL25:
+ 294              		.p2align 4,,10
+ 295 0194 0F1F4000 		.p2align 3
+ 296              	.L37:
+ 297              		.cfi_restore_state
+  89:fltk-1.3.4-1/jpeg/jdtrans.c **** 
+ 298              		.loc 1 89 1 view .LVU104
+ 299 0198 488B5710 		movq	16(%rdi), %rdx
+ 300 019c E977FFFF 		jmp	.L11
+ 300      FF
+ 301              	.LVL26:
+ 302              		.p2align 4,,10
+ 303 01a1 0F1F8000 		.p2align 3
+ 303      000000
+ 304              	.L6:
+ 305              	.LBB16:
+ 306              	.LBB11:
+ 307              	.LBB9:
  129:fltk-1.3.4-1/jpeg/jdtrans.c ****       /* For a nonprogressive multiscan file, estimate 1 scan per component. */
- 249              		.loc 1 129 0
- 250 01a8 488B8B60 		movq	608(%rbx), %rcx
- 250      020000
- 251 01af B8010000 		movl	$1, %eax
- 251      00
- 252 01b4 8B4920   		movl	32(%rcx), %ecx
- 253 01b7 85C9     		testl	%ecx, %ecx
- 254 01b9 7489     		je	.L7
- 255              	.LVL25:
- 256 01bb 48634338 		movslq	56(%rbx), %rax
- 257 01bf EB83     		jmp	.L7
- 258              	.LBE10:
- 259              	.LBE11:
- 260              	.LBE12:
- 261              		.cfi_endproc
- 262              	.LFE61:
- 264              		.section	.text.unlikely.jpeg_read_coefficients
- 265              	.LCOLDE0:
- 266              		.section	.text.jpeg_read_coefficients
- 267              	.LHOTE0:
- 268              		.text
- 269              	.Letext0:
- 270              		.section	.text.unlikely.jpeg_read_coefficients
- 271              	.Letext_cold0:
- 272              		.file 2 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
- 273              		.file 3 "/usr/include/x86_64-linux-gnu/bits/types.h"
- 274              		.file 4 "/usr/include/libio.h"
- 275              		.file 5 "fltk-1.3.4-1/jpeg/jmorecfg.h"
- 276              		.file 6 "fltk-1.3.4-1/jpeg/jpeglib.h"
- 277              		.file 7 "fltk-1.3.4-1/jpeg/jpegint.h"
- 278              		.file 8 "fltk-1.3.4-1/jpeg/jerror.h"
- 279              		.file 9 "/usr/include/stdio.h"
+ 308              		.loc 1 129 12 is_stmt 1 view .LVU105
+ 129:fltk-1.3.4-1/jpeg/jdtrans.c ****       /* For a nonprogressive multiscan file, estimate 1 scan per component. */
+ 309              		.loc 1 129 31 is_stmt 0 view .LVU106
+ 310 01a8 488B8560 		movq	608(%rbp), %rax
+ 310      020000
+ 311 01af B9010000 		movl	$1, %ecx
+ 311      00
+ 129:fltk-1.3.4-1/jpeg/jdtrans.c ****       /* For a nonprogressive multiscan file, estimate 1 scan per component. */
+ 312              		.loc 1 129 15 view .LVU107
+ 313 01b4 8B7020   		movl	32(%rax), %esi
+ 314 01b7 85F6     		testl	%esi, %esi
+ 315 01b9 0F841AFF 		je	.L7
+ 315      FFFF
+ 131:fltk-1.3.4-1/jpeg/jdtrans.c ****     } else {
+ 316              		.loc 1 131 7 is_stmt 1 view .LVU108
+ 317              	.LVL27:
+ 131:fltk-1.3.4-1/jpeg/jdtrans.c ****     } else {
+ 318              		.loc 1 131 7 is_stmt 0 view .LVU109
+ 319 01bf 48634D38 		movslq	56(%rbp), %rcx
+ 320 01c3 E911FFFF 		jmp	.L7
+ 320      FF
+ 321              	.LBE9:
+ 322              	.LBE11:
+ 323              	.LBE16:
+ 324              		.cfi_endproc
+ 325              	.LFE51:
+ 327              		.text
+ 328              	.Letext0:
+ 329              		.file 2 "/usr/lib/gcc/x86_64-linux-gnu/9/include/stddef.h"
+ 330              		.file 3 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 331              		.file 4 "/usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h"
+ 332              		.file 5 "/usr/include/x86_64-linux-gnu/bits/types/FILE.h"
+ 333              		.file 6 "/usr/include/stdio.h"
+ 334              		.file 7 "/usr/include/x86_64-linux-gnu/bits/sys_errlist.h"
+ 335              		.file 8 "fltk-1.3.4-1/jpeg/jmorecfg.h"
+ 336              		.file 9 "fltk-1.3.4-1/jpeg/jpeglib.h"
+ 337              		.file 10 "fltk-1.3.4-1/jpeg/jpegint.h"
+ 338              		.file 11 "fltk-1.3.4-1/jpeg/jerror.h"
+ 11514              		.section	.note.gnu.property,"a"
+ 11515              		.align 8
+ 11516 0000 04000000 		.long	 1f - 0f
+ 11517 0004 10000000 		.long	 4f - 1f
+ 11518 0008 05000000 		.long	 5
+ 11519              	0:
+ 11520 000c 474E5500 		.string	 "GNU"
+ 11521              	1:
+ 11522              		.align 8
+ 11523 0010 020000C0 		.long	 0xc0000002
+ 11524 0014 04000000 		.long	 3f - 2f
+ 11525              	2:
+ 11526 0018 03000000 		.long	 0x3
+ 11527              	3:
+ 11528 001c 00000000 		.align 8
+ 11529              	4:
 DEFINED SYMBOLS
                             *ABS*:0000000000000000 jdtrans.c
-     /tmp/ccisJhfg.s:14     .text.jpeg_read_coefficients:0000000000000000 jpeg_read_coefficients
-                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
-                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+     /tmp/ccw19XlB.s:8      .text.jpeg_read_coefficients:0000000000000000 jpeg_read_coefficients
+                           .group:0000000000000000 wm4.0.a6b23a418548ac0bda5d8549c4a2ec91
+                           .group:0000000000000000 wm4.stdcpredef.h.19.8dc41bed5d9037ff9622e015fb5f0ce3
                            .group:0000000000000000 wm4.jconfig.h.10.247fc3ff67998f3074970b1373c70333
-                           .group:0000000000000000 wm4.features.h.19.24da27e0a4d0d521fd057013d982b8b5
-                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
-                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
-                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
-                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
-                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
-                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
-                           .group:0000000000000000 wm4.waitflags.h.25.e401b8bcfee800b540b27abd7cc78de9
+                           .group:0000000000000000 wm4.features.h.19.5b5f5a19624a0527f479fdc52d54808f
+                           .group:0000000000000000 wm4.cdefs.h.19.98d80eddbb3f64f4f30cd9aee9c5593c
+                           .group:0000000000000000 wm4.wordsize.h.4.baf119258a1e53d8dba67ceac44ab6bc
+                           .group:0000000000000000 wm4.cdefs.h.475.fb75d2e4416aa349344e6f45f683bf28
+                           .group:0000000000000000 wm4.stubs64.h.10.6ce4c34010988db072c080326a6b6319
+                           .group:0000000000000000 wm4.libcheaderstart.h.37.d9274df4cc0172452960ad9644fa5579
+                           .group:0000000000000000 wm4.stdlib.h.28.2cffa49d94c5d85f4538f55f7b59771d
+                           .group:0000000000000000 wm4.stddef.h.181.13772e73e5434e8cc4fafaaddad2b5da
+                           .group:0000000000000000 wm4.waitflags.h.25.41934de4af99038521c2782f418699b1
                            .group:0000000000000000 wm4.waitstatus.h.28.93f167f49d64e2b9b99f98d1162a93bf
-                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
-                           .group:0000000000000000 wm4.endian.h.41.24cced64aef71195a51d4daa8e4f4a95
-                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
-                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
-                           .group:0000000000000000 wm4.byteswap.h.38.11ee5fdc0f6cc53a16c505b9233cecef
-                           .group:0000000000000000 wm4.endian.h.63.97272d7c64d5db8020003b32e9289502
-                           .group:0000000000000000 wm4.waitstatus.h.99.408b6270fa6eb71377201a241ef15f79
-                           .group:0000000000000000 wm4.stdlib.h.50.84aeca2ac6f37d40e1e9b3cef757ba2d
-                           .group:0000000000000000 wm4.types.h.23.f6dcbaa72f8f71361acef09804d45a5e
-                           .group:0000000000000000 wm4.time.h.53.beb46e650cd406cb917b6b96b45e640a
-                           .group:0000000000000000 wm4.stddef.h.238.847b6907dabda77be90a9ab7ad789e2e
-                           .group:0000000000000000 wm4.types.h.187.bd5a05039b505b3620e6973f1b2ffeb1
+                           .group:0000000000000000 wm4.stdlib.h.43.9fa4f727a2f1cb8d2450a574c9195553
+                           .group:0000000000000000 wm4.floatn.h.20.80c7cf8a8dfad237004b28d051d5afda
+                           .group:0000000000000000 wm4.floatncommon.h.34.7e1840d7dfb19e9bdb51aeb077d76637
+                           .group:0000000000000000 wm4.stdlib.h.71.2927e068ec678159b4f68ec2f089f7e6
+                           .group:0000000000000000 wm4.types.h.109.56eb9ae966b255288cc544f18746a7ff
+                           .group:0000000000000000 wm4.typesizes.h.24.2c64f817c0dc4b6fb2a2c619d717be26
+                           .group:0000000000000000 wm4.time64.h.24.a8166ae916ec910dab0d8987098d42ee
+                           .group:0000000000000000 wm4.types.h.40.18f72bab8242c2bb4c532a2aa95b5f00
+                           .group:0000000000000000 wm4.stddef.h.231.0adce5c8c1fd8096aaff50981b3d1f0f
+                           .group:0000000000000000 wm4.endian.h.20.efabd1018df5d7b4052c27dc6bdd5ce5
+                           .group:0000000000000000 wm4.endianness.h.2.2c6a211f7909f3af5e9e9cfa3b6b63c8
+                           .group:0000000000000000 wm4.endian.h.40.9e5d395adda2f4eb53ae69b69b664084
+                           .group:0000000000000000 wm4.endian.h.27.4c4f94262c4eaee2982fe00ed1b4f173
+                           .group:0000000000000000 wm4.byteswap.h.24.5363c019348146aada5aeadf51456576
+                           .group:0000000000000000 wm4.endian.h.39.30a606dbd99b6c3df61c1f06dbdabd4e
                            .group:0000000000000000 wm4.select.h.28.eb2f3debdbcffd1442ebddaebc4fb6ff
-                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
-                           .group:0000000000000000 wm4.select.h.36.f76c3b9e55c871743863013cc4cc14c9
-                           .group:0000000000000000 wm4.time.h.66.e70ce69790c975f0efb369340c432e0b
-                           .group:0000000000000000 wm4.time.h.25.ae5284cdff565e87a9198d819340325d
-                           .group:0000000000000000 wm4.select.h.49.e9d2041e5035cc68ebd1a20f7dbc8514
+                           .group:0000000000000000 wm4.__sigset_t.h.2.6b1ab6ff3d7b8fd9c0c42b0d80afbd80
+                           .group:0000000000000000 wm4.select.h.44.887a4ff60aa97fcd9c1be017735e1675
                            .group:0000000000000000 wm4.select2.h.27.f95f2ab0ffee66dc1b6575014894b21a
-                           .group:0000000000000000 wm4.sysmacros.h.20.8a0c33ff175cd9b434a86c0aaa36f0a2
-                           .group:0000000000000000 wm4.types.h.229.67b3f66bd74b06b451caec392a72a945
-                           .group:0000000000000000 wm4.pthreadtypes.h.25.6892b1493314fcf446bbc76e7362acba
+                           .group:0000000000000000 wm4.types.h.186.489a4ed8f2d29cd358843490f54ddea5
+                           .group:0000000000000000 wm4.pthreadtypesarch.h.25.6063cba99664c916e22d3a912bcc348a
+                           .group:0000000000000000 wm4.struct_mutex.h.20.ed51f515172b9be99e450ba83eb5dd99
+                           .group:0000000000000000 wm4.struct_rwlock.h.21.0254880f2904e3833fb8ae683e0f0330
                            .group:0000000000000000 wm4.alloca.h.19.edefa922a76c1cbaaf1e416903ba2d1c
                            .group:0000000000000000 wm4.alloca.h.29.156e12058824cc23d961c4d3b13031f6
-                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
-                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
-                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
-                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
-                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
-                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
-                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdio.h.24.5c1b97eef3c86b7a2549420f69f4f128
+                           .group:0000000000000000 wm4.libcheaderstart.h.31.87b3c285aeba93fe355ad19123070832
+                           .group:0000000000000000 wm4.stdio.h.31.e39a94e203ad4e1d978c0fc68ce016ee
+                           .group:0000000000000000 wm4.stddef.h.231.8136eebbab3406dbf57a7ec475dd5d83
                            .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
-                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
-                           .group:0000000000000000 wm4.stdio.h.80.17b7dd1ca72d8a61987532cb1d80194a
-                           .group:0000000000000000 wm4.stdio_lim.h.23.557290a6cddeba0587f574f29e3a5fb9
-                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
-                           .group:0000000000000000 wm4.stdio.h.26.cae64f7ada9bb8327a89dba6a5e93655
-                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
-                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
-                           .group:0000000000000000 wm4.string2.h.45.00535b99420fc3014c2da41d6645330d
-                           .group:0000000000000000 wm4.string3.h.31.0c4b9301b754a2db05eaafef869657d2
+                           .group:0000000000000000 wm4.struct_FILE.h.19.0888ac70396abe1031c03d393554032f
+                           .group:0000000000000000 wm4.stdio.h.53.139e45cf040c0964b2932c0c1bdaf6b2
+                           .group:0000000000000000 wm4.stdio_lim.h.19.e4b00b560d878dcfbc6635b3406640c5
+                           .group:0000000000000000 wm4.stdio.h.141.d7a290e19ca077c9e4aa7c43ede17a73
+                           .group:0000000000000000 wm4.stdio.h.20.b0caa08e5723aa5941367be0e5d2ec59
+                           .group:0000000000000000 wm4.stdio2.h.20.f45a0373b68e1296c4aa8cc09d66a9df
+                           .group:0000000000000000 wm4.string.h.23.93403f89af7dba8212345449bb14b09d
+                           .group:0000000000000000 wm4.string.h.31.e39a94e203ad4e1d978c0fc68ce016ee
+                           .group:0000000000000000 wm4.strings.h.19.a259f126920b1bb5ef76bc62b3984a3c
                            .group:0000000000000000 wm4.jinclude.h.67.b19f941ec97c4845fa4609292c7e2db4
                            .group:0000000000000000 wm4.jmorecfg.h.33.3b4c5f9cc07b3737823b06caf24d5b05
                            .group:0000000000000000 wm4.jpeglib.h.40.4f111c27252a38df39328d65454e82f4
@@ -532,7 +644,8 @@ DEFINED SYMBOLS
                            .group:0000000000000000 wm4.jerror.h.25.1dbd8674e70ab5215bc0037320e5c2a2
 
 UNDEFINED SYMBOLS
+_GLOBAL_OFFSET_TABLE_
 jpeg_core_output_dimensions
-jinit_arith_decoder
-jinit_d_coef_controller
 jinit_huff_decoder
+jinit_d_coef_controller
+jinit_arith_decoder

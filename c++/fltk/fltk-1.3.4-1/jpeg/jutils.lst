@@ -1,18 +1,13 @@
    1              		.file	"jutils.c"
    2              		.text
    3              	.Ltext0:
-   4              		.section	.text.unlikely.jdiv_round_up,"ax",@progbits
-   5              	.LCOLDB0:
-   6              		.section	.text.jdiv_round_up,"ax",@progbits
-   7              	.LHOTB0:
-   8              		.p2align 4,,15
-   9              		.section	.text.unlikely.jdiv_round_up
-  10              	.Ltext_cold0:
-  11              		.section	.text.jdiv_round_up
-  12              		.globl	jdiv_round_up
-  14              	jdiv_round_up:
-  15              	.LFB61:
-  16              		.file 1 "fltk-1.3.4-1/jpeg/jutils.c"
+   4              		.section	.text.jdiv_round_up,"ax",@progbits
+   5              		.p2align 4
+   6              		.globl	jdiv_round_up
+   8              	jdiv_round_up:
+   9              	.LVL0:
+  10              	.LFB51:
+  11              		.file 1 "fltk-1.3.4-1/jpeg/jutils.c"
    1:fltk-1.3.4-1/jpeg/jutils.c **** /*
    2:fltk-1.3.4-1/jpeg/jutils.c ****  * jutils.c
    3:fltk-1.3.4-1/jpeg/jutils.c ****  *
@@ -140,32 +135,29 @@
  125:fltk-1.3.4-1/jpeg/jutils.c **** /* Compute a/b rounded up to next integer, ie, ceil(a/b) */
  126:fltk-1.3.4-1/jpeg/jutils.c **** /* Assumes a >= 0, b > 0 */
  127:fltk-1.3.4-1/jpeg/jutils.c **** {
-  17              		.loc 1 127 0
-  18              		.cfi_startproc
-  19              	.LVL0:
+  12              		.loc 1 127 1 view -0
+  13              		.cfi_startproc
+  14              		.loc 1 127 1 is_stmt 0 view .LVU1
+  15 0000 F30F1EFA 		endbr64
  128:fltk-1.3.4-1/jpeg/jutils.c ****   return (a + b - 1L) / b;
-  20              		.loc 1 128 0
-  21 0000 488D4437 		leaq	-1(%rdi,%rsi), %rax
-  21      FF
-  22 0005 4899     		cqto
-  23 0007 48F7FE   		idivq	%rsi
+  16              		.loc 1 128 3 is_stmt 1 view .LVU2
+  17              		.loc 1 128 17 is_stmt 0 view .LVU3
+  18 0004 488D443E 		leaq	-1(%rsi,%rdi), %rax
+  18      FF
+  19              		.loc 1 128 23 view .LVU4
+  20 0009 4899     		cqto
+  21 000b 48F7FE   		idivq	%rsi
  129:fltk-1.3.4-1/jpeg/jutils.c **** }
-  24              		.loc 1 129 0
-  25 000a C3       		ret
-  26              		.cfi_endproc
-  27              	.LFE61:
-  29              		.section	.text.unlikely.jdiv_round_up
-  30              	.LCOLDE0:
-  31              		.section	.text.jdiv_round_up
-  32              	.LHOTE0:
-  33              		.section	.text.unlikely.jround_up,"ax",@progbits
-  34              	.LCOLDB1:
-  35              		.section	.text.jround_up,"ax",@progbits
-  36              	.LHOTB1:
-  37              		.p2align 4,,15
-  38              		.globl	jround_up
-  40              	jround_up:
-  41              	.LFB62:
+  22              		.loc 1 129 1 view .LVU5
+  23 000e C3       		ret
+  24              		.cfi_endproc
+  25              	.LFE51:
+  27              		.section	.text.jround_up,"ax",@progbits
+  28              		.p2align 4
+  29              		.globl	jround_up
+  31              	jround_up:
+  32              	.LVL1:
+  33              	.LFB52:
  130:fltk-1.3.4-1/jpeg/jutils.c **** 
  131:fltk-1.3.4-1/jpeg/jutils.c **** 
  132:fltk-1.3.4-1/jpeg/jutils.c **** GLOBAL(long)
@@ -173,38 +165,36 @@
  134:fltk-1.3.4-1/jpeg/jutils.c **** /* Compute a rounded up to next multiple of b, ie, ceil(a/b)*b */
  135:fltk-1.3.4-1/jpeg/jutils.c **** /* Assumes a >= 0, b > 0 */
  136:fltk-1.3.4-1/jpeg/jutils.c **** {
-  42              		.loc 1 136 0
-  43              		.cfi_startproc
-  44              	.LVL1:
+  34              		.loc 1 136 1 is_stmt 1 view -0
+  35              		.cfi_startproc
+  36              		.loc 1 136 1 is_stmt 0 view .LVU7
+  37 0000 F30F1EFA 		endbr64
  137:fltk-1.3.4-1/jpeg/jutils.c ****   a += b - 1L;
-  45              		.loc 1 137 0
-  46 0000 488D4C37 		leaq	-1(%rdi,%rsi), %rcx
-  46      FF
-  47              	.LVL2:
+  38              		.loc 1 137 3 is_stmt 1 view .LVU8
+  39              		.loc 1 137 5 is_stmt 0 view .LVU9
+  40 0004 488D4C3E 		leaq	-1(%rsi,%rdi), %rcx
+  40      FF
+  41              	.LVL2:
  138:fltk-1.3.4-1/jpeg/jutils.c ****   return a - (a % b);
-  48              		.loc 1 138 0
-  49 0005 4889C8   		movq	%rcx, %rax
-  50 0008 4899     		cqto
-  51 000a 48F7FE   		idivq	%rsi
-  52 000d 4889C8   		movq	%rcx, %rax
-  53 0010 4829D0   		subq	%rdx, %rax
+  42              		.loc 1 138 3 is_stmt 1 view .LVU10
+  43              		.loc 1 138 17 is_stmt 0 view .LVU11
+  44 0009 4889C8   		movq	%rcx, %rax
+  45 000c 4899     		cqto
+  46 000e 48F7FE   		idivq	%rsi
+  47              		.loc 1 138 12 view .LVU12
+  48 0011 4889C8   		movq	%rcx, %rax
+  49 0014 4829D0   		subq	%rdx, %rax
  139:fltk-1.3.4-1/jpeg/jutils.c **** }
-  54              		.loc 1 139 0
-  55 0013 C3       		ret
-  56              		.cfi_endproc
-  57              	.LFE62:
-  59              		.section	.text.unlikely.jround_up
-  60              	.LCOLDE1:
-  61              		.section	.text.jround_up
-  62              	.LHOTE1:
-  63              		.section	.text.unlikely.jcopy_sample_rows,"ax",@progbits
-  64              	.LCOLDB2:
-  65              		.section	.text.jcopy_sample_rows,"ax",@progbits
-  66              	.LHOTB2:
-  67              		.p2align 4,,15
-  68              		.globl	jcopy_sample_rows
-  70              	jcopy_sample_rows:
-  71              	.LFB63:
+  50              		.loc 1 139 1 view .LVU13
+  51 0017 C3       		ret
+  52              		.cfi_endproc
+  53              	.LFE52:
+  55              		.section	.text.jcopy_sample_rows,"ax",@progbits
+  56              		.p2align 4
+  57              		.globl	jcopy_sample_rows
+  59              	jcopy_sample_rows:
+  60              	.LVL3:
+  61              	.LFB53:
  140:fltk-1.3.4-1/jpeg/jutils.c **** 
  141:fltk-1.3.4-1/jpeg/jutils.c **** 
  142:fltk-1.3.4-1/jpeg/jutils.c **** /* On normal machines we can apply MEMCOPY() and MEMZERO() to sample arrays
@@ -251,178 +241,189 @@
  183:fltk-1.3.4-1/jpeg/jutils.c ****  * The source and destination arrays must be at least as wide as num_cols.
  184:fltk-1.3.4-1/jpeg/jutils.c ****  */
  185:fltk-1.3.4-1/jpeg/jutils.c **** {
-  72              		.loc 1 185 0
-  73              		.cfi_startproc
-  74              	.LVL3:
-  75 0000 4155     		pushq	%r13
-  76              		.cfi_def_cfa_offset 16
-  77              		.cfi_offset 13, -16
+  62              		.loc 1 185 1 is_stmt 1 view -0
+  63              		.cfi_startproc
+  64              		.loc 1 185 1 is_stmt 0 view .LVU15
+  65 0000 F30F1EFA 		endbr64
  186:fltk-1.3.4-1/jpeg/jutils.c ****   register JSAMPROW inptr, outptr;
+  66              		.loc 1 186 3 is_stmt 1 view .LVU16
  187:fltk-1.3.4-1/jpeg/jutils.c **** #ifdef FMEMCOPY
  188:fltk-1.3.4-1/jpeg/jutils.c ****   register size_t count = (size_t) (num_cols * SIZEOF(JSAMPLE));
+  67              		.loc 1 188 3 view .LVU17
+  68              	.LVL4:
  189:fltk-1.3.4-1/jpeg/jutils.c **** #else
  190:fltk-1.3.4-1/jpeg/jutils.c ****   register JDIMENSION count;
  191:fltk-1.3.4-1/jpeg/jutils.c **** #endif
  192:fltk-1.3.4-1/jpeg/jutils.c ****   register int row;
+  69              		.loc 1 192 3 view .LVU18
  193:fltk-1.3.4-1/jpeg/jutils.c **** 
  194:fltk-1.3.4-1/jpeg/jutils.c ****   input_array += source_row;
-  78              		.loc 1 194 0
-  79 0002 4863F6   		movslq	%esi, %rsi
+  70              		.loc 1 194 3 view .LVU19
  185:fltk-1.3.4-1/jpeg/jutils.c ****   register JSAMPROW inptr, outptr;
-  80              		.loc 1 185 0
-  81 0005 4154     		pushq	%r12
-  82              		.cfi_def_cfa_offset 24
-  83              		.cfi_offset 12, -24
-  84 0007 55       		pushq	%rbp
-  85              		.cfi_def_cfa_offset 32
-  86              		.cfi_offset 6, -32
-  87 0008 53       		pushq	%rbx
-  88              		.cfi_def_cfa_offset 40
-  89              		.cfi_offset 3, -40
-  90 0009 418D40FF 		leal	-1(%r8), %eax
-  91              		.loc 1 194 0
-  92 000d 488D1CF7 		leaq	(%rdi,%rsi,8), %rbx
-  93              	.LVL4:
+  71              		.loc 1 185 1 is_stmt 0 view .LVU20
+  72 0004 4155     		pushq	%r13
+  73              		.cfi_def_cfa_offset 16
+  74              		.cfi_offset 13, -16
+  75              		.loc 1 194 15 view .LVU21
+  76 0006 4863F6   		movslq	%esi, %rsi
  195:fltk-1.3.4-1/jpeg/jutils.c ****   output_array += dest_row;
-  94              		.loc 1 195 0
-  95 0011 4863C9   		movslq	%ecx, %rcx
+  77              		.loc 1 195 16 view .LVU22
+  78 0009 4863C9   		movslq	%ecx, %rcx
  185:fltk-1.3.4-1/jpeg/jutils.c ****   register JSAMPROW inptr, outptr;
-  96              		.loc 1 185 0
-  97 0014 4883EC08 		subq	$8, %rsp
-  98              		.cfi_def_cfa_offset 48
+  79              		.loc 1 185 1 view .LVU23
+  80 000c 4154     		pushq	%r12
+  81              		.cfi_def_cfa_offset 24
+  82              		.cfi_offset 12, -24
+  83 000e 55       		pushq	%rbp
+  84              		.cfi_def_cfa_offset 32
+  85              		.cfi_offset 6, -32
+  86              		.loc 1 195 16 view .LVU24
+  87 000f 488D2CCA 		leaq	(%rdx,%rcx,8), %rbp
+ 185:fltk-1.3.4-1/jpeg/jutils.c ****   register JSAMPROW inptr, outptr;
+  88              		.loc 1 185 1 view .LVU25
+  89 0013 53       		pushq	%rbx
+  90              		.cfi_def_cfa_offset 40
+  91              		.cfi_offset 3, -40
+ 194:fltk-1.3.4-1/jpeg/jutils.c ****   output_array += dest_row;
+  92              		.loc 1 194 15 view .LVU26
+  93 0014 488D1CF7 		leaq	(%rdi,%rsi,8), %rbx
+  94              	.LVL5:
+  95              		.loc 1 195 3 is_stmt 1 view .LVU27
  196:fltk-1.3.4-1/jpeg/jutils.c **** 
  197:fltk-1.3.4-1/jpeg/jutils.c ****   for (row = num_rows; row > 0; row--) {
-  99              		.loc 1 197 0
- 100 0018 4585C0   		testl	%r8d, %r8d
- 195:fltk-1.3.4-1/jpeg/jutils.c ****   output_array += dest_row;
- 101              		.loc 1 195 0
- 102 001b 488D2CCA 		leaq	(%rdx,%rcx,8), %rbp
- 103              	.LVL5:
- 104 001f 4C8D64C3 		leaq	8(%rbx,%rax,8), %r12
- 104      08
- 105              		.loc 1 197 0
- 106 0024 7E27     		jle	.L3
- 107 0026 4589CD   		movl	%r9d, %r13d
- 108              	.LVL6:
- 109 0029 0F1F8000 		.p2align 4,,10
- 109      000000
- 110              		.p2align 3
- 111              	.L5:
+  96              		.loc 1 197 3 view .LVU28
+  97              		.loc 1 197 24 view .LVU29
+ 185:fltk-1.3.4-1/jpeg/jutils.c ****   register JSAMPROW inptr, outptr;
+  98              		.loc 1 185 1 is_stmt 0 view .LVU30
+  99 0018 4883EC08 		subq	$8, %rsp
+ 100              		.cfi_def_cfa_offset 48
+ 101              		.loc 1 197 3 view .LVU31
+ 102 001c 4585C0   		testl	%r8d, %r8d
+ 103 001f 7E2B     		jle	.L4
+ 104 0021 418D40FF 		leal	-1(%r8), %eax
+ 105 0025 4589CC   		movl	%r9d, %r12d
+ 106              	.LVL6:
+ 107              		.loc 1 197 3 view .LVU32
+ 108 0028 4C8D6CC3 		leaq	8(%rbx,%rax,8), %r13
+ 108      08
+ 109              	.LVL7:
+ 110 002d 0F1F00   		.p2align 4,,10
+ 111              		.p2align 3
+ 112              	.L6:
  198:fltk-1.3.4-1/jpeg/jutils.c ****     inptr = *input_array++;
- 112              		.loc 1 198 0 discriminator 3
- 113 0030 4883C308 		addq	$8, %rbx
- 114              	.LVL7:
+ 113              		.loc 1 198 5 is_stmt 1 discriminator 3 view .LVU33
+ 114              	.LBB6:
+ 115              	.LBB7:
+ 116              		.file 2 "/usr/include/x86_64-linux-gnu/bits/string_fortified.h"
+   1:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** /* Copyright (C) 2004-2020 Free Software Foundation, Inc.
+   2:/usr/include/x86_64-linux-gnu/bits/string_fortified.h ****    This file is part of the GNU C Library.
+   3:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** 
+   4:/usr/include/x86_64-linux-gnu/bits/string_fortified.h ****    The GNU C Library is free software; you can redistribute it and/or
+   5:/usr/include/x86_64-linux-gnu/bits/string_fortified.h ****    modify it under the terms of the GNU Lesser General Public
+   6:/usr/include/x86_64-linux-gnu/bits/string_fortified.h ****    License as published by the Free Software Foundation; either
+   7:/usr/include/x86_64-linux-gnu/bits/string_fortified.h ****    version 2.1 of the License, or (at your option) any later version.
+   8:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** 
+   9:/usr/include/x86_64-linux-gnu/bits/string_fortified.h ****    The GNU C Library is distributed in the hope that it will be useful,
+  10:/usr/include/x86_64-linux-gnu/bits/string_fortified.h ****    but WITHOUT ANY WARRANTY; without even the implied warranty of
+  11:/usr/include/x86_64-linux-gnu/bits/string_fortified.h ****    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  12:/usr/include/x86_64-linux-gnu/bits/string_fortified.h ****    Lesser General Public License for more details.
+  13:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** 
+  14:/usr/include/x86_64-linux-gnu/bits/string_fortified.h ****    You should have received a copy of the GNU Lesser General Public
+  15:/usr/include/x86_64-linux-gnu/bits/string_fortified.h ****    License along with the GNU C Library; if not, see
+  16:/usr/include/x86_64-linux-gnu/bits/string_fortified.h ****    <https://www.gnu.org/licenses/>.  */
+  17:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** 
+  18:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** #ifndef _BITS_STRING_FORTIFIED_H
+  19:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** #define _BITS_STRING_FORTIFIED_H 1
+  20:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** 
+  21:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** #ifndef _STRING_H
+  22:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** # error "Never use <bits/string_fortified.h> directly; include <string.h> instead."
+  23:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** #endif
+  24:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** 
+  25:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** #if !__GNUC_PREREQ (5,0)
+  26:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** __warndecl (__warn_memset_zero_len,
+  27:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** 	    "memset used with constant zero length parameter; this could be due to transposed parameters")
+  28:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** #endif
+  29:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** 
+  30:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** __fortify_function void *
+  31:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** __NTH (memcpy (void *__restrict __dest, const void *__restrict __src,
+  32:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** 	       size_t __len))
+  33:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** {
+  34:/usr/include/x86_64-linux-gnu/bits/string_fortified.h ****   return __builtin___memcpy_chk (__dest, __src, __len, __bos0 (__dest));
+ 117              		.loc 2 34 10 is_stmt 0 discriminator 3 view .LVU34
+ 118 0030 488B7D00 		movq	0(%rbp), %rdi
+ 119 0034 488B33   		movq	(%rbx), %rsi
+ 120              	.LBE7:
+ 121              	.LBE6:
+ 122              		.loc 1 198 25 discriminator 3 view .LVU35
+ 123 0037 4883C308 		addq	$8, %rbx
+ 124              	.LVL8:
  199:fltk-1.3.4-1/jpeg/jutils.c ****     outptr = *output_array++;
- 115              		.loc 1 199 0 discriminator 3
- 116 0034 4883C508 		addq	$8, %rbp
- 117              	.LVL8:
- 118              	.LBB6:
- 119              	.LBB7:
- 120              		.file 2 "/usr/include/x86_64-linux-gnu/bits/string3.h"
-   1:/usr/include/x86_64-linux-gnu/bits/string3.h **** /* Copyright (C) 2004-2016 Free Software Foundation, Inc.
-   2:/usr/include/x86_64-linux-gnu/bits/string3.h ****    This file is part of the GNU C Library.
-   3:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
-   4:/usr/include/x86_64-linux-gnu/bits/string3.h ****    The GNU C Library is free software; you can redistribute it and/or
-   5:/usr/include/x86_64-linux-gnu/bits/string3.h ****    modify it under the terms of the GNU Lesser General Public
-   6:/usr/include/x86_64-linux-gnu/bits/string3.h ****    License as published by the Free Software Foundation; either
-   7:/usr/include/x86_64-linux-gnu/bits/string3.h ****    version 2.1 of the License, or (at your option) any later version.
-   8:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
-   9:/usr/include/x86_64-linux-gnu/bits/string3.h ****    The GNU C Library is distributed in the hope that it will be useful,
-  10:/usr/include/x86_64-linux-gnu/bits/string3.h ****    but WITHOUT ANY WARRANTY; without even the implied warranty of
-  11:/usr/include/x86_64-linux-gnu/bits/string3.h ****    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-  12:/usr/include/x86_64-linux-gnu/bits/string3.h ****    Lesser General Public License for more details.
-  13:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
-  14:/usr/include/x86_64-linux-gnu/bits/string3.h ****    You should have received a copy of the GNU Lesser General Public
-  15:/usr/include/x86_64-linux-gnu/bits/string3.h ****    License along with the GNU C Library; if not, see
-  16:/usr/include/x86_64-linux-gnu/bits/string3.h ****    <http://www.gnu.org/licenses/>.  */
-  17:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
-  18:/usr/include/x86_64-linux-gnu/bits/string3.h **** #ifndef _STRING_H
-  19:/usr/include/x86_64-linux-gnu/bits/string3.h **** # error "Never use <bits/string3.h> directly; include <string.h> instead."
-  20:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
-  21:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
-  22:/usr/include/x86_64-linux-gnu/bits/string3.h **** #if !__GNUC_PREREQ (5,0)
-  23:/usr/include/x86_64-linux-gnu/bits/string3.h **** __warndecl (__warn_memset_zero_len,
-  24:/usr/include/x86_64-linux-gnu/bits/string3.h **** 	    "memset used with constant zero length parameter; this could be due to transposed parameters")
-  25:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
-  26:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
-  27:/usr/include/x86_64-linux-gnu/bits/string3.h **** #ifndef __cplusplus
-  28:/usr/include/x86_64-linux-gnu/bits/string3.h **** /* XXX This is temporarily.  We should not redefine any of the symbols
-  29:/usr/include/x86_64-linux-gnu/bits/string3.h ****    and instead integrate the error checking into the original
-  30:/usr/include/x86_64-linux-gnu/bits/string3.h ****    definitions.  */
-  31:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memcpy
-  32:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memmove
-  33:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef memset
-  34:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strcat
-  35:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strcpy
-  36:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strncat
-  37:/usr/include/x86_64-linux-gnu/bits/string3.h **** # undef strncpy
-  38:/usr/include/x86_64-linux-gnu/bits/string3.h **** # ifdef __USE_GNU
-  39:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef mempcpy
-  40:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef stpcpy
-  41:/usr/include/x86_64-linux-gnu/bits/string3.h **** # endif
-  42:/usr/include/x86_64-linux-gnu/bits/string3.h **** # ifdef __USE_MISC
-  43:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef bcopy
-  44:/usr/include/x86_64-linux-gnu/bits/string3.h **** #  undef bzero
-  45:/usr/include/x86_64-linux-gnu/bits/string3.h **** # endif
-  46:/usr/include/x86_64-linux-gnu/bits/string3.h **** #endif
-  47:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
-  48:/usr/include/x86_64-linux-gnu/bits/string3.h **** 
-  49:/usr/include/x86_64-linux-gnu/bits/string3.h **** __fortify_function void *
-  50:/usr/include/x86_64-linux-gnu/bits/string3.h **** __NTH (memcpy (void *__restrict __dest, const void *__restrict __src,
-  51:/usr/include/x86_64-linux-gnu/bits/string3.h **** 	       size_t __len))
-  52:/usr/include/x86_64-linux-gnu/bits/string3.h **** {
-  53:/usr/include/x86_64-linux-gnu/bits/string3.h ****   return __builtin___memcpy_chk (__dest, __src, __len, __bos0 (__dest));
- 121              		.loc 2 53 0 discriminator 3
- 122 0038 488B7DF8 		movq	-8(%rbp), %rdi
- 123 003c 488B73F8 		movq	-8(%rbx), %rsi
- 124 0040 4C89EA   		movq	%r13, %rdx
- 125 0043 E8000000 		call	memcpy
- 125      00
- 126              	.LVL9:
- 127              	.LBE7:
- 128              	.LBE6:
- 197:fltk-1.3.4-1/jpeg/jutils.c ****     inptr = *input_array++;
- 129              		.loc 1 197 0 discriminator 3
- 130 0048 4C39E3   		cmpq	%r12, %rbx
- 131 004b 75E3     		jne	.L5
- 132              	.LVL10:
- 133              	.L3:
+ 125              		.loc 1 199 5 is_stmt 1 discriminator 3 view .LVU36
+ 126              	.LBB10:
+ 127              	.LBB8:
+ 128              		.loc 2 34 10 is_stmt 0 discriminator 3 view .LVU37
+ 129 003b 4C89E2   		movq	%r12, %rdx
+ 130              	.LBE8:
+ 131              	.LBE10:
+ 132              		.loc 1 199 27 discriminator 3 view .LVU38
+ 133 003e 4883C508 		addq	$8, %rbp
+ 134              	.LVL9:
  200:fltk-1.3.4-1/jpeg/jutils.c **** #ifdef FMEMCOPY
  201:fltk-1.3.4-1/jpeg/jutils.c ****     FMEMCOPY(outptr, inptr, count);
+ 135              		.loc 1 201 5 is_stmt 1 discriminator 3 view .LVU39
+ 136              	.LBB11:
+ 137              	.LBI6:
+  31:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** 	       size_t __len))
+ 138              		.loc 2 31 1 discriminator 3 view .LVU40
+ 139              	.LBB9:
+ 140              		.loc 2 34 3 discriminator 3 view .LVU41
+ 141              		.loc 2 34 10 is_stmt 0 discriminator 3 view .LVU42
+ 142 0042 E8000000 		call	memcpy@PLT
+ 142      00
+ 143              	.LVL10:
+ 144              		.loc 2 34 10 discriminator 3 view .LVU43
+ 145              	.LBE9:
+ 146              	.LBE11:
+ 197:fltk-1.3.4-1/jpeg/jutils.c ****     inptr = *input_array++;
+ 147              		.loc 1 197 33 is_stmt 1 discriminator 3 view .LVU44
+ 197:fltk-1.3.4-1/jpeg/jutils.c ****     inptr = *input_array++;
+ 148              		.loc 1 197 24 discriminator 3 view .LVU45
+ 197:fltk-1.3.4-1/jpeg/jutils.c ****     inptr = *input_array++;
+ 149              		.loc 1 197 3 is_stmt 0 discriminator 3 view .LVU46
+ 150 0047 4C39EB   		cmpq	%r13, %rbx
+ 151 004a 75E4     		jne	.L6
+ 152              	.LVL11:
+ 153              	.L4:
  202:fltk-1.3.4-1/jpeg/jutils.c **** #else
  203:fltk-1.3.4-1/jpeg/jutils.c ****     for (count = num_cols; count > 0; count--)
  204:fltk-1.3.4-1/jpeg/jutils.c ****       *outptr++ = *inptr++;	/* needn't bother with GETJSAMPLE() here */
  205:fltk-1.3.4-1/jpeg/jutils.c **** #endif
  206:fltk-1.3.4-1/jpeg/jutils.c ****   }
  207:fltk-1.3.4-1/jpeg/jutils.c **** }
- 134              		.loc 1 207 0
- 135 004d 4883C408 		addq	$8, %rsp
- 136              		.cfi_def_cfa_offset 40
- 137 0051 5B       		popq	%rbx
- 138              		.cfi_def_cfa_offset 32
- 139              	.LVL11:
- 140 0052 5D       		popq	%rbp
- 141              		.cfi_def_cfa_offset 24
- 142              	.LVL12:
- 143 0053 415C     		popq	%r12
- 144              		.cfi_def_cfa_offset 16
- 145 0055 415D     		popq	%r13
- 146              		.cfi_def_cfa_offset 8
- 147 0057 C3       		ret
- 148              		.cfi_endproc
- 149              	.LFE63:
- 151              		.section	.text.unlikely.jcopy_sample_rows
- 152              	.LCOLDE2:
- 153              		.section	.text.jcopy_sample_rows
- 154              	.LHOTE2:
- 155              		.section	.text.unlikely.jcopy_block_row,"ax",@progbits
- 156              	.LCOLDB3:
- 157              		.section	.text.jcopy_block_row,"ax",@progbits
- 158              	.LHOTB3:
- 159              		.p2align 4,,15
- 160              		.globl	jcopy_block_row
- 162              	jcopy_block_row:
- 163              	.LFB64:
+ 154              		.loc 1 207 1 view .LVU47
+ 155 004c 4883C408 		addq	$8, %rsp
+ 156              		.cfi_def_cfa_offset 40
+ 157 0050 5B       		popq	%rbx
+ 158              		.cfi_def_cfa_offset 32
+ 159              	.LVL12:
+ 160              		.loc 1 207 1 view .LVU48
+ 161 0051 5D       		popq	%rbp
+ 162              		.cfi_def_cfa_offset 24
+ 163              	.LVL13:
+ 164              		.loc 1 207 1 view .LVU49
+ 165 0052 415C     		popq	%r12
+ 166              		.cfi_def_cfa_offset 16
+ 167 0054 415D     		popq	%r13
+ 168              		.cfi_def_cfa_offset 8
+ 169 0056 C3       		ret
+ 170              		.cfi_endproc
+ 171              	.LFE53:
+ 173              		.section	.text.jcopy_block_row,"ax",@progbits
+ 174              		.p2align 4
+ 175              		.globl	jcopy_block_row
+ 177              	jcopy_block_row:
+ 178              	.LVL14:
+ 179              	.LFB54:
  208:fltk-1.3.4-1/jpeg/jutils.c **** 
  209:fltk-1.3.4-1/jpeg/jutils.c **** 
  210:fltk-1.3.4-1/jpeg/jutils.c **** GLOBAL(void)
@@ -430,457 +431,483 @@
  212:fltk-1.3.4-1/jpeg/jutils.c **** 		 JDIMENSION num_blocks)
  213:fltk-1.3.4-1/jpeg/jutils.c **** /* Copy a row of coefficient blocks from one place to another. */
  214:fltk-1.3.4-1/jpeg/jutils.c **** {
- 164              		.loc 1 214 0
- 165              		.cfi_startproc
- 166              	.LVL13:
- 167              		.loc 1 214 0
- 168 0000 4889F8   		movq	%rdi, %rax
- 169              	.LBB8:
- 170              	.LBB9:
- 171              		.loc 2 53 0
- 172 0003 89D2     		movl	%edx, %edx
- 173              	.LBE9:
- 174              	.LBE8:
- 175              		.loc 1 214 0
- 176 0005 4889F7   		movq	%rsi, %rdi
- 177              	.LVL14:
- 178              	.LBB11:
- 179              	.LBB10:
- 180              		.loc 2 53 0
- 181 0008 48C1E207 		salq	$7, %rdx
- 182              	.LVL15:
- 183 000c 4889C6   		movq	%rax, %rsi
- 184              	.LVL16:
- 185 000f E9000000 		jmp	memcpy
- 185      00
- 186              	.LVL17:
- 187              	.LBE10:
- 188              	.LBE11:
- 189              		.cfi_endproc
- 190              	.LFE64:
- 192              		.section	.text.unlikely.jcopy_block_row
- 193              	.LCOLDE3:
- 194              		.section	.text.jcopy_block_row
- 195              	.LHOTE3:
- 196              		.globl	jpeg_natural_order2
- 197              		.section	.rodata.jpeg_natural_order2,"a",@progbits
- 198              		.align 32
- 201              	jpeg_natural_order2:
- 202 0000 00000000 		.long	0
- 203 0004 01000000 		.long	1
- 204 0008 08000000 		.long	8
- 205 000c 09000000 		.long	9
- 206 0010 3F000000 		.long	63
- 207 0014 3F000000 		.long	63
- 208 0018 3F000000 		.long	63
- 209 001c 3F000000 		.long	63
- 210 0020 3F000000 		.long	63
- 211 0024 3F000000 		.long	63
- 212 0028 3F000000 		.long	63
- 213 002c 3F000000 		.long	63
- 214 0030 3F000000 		.long	63
- 215 0034 3F000000 		.long	63
- 216 0038 3F000000 		.long	63
- 217 003c 3F000000 		.long	63
- 218 0040 3F000000 		.long	63
- 219 0044 3F000000 		.long	63
- 220 0048 3F000000 		.long	63
- 221 004c 3F000000 		.long	63
- 222              		.globl	jpeg_natural_order3
- 223              		.section	.rodata.jpeg_natural_order3,"a",@progbits
- 224              		.align 32
- 227              	jpeg_natural_order3:
- 228 0000 00000000 		.long	0
- 229 0004 01000000 		.long	1
- 230 0008 08000000 		.long	8
- 231 000c 10000000 		.long	16
- 232 0010 09000000 		.long	9
- 233 0014 02000000 		.long	2
- 234 0018 0A000000 		.long	10
- 235 001c 11000000 		.long	17
- 236 0020 12000000 		.long	18
- 237 0024 3F000000 		.long	63
- 238 0028 3F000000 		.long	63
- 239 002c 3F000000 		.long	63
- 240 0030 3F000000 		.long	63
- 241 0034 3F000000 		.long	63
- 242 0038 3F000000 		.long	63
- 243 003c 3F000000 		.long	63
- 244 0040 3F000000 		.long	63
- 245 0044 3F000000 		.long	63
- 246 0048 3F000000 		.long	63
- 247 004c 3F000000 		.long	63
- 248 0050 3F000000 		.long	63
- 249 0054 3F000000 		.long	63
- 250 0058 3F000000 		.long	63
- 251 005c 3F000000 		.long	63
- 252 0060 3F000000 		.long	63
- 253              		.globl	jpeg_natural_order4
- 254              		.section	.rodata.jpeg_natural_order4,"a",@progbits
- 255              		.align 32
- 258              	jpeg_natural_order4:
- 259 0000 00000000 		.long	0
- 260 0004 01000000 		.long	1
- 261 0008 08000000 		.long	8
- 262 000c 10000000 		.long	16
- 263 0010 09000000 		.long	9
- 264 0014 02000000 		.long	2
- 265 0018 03000000 		.long	3
- 266 001c 0A000000 		.long	10
- 267 0020 11000000 		.long	17
- 268 0024 18000000 		.long	24
- 269 0028 19000000 		.long	25
- 270 002c 12000000 		.long	18
- 271 0030 0B000000 		.long	11
- 272 0034 13000000 		.long	19
- 273 0038 1A000000 		.long	26
- 274 003c 1B000000 		.long	27
- 275 0040 3F000000 		.long	63
- 276 0044 3F000000 		.long	63
- 277 0048 3F000000 		.long	63
- 278 004c 3F000000 		.long	63
- 279 0050 3F000000 		.long	63
- 280 0054 3F000000 		.long	63
- 281 0058 3F000000 		.long	63
- 282 005c 3F000000 		.long	63
- 283 0060 3F000000 		.long	63
- 284 0064 3F000000 		.long	63
- 285 0068 3F000000 		.long	63
- 286 006c 3F000000 		.long	63
- 287 0070 3F000000 		.long	63
- 288 0074 3F000000 		.long	63
- 289 0078 3F000000 		.long	63
- 290 007c 3F000000 		.long	63
- 291              		.globl	jpeg_natural_order5
- 292              		.section	.rodata.jpeg_natural_order5,"a",@progbits
- 293              		.align 32
- 296              	jpeg_natural_order5:
- 297 0000 00000000 		.long	0
- 298 0004 01000000 		.long	1
- 299 0008 08000000 		.long	8
- 300 000c 10000000 		.long	16
- 301 0010 09000000 		.long	9
- 302 0014 02000000 		.long	2
- 303 0018 03000000 		.long	3
- 304 001c 0A000000 		.long	10
- 305 0020 11000000 		.long	17
- 306 0024 18000000 		.long	24
- 307 0028 20000000 		.long	32
- 308 002c 19000000 		.long	25
- 309 0030 12000000 		.long	18
- 310 0034 0B000000 		.long	11
- 311 0038 04000000 		.long	4
- 312 003c 0C000000 		.long	12
- 313 0040 13000000 		.long	19
- 314 0044 1A000000 		.long	26
- 315 0048 21000000 		.long	33
- 316 004c 22000000 		.long	34
- 317 0050 1B000000 		.long	27
- 318 0054 14000000 		.long	20
- 319 0058 1C000000 		.long	28
- 320 005c 23000000 		.long	35
- 321 0060 24000000 		.long	36
- 322 0064 3F000000 		.long	63
- 323 0068 3F000000 		.long	63
- 324 006c 3F000000 		.long	63
- 325 0070 3F000000 		.long	63
- 326 0074 3F000000 		.long	63
- 327 0078 3F000000 		.long	63
- 328 007c 3F000000 		.long	63
- 329 0080 3F000000 		.long	63
- 330 0084 3F000000 		.long	63
- 331 0088 3F000000 		.long	63
- 332 008c 3F000000 		.long	63
- 333 0090 3F000000 		.long	63
- 334 0094 3F000000 		.long	63
- 335 0098 3F000000 		.long	63
- 336 009c 3F000000 		.long	63
- 337 00a0 3F000000 		.long	63
- 338              		.globl	jpeg_natural_order6
- 339              		.section	.rodata.jpeg_natural_order6,"a",@progbits
- 340              		.align 32
- 343              	jpeg_natural_order6:
- 344 0000 00000000 		.long	0
- 345 0004 01000000 		.long	1
- 346 0008 08000000 		.long	8
- 347 000c 10000000 		.long	16
- 348 0010 09000000 		.long	9
- 349 0014 02000000 		.long	2
- 350 0018 03000000 		.long	3
- 351 001c 0A000000 		.long	10
- 352 0020 11000000 		.long	17
- 353 0024 18000000 		.long	24
- 354 0028 20000000 		.long	32
- 355 002c 19000000 		.long	25
- 356 0030 12000000 		.long	18
- 357 0034 0B000000 		.long	11
- 358 0038 04000000 		.long	4
- 359 003c 05000000 		.long	5
- 360 0040 0C000000 		.long	12
- 361 0044 13000000 		.long	19
- 362 0048 1A000000 		.long	26
- 363 004c 21000000 		.long	33
- 364 0050 28000000 		.long	40
- 365 0054 29000000 		.long	41
- 366 0058 22000000 		.long	34
- 367 005c 1B000000 		.long	27
- 368 0060 14000000 		.long	20
- 369 0064 0D000000 		.long	13
- 370 0068 15000000 		.long	21
- 371 006c 1C000000 		.long	28
- 372 0070 23000000 		.long	35
- 373 0074 2A000000 		.long	42
- 374 0078 2B000000 		.long	43
- 375 007c 24000000 		.long	36
- 376 0080 1D000000 		.long	29
- 377 0084 25000000 		.long	37
- 378 0088 2C000000 		.long	44
- 379 008c 2D000000 		.long	45
- 380 0090 3F000000 		.long	63
- 381 0094 3F000000 		.long	63
- 382 0098 3F000000 		.long	63
- 383 009c 3F000000 		.long	63
- 384 00a0 3F000000 		.long	63
- 385 00a4 3F000000 		.long	63
- 386 00a8 3F000000 		.long	63
- 387 00ac 3F000000 		.long	63
- 388 00b0 3F000000 		.long	63
- 389 00b4 3F000000 		.long	63
- 390 00b8 3F000000 		.long	63
- 391 00bc 3F000000 		.long	63
- 392 00c0 3F000000 		.long	63
- 393 00c4 3F000000 		.long	63
- 394 00c8 3F000000 		.long	63
- 395 00cc 3F000000 		.long	63
- 396              		.globl	jpeg_natural_order7
- 397              		.section	.rodata.jpeg_natural_order7,"a",@progbits
- 398              		.align 32
- 401              	jpeg_natural_order7:
- 402 0000 00000000 		.long	0
- 403 0004 01000000 		.long	1
- 404 0008 08000000 		.long	8
- 405 000c 10000000 		.long	16
- 406 0010 09000000 		.long	9
- 407 0014 02000000 		.long	2
- 408 0018 03000000 		.long	3
- 409 001c 0A000000 		.long	10
- 410 0020 11000000 		.long	17
- 411 0024 18000000 		.long	24
- 412 0028 20000000 		.long	32
- 413 002c 19000000 		.long	25
- 414 0030 12000000 		.long	18
- 415 0034 0B000000 		.long	11
- 416 0038 04000000 		.long	4
- 417 003c 05000000 		.long	5
- 418 0040 0C000000 		.long	12
- 419 0044 13000000 		.long	19
- 420 0048 1A000000 		.long	26
- 421 004c 21000000 		.long	33
- 422 0050 28000000 		.long	40
- 423 0054 30000000 		.long	48
- 424 0058 29000000 		.long	41
- 425 005c 22000000 		.long	34
- 426 0060 1B000000 		.long	27
- 427 0064 14000000 		.long	20
- 428 0068 0D000000 		.long	13
- 429 006c 06000000 		.long	6
- 430 0070 0E000000 		.long	14
- 431 0074 15000000 		.long	21
- 432 0078 1C000000 		.long	28
- 433 007c 23000000 		.long	35
- 434 0080 2A000000 		.long	42
- 435 0084 31000000 		.long	49
- 436 0088 32000000 		.long	50
- 437 008c 2B000000 		.long	43
- 438 0090 24000000 		.long	36
- 439 0094 1D000000 		.long	29
- 440 0098 16000000 		.long	22
- 441 009c 1E000000 		.long	30
- 442 00a0 25000000 		.long	37
- 443 00a4 2C000000 		.long	44
- 444 00a8 33000000 		.long	51
- 445 00ac 34000000 		.long	52
- 446 00b0 2D000000 		.long	45
- 447 00b4 26000000 		.long	38
- 448 00b8 2E000000 		.long	46
- 449 00bc 35000000 		.long	53
- 450 00c0 36000000 		.long	54
- 451 00c4 3F000000 		.long	63
- 452 00c8 3F000000 		.long	63
- 453 00cc 3F000000 		.long	63
- 454 00d0 3F000000 		.long	63
- 455 00d4 3F000000 		.long	63
- 456 00d8 3F000000 		.long	63
- 457 00dc 3F000000 		.long	63
- 458 00e0 3F000000 		.long	63
- 459 00e4 3F000000 		.long	63
- 460 00e8 3F000000 		.long	63
- 461 00ec 3F000000 		.long	63
- 462 00f0 3F000000 		.long	63
- 463 00f4 3F000000 		.long	63
- 464 00f8 3F000000 		.long	63
- 465 00fc 3F000000 		.long	63
- 466 0100 3F000000 		.long	63
- 467              		.globl	jpeg_natural_order
- 468              		.section	.rodata.jpeg_natural_order,"a",@progbits
- 469              		.align 32
- 472              	jpeg_natural_order:
- 473 0000 00000000 		.long	0
- 474 0004 01000000 		.long	1
- 475 0008 08000000 		.long	8
- 476 000c 10000000 		.long	16
- 477 0010 09000000 		.long	9
- 478 0014 02000000 		.long	2
- 479 0018 03000000 		.long	3
- 480 001c 0A000000 		.long	10
- 481 0020 11000000 		.long	17
- 482 0024 18000000 		.long	24
- 483 0028 20000000 		.long	32
- 484 002c 19000000 		.long	25
- 485 0030 12000000 		.long	18
- 486 0034 0B000000 		.long	11
- 487 0038 04000000 		.long	4
- 488 003c 05000000 		.long	5
- 489 0040 0C000000 		.long	12
- 490 0044 13000000 		.long	19
- 491 0048 1A000000 		.long	26
- 492 004c 21000000 		.long	33
- 493 0050 28000000 		.long	40
- 494 0054 30000000 		.long	48
- 495 0058 29000000 		.long	41
- 496 005c 22000000 		.long	34
- 497 0060 1B000000 		.long	27
- 498 0064 14000000 		.long	20
- 499 0068 0D000000 		.long	13
- 500 006c 06000000 		.long	6
- 501 0070 07000000 		.long	7
- 502 0074 0E000000 		.long	14
- 503 0078 15000000 		.long	21
- 504 007c 1C000000 		.long	28
- 505 0080 23000000 		.long	35
- 506 0084 2A000000 		.long	42
- 507 0088 31000000 		.long	49
- 508 008c 38000000 		.long	56
- 509 0090 39000000 		.long	57
- 510 0094 32000000 		.long	50
- 511 0098 2B000000 		.long	43
- 512 009c 24000000 		.long	36
- 513 00a0 1D000000 		.long	29
- 514 00a4 16000000 		.long	22
- 515 00a8 0F000000 		.long	15
- 516 00ac 17000000 		.long	23
- 517 00b0 1E000000 		.long	30
- 518 00b4 25000000 		.long	37
- 519 00b8 2C000000 		.long	44
- 520 00bc 33000000 		.long	51
- 521 00c0 3A000000 		.long	58
- 522 00c4 3B000000 		.long	59
- 523 00c8 34000000 		.long	52
- 524 00cc 2D000000 		.long	45
- 525 00d0 26000000 		.long	38
- 526 00d4 1F000000 		.long	31
- 527 00d8 27000000 		.long	39
- 528 00dc 2E000000 		.long	46
- 529 00e0 35000000 		.long	53
- 530 00e4 3C000000 		.long	60
- 531 00e8 3D000000 		.long	61
- 532 00ec 36000000 		.long	54
- 533 00f0 2F000000 		.long	47
- 534 00f4 37000000 		.long	55
- 535 00f8 3E000000 		.long	62
- 536 00fc 3F000000 		.long	63
- 537 0100 3F000000 		.long	63
- 538 0104 3F000000 		.long	63
- 539 0108 3F000000 		.long	63
- 540 010c 3F000000 		.long	63
- 541 0110 3F000000 		.long	63
- 542 0114 3F000000 		.long	63
- 543 0118 3F000000 		.long	63
- 544 011c 3F000000 		.long	63
- 545 0120 3F000000 		.long	63
- 546 0124 3F000000 		.long	63
- 547 0128 3F000000 		.long	63
- 548 012c 3F000000 		.long	63
- 549 0130 3F000000 		.long	63
- 550 0134 3F000000 		.long	63
- 551 0138 3F000000 		.long	63
- 552 013c 3F000000 		.long	63
- 553              		.text
- 554              	.Letext0:
- 555              		.section	.text.unlikely.jdiv_round_up
- 556              	.Letext_cold0:
- 557              		.file 3 "/usr/lib/gcc/x86_64-linux-gnu/5/include/stddef.h"
- 558              		.file 4 "/usr/include/x86_64-linux-gnu/bits/types.h"
- 559              		.file 5 "/usr/include/libio.h"
- 560              		.file 6 "fltk-1.3.4-1/jpeg/jmorecfg.h"
- 561              		.file 7 "fltk-1.3.4-1/jpeg/jpeglib.h"
- 562              		.file 8 "/usr/include/stdio.h"
+ 180              		.loc 1 214 1 is_stmt 1 view -0
+ 181              		.cfi_startproc
+ 182              		.loc 1 214 1 is_stmt 0 view .LVU51
+ 183 0000 F30F1EFA 		endbr64
+ 215:fltk-1.3.4-1/jpeg/jutils.c **** #ifdef FMEMCOPY
+ 216:fltk-1.3.4-1/jpeg/jutils.c ****   FMEMCOPY(output_row, input_row, num_blocks * (DCTSIZE2 * SIZEOF(JCOEF)));
+ 184              		.loc 1 216 3 is_stmt 1 view .LVU52
+ 214:fltk-1.3.4-1/jpeg/jutils.c **** #ifdef FMEMCOPY
+ 185              		.loc 1 214 1 is_stmt 0 view .LVU53
+ 186 0004 4989F8   		movq	%rdi, %r8
+ 187              		.loc 1 216 3 view .LVU54
+ 188 0007 89D2     		movl	%edx, %edx
+ 214:fltk-1.3.4-1/jpeg/jutils.c **** #ifdef FMEMCOPY
+ 189              		.loc 1 214 1 view .LVU55
+ 190 0009 4889F7   		movq	%rsi, %rdi
+ 191              	.LVL15:
+ 192              	.LBB12:
+ 193              	.LBI12:
+  31:/usr/include/x86_64-linux-gnu/bits/string_fortified.h **** 	       size_t __len))
+ 194              		.loc 2 31 1 is_stmt 1 view .LVU56
+ 195              	.LBB13:
+ 196              		.loc 2 34 3 view .LVU57
+ 197              	.LBE13:
+ 198              	.LBE12:
+ 199              		.loc 1 216 3 is_stmt 0 view .LVU58
+ 200 000c 48C1E207 		salq	$7, %rdx
+ 201              	.LVL16:
+ 202              	.LBB15:
+ 203              	.LBB14:
+ 204              		.loc 2 34 10 view .LVU59
+ 205 0010 4C89C6   		movq	%r8, %rsi
+ 206              	.LVL17:
+ 207              		.loc 2 34 10 view .LVU60
+ 208 0013 E9000000 		jmp	memcpy@PLT
+ 208      00
+ 209              	.LVL18:
+ 210              		.loc 2 34 10 view .LVU61
+ 211              	.LBE14:
+ 212              	.LBE15:
+ 213              		.cfi_endproc
+ 214              	.LFE54:
+ 216              		.globl	jpeg_natural_order2
+ 217              		.section	.rodata.jpeg_natural_order2,"a"
+ 218              		.align 32
+ 221              	jpeg_natural_order2:
+ 222 0000 00000000 		.long	0
+ 223 0004 01000000 		.long	1
+ 224 0008 08000000 		.long	8
+ 225 000c 09000000 		.long	9
+ 226 0010 3F000000 		.long	63
+ 227 0014 3F000000 		.long	63
+ 228 0018 3F000000 		.long	63
+ 229 001c 3F000000 		.long	63
+ 230 0020 3F000000 		.long	63
+ 231 0024 3F000000 		.long	63
+ 232 0028 3F000000 		.long	63
+ 233 002c 3F000000 		.long	63
+ 234 0030 3F000000 		.long	63
+ 235 0034 3F000000 		.long	63
+ 236 0038 3F000000 		.long	63
+ 237 003c 3F000000 		.long	63
+ 238 0040 3F000000 		.long	63
+ 239 0044 3F000000 		.long	63
+ 240 0048 3F000000 		.long	63
+ 241 004c 3F000000 		.long	63
+ 242              		.globl	jpeg_natural_order3
+ 243              		.section	.rodata.jpeg_natural_order3,"a"
+ 244              		.align 32
+ 247              	jpeg_natural_order3:
+ 248 0000 00000000 		.long	0
+ 249 0004 01000000 		.long	1
+ 250 0008 08000000 		.long	8
+ 251 000c 10000000 		.long	16
+ 252 0010 09000000 		.long	9
+ 253 0014 02000000 		.long	2
+ 254 0018 0A000000 		.long	10
+ 255 001c 11000000 		.long	17
+ 256 0020 12000000 		.long	18
+ 257 0024 3F000000 		.long	63
+ 258 0028 3F000000 		.long	63
+ 259 002c 3F000000 		.long	63
+ 260 0030 3F000000 		.long	63
+ 261 0034 3F000000 		.long	63
+ 262 0038 3F000000 		.long	63
+ 263 003c 3F000000 		.long	63
+ 264 0040 3F000000 		.long	63
+ 265 0044 3F000000 		.long	63
+ 266 0048 3F000000 		.long	63
+ 267 004c 3F000000 		.long	63
+ 268 0050 3F000000 		.long	63
+ 269 0054 3F000000 		.long	63
+ 270 0058 3F000000 		.long	63
+ 271 005c 3F000000 		.long	63
+ 272 0060 3F000000 		.long	63
+ 273              		.globl	jpeg_natural_order4
+ 274              		.section	.rodata.jpeg_natural_order4,"a"
+ 275              		.align 32
+ 278              	jpeg_natural_order4:
+ 279 0000 00000000 		.long	0
+ 280 0004 01000000 		.long	1
+ 281 0008 08000000 		.long	8
+ 282 000c 10000000 		.long	16
+ 283 0010 09000000 		.long	9
+ 284 0014 02000000 		.long	2
+ 285 0018 03000000 		.long	3
+ 286 001c 0A000000 		.long	10
+ 287 0020 11000000 		.long	17
+ 288 0024 18000000 		.long	24
+ 289 0028 19000000 		.long	25
+ 290 002c 12000000 		.long	18
+ 291 0030 0B000000 		.long	11
+ 292 0034 13000000 		.long	19
+ 293 0038 1A000000 		.long	26
+ 294 003c 1B000000 		.long	27
+ 295 0040 3F000000 		.long	63
+ 296 0044 3F000000 		.long	63
+ 297 0048 3F000000 		.long	63
+ 298 004c 3F000000 		.long	63
+ 299 0050 3F000000 		.long	63
+ 300 0054 3F000000 		.long	63
+ 301 0058 3F000000 		.long	63
+ 302 005c 3F000000 		.long	63
+ 303 0060 3F000000 		.long	63
+ 304 0064 3F000000 		.long	63
+ 305 0068 3F000000 		.long	63
+ 306 006c 3F000000 		.long	63
+ 307 0070 3F000000 		.long	63
+ 308 0074 3F000000 		.long	63
+ 309 0078 3F000000 		.long	63
+ 310 007c 3F000000 		.long	63
+ 311              		.globl	jpeg_natural_order5
+ 312              		.section	.rodata.jpeg_natural_order5,"a"
+ 313              		.align 32
+ 316              	jpeg_natural_order5:
+ 317 0000 00000000 		.long	0
+ 318 0004 01000000 		.long	1
+ 319 0008 08000000 		.long	8
+ 320 000c 10000000 		.long	16
+ 321 0010 09000000 		.long	9
+ 322 0014 02000000 		.long	2
+ 323 0018 03000000 		.long	3
+ 324 001c 0A000000 		.long	10
+ 325 0020 11000000 		.long	17
+ 326 0024 18000000 		.long	24
+ 327 0028 20000000 		.long	32
+ 328 002c 19000000 		.long	25
+ 329 0030 12000000 		.long	18
+ 330 0034 0B000000 		.long	11
+ 331 0038 04000000 		.long	4
+ 332 003c 0C000000 		.long	12
+ 333 0040 13000000 		.long	19
+ 334 0044 1A000000 		.long	26
+ 335 0048 21000000 		.long	33
+ 336 004c 22000000 		.long	34
+ 337 0050 1B000000 		.long	27
+ 338 0054 14000000 		.long	20
+ 339 0058 1C000000 		.long	28
+ 340 005c 23000000 		.long	35
+ 341 0060 24000000 		.long	36
+ 342 0064 3F000000 		.long	63
+ 343 0068 3F000000 		.long	63
+ 344 006c 3F000000 		.long	63
+ 345 0070 3F000000 		.long	63
+ 346 0074 3F000000 		.long	63
+ 347 0078 3F000000 		.long	63
+ 348 007c 3F000000 		.long	63
+ 349 0080 3F000000 		.long	63
+ 350 0084 3F000000 		.long	63
+ 351 0088 3F000000 		.long	63
+ 352 008c 3F000000 		.long	63
+ 353 0090 3F000000 		.long	63
+ 354 0094 3F000000 		.long	63
+ 355 0098 3F000000 		.long	63
+ 356 009c 3F000000 		.long	63
+ 357 00a0 3F000000 		.long	63
+ 358              		.globl	jpeg_natural_order6
+ 359              		.section	.rodata.jpeg_natural_order6,"a"
+ 360              		.align 32
+ 363              	jpeg_natural_order6:
+ 364 0000 00000000 		.long	0
+ 365 0004 01000000 		.long	1
+ 366 0008 08000000 		.long	8
+ 367 000c 10000000 		.long	16
+ 368 0010 09000000 		.long	9
+ 369 0014 02000000 		.long	2
+ 370 0018 03000000 		.long	3
+ 371 001c 0A000000 		.long	10
+ 372 0020 11000000 		.long	17
+ 373 0024 18000000 		.long	24
+ 374 0028 20000000 		.long	32
+ 375 002c 19000000 		.long	25
+ 376 0030 12000000 		.long	18
+ 377 0034 0B000000 		.long	11
+ 378 0038 04000000 		.long	4
+ 379 003c 05000000 		.long	5
+ 380 0040 0C000000 		.long	12
+ 381 0044 13000000 		.long	19
+ 382 0048 1A000000 		.long	26
+ 383 004c 21000000 		.long	33
+ 384 0050 28000000 		.long	40
+ 385 0054 29000000 		.long	41
+ 386 0058 22000000 		.long	34
+ 387 005c 1B000000 		.long	27
+ 388 0060 14000000 		.long	20
+ 389 0064 0D000000 		.long	13
+ 390 0068 15000000 		.long	21
+ 391 006c 1C000000 		.long	28
+ 392 0070 23000000 		.long	35
+ 393 0074 2A000000 		.long	42
+ 394 0078 2B000000 		.long	43
+ 395 007c 24000000 		.long	36
+ 396 0080 1D000000 		.long	29
+ 397 0084 25000000 		.long	37
+ 398 0088 2C000000 		.long	44
+ 399 008c 2D000000 		.long	45
+ 400 0090 3F000000 		.long	63
+ 401 0094 3F000000 		.long	63
+ 402 0098 3F000000 		.long	63
+ 403 009c 3F000000 		.long	63
+ 404 00a0 3F000000 		.long	63
+ 405 00a4 3F000000 		.long	63
+ 406 00a8 3F000000 		.long	63
+ 407 00ac 3F000000 		.long	63
+ 408 00b0 3F000000 		.long	63
+ 409 00b4 3F000000 		.long	63
+ 410 00b8 3F000000 		.long	63
+ 411 00bc 3F000000 		.long	63
+ 412 00c0 3F000000 		.long	63
+ 413 00c4 3F000000 		.long	63
+ 414 00c8 3F000000 		.long	63
+ 415 00cc 3F000000 		.long	63
+ 416              		.globl	jpeg_natural_order7
+ 417              		.section	.rodata.jpeg_natural_order7,"a"
+ 418              		.align 32
+ 421              	jpeg_natural_order7:
+ 422 0000 00000000 		.long	0
+ 423 0004 01000000 		.long	1
+ 424 0008 08000000 		.long	8
+ 425 000c 10000000 		.long	16
+ 426 0010 09000000 		.long	9
+ 427 0014 02000000 		.long	2
+ 428 0018 03000000 		.long	3
+ 429 001c 0A000000 		.long	10
+ 430 0020 11000000 		.long	17
+ 431 0024 18000000 		.long	24
+ 432 0028 20000000 		.long	32
+ 433 002c 19000000 		.long	25
+ 434 0030 12000000 		.long	18
+ 435 0034 0B000000 		.long	11
+ 436 0038 04000000 		.long	4
+ 437 003c 05000000 		.long	5
+ 438 0040 0C000000 		.long	12
+ 439 0044 13000000 		.long	19
+ 440 0048 1A000000 		.long	26
+ 441 004c 21000000 		.long	33
+ 442 0050 28000000 		.long	40
+ 443 0054 30000000 		.long	48
+ 444 0058 29000000 		.long	41
+ 445 005c 22000000 		.long	34
+ 446 0060 1B000000 		.long	27
+ 447 0064 14000000 		.long	20
+ 448 0068 0D000000 		.long	13
+ 449 006c 06000000 		.long	6
+ 450 0070 0E000000 		.long	14
+ 451 0074 15000000 		.long	21
+ 452 0078 1C000000 		.long	28
+ 453 007c 23000000 		.long	35
+ 454 0080 2A000000 		.long	42
+ 455 0084 31000000 		.long	49
+ 456 0088 32000000 		.long	50
+ 457 008c 2B000000 		.long	43
+ 458 0090 24000000 		.long	36
+ 459 0094 1D000000 		.long	29
+ 460 0098 16000000 		.long	22
+ 461 009c 1E000000 		.long	30
+ 462 00a0 25000000 		.long	37
+ 463 00a4 2C000000 		.long	44
+ 464 00a8 33000000 		.long	51
+ 465 00ac 34000000 		.long	52
+ 466 00b0 2D000000 		.long	45
+ 467 00b4 26000000 		.long	38
+ 468 00b8 2E000000 		.long	46
+ 469 00bc 35000000 		.long	53
+ 470 00c0 36000000 		.long	54
+ 471 00c4 3F000000 		.long	63
+ 472 00c8 3F000000 		.long	63
+ 473 00cc 3F000000 		.long	63
+ 474 00d0 3F000000 		.long	63
+ 475 00d4 3F000000 		.long	63
+ 476 00d8 3F000000 		.long	63
+ 477 00dc 3F000000 		.long	63
+ 478 00e0 3F000000 		.long	63
+ 479 00e4 3F000000 		.long	63
+ 480 00e8 3F000000 		.long	63
+ 481 00ec 3F000000 		.long	63
+ 482 00f0 3F000000 		.long	63
+ 483 00f4 3F000000 		.long	63
+ 484 00f8 3F000000 		.long	63
+ 485 00fc 3F000000 		.long	63
+ 486 0100 3F000000 		.long	63
+ 487              		.globl	jpeg_natural_order
+ 488              		.section	.rodata.jpeg_natural_order,"a"
+ 489              		.align 32
+ 492              	jpeg_natural_order:
+ 493 0000 00000000 		.long	0
+ 494 0004 01000000 		.long	1
+ 495 0008 08000000 		.long	8
+ 496 000c 10000000 		.long	16
+ 497 0010 09000000 		.long	9
+ 498 0014 02000000 		.long	2
+ 499 0018 03000000 		.long	3
+ 500 001c 0A000000 		.long	10
+ 501 0020 11000000 		.long	17
+ 502 0024 18000000 		.long	24
+ 503 0028 20000000 		.long	32
+ 504 002c 19000000 		.long	25
+ 505 0030 12000000 		.long	18
+ 506 0034 0B000000 		.long	11
+ 507 0038 04000000 		.long	4
+ 508 003c 05000000 		.long	5
+ 509 0040 0C000000 		.long	12
+ 510 0044 13000000 		.long	19
+ 511 0048 1A000000 		.long	26
+ 512 004c 21000000 		.long	33
+ 513 0050 28000000 		.long	40
+ 514 0054 30000000 		.long	48
+ 515 0058 29000000 		.long	41
+ 516 005c 22000000 		.long	34
+ 517 0060 1B000000 		.long	27
+ 518 0064 14000000 		.long	20
+ 519 0068 0D000000 		.long	13
+ 520 006c 06000000 		.long	6
+ 521 0070 07000000 		.long	7
+ 522 0074 0E000000 		.long	14
+ 523 0078 15000000 		.long	21
+ 524 007c 1C000000 		.long	28
+ 525 0080 23000000 		.long	35
+ 526 0084 2A000000 		.long	42
+ 527 0088 31000000 		.long	49
+ 528 008c 38000000 		.long	56
+ 529 0090 39000000 		.long	57
+ 530 0094 32000000 		.long	50
+ 531 0098 2B000000 		.long	43
+ 532 009c 24000000 		.long	36
+ 533 00a0 1D000000 		.long	29
+ 534 00a4 16000000 		.long	22
+ 535 00a8 0F000000 		.long	15
+ 536 00ac 17000000 		.long	23
+ 537 00b0 1E000000 		.long	30
+ 538 00b4 25000000 		.long	37
+ 539 00b8 2C000000 		.long	44
+ 540 00bc 33000000 		.long	51
+ 541 00c0 3A000000 		.long	58
+ 542 00c4 3B000000 		.long	59
+ 543 00c8 34000000 		.long	52
+ 544 00cc 2D000000 		.long	45
+ 545 00d0 26000000 		.long	38
+ 546 00d4 1F000000 		.long	31
+ 547 00d8 27000000 		.long	39
+ 548 00dc 2E000000 		.long	46
+ 549 00e0 35000000 		.long	53
+ 550 00e4 3C000000 		.long	60
+ 551 00e8 3D000000 		.long	61
+ 552 00ec 36000000 		.long	54
+ 553 00f0 2F000000 		.long	47
+ 554 00f4 37000000 		.long	55
+ 555 00f8 3E000000 		.long	62
+ 556 00fc 3F000000 		.long	63
+ 557 0100 3F000000 		.long	63
+ 558 0104 3F000000 		.long	63
+ 559 0108 3F000000 		.long	63
+ 560 010c 3F000000 		.long	63
+ 561 0110 3F000000 		.long	63
+ 562 0114 3F000000 		.long	63
+ 563 0118 3F000000 		.long	63
+ 564 011c 3F000000 		.long	63
+ 565 0120 3F000000 		.long	63
+ 566 0124 3F000000 		.long	63
+ 567 0128 3F000000 		.long	63
+ 568 012c 3F000000 		.long	63
+ 569 0130 3F000000 		.long	63
+ 570 0134 3F000000 		.long	63
+ 571 0138 3F000000 		.long	63
+ 572 013c 3F000000 		.long	63
+ 573              		.text
+ 574              	.Letext0:
+ 575              		.file 3 "/usr/lib/gcc/x86_64-linux-gnu/9/include/stddef.h"
+ 576              		.file 4 "/usr/include/x86_64-linux-gnu/bits/types.h"
+ 577              		.file 5 "/usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h"
+ 578              		.file 6 "/usr/include/x86_64-linux-gnu/bits/types/FILE.h"
+ 579              		.file 7 "/usr/include/stdio.h"
+ 580              		.file 8 "/usr/include/x86_64-linux-gnu/bits/sys_errlist.h"
+ 581              		.file 9 "fltk-1.3.4-1/jpeg/jmorecfg.h"
+ 582              		.file 10 "fltk-1.3.4-1/jpeg/jpeglib.h"
+ 583              		.file 11 "fltk-1.3.4-1/jpeg/jpegint.h"
+ 584              		.file 12 "<built-in>"
+ 8332              		.section	.note.gnu.property,"a"
+ 8333              		.align 8
+ 8334 0000 04000000 		.long	 1f - 0f
+ 8335 0004 10000000 		.long	 4f - 1f
+ 8336 0008 05000000 		.long	 5
+ 8337              	0:
+ 8338 000c 474E5500 		.string	 "GNU"
+ 8339              	1:
+ 8340              		.align 8
+ 8341 0010 020000C0 		.long	 0xc0000002
+ 8342 0014 04000000 		.long	 3f - 2f
+ 8343              	2:
+ 8344 0018 03000000 		.long	 0x3
+ 8345              	3:
+ 8346 001c 00000000 		.align 8
+ 8347              	4:
 DEFINED SYMBOLS
                             *ABS*:0000000000000000 jutils.c
-     /tmp/ccDYFzKJ.s:14     .text.jdiv_round_up:0000000000000000 jdiv_round_up
-     /tmp/ccDYFzKJ.s:40     .text.jround_up:0000000000000000 jround_up
-     /tmp/ccDYFzKJ.s:70     .text.jcopy_sample_rows:0000000000000000 jcopy_sample_rows
-     /tmp/ccDYFzKJ.s:162    .text.jcopy_block_row:0000000000000000 jcopy_block_row
-     /tmp/ccDYFzKJ.s:201    .rodata.jpeg_natural_order2:0000000000000000 jpeg_natural_order2
-     /tmp/ccDYFzKJ.s:227    .rodata.jpeg_natural_order3:0000000000000000 jpeg_natural_order3
-     /tmp/ccDYFzKJ.s:258    .rodata.jpeg_natural_order4:0000000000000000 jpeg_natural_order4
-     /tmp/ccDYFzKJ.s:296    .rodata.jpeg_natural_order5:0000000000000000 jpeg_natural_order5
-     /tmp/ccDYFzKJ.s:343    .rodata.jpeg_natural_order6:0000000000000000 jpeg_natural_order6
-     /tmp/ccDYFzKJ.s:401    .rodata.jpeg_natural_order7:0000000000000000 jpeg_natural_order7
-     /tmp/ccDYFzKJ.s:472    .rodata.jpeg_natural_order:0000000000000000 jpeg_natural_order
-                           .group:0000000000000000 wm4.0.cf9695abff4f49bdfe00dc4091904acd
-                           .group:0000000000000000 wm4.stdcpredef.h.19.bf2bf6c5fb087dfb5ef2d2297c2795de
+     /tmp/ccEpDqgR.s:8      .text.jdiv_round_up:0000000000000000 jdiv_round_up
+     /tmp/ccEpDqgR.s:31     .text.jround_up:0000000000000000 jround_up
+     /tmp/ccEpDqgR.s:59     .text.jcopy_sample_rows:0000000000000000 jcopy_sample_rows
+     /tmp/ccEpDqgR.s:177    .text.jcopy_block_row:0000000000000000 jcopy_block_row
+     /tmp/ccEpDqgR.s:221    .rodata.jpeg_natural_order2:0000000000000000 jpeg_natural_order2
+     /tmp/ccEpDqgR.s:247    .rodata.jpeg_natural_order3:0000000000000000 jpeg_natural_order3
+     /tmp/ccEpDqgR.s:278    .rodata.jpeg_natural_order4:0000000000000000 jpeg_natural_order4
+     /tmp/ccEpDqgR.s:316    .rodata.jpeg_natural_order5:0000000000000000 jpeg_natural_order5
+     /tmp/ccEpDqgR.s:363    .rodata.jpeg_natural_order6:0000000000000000 jpeg_natural_order6
+     /tmp/ccEpDqgR.s:421    .rodata.jpeg_natural_order7:0000000000000000 jpeg_natural_order7
+     /tmp/ccEpDqgR.s:492    .rodata.jpeg_natural_order:0000000000000000 jpeg_natural_order
+                           .group:0000000000000000 wm4.0.a6b23a418548ac0bda5d8549c4a2ec91
+                           .group:0000000000000000 wm4.stdcpredef.h.19.8dc41bed5d9037ff9622e015fb5f0ce3
                            .group:0000000000000000 wm4.jconfig.h.10.247fc3ff67998f3074970b1373c70333
-                           .group:0000000000000000 wm4.features.h.19.24da27e0a4d0d521fd057013d982b8b5
-                           .group:0000000000000000 wm4.cdefs.h.19.56613e71f285ebad825b69b151170a81
-                           .group:0000000000000000 wm4.wordsize.h.4.256e8fdbd37801980286acdbc40d0280
-                           .group:0000000000000000 wm4.cdefs.h.432.619afd0aac7c4b439843706c1b28ddea
-                           .group:0000000000000000 wm4.stubs64.h.10.918ceb5fa58268542bf143e4c1efbcf3
-                           .group:0000000000000000 wm4.stdlib.h.27.59e2586c75bdbcb991b248ad7257b993
-                           .group:0000000000000000 wm4.stddef.h.187.e1c83cba2098ce92b68f6311de19e6b1
-                           .group:0000000000000000 wm4.waitflags.h.25.e401b8bcfee800b540b27abd7cc78de9
+                           .group:0000000000000000 wm4.features.h.19.5b5f5a19624a0527f479fdc52d54808f
+                           .group:0000000000000000 wm4.cdefs.h.19.98d80eddbb3f64f4f30cd9aee9c5593c
+                           .group:0000000000000000 wm4.wordsize.h.4.baf119258a1e53d8dba67ceac44ab6bc
+                           .group:0000000000000000 wm4.cdefs.h.475.fb75d2e4416aa349344e6f45f683bf28
+                           .group:0000000000000000 wm4.stubs64.h.10.6ce4c34010988db072c080326a6b6319
+                           .group:0000000000000000 wm4.libcheaderstart.h.37.d9274df4cc0172452960ad9644fa5579
+                           .group:0000000000000000 wm4.stdlib.h.28.2cffa49d94c5d85f4538f55f7b59771d
+                           .group:0000000000000000 wm4.stddef.h.181.13772e73e5434e8cc4fafaaddad2b5da
+                           .group:0000000000000000 wm4.waitflags.h.25.41934de4af99038521c2782f418699b1
                            .group:0000000000000000 wm4.waitstatus.h.28.93f167f49d64e2b9b99f98d1162a93bf
-                           .group:0000000000000000 wm4.endian.h.19.ff00c9c0f5e9f9a9719c5de76ace57b4
-                           .group:0000000000000000 wm4.endian.h.41.24cced64aef71195a51d4daa8e4f4a95
-                           .group:0000000000000000 wm4.types.h.89.468e2451361e3b92f048f6cad51690ff
-                           .group:0000000000000000 wm4.typesizes.h.24.40eb69a6270178f15d1bf3d7b6635a8b
-                           .group:0000000000000000 wm4.byteswap.h.38.11ee5fdc0f6cc53a16c505b9233cecef
-                           .group:0000000000000000 wm4.endian.h.63.97272d7c64d5db8020003b32e9289502
-                           .group:0000000000000000 wm4.waitstatus.h.99.408b6270fa6eb71377201a241ef15f79
-                           .group:0000000000000000 wm4.stdlib.h.50.84aeca2ac6f37d40e1e9b3cef757ba2d
-                           .group:0000000000000000 wm4.types.h.23.f6dcbaa72f8f71361acef09804d45a5e
-                           .group:0000000000000000 wm4.time.h.53.beb46e650cd406cb917b6b96b45e640a
-                           .group:0000000000000000 wm4.stddef.h.238.847b6907dabda77be90a9ab7ad789e2e
-                           .group:0000000000000000 wm4.types.h.187.bd5a05039b505b3620e6973f1b2ffeb1
+                           .group:0000000000000000 wm4.stdlib.h.43.9fa4f727a2f1cb8d2450a574c9195553
+                           .group:0000000000000000 wm4.floatn.h.20.80c7cf8a8dfad237004b28d051d5afda
+                           .group:0000000000000000 wm4.floatncommon.h.34.7e1840d7dfb19e9bdb51aeb077d76637
+                           .group:0000000000000000 wm4.stdlib.h.71.2927e068ec678159b4f68ec2f089f7e6
+                           .group:0000000000000000 wm4.types.h.109.56eb9ae966b255288cc544f18746a7ff
+                           .group:0000000000000000 wm4.typesizes.h.24.2c64f817c0dc4b6fb2a2c619d717be26
+                           .group:0000000000000000 wm4.time64.h.24.a8166ae916ec910dab0d8987098d42ee
+                           .group:0000000000000000 wm4.types.h.40.18f72bab8242c2bb4c532a2aa95b5f00
+                           .group:0000000000000000 wm4.stddef.h.231.0adce5c8c1fd8096aaff50981b3d1f0f
+                           .group:0000000000000000 wm4.endian.h.20.efabd1018df5d7b4052c27dc6bdd5ce5
+                           .group:0000000000000000 wm4.endianness.h.2.2c6a211f7909f3af5e9e9cfa3b6b63c8
+                           .group:0000000000000000 wm4.endian.h.40.9e5d395adda2f4eb53ae69b69b664084
+                           .group:0000000000000000 wm4.endian.h.27.4c4f94262c4eaee2982fe00ed1b4f173
+                           .group:0000000000000000 wm4.byteswap.h.24.5363c019348146aada5aeadf51456576
+                           .group:0000000000000000 wm4.endian.h.39.30a606dbd99b6c3df61c1f06dbdabd4e
                            .group:0000000000000000 wm4.select.h.28.eb2f3debdbcffd1442ebddaebc4fb6ff
-                           .group:0000000000000000 wm4.sigset.h.20.f36413b6d2364ad847d3db53fb03e683
-                           .group:0000000000000000 wm4.select.h.36.f76c3b9e55c871743863013cc4cc14c9
-                           .group:0000000000000000 wm4.time.h.66.e70ce69790c975f0efb369340c432e0b
-                           .group:0000000000000000 wm4.time.h.25.ae5284cdff565e87a9198d819340325d
-                           .group:0000000000000000 wm4.select.h.49.e9d2041e5035cc68ebd1a20f7dbc8514
+                           .group:0000000000000000 wm4.__sigset_t.h.2.6b1ab6ff3d7b8fd9c0c42b0d80afbd80
+                           .group:0000000000000000 wm4.select.h.44.887a4ff60aa97fcd9c1be017735e1675
                            .group:0000000000000000 wm4.select2.h.27.f95f2ab0ffee66dc1b6575014894b21a
-                           .group:0000000000000000 wm4.sysmacros.h.20.8a0c33ff175cd9b434a86c0aaa36f0a2
-                           .group:0000000000000000 wm4.types.h.229.67b3f66bd74b06b451caec392a72a945
-                           .group:0000000000000000 wm4.pthreadtypes.h.25.6892b1493314fcf446bbc76e7362acba
+                           .group:0000000000000000 wm4.types.h.186.489a4ed8f2d29cd358843490f54ddea5
+                           .group:0000000000000000 wm4.pthreadtypesarch.h.25.6063cba99664c916e22d3a912bcc348a
+                           .group:0000000000000000 wm4.struct_mutex.h.20.ed51f515172b9be99e450ba83eb5dd99
+                           .group:0000000000000000 wm4.struct_rwlock.h.21.0254880f2904e3833fb8ae683e0f0330
                            .group:0000000000000000 wm4.alloca.h.19.edefa922a76c1cbaaf1e416903ba2d1c
                            .group:0000000000000000 wm4.alloca.h.29.156e12058824cc23d961c4d3b13031f6
-                           .group:0000000000000000 wm4.stdio.h.26.4719156f1aea2bb9662fd6c582dc9a4c
-                           .group:0000000000000000 wm4.stddef.h.238.04cc7214bceba497b20d15c10fd97511
-                           .group:0000000000000000 wm4.stdio.h.36.2dd12c1fd035242ad5cfd0152a01be5a
-                           .group:0000000000000000 wm4._G_config.h.5.b0f37d9e474454cf6e459063458db32f
-                           .group:0000000000000000 wm4.wchar.h.80.eea3eba2d2a17aace9470a8e0d8218dc
-                           .group:0000000000000000 wm4._G_config.h.46.5187c97b14fd664662cb32e6b94fc49e
-                           .group:0000000000000000 wm4.libio.h.33.a775b9ecae273f33bc59931e9891e4ca
+                           .group:0000000000000000 wm4.stdio.h.24.5c1b97eef3c86b7a2549420f69f4f128
+                           .group:0000000000000000 wm4.libcheaderstart.h.31.87b3c285aeba93fe355ad19123070832
+                           .group:0000000000000000 wm4.stdio.h.31.e39a94e203ad4e1d978c0fc68ce016ee
+                           .group:0000000000000000 wm4.stddef.h.231.8136eebbab3406dbf57a7ec475dd5d83
                            .group:0000000000000000 wm4.stdarg.h.34.3a23a216c0c293b3d2ea2e89281481e6
-                           .group:0000000000000000 wm4.libio.h.51.dab170798ec1df48c625aea7c30e1b63
-                           .group:0000000000000000 wm4.stdio.h.80.17b7dd1ca72d8a61987532cb1d80194a
-                           .group:0000000000000000 wm4.stdio_lim.h.23.557290a6cddeba0587f574f29e3a5fb9
-                           .group:0000000000000000 wm4.stdio.h.172.df21df34a7396d7da2e08f9b617d582f
-                           .group:0000000000000000 wm4.stdio.h.26.cae64f7ada9bb8327a89dba6a5e93655
-                           .group:0000000000000000 wm4.string.h.23.8394011d5995a16f15d67d04e84a1d69
-                           .group:0000000000000000 wm4.string.h.24.1b0dc67418e7128d207285861439c2f8
-                           .group:0000000000000000 wm4.string2.h.45.00535b99420fc3014c2da41d6645330d
-                           .group:0000000000000000 wm4.string3.h.31.0c4b9301b754a2db05eaafef869657d2
+                           .group:0000000000000000 wm4.struct_FILE.h.19.0888ac70396abe1031c03d393554032f
+                           .group:0000000000000000 wm4.stdio.h.53.139e45cf040c0964b2932c0c1bdaf6b2
+                           .group:0000000000000000 wm4.stdio_lim.h.19.e4b00b560d878dcfbc6635b3406640c5
+                           .group:0000000000000000 wm4.stdio.h.141.d7a290e19ca077c9e4aa7c43ede17a73
+                           .group:0000000000000000 wm4.stdio.h.20.b0caa08e5723aa5941367be0e5d2ec59
+                           .group:0000000000000000 wm4.stdio2.h.20.f45a0373b68e1296c4aa8cc09d66a9df
+                           .group:0000000000000000 wm4.string.h.23.93403f89af7dba8212345449bb14b09d
+                           .group:0000000000000000 wm4.string.h.31.e39a94e203ad4e1d978c0fc68ce016ee
+                           .group:0000000000000000 wm4.strings.h.19.a259f126920b1bb5ef76bc62b3984a3c
                            .group:0000000000000000 wm4.jinclude.h.67.b19f941ec97c4845fa4609292c7e2db4
                            .group:0000000000000000 wm4.jmorecfg.h.33.3b4c5f9cc07b3737823b06caf24d5b05
                            .group:0000000000000000 wm4.jpeglib.h.40.4f111c27252a38df39328d65454e82f4
@@ -888,4 +915,5 @@ DEFINED SYMBOLS
                            .group:0000000000000000 wm4.jerror.h.25.1dbd8674e70ab5215bc0037320e5c2a2
 
 UNDEFINED SYMBOLS
+_GLOBAL_OFFSET_TABLE_
 memcpy
