@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# shellcheck disable=2034
+# shellcheck disable=1090
+#---------------------------------------------------------------------
+#
+#  tut_array
+#
+#  [Description]
+#    Tutorial of sed
+#
+#  [Author]
+#    Peter Malmberg <peter.malmberg@gmail.com>
+#
+#  [Date]
+#    2022-11-13
+#
+#  [License]
+#    MIT
+#
+#---------------------------------------------------------------------
+# Generated with bashplates. [https://github.com/zonbrisad/bashplates]
+#---------------------------------------------------------------------
+#
+
+#set -o xtrace   # Display commands as they are executed
+#set -o pipefail # Exit script when pipe fails
+
+# Directory where script is located
+#scriptPath=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+
+#---------------------------------------------------------------------
+
+ef=sed-test
+
+efile() {
+  rm -f "$ef"
+  {
+    echo "Row 1"
+    echo "Row 2"
+    echo "Row 3"
+    echo "Row 4"
+    echo "Row 5"
+    echo "Row 6"
+    echo "Row 7"
+    echo "Row 8"
+
+  } >>"$ef"
+}
+
+IFS=$' '
+
+efile
+
+# Add string after match
+sed -i "s/Row 2/& String added after match/" "$ef"
+
+# Append line after match
+sed -i "/Row 3/a String added on line after match" "$ef"
+
+# Append line before match
+sed -i "/Row 7/i String added on line before match" "$ef"
+
+# Append line at end of file
+sed -i "$ a String added after last row of file" "$ef"
+
+# Replace row
+sed -i "s/Row 5/String replaced row/" "$ef"
+
+echo
+cat $ef
