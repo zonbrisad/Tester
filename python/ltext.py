@@ -61,6 +61,7 @@ x2 = LLetter(
     row5=" ##       ",
     row6=" ##       ",
     row7=" #########" 
+)
 xd = LLetter(
     letter=".",
     row1="     ",
@@ -69,7 +70,8 @@ xd = LLetter(
     row4="     ",
     row5="     ",
     row6=" ### ",
-    row7=" ### ",
+    row7=" ### "
+)
 x3 = LLetter(
     letter="3",
     row1="  ####### ",

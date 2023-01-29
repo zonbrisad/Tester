@@ -400,10 +400,10 @@
  285              	4:
 DEFINED SYMBOLS
                             *ABS*:0000000000000000 main.c
-     /tmp/ccug8KG6.s:10     .text:0000000000000000 sigHup
-     /tmp/ccug8KG6.s:26     .text:0000000000000010 sigInt
-     /tmp/ccug8KG6.s:50     .text:0000000000000030 print_hello
-     /tmp/ccug8KG6.s:88     .text.startup:0000000000000000 main
+     /tmp/ccRepyxM.s:10     .text:0000000000000000 sigHup
+     /tmp/ccRepyxM.s:26     .text:0000000000000010 sigInt
+     /tmp/ccRepyxM.s:50     .text:0000000000000030 print_hello
+     /tmp/ccRepyxM.s:88     .text.startup:0000000000000000 main
                             *COM*:0000000000000008 window
                             *COM*:0000000000000008 vbox
                             *COM*:0000000000000008 button
@@ -412,18 +412,18 @@ DEFINED SYMBOLS
                             *COM*:0000000000000008 fileMenu
                             *COM*:0000000000000008 fileMi
                             *COM*:0000000000000008 quitMi
-     /tmp/ccug8KG6.s:4      .rodata.str1.1:0000000000000000 .LC0
-     /tmp/ccug8KG6.s:20     .rodata.str1.1:0000000000000007 .LC1
-     /tmp/ccug8KG6.s:44     .rodata.str1.1:0000000000000018 .LC2
-     /tmp/ccug8KG6.s:66     .rodata.str1.1:0000000000000025 .LC3
-     /tmp/ccug8KG6.s:68     .rodata.str1.1:000000000000003d .LC4
-     /tmp/ccug8KG6.s:70     .rodata.str1.1:0000000000000045 .LC5
-     /tmp/ccug8KG6.s:72     .rodata.str1.1:0000000000000051 .LC6
-     /tmp/ccug8KG6.s:74     .rodata.str1.1:000000000000005f .LC7
-     /tmp/ccug8KG6.s:76     .rodata.str1.1:0000000000000067 .LC8
-     /tmp/ccug8KG6.s:78     .rodata.str1.1:000000000000006c .LC9
-     /tmp/ccug8KG6.s:80     .rodata.str1.1:0000000000000071 .LC10
-     /tmp/ccug8KG6.s:82     .rodata.str1.1:0000000000000079 .LC11
+     /tmp/ccRepyxM.s:4      .rodata.str1.1:0000000000000000 .LC0
+     /tmp/ccRepyxM.s:20     .rodata.str1.1:0000000000000007 .LC1
+     /tmp/ccRepyxM.s:44     .rodata.str1.1:0000000000000018 .LC2
+     /tmp/ccRepyxM.s:66     .rodata.str1.1:0000000000000025 .LC3
+     /tmp/ccRepyxM.s:68     .rodata.str1.1:000000000000003d .LC4
+     /tmp/ccRepyxM.s:70     .rodata.str1.1:0000000000000045 .LC5
+     /tmp/ccRepyxM.s:72     .rodata.str1.1:0000000000000051 .LC6
+     /tmp/ccRepyxM.s:74     .rodata.str1.1:000000000000005f .LC7
+     /tmp/ccRepyxM.s:76     .rodata.str1.1:0000000000000067 .LC8
+     /tmp/ccRepyxM.s:78     .rodata.str1.1:000000000000006c .LC9
+     /tmp/ccRepyxM.s:80     .rodata.str1.1:0000000000000071 .LC10
+     /tmp/ccRepyxM.s:82     .rodata.str1.1:0000000000000079 .LC11
 
 UNDEFINED SYMBOLS
 _GLOBAL_OFFSET_TABLE_

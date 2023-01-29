@@ -193,7 +193,7 @@ class MainForm(QMainWindow):
         self.vlText = QtWidgets.QVBoxLayout()
         self.vlText.setSpacing(2)
         self.horizontalLayout.addLayout(self.vlText)
-        self.label = QtWidgets.QLabel("TextEdit", self.centralwidget)
+        self.label = QtWidgets.QLabel("PlainTextEdit 2", self.centralwidget)
         self.vlText.addWidget(self.label)
         
         # TextEdit

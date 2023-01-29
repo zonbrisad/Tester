@@ -321,6 +321,7 @@ class MainForm(QMainWindow):
 
     def testText(self):
         text, ok = QInputDialog.getText(self, 'Input Dialog', 'Enter your name:')
+        
         if (ok):
             self.append("Entered: "+text)
         else:
@@ -441,22 +442,6 @@ def main():
     parser.add_argument("-d",    action="append", type=int, help="Append values to list", dest='dlist', default=[] )
     
     args = parser.parse_args()
-
-    if args.info:
-        printInfo()
-        return
-    
-#    if args.a:
-#        print("Boolean argument")
-        
-#    if args.b:
-#        print("String argument = " + args.b)
-            
-#    if args.c:
-#        print("Integer argument = " + str(args.c) )
-
-#    if args.dlist:
-#        print("List = ", args.dlist )
         
         
     app = QApplication(sys.argv)

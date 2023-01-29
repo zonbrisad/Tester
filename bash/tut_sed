@@ -29,6 +29,14 @@
 #scriptPath=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 #---------------------------------------------------------------------
+#  Links
+#
+# https://www.baeldung.com/linux/file-insert-multiple-lines
+# https://fabianlee.org/2018/10/28/linux-using-sed-to-insert-lines-before-or-after-a-match/
+# https://linuxhint.com/how_to_insert_a_line_after_the_match_using_sed/
+# https://www.grymoire.com/Unix/Sed.html
+#
+#---------------------------------------------------------------------
 
 ef=sed-test
 
@@ -42,14 +50,24 @@ efile() {
     echo "Row 5"
     echo "Row 6"
     echo "Row 7"
-    echo "Row 8"
+    echo "Row 9"
+    echo "Row 10"
+    echo "To be deleted"
+    echo "Row 11"
 
-  } >>"$ef"
+  } \
+    >>"$ef"
 }
 
 IFS=$' '
 
 efile
+
+# Append line at end of file
+sed -i "$ a String added after last row of file" "$ef"
+
+# Append line after row 7
+sed -i "7 a Row 8 Added afterwards" "$ef"
 
 # Add string after match
 sed -i "s/Row 2/& String added after match/" "$ef"
@@ -60,11 +78,17 @@ sed -i "/Row 3/a String added on line after match" "$ef"
 # Append line before match
 sed -i "/Row 7/i String added on line before match" "$ef"
 
-# Append line at end of file
-sed -i "$ a String added after last row of file" "$ef"
-
 # Replace row
 sed -i "s/Row 5/String replaced row/" "$ef"
+
+# Replace text to uppercase
+#sed -i "y/Row"
+
+# Delete row
+sed -i "/To be/d" "$ef"
+
+# Append text from piple after match
+echo -e "Extra 1\nExtra 2\nExtra 3" | sed -i "/Row 10/r /dev/stdin" "$ef"
 
 echo
 cat $ef
