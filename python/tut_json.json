@@ -1,0 +1,8 @@
+{
+    "alias": "default",
+    "port": "",
+    "bitrate": 9600,
+    "bits": 8,
+    "stopbit": "",
+    "parity": "None"
+}
