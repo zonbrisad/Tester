@@ -26,33 +26,33 @@
 #set -o pipefail # Exit script when pipe fails
 
 # Directory where script is located
-scriptPath=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+scriptPath=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 #---------------------------------------------------------------------
 
 # Initiate string
-S="Hello World everybody in the World"
+S="Hello World"
 
 # Initiate array of strings
-SA=($S)
+#SA=($S)
 
+prints() {
+  printf "%-20s  %s\n" "$1" "$2"
+}
 
-echo -e "String tests --------"
-echo -e "String:\n${S}"
-echo -e "String length:\n${#S}"
-echo -e "Substring:\n${S:0:5}"
+# prints "1232" "asdf"
+prints "String:" "${S}"
+prints "String length:" "${#S}"
+prints "Substring:" "${S:0:5}"
+prints "Remove:" "${S/World/}"
+prints "Replace one:" "${S/World/Europe}"
+# prints "Replace all:" "${S//World/Europe}"
+prints "Remove begining:" "${S#Hello }"
+prints "Remove end:" "${S%World}"
 
-echo -e "Remove:\n${S/World }"
-echo -e "Replace one:\n${S/World/Europe}"
-echo -e "Replace all:\n${S//World/Europe}"
-
-echo -e "Remove begining:\n${S#Hello }"
-echo -e "Remove end:\n${S%World}"
-
-
-echo -e "\nArray tests ----------"
-echo ${SA[@]}
-echo ${SA[@]:1}
-for i in "${SA[@]}"; do
-  echo $i
-done	
+# echo -e "\nArray tests ----------"
+# echo ${SA[@]}
+# echo ${SA[@]:1}
+# for i in "${SA[@]}"; do
+# echo $i
+# done
