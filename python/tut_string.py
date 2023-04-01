@@ -28,6 +28,7 @@ num2 = 42
 num3 = 123.456
 pad = 8
 num4 = .42
+num5 = 12
 my_variable = "Some value"
 state = State.STARTUP
 
@@ -43,6 +44,8 @@ print(s2.split())
 
 print(f"No formating:    {num}")
 print(f"Hexadecimal:     {num:x}")
+print(f"Hexadecimal:     {num5:#02x}")
+
 print(f"Binary:          {num:b}")
 print(f"Octal:           {num:o}")
 print(f"Scientific:      {num:e}")

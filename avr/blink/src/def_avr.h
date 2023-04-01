@@ -1,80 +1,106 @@
 /**
  * -----------------------------------------------------------------
- * @file  def_avr.h
  * @brief Some common definitions for Atmel AVR/Arduino MCU's.
  *
- *
+ * @file  def_avr.h
  * @author Peter Malmberg <peter.malmberg@gmail.com>
+ * @license MIT
  *
- * Licence MIT
  * -----------------------------------------------------------------
  */
 
 #ifndef DEF_AVR_H_
 #define DEF_AVR_H_
 
-
 // Atmel AVR specific -------------------------------------------------------
 
 // Reset causes -------------------------------------------------------------
-#define IS_POWER_ON_RESET()            (MCUSR & (1<<PORF))
-#define IS_BROWN_OUT_RESET()           (MCUSR & (1<<BORF))
-#define IS_WATCH_DOG_RESET()           (MCUSR & (1<<WDRF))
-#define IS_JTAG_RESET_RESET()          (MCUSR & (1<<JTRF))
-#define IS_EXTERNAL_RESET()            (MCUSR & (1<<EXTRF))
-#define CLEAR_RESETS()                 MCUSR  &= ~31              /* clearing all resets */
-
+#define IS_POWER_ON_RESET() (MCUSR & (1 << PORF))
+#define IS_BROWN_OUT_RESET() (MCUSR & (1 << BORF))
+#define IS_WATCH_DOG_RESET() (MCUSR & (1 << WDRF))
+#define IS_JTAG_RESET_RESET() (MCUSR & (1 << JTRF))
+#define IS_EXTERNAL_RESET() (MCUSR & (1 << EXTRF))
+#define CLEAR_RESETS() MCUSR &= ~31 /* clearing all resets */
 
 // Reset MCU with watchdog --------------------------------------------------
 
-#define RESET()                     wdt_enable(WDTO_500MS); while(1) {}
-
+#define RESET()              \
+     wdt_enable(WDTO_500MS); \
+     while (1)               \
+     {                       \
+     }
 
 // AVR Timers ---------------------------------------------------------------
 
-#define TIMER0_DISSABLE()     TCCR0B &= 0xF8                  /* Disable timer                  */
-#define TIMER0_PRES_1()       TIMER0_DISSABLE(); TCCR0B |= 1  /* Select prescaler 1/1           */
-#define TIMER0_PRES_8()       TIMER0_DISSABLE(); TCCR0B |= 2  /* Select prescaler 1/8           */
-#define TIMER0_PRES_64()      TIMER0_DISSABLE(); TCCR0B |= 3  /* Select prescaler 1/64          */
-#define TIMER0_PRES_256()     TIMER0_DISSABLE(); TCCR0B |= 4  /* Select prescaler 1/256         */
-#define TIMER0_PRES_1024()    TIMER0_DISSABLE(); TCCR0B |= 5  /* Select prescaler 1/1024        */
-#define TIMER0_EXT_FE()       TIMER0_DISSABLE(); TCCR0B |= 6  /* External T0 falling edge       */
-#define TIMER0_EXT_RE()       TIMER0_DISSABLE(); TCCR0B |= 7  /* External T0 rising edge        */
-#define TIMER0_OVF_IE()       TIMSK0 |= (1<<TOIE0)            /* Enable overflow interrupt      */
-#define TIMER0_OVF_ID()       TIMSK0 &= ~(1<<TOIE0)           /* Disable overflow interrupt     */
-#define TIMER0_RELOAD(x)      TCNT0 = x                       /* Reload timer register          */
+#define TIMER0_DISSABLE() TCCR0B &= 0xF8 /* Disable timer                  */
+#define TIMER0_PRES_1() \
+     TIMER0_DISSABLE(); \
+     TCCR0B |= 1 /* Select prescaler 1/1           */
+#define TIMER0_PRES_8() \
+     TIMER0_DISSABLE(); \
+     TCCR0B |= 2 /* Select prescaler 1/8           */
+#define TIMER0_PRES_64() \
+     TIMER0_DISSABLE();  \
+     TCCR0B |= 3 /* Select prescaler 1/64          */
+#define TIMER0_PRES_256() \
+     TIMER0_DISSABLE();   \
+     TCCR0B |= 4 /* Select prescaler 1/256         */
+#define TIMER0_PRES_1024() \
+     TIMER0_DISSABLE();    \
+     TCCR0B |= 5 /* Select prescaler 1/1024        */
+#define TIMER0_EXT_FE() \
+     TIMER0_DISSABLE(); \
+     TCCR0B |= 6 /* External T0 falling edge       */
+#define TIMER0_EXT_RE() \
+     TIMER0_DISSABLE(); \
+     TCCR0B |= 7                                /* External T0 rising edge        */
+#define TIMER0_OVF_IE() TIMSK0 |= (1 << TOIE0)  /* Enable overflow interrupt      */
+#define TIMER0_OVF_ID() TIMSK0 &= ~(1 << TOIE0) /* Disable overflow interrupt     */
+#define TIMER0_RELOAD(x) TCNT0 = x              /* Reload timer register          */
 
-#define TIMER1_DISSABLE()     TCCR1B &= 0xF8                  /* Disable timer                  */
-#define TIMER1_PRES_1()       TIMER1_DISSABLE(); TCCR1B |= 1  /* Select prescaler 1/1           */
-#define TIMER1_PRES_8()       TIMER1_DISSABLE(); TCCR1B |= 2  /* Select prescaler 1/8           */
-#define TIMER1_PRES_64()      TIMER1_DISSABLE(); TCCR1B |= 3  /* Select prescaler 1/64          */
-#define TIMER1_PRES_256()     TIMER1_DISSABLE(); TCCR1B |= 4  /* Select prescaler 1/256         */
-#define TIMER1_PRES_1024()    TIMER1_DISSABLE(); TCCR1B |= 5  /* Select prescaler 1/1024        */
-#define TIMER1_EXT_FE()       TIMER1_DISSABLE(); TCCR1B |= 6  /* External T0 falling edge       */
-#define TIMER1_EXT_RE()       TIMER1_DISSABLE(); TCCR1B |= 7  /* External T0 rising edge        */
-#define TIMER1_OVF_IE()       TIMSK1 |= (1<<TOIE1)            /* Enable overflow interrupt      */
-#define TIMER1_OVF_ID()       TIMSK1 &= ~(1<<TOIE1)           /* Disable overflow interrupt     */
-#define TIMER1_RELOAD(x)      TCNT1H = (uint8_t) ((uint16_t)x>>8); TCNT1L = (uint8_t)((uint16_t)x & 0xff)  /* Reload timer register          */
-
+#define TIMER1_DISSABLE() TCCR1B &= 0xF8 /* Disable timer                  */
+#define TIMER1_PRES_1() \
+     TIMER1_DISSABLE(); \
+     TCCR1B |= 1 /* Select prescaler 1/1           */
+#define TIMER1_PRES_8() \
+     TIMER1_DISSABLE(); \
+     TCCR1B |= 2 /* Select prescaler 1/8           */
+#define TIMER1_PRES_64() \
+     TIMER1_DISSABLE();  \
+     TCCR1B |= 3 /* Select prescaler 1/64          */
+#define TIMER1_PRES_256() \
+     TIMER1_DISSABLE();   \
+     TCCR1B |= 4 /* Select prescaler 1/256         */
+#define TIMER1_PRES_1024() \
+     TIMER1_DISSABLE();    \
+     TCCR1B |= 5 /* Select prescaler 1/1024        */
+#define TIMER1_EXT_FE() \
+     TIMER1_DISSABLE(); \
+     TCCR1B |= 6 /* External T0 falling edge       */
+#define TIMER1_EXT_RE() \
+     TIMER1_DISSABLE(); \
+     TCCR1B |= 7                                /* External T0 rising edge        */
+#define TIMER1_OVF_IE() TIMSK1 |= (1 << TOIE1)  /* Enable overflow interrupt      */
+#define TIMER1_OVF_ID() TIMSK1 &= ~(1 << TOIE1) /* Disable overflow interrupt     */
+#define TIMER1_RELOAD(x)                   \
+     TCNT1H = (uint8_t)((uint16_t)x >> 8); \
+     TCNT1L = (uint8_t)((uint16_t)x & 0xff) /* Reload timer register          */
 
 // Arduino specific ---------------------------------------------------------
 
-#ifdef ARDUINO_MEGA
-#define ARD_LED_INIT()             DDRB  |= (1<<PB7)
-#define ARD_LED_ON()               PORTB |= (1<<PB7)
-#define ARD_LED_OFF()              PORTB &= ~(1<<PB7)
-#define ARD_LED_TOGGLE()           PORTB ^= (1<<PB7)
-#define ARD_IS_LED_ON()            (PINB && (1<<PB7))
-#endif
-
 #ifdef ARDUINO
-#define ARD_LED_INIT()             DDRB  |= (1<<PB5)
-#define ARD_LED_ON()               PORTB |= (1<<PB5)
-#define ARD_LED_OFF()              PORTB &= ~(1<<PB5)
-#define ARD_LED_TOGGLE()           PORTB ^= (1<<PB5)
-#define ARD_IS_LED_ON()            (PINB && (1<<PB5))
+#define ARDUINO_LED_PIN PB5
 #endif
 
+#ifdef ARDUINO_MEGA
+#define ARDUINO_LED_PIN PB7
+#endif
+
+#define ARDUINO_LED_INIT() DDRB |= (1 << ARDUINO_LED_PIN)
+#define ARDUINO_LED_ON() PORTB |= (1 << ARDUINO_LED_PIN)
+#define ARDUINO_LED_OFF() PORTB &= ~(1 << ARDUINO_LED_PIN)
+#define ARDUINO_LED_TOGGLE() PORTB ^= (1 << ARDUINO_LED_PIN)
+#define ARDUINO_LED_IS_ON() (PINB && (1 << ARDUINO_LED_PIN))
 
 /*
          +----[PWR]-------------------| USB |--+
@@ -204,9 +230,6 @@
 
 */
 
-
-
 //  http://busyducks.com/wp_4_1/2015/11/16/ascii-art-arduino-pinouts/
 
-#endif  /* DEF_AVR_H */
-
+#endif /* DEF_AVR_H */

@@ -24,27 +24,32 @@
 #include "uart.h"
 #include "def.h"
 
+
+void hw_init(void);
+
+
 #define UART_BAUD_RATE 9600
-// static FILE mystdout = FDEV_SETUP_STREAM(uart_putc, uart_getc, _FDEV_SETUP_WRITE);
+static FILE mystdout = FDEV_SETUP_STREAM(uart_putc, NULL, _FDEV_SETUP_WRITE);
 
 void hw_init(void)
 {
+	stdout = &mystdout;
 	DDRD |= (0x1 << PD1);
 	uart_init(UART_BAUD_SELECT(UART_BAUD_RATE, F_CPU));
 	sei();
-	ARD_LED_INIT();
+	ARDUINO_LED_INIT();
 }
 
 int main()
 {
 	hw_init();
-	_delay_ms(200);
-	uart_puts("Starting up blink program\n");
+	_delay_ms(500);
+	printf("Starting up blink program\n");
 	while (1)
 	{
 		_delay_ms(100);
 		uart_putc('B');
-		ARD_LED_TOGGLE();
+		ARDUINO_LED_TOGGLE();
 	}
 
 	return 0;
