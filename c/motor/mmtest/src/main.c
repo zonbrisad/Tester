@@ -76,27 +76,29 @@ void signal_update(SIGNAL *signal) {
 WINDOW    *mainWin = NULL; 
 WINDOW    *infoWin = NULL;
 
+CHANNEL chTest = CHANNEL_NORMAL("Sinus", "Sin",   CHANNEL_MODE_NORMAL);
+
 //CHANNEL chns[10];
 
 CHANNEL channels[] = {
-  CHANNEL_NORMAL("Sinus",    CHANNEL_MODE_NORMAL),
-  CHANNEL_NORMAL("Square",   CHANNEL_MODE_NORMAL),
-  CHANNEL_NORMAL("Min",      CHANNEL_MODE_MIN),
-  CHANNEL_NORMAL("Max",      CHANNEL_MODE_MAX),
-  CHANNEL_NORMAL("Average",  CHANNEL_MODE_AVERAGE),
-  CHANNEL_LIMIT("Limit", 0.1, 0.8),
-  CHANNEL_NORMAL("Integrate",CHANNEL_MODE_INTEGRATE),
-  CHANNEL_COUNT("Count", 0.5),
+  CHANNEL_NORMAL("Sinus", "Sin", CHANNEL_MODE_NORMAL),
+  CHANNEL_NORMAL("Square", "",   CHANNEL_MODE_NORMAL),
+  CHANNEL_NORMAL("Min", "",      CHANNEL_MODE_MIN),
+  CHANNEL_NORMAL("Max", "",      CHANNEL_MODE_MAX),
+  CHANNEL_NORMAL("Average", "",  CHANNEL_MODE_AVERAGE),
+  CHANNEL_LIMIT("Limit", "", 0.1, 0.8),
+  CHANNEL_NORMAL("Integrate","", CHANNEL_MODE_INTEGRATE),
+  CHANNEL_COUNT("Count", "", 0.5),
 };
 
 // Code ----------------------------------------------------------------------
 
 void initChannels() {
-  channels[2].ch = &channels[0];
-  channels[3].ch = &channels[0];
-  channels[5].ch = &channels[0];
-  channels[6].ch = &channels[5];
-  channels[7].ch = &channels[0];
+  channels[2].src = &channels[0];
+  channels[3].src = &channels[0];
+  channels[5].src = &channels[0];
+  channels[6].src = &channels[5];
+  channels[7].src = &channels[0];
 }
 
 
@@ -130,8 +132,9 @@ void safeExit(int x) {
 
 void printResourses() {
   int i;
+	wprintw(mainWin, "%s\n",channel_toString(NULL));
   for (i=0; i<CHANNELS; i++) {
-    wprintw(mainWin, "%3d %s\n", i, channel_toString(&channels[i]));
+    wprintw(mainWin, "  %s\n", channel_toString(&channels[i]));
   }
   
 }

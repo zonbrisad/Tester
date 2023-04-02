@@ -42,10 +42,9 @@ void channelInit(CHANNEL *chn) {
   uint8_t i;
   chn->value = 0;
   chn->tmp1  = 0;
-  chn->ch    = NULL;
+  chn->src    = NULL;
   chn->mode  = CHANNEL_MODE_NORMAL;
   chn->flags = 0;
-  chn->ch    = NULL;
   chn->gpCnt = 0;
   for(i=0;i<3;i++) {
     chn->param[i] = 0;
@@ -64,8 +63,8 @@ void channelUpdate(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider) {
   CHANNEL_VAL nVal;
 
   // check if new value commes from connected channel or not
-  if (chn->ch != NULL) {
-    nVal = chn->ch->value;
+  if (chn->src != NULL) {
+    nVal = chn->src->value;
   } else {
     nVal = newValue;
   }
@@ -101,7 +100,7 @@ void channelUpdate(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider) {
 }
 
 void channelSetConnection(CHANNEL *chn, CHANNEL *connection) {
-  chn->ch = connection;
+  chn->src = connection;
 }
 
 void channelSetMode(CHANNEL *chn, CHANNEL_MODE mode) {
@@ -138,8 +137,21 @@ char *channel_modeToString(CHANNEL_MODE mode) {
 }
 
 char *channel_toString(CHANNEL *chn) {
-  static char buf[40];
-//  sprintf(buf, "%6.2f %-10s", chn->value, channel_modeToString(chn->mode));
-	sprintf(buf, "%-10s %-10s %6.2f", chn->name, channel_modeToString(chn->mode), chn->value);
+  static char buf[128];
+	if (chn==NULL) {
+		return "  Id          Name             Mode       Value";
+	}
+	sprintf(buf, "%-10s  %-16s %-10s %6.2f", channel_get_id(chn), chn->name, channel_modeToString(chn->mode), chn->value);
   return buf;
+}
+
+
+char *channel_get_id(CHANNEL *chn) {
+	static char buf[32];
+	if (chn->src == NULL) {
+		return chn->id;
+	}
+	
+	sprintf(buf, ">%s", channel_get_id(chn->src));
+	return buf;
 }

@@ -3,6 +3,7 @@
  * @brief Some common definitions for Atmel AVR/Arduino MCU's.
  *
  * @file  def_avr.h
+ *
  * @author Peter Malmberg <peter.malmberg@gmail.com>
  * @license MIT
  *
