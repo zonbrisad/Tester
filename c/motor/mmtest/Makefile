@@ -38,7 +38,10 @@ TARGET = mmtest
 SRC = src/main.c                \
       src/channel.c             \
       src/alarm.c               \
-      src/argtable3/argtable3.c
+      src/argtable3/argtable3.c \
+			src/systemp.c \
+			src/signal.c \
+			src/filter.c
 
 # List C, C++ and assembler library/3rd partry source files here. (C/C++ dependencies are automatically generated.)
 LSRC =	
@@ -127,9 +130,9 @@ CFLAGS += -funsigned-char
 CFLAGS += -Wall                  # Standard warnings
 CFLAGS += -Wextra                # Some extra warnings
 CFLAGS += -Wmissing-braces 
-CFLAGS += -Wmissing-declarations # Warn if global function is not declared
-CFLAGS += -Wmissing-prototypes   # if a function is missing its prototype
-CFLAGS += -Wstrict-prototypes    # non correct prototypes i.e. void fun() => void fun(void) 
+#CFLAGS += -Wmissing-declarations # Warn if global function is not declared
+#CFLAGS += -Wmissing-prototypes   # if a function is missing its prototype
+#CFLAGS += -Wstrict-prototypes    # non correct prototypes i.e. void fun() => void fun(void) 
 CFLAGS += -Wredundant-decls      # Warn if something is declared more than ones
 CFLAGS += -Wunreachable-code     # if code is not used
 CFLAGS += -Wshadow               # if local variable has same name as global

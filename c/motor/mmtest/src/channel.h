@@ -17,6 +17,7 @@
 #include <stdint.h>
 
 #include "mmmotor_settings.h"
+#include "filter.h"
 
 typedef enum
 {
@@ -35,6 +36,7 @@ typedef enum
   CHANNEL_MODE_FIR,
   CHANNEL_MODE_PWM,
   CHANNEL_MODE_HYSTERESIS,
+	CHANNEL_MODE_FILTER,
 
   CHANNEL_MODE_SINUS,
   CHANNEL_MODE_RAMP,
@@ -53,20 +55,28 @@ typedef enum
 #define CH_PARAM2 1
 #define CH_PARAM3 2
 
-typedef float CHANNEL_VAL;
-
 #define CHANNEL_NORMAL(name, id, mode)             \
   {                                            \
-    0, 0, {0, 0, 0}, id, name, 0, mode, 0, 0, NULL \
+    0, 0, {0, 0, 0}, id, name, 0, mode, 0, 0, NULL, NULL \
   }
 
 #define CHANNEL_LIMIT(name, id, min, max)                            \
   {                                                              \
-    0, 0, {max, min, 0}, id, name, 0, CHANNEL_MODE_LIMIT, 0, 0, NULL \
+    0, 0, {max, min, 0}, id, name, 0, CHANNEL_MODE_LIMIT, 0, 0, NULL, NULL \
   }
 #define CHANNEL_COUNT(name, id, thres)                               \
   {                                                              \
-    0, 0, {thres, 0, 0}, id, name, 0, CHANNEL_MODE_COUNT, 0, 0, NULL \
+    0, 0, {thres, 0, 0}, id, name, 0, CHANNEL_MODE_COUNT, 0, 0, NULL, NULL \
+  }
+
+#define CHANNEL_FILTER(name, id, filter)                               \
+  {                                                              \
+    0, 0, {0, 0, 0}, id, name, 0, CHANNEL_MODE_FILTER, 0, 0, NULL, filter \
+  }
+
+#define CHANNEL_LAST()                                          \
+	 {                                                             \
+    0, 0, {0, 0, 0}, "", "", 0, CHANNEL_MODE_LAST, 0, 0, NULL, NULL \
   }
 
 #ifdef __cplusplus
@@ -74,7 +84,7 @@ extern "C"
 {
 #endif
 
-  typedef struct channel_struct
+  typedef struct channel
   {
     CHANNEL_VAL value;
     CHANNEL_VAL tmp1;
@@ -85,40 +95,41 @@ extern "C"
     CHANNEL_MODE mode;
     uint32_t timeStamp;
     uint16_t gpCnt;            // general purpose counter
-    struct channel_struct *src; // external source channel channel
+    struct channel *src; // external source channel channel
+		FILTER *filter;
   } CHANNEL;
 
   /**
    * Initiate channel.
    * @param ch channel to be initiated
    */
-  void channelInit(CHANNEL *chn);
+  void CHANNEL_Init(CHANNEL *chn);
 
-  void channelSetName(CHANNEL *chn);
+  void CHANNEL_SetName(CHANNEL *chn);
 
   /**
    * Get curent value from channel.
    * @param ch  channel
    * @return value of channel
    */
-  float channelGetValue(CHANNEL *chn);
+  float CHANNEL_GetValue(CHANNEL *chn);
 
-  void channelSetValue(CHANNEL *chn, CHANNEL_VAL value);
+  void CHANNEL_SetValue(CHANNEL *chn, CHANNEL_VAL value);
 
-  void channelSetConnection(CHANNEL *chn, CHANNEL *connection);
+  void CHANNEL_SetConnection(CHANNEL *chn, CHANNEL *connection);
 
-  void channelUpdate(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider);
+  void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider);
 
-  void channelSetMode(CHANNEL *chn, CHANNEL_MODE mode);
+  void CHANNEL_SetMode(CHANNEL *chn, CHANNEL_MODE mode);
 
-  void channelSetParam(CHANNEL *chn, uint8_t param, CHANNEL_VAL value);
+  void CHANNEL_SetParam(CHANNEL *chn, uint8_t param, CHANNEL_VAL value);
 
-  void channelSetFlag(CHANNEL *chn, uint16_t flags);
+  void CHANNEL_SetFlag(CHANNEL *chn, uint16_t flags);
 
-	char *channel_modeToString(CHANNEL_MODE mode);
-  char *channel_toString(CHANNEL *chn);
+	char *CHANNEL_modeToString(CHANNEL_MODE mode);
+  char *CHANNEL_toString(CHANNEL *chn);
 
-	char *channel_get_id(CHANNEL *chn);
+	char *CHANNEL_get_id(CHANNEL *chn);
 
 #ifdef __cplusplus
 }

@@ -13,6 +13,8 @@
 #ifndef MMMOTOR_SETTINGS_H
 #define	MMMOTOR_SETTINGS_H
 
+typedef float CHANNEL_VAL;
+
 #define CHANNELS    8      // nr of channels
 #define ALARMS      10      // nr of alarms
 

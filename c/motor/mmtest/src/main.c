@@ -21,54 +21,11 @@
 #include "mmmotor.h"
 #include "channel.h"
 #include "alarm.h"
+#include "signal.h"
+#include "filter.h"
 #include "httpThread.h"
 #include "motorThread.h"
-
-
-
-typedef enum {
-	SIGNAL_MODE_SINUS = 0,
-	SIGNAL_MODE_RAMP,
-	SIGNAL_MODE_SAWTOOTH,
-	SIGNAL_MODE_SQUARE,
-	SIGNAL_MODE_RANDOM,
-} SIGNAL_MODE;
-
-typedef struct {
-	SIGNAL_MODE mode;
-  float param1;
-  float param2;
-  float param3;
-  CHANNEL *channel;
-} SIGNAL;
-
-void signal_init(SIGNAL *signal, SIGNAL_MODE mode, char *name) {
-  signal->mode = mode;
-  signal->param1 = 1;
-  signal->param2 = 0.1;
-  signal->param3 = 0;
-}
-
-void signal_setChannel(SIGNAL *signal, CHANNEL *channel) {
-  signal->channel = channel;
-}
-
-void signal_update(SIGNAL *signal) {
-  CHANNEL_VAL value;
-  switch (signal->mode){
-    case SIGNAL_MODE_SINUS:
-      value = signal->param1 * sin(signal->param3);
-      signal->param3 += signal->param2;
-      break;
-    case SIGNAL_MODE_RAMP: break;
-    case SIGNAL_MODE_SAWTOOTH: break;
-    case SIGNAL_MODE_SQUARE: break;
-    case SIGNAL_MODE_RANDOM: break;
-    default: break;
-    
-  }
-  channelSetValue(signal->channel, value);
-}
+#include "systemp.h"
 
 
 // Variables -----------------------------------------------------------------
@@ -77,8 +34,6 @@ WINDOW    *mainWin = NULL;
 WINDOW    *infoWin = NULL;
 
 CHANNEL chTest = CHANNEL_NORMAL("Sinus", "Sin",   CHANNEL_MODE_NORMAL);
-
-//CHANNEL chns[10];
 
 CHANNEL channels[] = {
   CHANNEL_NORMAL("Sinus", "Sin", CHANNEL_MODE_NORMAL),
@@ -89,18 +44,11 @@ CHANNEL channels[] = {
   CHANNEL_LIMIT("Limit", "", 0.1, 0.8),
   CHANNEL_NORMAL("Integrate","", CHANNEL_MODE_INTEGRATE),
   CHANNEL_COUNT("Count", "", 0.5),
+	CHANNEL_LAST()
 };
 
+
 // Code ----------------------------------------------------------------------
-
-void initChannels() {
-  channels[2].src = &channels[0];
-  channels[3].src = &channels[0];
-  channels[5].src = &channels[0];
-  channels[6].src = &channels[5];
-  channels[7].src = &channels[0];
-}
-
 
 void createWindows() {
   if (infoWin != NULL) {
@@ -121,42 +69,125 @@ void safeExit(int x) {
   delwin(mainWin);
   delwin(infoWin);
   endwin();        
-  
-  //gp_log_close();
-  
+  //gp_log_close();  
   //uart_close(dev);
   //system("reset");
   printf("SafeExit\n");
   exit(x);
 }
 
-void printResourses() {
-  int i;
-	wprintw(mainWin, "%s\n",channel_toString(NULL));
-  for (i=0; i<CHANNELS; i++) {
-    wprintw(mainWin, "  %s\n", channel_toString(&channels[i]));
-  }
-  
+void printResourses(CHANNEL *chns) {
+  int i = 0;
+	wprintw(mainWin, "%s\n",CHANNEL_toString(NULL));
+
+	while (chns[i].mode != CHANNEL_MODE_LAST) {
+		wprintw(mainWin, "  %s\n", CHANNEL_toString(&chns[i]));
+		i++;
+	}
 }
 
+
+void temptest(char *sensor) {
+  STEMP *temp;
+	CHANNEL *chns;
+	FILTER *filter;
+	int i;
+
+	filter = FILTER_new();
+	CHANNEL cpu_temp[] = {
+		CHANNEL_NORMAL("CPU Temperature", "CPU", CHANNEL_MODE_NORMAL),
+		CHANNEL_NORMAL("Min", "",      CHANNEL_MODE_MIN),
+		CHANNEL_NORMAL("Max", "",      CHANNEL_MODE_MAX),
+		CHANNEL_NORMAL("Average", "",  CHANNEL_MODE_AVERAGE),
+		CHANNEL_FILTER("Filter", "", filter),
+		CHANNEL_LAST()
+	};
+
+	
+	
+	temp = STEMP_new();
+	STEMP_init(temp, sensor);
+	chns = cpu_temp;
+
+
+	chns[1].src = &chns[0];
+	chns[2].src = &chns[0];
+	chns[3].src = &chns[0];
+	chns[4].src = &chns[0];
+	
+	while(1) {
+		STEMP_read(temp);
+		CHANNEL_Update(&chns[0], (temp->temperature/1000), 10);
+		i = 1;
+		while (chns[i].mode != CHANNEL_MODE_LAST) {
+			CHANNEL_Update(&chns[i], 0, 10);
+			i++;
+		}
+		
+		wclear(mainWin);
+		printResourses(chns);
+		wrefresh(mainWin);
+		usleep(100000);
+		wrefresh(mainWin);
+  }
+	
+	while(1) {
+    STEMP_read(temp);
+		printf("Temperature: %d\n", temp->temperature);
+		usleep(100000);
+	}	
+}
+
+
+void maintest() {
+	int j;
+	SIGNAL *sig;
+	CHANNEL *chns;
+
+	//channels[1].src = &channels[0];
+  channels[2].src = &channels[0];
+  channels[3].src = &channels[0];
+  channels[6].src = &channels[5];
+  channels[7].src = &channels[0];
+	
+	chns = channels;
+	sig = SIGNAL_new();
+  SIGNAL_init(sig, SIGNAL_MODE_SINUS);
+  SIGNAL_setChannel(sig, &channels[0]);
+  //channelSetValue(&channels[0], 42);
+
+  while(1) {
+
+    SIGNAL_update(sig);
+
+		
+		j = 1;
+		while (chns[j].mode != CHANNEL_MODE_LAST) {
+			CHANNEL_Update(&chns[j], 0, 10);
+			j++;
+		}
+		
+		wclear(mainWin);
+		printResourses(chns);
+		wrefresh(mainWin);
+		usleep(100000);
+		wrefresh(mainWin);
+  }
+}
 
 /**
  * 
  */
 int main(int argc, char** argv) {
   int nerrors;
-  int i, j;
-  SIGNAL sig;
-  
-//  for (i=0; i<10; i++) {
-//    channelInit(&chns[i]);
-//    channelSetMode(&chns[i], modes[i]);
-//  }
 
   struct arg_lit *help = arg_lit0("h", "help", "Print help options");
+	struct arg_lit *mainT = arg_lit0("m", "main", "Main test");
+	struct arg_lit *tempT = arg_lit0("t", "temp", "Temperature test");
+	struct arg_file *sensor = arg_file0("s", "sensor", "<sensorfile>", "File with sensor data");
   struct arg_end *end = arg_end(20);
 
-  void *argtable[] = {help, end};
+  void *argtable[] = {help, mainT, tempT, sensor, end};
 
   if (arg_nullcheck(argtable) != 0)
     printf("error: insufficient memory\n");
@@ -174,14 +205,6 @@ int main(int argc, char** argv) {
     arg_print_glossary(stdout, argtable, "  %-25s %s\n");
     exit(0);
   }
-/*  
-  for (i=0; i<CHANNELS; i++) {
-    printf("%3d %s\n", i, channel_toString(&channels[i]));
-  }
-  */
-  signal_init(&sig, SIGNAL_MODE_SINUS, "Sinus");
-  signal_setChannel(&sig, &channels[0]);
-  initChannels();
 
   initscr();            // init ncurses
   //raw();                // raw mode
@@ -189,25 +212,28 @@ int main(int argc, char** argv) {
 
   createWindows();
 
-  while(1) {
+	if (mainT->count > 0) {
+		maintest();
+		safeExit(0);
+	}
 
-    signal_update(&sig);
-
-		for(j=1;j<CHANNELS;j++) {
-			channelUpdate(&channels[j],0, 10);
+	if (tempT->count > 0) {
+		if (sensor->count > 0) {
+		//	printf("A\n");
+		//	safeExit(0);
+			temptest(sensor->filename[0]);
+			safeExit(0);
 		}
-		wclear(mainWin);
-		printResourses();
-		wrefresh(mainWin);
-		//sleep(1);
-		usleep(100000);
-		wrefresh(mainWin);
-  }
-  
-  safeExit(0);
-  // cleanup
+		temptest("/sys/class/thermal/thermal_zone0/temp");
+		safeExit(0);
+		
+ 	}
+
+	arg_print_glossary(stdout, argtable, "  %-25s %s\n");
+
   arg_freetable(argtable, sizeof (argtable) / sizeof (argtable[0]));
   pthread_exit(NULL);
-  return (EXIT_SUCCESS);
+
+	return (EXIT_SUCCESS);
 }
 
