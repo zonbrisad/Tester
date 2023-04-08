@@ -102,7 +102,11 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider) {
       }
       break;
     case CHANNEL_MODE_DELAY:       break;
-    case CHANNEL_MODE_TIMER:       break;
+    case CHANNEL_MODE_TIMER:
+		  if (chn->value > 0) {
+				chn->value = chn->value - 1;
+			}
+		break;
 	 case CHANNEL_MODE_INTEGRATE: chn->value += nVal/divider;  break;
 	 case CHANNEL_MODE_FILTER:
 		FILTER_add(chn->filter, nVal);
@@ -154,9 +158,9 @@ char *CHANNEL_modeToString(CHANNEL_MODE mode) {
 char *CHANNEL_toString(CHANNEL *chn) {
   static char buf[128];
 	if (chn==NULL) {
-		return "  Id          Name             Mode       Value";
+		return E_YELLOW "  Id          Name             Mode        Value" E_END ;
 	}
-	sprintf(buf, "%-10s  %-16s %-10s %6.2f", CHANNEL_get_id(chn), chn->name, CHANNEL_modeToString(chn->mode), chn->value);
+	sprintf(buf, "%-10s  " E_BR_MAGENTA "%-16s" E_END " %-10s " E_CYAN "%6.2f" E_END, CHANNEL_get_id(chn), chn->name, CHANNEL_modeToString(chn->mode), chn->value);
   return buf;
 }
 

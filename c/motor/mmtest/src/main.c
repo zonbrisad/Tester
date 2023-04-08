@@ -177,6 +177,11 @@ int main(int argc, char** argv) {
     exit(0);
   }
 
+	printf("\n");
+	printf("Size of channel struct: %d\n", sizeof(CHANNEL));
+	printf("\n");
+	
+	
 	if (mainT->count > 0) {
 		maintest();
 		safeExit(0);
