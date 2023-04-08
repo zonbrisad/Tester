@@ -16,7 +16,6 @@
 #include <termios.h>
 #include <sys/types.h>
 #include <fcntl.h>
-#include <ncurses.h>
 
 #include "mmmotor.h"
 #include "channel.h"
@@ -26,13 +25,11 @@
 #include "httpThread.h"
 #include "motorThread.h"
 #include "systemp.h"
+#include "def.h"
 
 
 // Variables -----------------------------------------------------------------
  
-WINDOW    *mainWin = NULL; 
-WINDOW    *infoWin = NULL;
-
 CHANNEL chTest = CHANNEL_NORMAL("Sinus", "Sin",   CHANNEL_MODE_NORMAL);
 
 CHANNEL channels[] = {
@@ -50,25 +47,9 @@ CHANNEL channels[] = {
 
 // Code ----------------------------------------------------------------------
 
-void createWindows() {
-  if (infoWin != NULL) {
-    delwin(infoWin);
-  }
-  
-  if (mainWin != NULL) {
-    delwin(mainWin);
-  }
-  
-  infoWin = newwin(1,COLS, LINES-1, 0);
-  mainWin = newwin(LINES-1,COLS, 0, 0);
-  scrollok(mainWin, TRUE);  
-}
 
 void safeExit(int x) {
 
-  delwin(mainWin);
-  delwin(infoWin);
-  endwin();        
   //gp_log_close();  
   //uart_close(dev);
   //system("reset");
@@ -76,14 +57,19 @@ void safeExit(int x) {
   exit(x);
 }
 
-void printResourses(CHANNEL *chns) {
+void print_channels(CHANNEL *chns) {
   int i = 0;
-	wprintw(mainWin, "%s\n",CHANNEL_toString(NULL));
-
+	int j;
+	printf("%s\n",CHANNEL_toString(NULL));
+	
 	while (chns[i].mode != CHANNEL_MODE_LAST) {
-		wprintw(mainWin, "  %s\n", CHANNEL_toString(&chns[i]));
+		printf("  %s\n", CHANNEL_toString(&chns[i]));
 		i++;
 	}
+	for (j=0; j<(i+1); j++) {
+			printf(E_CUR_RETURN);
+	}
+
 }
 
 
@@ -102,13 +88,10 @@ void temptest(char *sensor) {
 		CHANNEL_FILTER("Filter", "", filter),
 		CHANNEL_LAST()
 	};
-
-	
 	
 	temp = STEMP_new();
 	STEMP_init(temp, sensor);
 	chns = cpu_temp;
-
 
 	chns[1].src = &chns[0];
 	chns[2].src = &chns[0];
@@ -124,23 +107,16 @@ void temptest(char *sensor) {
 			i++;
 		}
 		
-		wclear(mainWin);
-		printResourses(chns);
-		wrefresh(mainWin);
+		print_channels(chns);
+		
 		usleep(100000);
-		wrefresh(mainWin);
   }
 	
-	while(1) {
-    STEMP_read(temp);
-		printf("Temperature: %d\n", temp->temperature);
-		usleep(100000);
-	}	
 }
 
 
 void maintest() {
-	int j;
+	int i;
 	SIGNAL *sig;
 	CHANNEL *chns;
 
@@ -154,24 +130,19 @@ void maintest() {
 	sig = SIGNAL_new();
   SIGNAL_init(sig, SIGNAL_MODE_SINUS);
   SIGNAL_setChannel(sig, &channels[0]);
-  //channelSetValue(&channels[0], 42);
+
 
   while(1) {
 
-    SIGNAL_update(sig);
-
-		
-		j = 1;
-		while (chns[j].mode != CHANNEL_MODE_LAST) {
-			CHANNEL_Update(&chns[j], 0, 10);
-			j++;
+    SIGNAL_update(sig);		
+		i = 1;
+		while (chns[i].mode != CHANNEL_MODE_LAST) {
+			CHANNEL_Update(&chns[i], 0, 10);
+			i++;
 		}
 		
-		wclear(mainWin);
-		printResourses(chns);
-		wrefresh(mainWin);
+    print_channels(chns);
 		usleep(100000);
-		wrefresh(mainWin);
   }
 }
 
@@ -206,12 +177,6 @@ int main(int argc, char** argv) {
     exit(0);
   }
 
-  initscr();            // init ncurses
-  //raw();                // raw mode
-  cbreak();             // c break mode
-
-  createWindows();
-
 	if (mainT->count > 0) {
 		maintest();
 		safeExit(0);
@@ -219,8 +184,6 @@ int main(int argc, char** argv) {
 
 	if (tempT->count > 0) {
 		if (sensor->count > 0) {
-		//	printf("A\n");
-		//	safeExit(0);
 			temptest(sensor->filename[0]);
 			safeExit(0);
 		}

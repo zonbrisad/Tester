@@ -54,18 +54,11 @@ INCLUDE = src \
 LIB   = -lm 
 #LIB  += -lpthread
 
-# Libraries to link
-#LIB += $(shell pkg-config --libs glib-2.0)
-#LIB += $(shell pkg-config --libs gthread-2.0)
-#LIB += $(shell pkg-config --libs ncurses)
-
 # Libraries to use in pkg-config system
 PKGLIBS += glib-2.0
 PKGLIBS += gthread-2.0
 PKGLIBS += gio-2.0
-PKGLIBS += ncurses
-#PKGLIBS += lua5.1
-#PKGLIBS += sqlite3
+
 
 # Object files directory
 #     To put object files in current directory, use a dot (.), do NOT make
