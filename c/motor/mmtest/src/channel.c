@@ -34,7 +34,9 @@ modeName mode2name[] = {
   {CHANNEL_MODE_SINUS,      "Sinus"},
   {CHANNEL_MODE_RAMP,       "Ramp"},
   {CHANNEL_MODE_PWM,        "PWM"},
-	{CHANNEL_MODE_FILTER,     "Filter"},
+	{CHANNEL_MODE_DIVIDE,     "Divide"},
+	{CHANNEL_MODE_MULTIPLY,   "Multiply"},
+	
   {CHANNEL_MODE_NONE,       "None"}
 };
 
@@ -42,14 +44,14 @@ modeName mode2name[] = {
 void CHANNEL_Init(CHANNEL *chn) {
   uint8_t i;
   chn->value = 0;
-  chn->tmp1  = 0;
+//  chn->tmp1  = 0;
   chn->src    = NULL;
   chn->mode  = CHANNEL_MODE_NORMAL;
   chn->flags = 0;
-  chn->gpCnt = 0;
-  for(i=0;i<3;i++) {
-    chn->param[i] = 0;
-  }
+//  chn->gpCnt = 0;
+//  for(i=0;i<3;i++) {
+//    chn->param[i] = 0;
+//  }
 }
   
 float CHANNEL_GetValue(CHANNEL *chn) {
@@ -75,18 +77,18 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider) {
     case CHANNEL_MODE_MAX: if (nVal>chn->value) chn->value = nVal; break;
     case CHANNEL_MODE_MIN: if (nVal<chn->value) chn->value = nVal; break;
     case CHANNEL_MODE_COUNT:   
-      if ((nVal > chn->param[0]) && (chn->tmp1 < chn->param[0]))
+      if ((nVal > chn->tmp2) && (chn->tmp1 < chn->tmp2))
         chn->value++;
       chn->tmp1 = nVal;
       break;
     case CHANNEL_MODE_AVERAGE:
-		chn->param[0] += nVal;
-		chn->param[1] += 1;
-		if (chn->param[1] >= 10) {
-			chn->value = chn->param[0] / 10;
-			chn->param[0] = 0;
-			chn->param[1] = 0;
-		}
+//		chn->param[0] += nVal;
+//		chn->param[1] += 1;
+//		if (chn->param[1] >= 10) {
+//			chn->value = chn->param[0] / 10;
+//			chn->param[0] = 0;
+//			chn->param[1] = 0;
+//		}
 		
 		break;
     case CHANNEL_MODE_RATE_LIMIT:  
@@ -94,11 +96,11 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider) {
       break;
     case CHANNEL_MODE_LIMIT: 
       chn->value = nVal;
-      if (nVal>chn->param[0]) {     // max value
-        chn->value = chn->param[0];
+      if (nVal>chn->tmp1) {     // max value
+       chn->value = chn->tmp1;
       }
-      if (nVal < chn->param[1]) {      // min value
-        chn->value = chn->param[1];
+      if (nVal < chn->tmp2) {      // min value
+        chn->value = chn->tmp2;
       }
       break;
     case CHANNEL_MODE_DELAY:       break;
@@ -111,6 +113,10 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider) {
 	 case CHANNEL_MODE_FILTER:
 		FILTER_add(chn->filter, nVal);
 		chn->value = FILTER_value(chn->filter);
+		break;
+
+	 case CHANNEL_MODE_DIVIDE:
+		chn->value = nVal / chn->tmp1;
 		break;
 		
     default: break;
@@ -127,9 +133,6 @@ void CHANNEL_SetMode(CHANNEL *chn, CHANNEL_MODE mode) {
   chn->mode = mode;
 }
 
-void CHANNEL_SetParam(CHANNEL *chn, uint8_t param, CHANNEL_VAL value)  {
-  chn->param[param] = value;
-}
 
 char *CHANNEL_modeToString(CHANNEL_MODE mode) {
   int i;
@@ -160,7 +163,7 @@ char *CHANNEL_toString(CHANNEL *chn) {
 	if (chn==NULL) {
 		return E_YELLOW "  Id          Name             Mode        Value" E_END ;
 	}
-	sprintf(buf, "%-10s  " E_BR_MAGENTA "%-16s" E_END " %-10s " E_CYAN "%6.2f" E_END, CHANNEL_get_id(chn), chn->name, CHANNEL_modeToString(chn->mode), chn->value);
+	sprintf(buf, "%-10s  " E_BR_MAGENTA "%-16s" E_END " %-10s " E_CYAN "%6d" E_END, CHANNEL_get_id(chn), chn->name, CHANNEL_modeToString(chn->mode), chn->value);
   return buf;
 }
 

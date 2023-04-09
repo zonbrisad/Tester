@@ -38,6 +38,9 @@ typedef enum
   CHANNEL_MODE_HYSTERESIS,
 	CHANNEL_MODE_FILTER,
 
+	CHANNEL_MODE_DIVIDE,
+	CHANNEL_MODE_MULTIPLY,
+
   CHANNEL_MODE_SINUS,
   CHANNEL_MODE_RAMP,
   CHANNEL_MODE_LAST
@@ -51,33 +54,18 @@ typedef enum
   CHANNEL_FLAG_VALUE_NA
 } CHANNEL_FLAGS;
 
-#define CH_PARAM1 0
-#define CH_PARAM2 1
-#define CH_PARAM3 2
 
-#define CHANNEL_NORMAL(name, id, mode)             \
-  {                                            \
-    0, 0, {0, 0, 0}, id, name, 0, mode, 0, 0, NULL, NULL \
-  }
+#define CHANNEL_INIT(cname, cid, cmode, ctmp1, ctmp2) { .value=0, .tmp1=ctmp1, .tmp2=ctmp2, .name=cname, .id=cid, .mode=cmode, .src=NULL, .flags=0 }
 
-#define CHANNEL_LIMIT(name, id, min, max)                            \
-  {                                                              \
-    0, 0, {max, min, 0}, id, name, 0, CHANNEL_MODE_LIMIT, 0, 0, NULL, NULL \
-  }
-#define CHANNEL_COUNT(name, id, thres)                               \
-  {                                                              \
-    0, 0, {thres, 0, 0}, id, name, 0, CHANNEL_MODE_COUNT, 0, 0, NULL, NULL \
-  }
+#define CHANNEL_NORMAL(cname, cid, cmode)   CHANNEL_INIT(cname, cid, cmode, 0, 0)
 
-#define CHANNEL_FILTER(name, id, filter)                               \
-  {                                                              \
-    0, 0, {0, 0, 0}, id, name, 0, CHANNEL_MODE_FILTER, 0, 0, NULL, filter \
-  }
+#define CHANNEL_LIMIT(cname, cid, cmin, cmax ) CHANNEL_INIT(cname, cid, CHANNEL_MODE_LIMIT, cmax, cmin)
+#define CHANNEL_COUNT(cname, cid, thres) CHANNEL_INIT(cname, cid, CHANNEL_MODE_COUNT, 0, 0)
+//#define CHANNEL_FILTER(cname, cid, filter) CHANNEL_INIT(cname, cid, cmode, 0, 0)                              
+#define CHANNEL_LAST()  CHANNEL_INIT("", "", CHANNEL_MODE_LAST, 0, 0)
 
-#define CHANNEL_LAST()                                          \
-	 {                                                             \
-    0, 0, {0, 0, 0}, "", "", 0, CHANNEL_MODE_LAST, 0, 0, NULL, NULL \
-  }
+#define CHANNEL_DIVIDE(cname, cid, cdiv) CHANNEL_INIT(cname, cid, CHANNEL_MODE_DIVIDE, cdiv, 0)
+
 
 #ifdef __cplusplus
 extern "C"
@@ -88,13 +76,11 @@ extern "C"
   {
     CHANNEL_VAL value;
     CHANNEL_VAL tmp1;
-    CHANNEL_VAL param[3]; // general purpose parameters
+    CHANNEL_VAL tmp2;
     char id[16];
     char name[NAMESIZE];
     uint8_t flags;
     CHANNEL_MODE mode;
-    uint32_t timeStamp;
-    uint16_t gpCnt;            // general purpose counter
     struct channel *src; // external source channel channel
 		FILTER *filter;
   } CHANNEL;
@@ -122,7 +108,7 @@ extern "C"
 
   void CHANNEL_SetMode(CHANNEL *chn, CHANNEL_MODE mode);
 
-  void CHANNEL_SetParam(CHANNEL *chn, uint8_t param, CHANNEL_VAL value);
+//  void CHANNEL_SetParam(CHANNEL *chn, uint8_t param, CHANNEL_VAL value);
 
   void CHANNEL_SetFlag(CHANNEL *chn, uint16_t flags);
 

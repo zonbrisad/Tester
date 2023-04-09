@@ -33,8 +33,8 @@ void SIGNAL_free(SIGNAL *sgn) {
 
 void SIGNAL_init(SIGNAL *signal, SIGNAL_MODE mode) {
   signal->mode = mode;
-  signal->param1 = 1;
-  signal->param2 = 0.1;
+  signal->param1 = 10;
+  signal->param2 = 1;
   signal->param3 = 0;
 }
 
@@ -46,7 +46,7 @@ void SIGNAL_update(SIGNAL *signal) {
   CHANNEL_VAL value;
   switch (signal->mode){
     case SIGNAL_MODE_SINUS:
-      value = signal->param1 * sin(signal->param3);
+      value =100*(signal->param1 * sin(signal->param3/10));
       signal->param3 += signal->param2;
       break;
     case SIGNAL_MODE_RAMP: break;

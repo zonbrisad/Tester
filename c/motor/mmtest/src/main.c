@@ -30,19 +30,6 @@
 
 // Variables -----------------------------------------------------------------
  
-CHANNEL chTest = CHANNEL_NORMAL("Sinus", "Sin",   CHANNEL_MODE_NORMAL);
-
-CHANNEL channels[] = {
-  CHANNEL_NORMAL("Sinus", "Sin", CHANNEL_MODE_NORMAL),
-  CHANNEL_NORMAL("Square", "",   CHANNEL_MODE_NORMAL),
-  CHANNEL_NORMAL("Min", "",      CHANNEL_MODE_MIN),
-  CHANNEL_NORMAL("Max", "",      CHANNEL_MODE_MAX),
-  CHANNEL_NORMAL("Average", "",  CHANNEL_MODE_AVERAGE),
-  CHANNEL_LIMIT("Limit", "", 0.1, 0.8),
-  CHANNEL_NORMAL("Integrate","", CHANNEL_MODE_INTEGRATE),
-  CHANNEL_COUNT("Count", "", 0.5),
-	CHANNEL_LAST()
-};
 
 
 // Code ----------------------------------------------------------------------
@@ -69,7 +56,6 @@ void print_channels(CHANNEL *chns) {
 	for (j=0; j<(i+1); j++) {
 			printf(E_CUR_RETURN);
 	}
-
 }
 
 
@@ -85,7 +71,7 @@ void temptest(char *sensor) {
 		CHANNEL_NORMAL("Min", "",      CHANNEL_MODE_MIN),
 		CHANNEL_NORMAL("Max", "",      CHANNEL_MODE_MAX),
 		CHANNEL_NORMAL("Average", "",  CHANNEL_MODE_AVERAGE),
-		CHANNEL_FILTER("Filter", "", filter),
+//		CHANNEL_FILTER("Filter", "", filter),
 		CHANNEL_LAST()
 	};
 	
@@ -100,18 +86,15 @@ void temptest(char *sensor) {
 	
 	while(1) {
 		STEMP_read(temp);
-		CHANNEL_Update(&chns[0], (temp->temperature/1000), 10);
+		CHANNEL_Update(&chns[0], (temp->temperature/10), 10);
 		i = 1;
 		while (chns[i].mode != CHANNEL_MODE_LAST) {
 			CHANNEL_Update(&chns[i], 0, 10);
 			i++;
 		}
-		
-		print_channels(chns);
-		
+		print_channels(chns);	
 		usleep(100000);
-  }
-	
+  }	
 }
 
 
@@ -120,17 +103,33 @@ void maintest() {
 	SIGNAL *sig;
 	CHANNEL *chns;
 
+	CHANNEL channels[] = {
+    CHANNEL_NORMAL("Sinus", "Sin", CHANNEL_MODE_NORMAL),
+    CHANNEL_NORMAL("Square", "",   CHANNEL_MODE_NORMAL),
+    CHANNEL_NORMAL("Min", "",      CHANNEL_MODE_MIN),
+    CHANNEL_NORMAL("Max", "",      CHANNEL_MODE_MAX),
+    CHANNEL_NORMAL("Average", "",  CHANNEL_MODE_AVERAGE),
+    CHANNEL_LIMIT("Limit", "", 0, 700),
+		CHANNEL_DIVIDE("Div / 10", "", 10),
+
+		CHANNEL_NORMAL("Integrate","", CHANNEL_MODE_INTEGRATE),
+    CHANNEL_COUNT("Count", "", 100),
+	  CHANNEL_LAST()
+	};
+
+	
 	//channels[1].src = &channels[0];
   channels[2].src = &channels[0];
   channels[3].src = &channels[0];
+	channels[5].src = &channels[0];
   channels[6].src = &channels[5];
-  channels[7].src = &channels[0];
+	channels[7].src = &channels[6];
+  channels[8].src = &channels[0];
 	
 	chns = channels;
 	sig = SIGNAL_new();
   SIGNAL_init(sig, SIGNAL_MODE_SINUS);
   SIGNAL_setChannel(sig, &channels[0]);
-
 
   while(1) {
 
