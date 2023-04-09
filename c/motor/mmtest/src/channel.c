@@ -12,6 +12,7 @@
  */
 
 #include <stdio.h>
+#include <math.h>
 
 #include "def.h"
 #include "channel.h"
@@ -27,35 +28,49 @@ modeName mode2name[] = {
   {CHANNEL_MODE_MAX,        "Max"},
   {CHANNEL_MODE_COUNT,      "Count"},
   {CHANNEL_MODE_LIMIT,      "Limit"},
+
+	{CHANNEL_MODE_DIVIDE,     "Divide"},
+	{CHANNEL_MODE_MULTIPLY,   "Multiply"},
   {CHANNEL_MODE_INTEGRATE,  "Integrate"},
+	{CHANNEL_MODE_DERIVATE,   "Derivate"},
+	
   {CHANNEL_MODE_RATE_LIMIT, "Rate limit"},
   {CHANNEL_MODE_AVERAGE,    "Average"},
   {CHANNEL_MODE_TIMER,      "Timer"},
-  {CHANNEL_MODE_SINUS,      "Sinus"},
+
+  {CHANNEL_MODE_SINE,       "Sine"},
   {CHANNEL_MODE_RAMP,       "Ramp"},
-  {CHANNEL_MODE_PWM,        "PWM"},
-	{CHANNEL_MODE_DIVIDE,     "Divide"},
-	{CHANNEL_MODE_MULTIPLY,   "Multiply"},
+	{CHANNEL_MODE_SQUARE,     "Square"},
+
+	{CHANNEL_MODE_PWM,        "PWM"},
+	{CHANNEL_MODE_INVERSE,    "Inverse"},
+	{CHANNEL_MODE_DELAY,      "Delay"},
+	
 	
   {CHANNEL_MODE_NONE,       "None"}
 };
 
-
 void CHANNEL_Init(CHANNEL *chn) {
-  uint8_t i;
   chn->value = 0;
-//  chn->tmp1  = 0;
-  chn->src    = NULL;
+  chn->tmp1  = 0;
+	chn->tmp2  = 0;
   chn->mode  = CHANNEL_MODE_NORMAL;
   chn->flags = 0;
-//  chn->gpCnt = 0;
-//  for(i=0;i<3;i++) {
-//    chn->param[i] = 0;
-//  }
 }
   
-float CHANNEL_GetValue(CHANNEL *chn) {
-  return chn->value;
+CHANNEL_VAL CHANNEL_GetValue(CHANNEL *chn) {
+
+	switch (chn->mode) {
+	 case CHANNEL_MODE_SINE:
+ 	 	return (chn->tmp1 * sin(((float)chn->value/1000)));
+  		break;
+//	 case CHANNEL_MODE_SQUARE:
+		
+//		break;
+		
+	 default: return chn->value;
+	}
+	return chn->value;
 }
   
 void CHANNEL_SetValue(CHANNEL *chn, CHANNEL_VAL value) {
@@ -66,8 +81,8 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider) {
   CHANNEL_VAL nVal;
 
   // check if new value commes from connected channel or not
-  if (chn->src != NULL) {
-    nVal = chn->src->value;
+  if (chn->src.ptr != NULL) {
+		nVal = CHANNEL_GetValue(chn->src.ptr);
   } else {
     nVal = newValue;
   }
@@ -77,7 +92,7 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider) {
     case CHANNEL_MODE_MAX: if (nVal>chn->value) chn->value = nVal; break;
     case CHANNEL_MODE_MIN: if (nVal<chn->value) chn->value = nVal; break;
     case CHANNEL_MODE_COUNT:   
-      if ((nVal > chn->tmp2) && (chn->tmp1 < chn->tmp2))
+      if ((nVal > chn->tmp2) && (chn->tmp1 <= chn->tmp2))
         chn->value++;
       chn->tmp1 = nVal;
       break;
@@ -103,13 +118,16 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider) {
         chn->value = chn->tmp2;
       }
       break;
-    case CHANNEL_MODE_DELAY:       break;
+    case CHANNEL_MODE_DELAY:
+
+		break;
     case CHANNEL_MODE_TIMER:
 		  if (chn->value > 0) {
 				chn->value = chn->value - 1;
 			}
 		break;
 	 case CHANNEL_MODE_INTEGRATE: chn->value += nVal/divider;  break;
+	 case CHANNEL_MODE_DERIVATE: chn->value = nVal - chn->tmp1; chn->tmp1 = nVal; break;
 	 case CHANNEL_MODE_FILTER:
 		FILTER_add(chn->filter, nVal);
 		chn->value = FILTER_value(chn->filter);
@@ -118,14 +136,39 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider) {
 	 case CHANNEL_MODE_DIVIDE:
 		chn->value = nVal / chn->tmp1;
 		break;
+
+	 case CHANNEL_MODE_MULTIPLY:
+		chn->value = nVal * chn->tmp1;
+	 break;
+
+	 case CHANNEL_MODE_SINE:
+		  chn->value += chn->tmp2;
+		break;
+
+	 case CHANNEL_MODE_SQUARE:
+		  chn->tmp1 += 1;
+		 if (chn->tmp1>chn->tmp2) {
+			 chn->tmp1 = 0;
+			 chn->value ^= 1;
+		 }
+		  //chn->value += chn->tmp2;
 		
+		break;
+	 case CHANNEL_MODE_INVERSE:
+		if (nVal > 0) {
+			chn->value = 0;
+		} else {
+			chn->value = 1;
+		}
+		break;
+
     default: break;
     
   }
 }
 
 void CHANNEL_SetConnection(CHANNEL *chn, CHANNEL *connection) {
-  chn->src = connection;
+  chn->src.ptr = connection;
 }
 
 void CHANNEL_SetMode(CHANNEL *chn, CHANNEL_MODE mode) {
@@ -163,17 +206,17 @@ char *CHANNEL_toString(CHANNEL *chn) {
 	if (chn==NULL) {
 		return E_YELLOW "  Id          Name             Mode        Value" E_END ;
 	}
-	sprintf(buf, "%-10s  " E_BR_MAGENTA "%-16s" E_END " %-10s " E_CYAN "%6d" E_END, CHANNEL_get_id(chn), chn->name, CHANNEL_modeToString(chn->mode), chn->value);
+	sprintf(buf, "%-10s  " E_BR_MAGENTA "%-16s" E_END " %-10s " E_CYAN "%6d" E_END, CHANNEL_get_id(chn), chn->name, CHANNEL_modeToString(chn->mode), CHANNEL_GetValue(chn));
   return buf;
 }
 
 
 char *CHANNEL_get_id(CHANNEL *chn) {
 	static char buf[32];
-	if (chn->src == NULL) {
+	if (chn->src.ptr == NULL) {
 		return chn->id;
 	}
 	
-	sprintf(buf, ">%s", CHANNEL_get_id(chn->src));
+	sprintf(buf, ">%s", CHANNEL_get_id(chn->src.ptr));
 	return buf;
 }

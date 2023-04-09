@@ -59,18 +59,18 @@ void print_channels(CHANNEL *chns) {
 }
 
 
-void temptest(char *sensor) {
+void temptest(const char *sensor) {
   STEMP *temp;
 	CHANNEL *chns;
-	FILTER *filter;
+//	FILTER *filter;
 	int i;
 
-	filter = FILTER_new();
+//	filter = FILTER_new();
 	CHANNEL cpu_temp[] = {
-		CHANNEL_NORMAL("CPU Temperature", "CPU", CHANNEL_MODE_NORMAL),
-		CHANNEL_NORMAL("Min", "",      CHANNEL_MODE_MIN),
-		CHANNEL_NORMAL("Max", "",      CHANNEL_MODE_MAX),
-		CHANNEL_NORMAL("Average", "",  CHANNEL_MODE_AVERAGE),
+		CHANNEL_NORMAL("CPU Temperature", "CPU", CHANNEL_MODE_NORMAL, 0),
+		CHANNEL_NORMAL("Min", "",      CHANNEL_MODE_MIN, -1),
+		CHANNEL_NORMAL("Max", "",      CHANNEL_MODE_MAX, -2),
+		CHANNEL_NORMAL("Average", "",  CHANNEL_MODE_AVERAGE, -3),
 //		CHANNEL_FILTER("Filter", "", filter),
 		CHANNEL_LAST()
 	};
@@ -79,10 +79,10 @@ void temptest(char *sensor) {
 	STEMP_init(temp, sensor);
 	chns = cpu_temp;
 
-	chns[1].src = &chns[0];
-	chns[2].src = &chns[0];
-	chns[3].src = &chns[0];
-	chns[4].src = &chns[0];
+	chns[1].src.ptr = &chns[0];
+	chns[2].src.ptr = &chns[0];
+	chns[3].src.ptr = &chns[0];
+	chns[4].src.ptr = &chns[0];
 	
 	while(1) {
 		STEMP_read(temp);
@@ -100,46 +100,47 @@ void temptest(char *sensor) {
 
 void maintest() {
 	int i;
-	SIGNAL *sig;
 	CHANNEL *chns;
 
 	CHANNEL channels[] = {
-    CHANNEL_NORMAL("Sinus", "Sin", CHANNEL_MODE_NORMAL),
-    CHANNEL_NORMAL("Square", "",   CHANNEL_MODE_NORMAL),
-    CHANNEL_NORMAL("Min", "",      CHANNEL_MODE_MIN),
-    CHANNEL_NORMAL("Max", "",      CHANNEL_MODE_MAX),
-    CHANNEL_NORMAL("Average", "",  CHANNEL_MODE_AVERAGE),
-    CHANNEL_LIMIT("Limit", "", 0, 700),
-		CHANNEL_DIVIDE("Div / 10", "", 10),
+		CHANNEL_SINE("Sinus", "Sin", 1000, 50),
+    CHANNEL_SQUARE("Square", "Sqr", 4),
+    CHANNEL_MIN("Min", "", -2),
+    CHANNEL_MAX("Max", "", -3),
+		CHANNEL_COUNT("Count", "", 100, -4),
+		CHANNEL_DERIVATE("Derivate","", -5),
+    CHANNEL_LIMIT("Limit", "", 0, 700, -6),
+		CHANNEL_DIVIDE("Div / 10", "", 10, -1),
+		CHANNEL_INTEGRATE("Integrate","", -1),
+		CHANNEL_MULTIPLY("x2","", 2, -3),
 
-		CHANNEL_NORMAL("Integrate","", CHANNEL_MODE_INTEGRATE),
-    CHANNEL_COUNT("Count", "", 100),
+		CHANNEL_SQUARE("Square", "S2",  5),
+		CHANNEL_INVERSE("Inverse", "", -1),
+		CHANNEL_COUNT("Count", "", 0, -2),
+		CHANNEL_SQUARE("Square slow", "SL",  20),
+		CHANNEL_DELAY("Delay", "", 5, -1),
+		
 	  CHANNEL_LAST()
 	};
 
-	
-	//channels[1].src = &channels[0];
-  channels[2].src = &channels[0];
-  channels[3].src = &channels[0];
-	channels[5].src = &channels[0];
-  channels[6].src = &channels[5];
-	channels[7].src = &channels[6];
-  channels[8].src = &channels[0];
-	
 	chns = channels;
-	sig = SIGNAL_new();
-  SIGNAL_init(sig, SIGNAL_MODE_SINUS);
-  SIGNAL_setChannel(sig, &channels[0]);
-
+	
+	i = 0;
+	while (chns[i].mode != CHANNEL_MODE_LAST) {
+	  if (chns[i].src.init != 0) {
+			chns[i].src.ptr   = &chns[i + chns[i].src.init];
+		}
+//		CHANNEL_Init(&chns[i], 0, 10);
+		i++;
+	}
+		
   while(1) {
 
-    SIGNAL_update(sig);		
-		i = 1;
+		i = 0;
 		while (chns[i].mode != CHANNEL_MODE_LAST) {
 			CHANNEL_Update(&chns[i], 0, 10);
 			i++;
 		}
-		
     print_channels(chns);
 		usleep(100000);
   }
@@ -177,7 +178,7 @@ int main(int argc, char** argv) {
   }
 
 	printf("\n");
-	printf("Size of channel struct: %d\n", sizeof(CHANNEL));
+	printf("Size of channel struct: %ld\n", sizeof(CHANNEL));
 	printf("\n");
 	
 	
@@ -192,8 +193,7 @@ int main(int argc, char** argv) {
 			safeExit(0);
 		}
 		temptest("/sys/class/thermal/thermal_zone0/temp");
-		safeExit(0);
-		
+		safeExit(0);	
  	}
 
 	arg_print_glossary(stdout, argtable, "  %-25s %s\n");

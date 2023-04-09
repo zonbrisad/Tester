@@ -559,8 +559,17 @@ strip: $(TRGFILE) ## Strip target binary from symbols
 # 
 # Debug rules
 #============================================================================
+
+APP_ARGS=--main
+
+run:    ## Run application
+	@$(TRGFILE) $(APP_ARGS)
+
+
+
 debug: ## Debug program
-	@$(GDB) $(TRGFILE) 
+	
+	@$(GDB) --args $(TRGFILE) $(APP_ARGS)
 
 	
 #
@@ -664,8 +673,6 @@ backup: ## Make an incremental backup
 edit:   ## Open source and makefile in editor
 	@$(EDITOR) Makefile $(SRC)
 
-run:    ## Run application
-	@$(OUTDIR)/$(TARGET)
 
 # Include the dependency files.
 -include $(shell mkdir .dep 2>/dev/null) $(wildcard .dep/*)

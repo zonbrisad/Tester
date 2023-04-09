@@ -32,7 +32,7 @@ typedef struct {
 
 STEMP *STEMP_new();
 
-void STEMP_init(STEMP *stemp, char *filename);
+void STEMP_init(STEMP *stemp, const char *filename);
 
 void STEMP_read(STEMP *stemp);
 

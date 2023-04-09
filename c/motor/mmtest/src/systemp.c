@@ -22,7 +22,7 @@ STEMP *STEMP_new() {
   return malloc(sizeof(STEMP));
 }
 
-void STEMP_init(STEMP *stemp, char *filename) {
+void STEMP_init(STEMP *stemp, const char *filename) {
 	strcpy(stemp->filename, filename);
 //  stemp->file = fopen(filename, "r");
 } 
