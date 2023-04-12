@@ -41,7 +41,8 @@ SRC = src/main.c                \
       src/argtable3/argtable3.c \
 			src/systemp.c \
 			src/signal.c \
-			src/filter.c
+			src/filter.c \
+			src/def_util.c
 
 # List C, C++ and assembler library/3rd partry source files here. (C/C++ dependencies are automatically generated.)
 LSRC =	
@@ -73,7 +74,7 @@ OUTDIR = output
 
 # Optimization level, can be [0, 1, 2, 3, s]. 
 #     0 = turn off optimization. s = optimize for size.
-OPT = 0
+OPT = s
 
 # Compiler flag to set the C and C++ Standard level.
 # [ gnu99 gnu11 c++98 c++03 c++11 c++14 ] 

@@ -15,6 +15,7 @@
 #include <math.h>
 
 #include "def.h"
+#include "def_util.h"
 #include "channel.h"
 
 typedef struct {
@@ -74,12 +75,19 @@ CHANNEL_VAL CHANNEL_GetValue(CHANNEL *chn) {
 }
   
 void CHANNEL_SetValue(CHANNEL *chn, CHANNEL_VAL value) {
-  chn->value = value;
+	//if (chn->value != value) {
+    chn->value = value;
+	//}
 }
 
 void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider) {
   CHANNEL_VAL nVal;
+	CHANNEL_VAL rate;
 
+	if (!CHANNEL_IS_ENABLED(chn)) {
+		return 0;
+	}
+	
   // check if new value commes from connected channel or not
   if (chn->src.ptr != NULL) {
 		nVal = CHANNEL_GetValue(chn->src.ptr);
@@ -92,8 +100,9 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider) {
     case CHANNEL_MODE_MAX: if (nVal>chn->value) chn->value = nVal; break;
     case CHANNEL_MODE_MIN: if (nVal<chn->value) chn->value = nVal; break;
     case CHANNEL_MODE_COUNT:   
-      if ((nVal > chn->tmp2) && (chn->tmp1 <= chn->tmp2))
+      if ((nVal > chn->tmp2) && (chn->tmp1 <= chn->tmp2)) {
         chn->value++;
+			}
       chn->tmp1 = nVal;
       break;
     case CHANNEL_MODE_AVERAGE:
@@ -106,7 +115,11 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider) {
 //		}
 		
 		break;
-    case CHANNEL_MODE_RATE_LIMIT:  
+    case CHANNEL_MODE_RATE_LIMIT:
+//		  rate = Abs(chn->value - nVal);
+		  rate = Clamp(nVal - chn->value, 0-chn->tmp1, chn->tmp1);
+		chn->value += rate;
+//		chn->value += (chn->tmp1 > rate) ? (rate) : chn->tmp1;
       
       break;
     case CHANNEL_MODE_LIMIT: 
@@ -119,7 +132,10 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider) {
       }
       break;
     case CHANNEL_MODE_DELAY:
-
+		if ((nVal > chn->tmp2) && (chn->tmp1 <= chn->tmp2)) {
+			chn->value++;
+		}
+		chn->tmp1 = nVal;
 		break;
     case CHANNEL_MODE_TIMER:
 		  if (chn->value > 0) {
@@ -132,6 +148,14 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider) {
 		FILTER_add(chn->filter, nVal);
 		chn->value = FILTER_value(chn->filter);
 		break;
+
+	 case CHANNEL_MODE_ADD:
+		chn->value = nVal + chn->tmp1;
+		break;
+	 case CHANNEL_MODE_SUBTRACT:
+				chn->value = nVal - chn->tmp1;
+		break;
+
 
 	 case CHANNEL_MODE_DIVIDE:
 		chn->value = nVal / chn->tmp1;
@@ -154,6 +178,20 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider) {
 		  //chn->value += chn->tmp2;
 		
 		break;
+	 case CHANNEL_MODE_PWM:
+		if (chn->tmp3 <0) {
+			chn->value = 0;
+		} else {
+			chn->value = 1;
+		}
+		chn->tmp3++;
+		if (chn->tmp3 >= chn->tmp1) {
+			chn->tmp3 = 0-chn->tmp2;
+		}
+
+			
+		break;
+		
 	 case CHANNEL_MODE_INVERSE:
 		if (nVal > 0) {
 			chn->value = 0;
@@ -203,10 +241,12 @@ char *CHANNEL_modeToString(CHANNEL_MODE mode) {
 
 char *CHANNEL_toString(CHANNEL *chn) {
   static char buf[128];
+	char ibuf[16];
+	
 	if (chn==NULL) {
-		return E_YELLOW "  Id          Name             Mode        Value" E_END ;
+		return E_YELLOW "  Id          Name             Mode        Value     Flags" E_END ;
 	}
-	sprintf(buf, "%-10s  " E_BR_MAGENTA "%-16s" E_END " %-10s " E_CYAN "%6d" E_END, CHANNEL_get_id(chn), chn->name, CHANNEL_modeToString(chn->mode), CHANNEL_GetValue(chn));
+	sprintf(buf, "%-10s  " E_BR_MAGENTA "%-16s" E_END " %-10s " E_CYAN "%6d" E_END "      %s", CHANNEL_get_id(chn), chn->name, CHANNEL_modeToString(chn->mode), CHANNEL_GetValue(chn), int2bin(ibuf, chn->flags,8));
   return buf;
 }
 
@@ -219,4 +259,14 @@ char *CHANNEL_get_id(CHANNEL *chn) {
 	
 	sprintf(buf, ">%s", CHANNEL_get_id(chn->src.ptr));
 	return buf;
+}
+
+
+void CHANNEL_Enable(CHANNEL *chn, char enable) {
+	if (enable) {
+		Bit_set(chn->flags, CHANNEL_FLAG_ENABLE);
+	} else {
+		Bit_clear(chn->flags, CHANNEL_FLAG_ENABLE);
+
+	}
 }
