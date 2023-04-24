@@ -160,7 +160,6 @@ extern "C"
 
 	char *CHANNEL_get_id(CHANNEL *chn);
 
-
 	void CHANNEL_Enable(CHANNEL *chn, char enable);
 
 #ifdef __cplusplus

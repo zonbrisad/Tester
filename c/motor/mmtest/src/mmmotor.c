@@ -16,11 +16,8 @@
 
 CHANNEL *mmotor_findId(uint8_t id);
 
-
 CHANNEL *m_channels;
 int m_len;
-
-
 
 
 void mmotor_init(CHANNEL *chns, int len) {
@@ -30,17 +27,8 @@ void mmotor_init(CHANNEL *chns, int len) {
 
 	// Initiate referenses
 	for (i = 0;i<m_len; i++) {
-//		chns[i].src = CHANNEL_findId(chns, chns[i].rid);
 		chns[i].src.ptr = mmotor_findId(chns[i].src.init);
 	}
-	
-	// Initiate referenses
-//	for (i = 0;i<m_len; i++) {
-//	  if (m_channels[i].src.init != 0) {
-//			m_channels[i].src.ptr   = &m_channels[i + m_channels[i].src.init];
-//		}
-//	}
-
 }
 
 

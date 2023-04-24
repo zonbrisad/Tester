@@ -85,7 +85,7 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider) {
 	CHANNEL_VAL rate;
 
 	if (!CHANNEL_IS_ENABLED(chn)) {
-		return 0;
+		return;
 	}
 	
   // check if new value commes from connected channel or not
@@ -232,7 +232,7 @@ char *CHANNEL_modeToString(CHANNEL_MODE mode) {
   }
   
   
-  while (mode2name[i].mode =! CHANNEL_MODE_NONE ) {
+  while ( mode2name[i].mode != CHANNEL_MODE_NONE ) {
     if (mode2name[i].mode == mode) {
       return mode2name[i].name;
     }
@@ -263,7 +263,6 @@ char *CHANNEL_get_id(CHANNEL *chn) {
 	return buf;
 }
 
-
 void CHANNEL_Enable(CHANNEL *chn, char enable) {
 	if (enable) {
 		Bit_set(chn->flags, CHANNEL_FLAG_ENABLE);
@@ -272,10 +271,3 @@ void CHANNEL_Enable(CHANNEL *chn, char enable) {
 
 	}
 }
-
-/*
-CHANNEL *CHANNEL_findId(CHANNEL *chns, uint8_t id) {
-	
-	
-}
-*/
