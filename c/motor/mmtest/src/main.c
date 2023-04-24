@@ -74,7 +74,6 @@ void printSysInfo(void) {
 }
 
 
-
 void safeExit(int x) {
 
   //gp_log_close();  
@@ -84,16 +83,14 @@ void safeExit(int x) {
   exit(x);
 }
 
-void print_channels(CHANNEL *chns) {
-  int i = 0;
-	int j;
+void print_channels(CHANNEL *chns, int len) {
+  int i;
 	printf("%s\n",CHANNEL_toString(NULL));
 	
-	while (chns[i].mode != CHANNEL_MODE_LAST) {
+  for (i=0; i<len; i++) {
 		printf("  %s\n", CHANNEL_toString(&chns[i]));
-		i++;
 	}
-	for (j=0; j<(i+1); j++) {
+	for (i=0; i<=len; i++) {
 			printf(E_PREVLINE);
 	}
 }
@@ -101,46 +98,33 @@ void print_channels(CHANNEL *chns) {
 
 void temptest(const char *sensor) {
   STEMP *temp;
-	CHANNEL *chns;
-//	FILTER *filter;
-	int i;
 
 //	filter = FILTER_new();
-	CHANNEL cpu_temp[] = {
+	CHANNEL channels[] = {
 		CHANNEL_NORMAL("CPU Temperature", "CPU", CHANNEL_MODE_NORMAL, 0),
 		CHANNEL_NORMAL("Min", "",      CHANNEL_MODE_MIN, -1),
 		CHANNEL_NORMAL("Max", "",      CHANNEL_MODE_MAX, -2),
 		CHANNEL_NORMAL("Average", "",  CHANNEL_MODE_AVERAGE, -3),
 //		CHANNEL_FILTER("Filter", "", filter),
-		CHANNEL_LAST()
 	};
 	
 	temp = STEMP_new();
 	STEMP_init(temp, sensor);
-	chns = cpu_temp;
 
-	chns[1].src.ptr = &chns[0];
-	chns[2].src.ptr = &chns[0];
-	chns[3].src.ptr = &chns[0];
-	chns[4].src.ptr = &chns[0];
-	
+	mmotor_init(channels, MARRAY_LENGTH(channels));
+
 	while(1) {
 		STEMP_read(temp);
-		CHANNEL_Update(&chns[0], (temp->temperature/10), 10);
-		i = 1;
-		while (chns[i].mode != CHANNEL_MODE_LAST) {
-			CHANNEL_Update(&chns[i], 0, 10);
-			i++;
-		}
-		print_channels(chns);	
+		CHANNEL_SetValue(&channels[0], (temp->temperature/10));
+
+		mmotor_update();
+
+		print_channels(channels, MARRAY_LENGTH(channels));
   }	
 }
 
 
 void maintest() {
-	int i;
-	CHANNEL *chns;
-
 	CHANNEL channels[] = {
 		CHANNEL_SINE("Sinus", "Sin", 1000, 50), // 0
     CHANNEL_SQUARE("Square", "Sqr", 4),
@@ -161,33 +145,15 @@ void maintest() {
 		CHANNEL_RATELIMIT("Rate", "", 10, -1),
 		CHANNEL_NORMAL("Dissabled", "", CHANNEL_MODE_NORMAL, -1),
 		CHANNEL_PWM("PWM test", "", 1, 4),
-							
-		
-	  CHANNEL_LAST()
 	};
-
 	
-	chns = channels;
-
-  CHANNEL_Enable(&chns[17], false);
+	mmotor_init(channels, MARRAY_LENGTH(channels));
 	
-	i = 0;
-	while (chns[i].mode != CHANNEL_MODE_LAST) {
-	  if (chns[i].src.init != 0) {
-			chns[i].src.ptr   = &chns[i + chns[i].src.init];
-		}
-//		CHANNEL_Init(&chns[i], 0, 10);
-		i++;
-	}
-		
+  CHANNEL_Enable(&channels[17], false);
+
   while(1) {
-
-		i = 0;
-		while (chns[i].mode != CHANNEL_MODE_LAST) {
-			CHANNEL_Update(&chns[i], 0, 10);
-			i++;
-		}
-    print_channels(chns);
+		mmotor_update();
+    print_channels(channels, MARRAY_LENGTH(channels));
 		usleep(100000);
   }
 }

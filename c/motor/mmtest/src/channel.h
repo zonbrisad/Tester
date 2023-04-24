@@ -62,7 +62,7 @@ typedef enum
 
 	ALARM_MODE_ABOVE,
 	ALARM_MODE_BELLOW,
-	ALARM_MODE_WHITIN,
+	ALARM_MODE_WHITHIN,
 	ALARM_MODE_OUTSIDE,
 	
   CHANNEL_MODE_LAST
@@ -101,9 +101,6 @@ typedef enum
 #define CHANNEL_SINE(cname, cid, ampl, step)  CHANNEL_INIT(cname, cid, CHANNEL_MODE_SINE, ampl, step, 0)
 #define CHANNEL_SQUARE(cname, cid, step)  CHANNEL_INIT(cname, cid, CHANNEL_MODE_SQUARE, 0, step, 0)
 #define CHANNEL_PWM(cname, cid, con, coff)  CHANNEL_INIT(cname, cid, CHANNEL_MODE_PWM, con, coff, 0)
-
-
-#define CHANNEL_LAST()  CHANNEL_INIT("", "", CHANNEL_MODE_LAST, 0, 0, 0)
 
 #define CHANNEL_IS_ENABLED(chn) (Bit_is_set(chn->flags, CHANNEL_FLAG_ENABLE))
 

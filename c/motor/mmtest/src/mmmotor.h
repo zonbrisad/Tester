@@ -20,6 +20,11 @@
 #include "channel.h"
 #include "alarm.h"
 
+
+// Determine length of array
+#define MARRAY_LENGTH(array) (sizeof((array))/sizeof((array)[0]))
+
+
 #ifdef	__cplusplus
 extern "C" {
 #endif

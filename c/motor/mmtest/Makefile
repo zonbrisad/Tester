@@ -38,6 +38,7 @@ TARGET = mmtest
 SRC = src/main.c                \
       src/channel.c             \
       src/alarm.c               \
+			src/mmmotor.c             \
       src/argtable3/argtable3.c \
 			src/systemp.c \
 			src/signal.c \

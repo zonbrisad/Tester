@@ -96,7 +96,7 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider) {
   }
 
   switch (chn->mode) {
-    case CHANNEL_MODE_NORMAL: chn->value = nVal; break;
+    case CHANNEL_MODE_NORMAL: break; //chn->value = nVal; break;
     case CHANNEL_MODE_MAX: if (nVal>chn->value) chn->value = nVal; break;
     case CHANNEL_MODE_MIN: if (nVal<chn->value) chn->value = nVal; break;
     case CHANNEL_MODE_COUNT:   
