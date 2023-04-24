@@ -69,7 +69,7 @@
 #endif
 
 #ifdef DEF_PLATFORM_AVR
-#include "def_avr.h"
+//#include "def_avr.h"
 #endif
 
 #ifndef DEF_H_
@@ -976,8 +976,7 @@ typedef unsigned long ulong;
 #define E_PREVLINE "\033[F" // (CPL) Cursor Previous Line
                             // Move cursor to beginning of line, n (defult 1) line(s) up
 
-
-
+ 
 #define E_HOME "\033[H"    // cursor to left upper corner
 
 #define E_HIDE_CURSOR "\033[?25l" // hide cursor

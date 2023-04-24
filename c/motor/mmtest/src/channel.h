@@ -57,7 +57,14 @@ typedef enum
   CHANNEL_MODE_VARIANCE,
   CHANNEL_MODE_FIR,
   CHANNEL_MODE_HYSTERESIS,
+	CHANNEL_MODE_PID,
+	CHANNEL_MODE_ALARM,
 
+	ALARM_MODE_ABOVE,
+	ALARM_MODE_BELLOW,
+	ALARM_MODE_WHITIN,
+	ALARM_MODE_OUTSIDE,
+	
   CHANNEL_MODE_LAST
 } CHANNEL_MODE;
 
@@ -98,11 +105,7 @@ typedef enum
 
 #define CHANNEL_LAST()  CHANNEL_INIT("", "", CHANNEL_MODE_LAST, 0, 0, 0)
 
-
-
 #define CHANNEL_IS_ENABLED(chn) (Bit_is_set(chn->flags, CHANNEL_FLAG_ENABLE))
-
-
 
 
 #ifdef __cplusplus
@@ -110,13 +113,16 @@ extern "C"
 {
 #endif
 
+
+	
   typedef struct channel
   {
     CHANNEL_VAL value;
     CHANNEL_VAL tmp1;
     CHANNEL_VAL tmp2;
 		CHANNEL_VAL tmp3;
-		
+
+//		uint8_t caid;
     char id[16];
     char name[NAMESIZE];
     uint8_t flags;

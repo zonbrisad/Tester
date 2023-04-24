@@ -145,8 +145,8 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider) {
 	 case CHANNEL_MODE_INTEGRATE: chn->value += nVal/divider;  break;
 	 case CHANNEL_MODE_DERIVATE: chn->value = nVal - chn->tmp1; chn->tmp1 = nVal; break;
 	 case CHANNEL_MODE_FILTER:
-		FILTER_add(chn->filter, nVal);
-		chn->value = FILTER_value(chn->filter);
+//		FILTER_add(chn->filter, nVal);
+//		chn->value = FILTER_value(chn->filter);
 		break;
 
 	 case CHANNEL_MODE_ADD:
@@ -187,9 +187,7 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider) {
 		chn->tmp3++;
 		if (chn->tmp3 >= chn->tmp1) {
 			chn->tmp3 = 0-chn->tmp2;
-		}
-
-			
+		}			
 		break;
 		
 	 case CHANNEL_MODE_INVERSE:
@@ -200,6 +198,10 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider) {
 		}
 		break;
 
+	 case ALARM_MODE_ABOVE:
+		
+		break;
+		
     default: break;
     
   }

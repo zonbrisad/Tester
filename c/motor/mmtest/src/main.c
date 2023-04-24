@@ -133,7 +133,6 @@ void temptest(const char *sensor) {
 			i++;
 		}
 		print_channels(chns);	
-		usleep(100000);
   }	
 }
 
