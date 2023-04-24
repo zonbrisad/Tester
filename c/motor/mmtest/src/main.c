@@ -101,10 +101,10 @@ void temptest(const char *sensor) {
 
 //	filter = FILTER_new();
 	CHANNEL channels[] = {
-		CHANNEL_NORMAL("CPU Temperature", "CPU", CHANNEL_MODE_NORMAL, 0),
-		CHANNEL_NORMAL("Min", "",      CHANNEL_MODE_MIN, -1),
-		CHANNEL_NORMAL("Max", "",      CHANNEL_MODE_MAX, -2),
-		CHANNEL_NORMAL("Average", "",  CHANNEL_MODE_AVERAGE, -3),
+		CHANNEL_NORMAL(1, "CPU Temperature", "CPU", CHANNEL_MODE_NORMAL, 0),
+		CHANNEL_NORMAL(2, "Min", "",      CHANNEL_MODE_MIN,     1),
+		CHANNEL_NORMAL(3, "Max", "",      CHANNEL_MODE_MAX,     1),
+		CHANNEL_NORMAL(4, "Average", "",  CHANNEL_MODE_AVERAGE, 1),
 //		CHANNEL_FILTER("Filter", "", filter),
 	};
 	
@@ -126,25 +126,25 @@ void temptest(const char *sensor) {
 
 void maintest() {
 	CHANNEL channels[] = {
-		CHANNEL_SINE("Sinus", "Sin", 1000, 50), // 0
-    CHANNEL_SQUARE("Square", "Sqr", 4),
-    CHANNEL_MIN("Min", "", -2),
-    CHANNEL_MAX("Max", "", -3),
-		CHANNEL_COUNT("Count", "", 100, -4),
-		CHANNEL_DERIVATE("Derivate","", -5),
-    CHANNEL_LIMIT("Limit", "", 0, 700, -6),
-		CHANNEL_DIVIDE("Div / 10", "", 10, -1),
-		CHANNEL_INTEGRATE("Integrate","", -1),
-		CHANNEL_MULTIPLY("x2","", 2, -3),
-		CHANNEL_SQUARE("Square", "S2",  5), // 10
-		CHANNEL_INVERSE("Inverse", "", -1),
-		CHANNEL_COUNT("Count", "", 0, -2),
-		CHANNEL_SQUARE("Square slow", "SL",  20),
-		CHANNEL_DELAY("Delay", "", 5, -1),
-		CHANNEL_MULTIPLY("Mult", "", 100, -2), // 15
-		CHANNEL_RATELIMIT("Rate", "", 10, -1),
-		CHANNEL_NORMAL("Dissabled", "", CHANNEL_MODE_NORMAL, -1),
-		CHANNEL_PWM("PWM test", "", 1, 4),
+		CHANNEL_SINE(1, "Sinus", "Sin", 1000, 50), // 0
+    CHANNEL_SQUARE(2, "Square", "Sqr", 4),
+    CHANNEL_MIN(3, "Min", "", 1),
+    CHANNEL_MAX(4, "Max", "", 1),
+		CHANNEL_COUNT(5, "Count", "", 100, 1),
+		CHANNEL_DERIVATE(6, "Derivate","", 1),
+    CHANNEL_LIMIT(7, "Limit", "", 0, 700, 1),
+		CHANNEL_DIVIDE(8, "Div / 10", "", 10, 7),
+		CHANNEL_INTEGRATE(9, "Integrate","", 7),
+		CHANNEL_MULTIPLY(10, "x2","", 2, 7),
+		CHANNEL_SQUARE(11, "Square", "S2",  5), // 10
+		CHANNEL_INVERSE(12, "Inverse", "", 11),
+		CHANNEL_COUNT(13, "Count", "", 0, 11),
+		CHANNEL_SQUARE(14, "Square slow", "SL",  20),
+		CHANNEL_DELAY(15, "Delay", "", 5, 14),
+		CHANNEL_MULTIPLY(16, "Mult", "", 100, 14), // 15
+		CHANNEL_RATELIMIT(17, "Rate", "", 10, 16),
+		CHANNEL_NORMAL(18, "Dissabled", "", CHANNEL_MODE_NORMAL, 17),
+		CHANNEL_PWM(19, "PWM test", "", 1, 4),
 	};
 	
 	mmotor_init(channels, MARRAY_LENGTH(channels));

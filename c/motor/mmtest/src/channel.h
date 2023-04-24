@@ -78,29 +78,29 @@ typedef enum
 } CHANNEL_FLAGS;
 
 
-#define CHANNEL_INIT(cname, cid, cmode, ctmp1, ctmp2, rsrc) { .value=0, .tmp1=ctmp1, .tmp2=ctmp2, .tmp3=0, .name=cname, .id=cid, .mode=cmode, .src.init=rsrc, .flags=(1<<CHANNEL_FLAG_ENABLE) }
+#define CHANNEL_INIT(id, cname, cid, cmode, ctmp1, ctmp2, rsrc) { .rid=id, .value=0, .tmp1=ctmp1, .tmp2=ctmp2, .tmp3=0, .name=cname, .tid=cid, .mode=cmode, .src.init=rsrc, .flags=(1<<CHANNEL_FLAG_ENABLE) }
 
-#define CHANNEL_NORMAL(cname, cid, cmode, rsrc)   CHANNEL_INIT(cname, cid, cmode, 0, 0, rsrc)
+#define CHANNEL_NORMAL(id, cname, cid, cmode, rsrc)   CHANNEL_INIT(id, cname, cid, cmode, 0, 0, rsrc)
 
-#define CHANNEL_MIN(cname, cid, rsrc)   CHANNEL_INIT(cname, cid, CHANNEL_MODE_MIN, 0, 0, rsrc)
-#define CHANNEL_MAX(cname, cid, rsrc)   CHANNEL_INIT(cname, cid, CHANNEL_MODE_MAX, 0, 0, rsrc)
-#define CHANNEL_LIMIT(cname, cid, cmin, cmax, rsrc) CHANNEL_INIT(cname, cid, CHANNEL_MODE_LIMIT, cmax, cmin, rsrc)
-#define CHANNEL_COUNT(cname, cid, thres, rsrc) CHANNEL_INIT(cname, cid, CHANNEL_MODE_COUNT, 0, 0, rsrc)
-#define CHANNEL_RATELIMIT(cname, cid, crate, rsrc) CHANNEL_INIT(cname, cid, CHANNEL_MODE_RATE_LIMIT, crate, 0, rsrc)
+#define CHANNEL_MIN(id, cname, cid, rsrc)   CHANNEL_INIT(id, cname, cid, CHANNEL_MODE_MIN, 0, 0, rsrc)
+#define CHANNEL_MAX(id, cname, cid, rsrc)   CHANNEL_INIT(id, cname, cid, CHANNEL_MODE_MAX, 0, 0, rsrc)
+#define CHANNEL_LIMIT(id, cname, cid, cmin, cmax, rsrc) CHANNEL_INIT(id, cname, cid, CHANNEL_MODE_LIMIT, cmax, cmin, rsrc)
+#define CHANNEL_COUNT(id, cname, cid, thres, rsrc) CHANNEL_INIT(id, cname, cid, CHANNEL_MODE_COUNT, 0, 0, rsrc)
+#define CHANNEL_RATELIMIT(id, cname, cid, crate, rsrc) CHANNEL_INIT(id, cname, cid, CHANNEL_MODE_RATE_LIMIT, crate, 0, rsrc)
 
-#define CHANNEL_INVERSE(cname, cid, rsrc)  CHANNEL_INIT(cname, cid, CHANNEL_MODE_INVERSE, 0, 0, rsrc)
-#define CHANNEL_DELAY(cname, cid, delay, rsrc)  CHANNEL_INIT(cname, cid, CHANNEL_MODE_DELAY, 0, delay, rsrc)
+#define CHANNEL_INVERSE(id, cname, cid, rsrc)  CHANNEL_INIT(id, cname, cid, CHANNEL_MODE_INVERSE, 0, 0, rsrc)
+#define CHANNEL_DELAY(id, cname, cid, delay, rsrc)  CHANNEL_INIT(id, cname, cid, CHANNEL_MODE_DELAY, 0, delay, rsrc)
 
-#define CHANNEL_ADD(cname, cid, cterm, rsrc) CHANNEL_INIT(cname, cid, CHANNEL_MODE_ADD, cterm, 0, rsrc)
-#define CHANNEL_SUBTRACT(cname, cid, cterm, rsrc) CHANNEL_INIT(cname, cid, CHANNEL_MODE_SUBTRACT, cterm, 0, rsrc)
-#define CHANNEL_MULTIPLY(cname, cid, cfact, rsrc) CHANNEL_INIT(cname, cid, CHANNEL_MODE_MULTIPLY, cfact, 0, rsrc)
-#define CHANNEL_DIVIDE(cname, cid, cdiv, rsrc) CHANNEL_INIT(cname, cid, CHANNEL_MODE_DIVIDE, cdiv, 0, rsrc)
-#define CHANNEL_INTEGRATE(cname, cid, rsrc)  CHANNEL_INIT(cname, cid, CHANNEL_MODE_INTEGRATE, 0, 0, rsrc)
-#define CHANNEL_DERIVATE(cname, cid, rsrc)  CHANNEL_INIT(cname, cid, CHANNEL_MODE_DERIVATE, 0, 0, rsrc)
+#define CHANNEL_ADD(id, cname, cid, cterm, rsrc) CHANNEL_INIT(id, cname, cid, CHANNEL_MODE_ADD, cterm, 0, rsrc)
+#define CHANNEL_SUBTRACT(id, cname, cid, cterm, rsrc) CHANNEL_INIT(id, cname, cid, CHANNEL_MODE_SUBTRACT, cterm, 0, rsrc)
+#define CHANNEL_MULTIPLY(id, cname, cid, cfact, rsrc) CHANNEL_INIT(id, cname, cid, CHANNEL_MODE_MULTIPLY, cfact, 0, rsrc)
+#define CHANNEL_DIVIDE(id, cname, cid, cdiv, rsrc) CHANNEL_INIT(id, cname, cid, CHANNEL_MODE_DIVIDE, cdiv, 0, rsrc)
+#define CHANNEL_INTEGRATE(id, cname, cid, rsrc)  CHANNEL_INIT(id, cname, cid, CHANNEL_MODE_INTEGRATE, 0, 0, rsrc)
+#define CHANNEL_DERIVATE(id, cname, cid, rsrc)  CHANNEL_INIT(id, cname, cid, CHANNEL_MODE_DERIVATE, 0, 0, rsrc)
 
-#define CHANNEL_SINE(cname, cid, ampl, step)  CHANNEL_INIT(cname, cid, CHANNEL_MODE_SINE, ampl, step, 0)
-#define CHANNEL_SQUARE(cname, cid, step)  CHANNEL_INIT(cname, cid, CHANNEL_MODE_SQUARE, 0, step, 0)
-#define CHANNEL_PWM(cname, cid, con, coff)  CHANNEL_INIT(cname, cid, CHANNEL_MODE_PWM, con, coff, 0)
+#define CHANNEL_SINE(id, cname, cid, ampl, step)  CHANNEL_INIT(id, cname, cid, CHANNEL_MODE_SINE, ampl, step, 0)
+#define CHANNEL_SQUARE(id, cname, cid, step)  CHANNEL_INIT(id, cname, cid, CHANNEL_MODE_SQUARE, 0, step, 0)
+#define CHANNEL_PWM(id, cname, cid, con, coff)  CHANNEL_INIT(id, cname, cid, CHANNEL_MODE_PWM, con, coff, 0)
 
 #define CHANNEL_IS_ENABLED(chn) (Bit_is_set(chn->flags, CHANNEL_FLAG_ENABLE))
 
@@ -110,8 +110,6 @@ extern "C"
 {
 #endif
 
-
-	
   typedef struct channel
   {
     CHANNEL_VAL value;
@@ -119,8 +117,8 @@ extern "C"
     CHANNEL_VAL tmp2;
 		CHANNEL_VAL tmp3;
 
-//		uint8_t caid;
-    char id[16];
+		uint8_t rid;
+    char tid[16];
     char name[NAMESIZE];
     uint8_t flags;
     CHANNEL_MODE mode;

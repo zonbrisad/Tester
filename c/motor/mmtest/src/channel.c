@@ -256,7 +256,7 @@ char *CHANNEL_toString(CHANNEL *chn) {
 char *CHANNEL_get_id(CHANNEL *chn) {
 	static char buf[32];
 	if (chn->src.ptr == NULL) {
-		return chn->id;
+		return chn->tid;
 	}
 	
 	sprintf(buf, ">%s", CHANNEL_get_id(chn->src.ptr));
@@ -272,3 +272,10 @@ void CHANNEL_Enable(CHANNEL *chn, char enable) {
 
 	}
 }
+
+/*
+CHANNEL *CHANNEL_findId(CHANNEL *chns, uint8_t id) {
+	
+	
+}
+*/
