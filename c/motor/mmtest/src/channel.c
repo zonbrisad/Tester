@@ -246,11 +246,13 @@ char *CHANNEL_toString(CHANNEL *chn) {
 	char ibuf[16];
 	
 	if (chn==NULL) {
-		return E_YELLOW "  Id          Name             Mode        Value     Flags" E_END ;
+		return E_YELLOW "  rId   Id          Name             Mode        Value     Flags" E_END ;
 	}
-	sprintf(buf, "%-10s  " E_BR_MAGENTA "%-16s" E_END " %-10s " E_CYAN "%6d" E_END "      %s", CHANNEL_get_id(chn), chn->name, CHANNEL_modeToString(chn->mode), CHANNEL_GetValue(chn), int2bin(ibuf, chn->flags,8));
+	sprintf(buf, " %2d   %-10s  " E_BR_MAGENTA "%-16s" E_END " %-10s " E_CYAN "%6d" E_END "      %s", chn->rid, CHANNEL_get_id(chn), chn->name, CHANNEL_modeToString(chn->mode), CHANNEL_GetValue(chn), int2bin(ibuf, chn->flags,8));
   return buf;
 }
+
+
 
 
 char *CHANNEL_get_id(CHANNEL *chn) {

@@ -66,8 +66,7 @@ void printSysInfo(void) {
 #endif
 #endif
 
-	sprintf(buf,"%d",sizeof(void*));
-//	printf("Size %d\n",sizeof(void*));
+	sprintf(buf,"%ld",sizeof(void*));
 	
 	printInfo("Pointer size:", buf);
 
