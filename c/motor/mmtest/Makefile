@@ -38,11 +38,11 @@ TARGET = mmtest
 SRC = src/main.c                \
       src/channel.c             \
       src/alarm.c               \
-      src/argtable3/argtable3.c \
+			src/mmmotor.c             \
 			src/systemp.c \
-			src/signal.c \
 			src/filter.c \
-			src/def_util.c
+			src/def_util.c \
+      src/argtable3/argtable3.c 
 
 # List C, C++ and assembler library/3rd partry source files here. (C/C++ dependencies are automatically generated.)
 LSRC =	

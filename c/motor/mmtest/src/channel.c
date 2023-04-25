@@ -85,7 +85,7 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider) {
 	CHANNEL_VAL rate;
 
 	if (!CHANNEL_IS_ENABLED(chn)) {
-		return 0;
+		return;
 	}
 	
   // check if new value commes from connected channel or not
@@ -96,7 +96,7 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider) {
   }
 
   switch (chn->mode) {
-    case CHANNEL_MODE_NORMAL: chn->value = nVal; break;
+    case CHANNEL_MODE_NORMAL: break; //chn->value = nVal; break;
     case CHANNEL_MODE_MAX: if (nVal>chn->value) chn->value = nVal; break;
     case CHANNEL_MODE_MIN: if (nVal<chn->value) chn->value = nVal; break;
     case CHANNEL_MODE_COUNT:   
@@ -232,7 +232,7 @@ char *CHANNEL_modeToString(CHANNEL_MODE mode) {
   }
   
   
-  while (mode2name[i].mode =! CHANNEL_MODE_NONE ) {
+  while ( mode2name[i].mode != CHANNEL_MODE_NONE ) {
     if (mode2name[i].mode == mode) {
       return mode2name[i].name;
     }
@@ -246,23 +246,24 @@ char *CHANNEL_toString(CHANNEL *chn) {
 	char ibuf[16];
 	
 	if (chn==NULL) {
-		return E_YELLOW "  Id          Name             Mode        Value     Flags" E_END ;
+		return E_YELLOW "  rId   Id          Name             Mode        Value     Flags" E_END ;
 	}
-	sprintf(buf, "%-10s  " E_BR_MAGENTA "%-16s" E_END " %-10s " E_CYAN "%6d" E_END "      %s", CHANNEL_get_id(chn), chn->name, CHANNEL_modeToString(chn->mode), CHANNEL_GetValue(chn), int2bin(ibuf, chn->flags,8));
+	sprintf(buf, " %2d   %-10s  " E_BR_MAGENTA "%-16s" E_END " %-10s " E_CYAN "%6d" E_END "      %s", chn->rid, CHANNEL_get_id(chn), chn->name, CHANNEL_modeToString(chn->mode), CHANNEL_GetValue(chn), int2bin(ibuf, chn->flags,8));
   return buf;
 }
+
+
 
 
 char *CHANNEL_get_id(CHANNEL *chn) {
 	static char buf[32];
 	if (chn->src.ptr == NULL) {
-		return chn->id;
+		return chn->tid;
 	}
 	
 	sprintf(buf, ">%s", CHANNEL_get_id(chn->src.ptr));
 	return buf;
 }
-
 
 void CHANNEL_Enable(CHANNEL *chn, char enable) {
 	if (enable) {
