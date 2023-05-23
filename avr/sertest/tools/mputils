@@ -253,7 +253,7 @@ avrdude-arduino() { ##D Write firmware to arduino with avrdude
     bpWarning "Device ${PORT} does not exist!"
   fi
 
-  avrdude -v -v -p "${MCU}" -b 57600 -c arduino -P "${PORT}" -U flash:w:"${FILE}":i
+  avrdude -v -v -V -p "${MCU}" -b 57600 -c arduino -P "${PORT}" -U flash:w:"${FILE}":i
 }
 
 #

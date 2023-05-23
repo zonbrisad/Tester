@@ -22,6 +22,7 @@ void cmd_c16(char *args);
 void cmd_c256(char *args);
 void cmd_r100(char *args);
 void cmd_r1000(char *args);
+void cmd_r10000(char *args);
 void cmd_help(char *args);
 
 typedef enum {
@@ -33,11 +34,14 @@ static FILE mystdout = FDEV_SETUP_STREAM((void*)uart_putc, NULL, _FDEV_SETUP_WRI
 LEF_Timer timer1;
 
 const PROGMEM LEF_CliCmd commands[] = {
-	{cmd_c16 ,  "c16",   "Print 16 terminal colors"},
-	{cmd_c256 , "c256",  "Print 256 terminal colors"},
-	{cmd_r100,  "r100",  "Print 100 rows"},
-	{cmd_r1000, "r1000", "print 1000 rows"},
-	{cmd_help,  "help",  "Print help information"},
+	LEF_CLI_LABEL("Color"),
+	{cmd_c16 ,   "c16",    "Print 16 terminal colors"},
+	{cmd_c256 ,  "c256",   "Print 256 terminal colors"},
+	LEF_CLI_LABEL("Generators"),
+	{cmd_r100,   "r100",   "Print 100 rows"},
+	{cmd_r1000,  "r1000",  "print 1000 rows"},
+	{cmd_r10000, "r10000", "print 10000 rows"},
+	{cmd_help,   "help",   "Print help information"},
 };
 
 ISR(TIMER1_COMPA_vect) {
@@ -73,23 +77,19 @@ void cmd_c256(char *args) {
 	UNUSED(args);
 
 	p = buf;
-	
+	printf("\n");
 	for (i=16; i<256; i++) {
+
 		printf(E_FG256P" %3d "E_END,i,i);
 		p += sprintf(p, E_BG256P" %3d "E_END,i,i);
+		p++;
+		p[0] = ' ';
+		p--;
 		if (((i-15) % 6)==0) {
-			printf("%s\n",buf);
-			//printf("\n");
+			p = buf;
+			printf("  %s\n",buf);
 		}
 	}
-	
-	for (i=16; i<256; i++) {
-		printf(E_BG256P" %3d "E_END,i,i);
-		if (((i-15)%6)==0) {
-			printf("\n");
-		}
-	}
-
 }
 
 void print_rows(int r) {
@@ -100,20 +100,23 @@ void print_rows(int r) {
 }
 
 void cmd_r100(char *args) {
-	int i;
 	UNUSED(args);
 	print_rows(100);
 }
 
 void cmd_r1000(char *args) {
-	int i;
 	UNUSED(args);
 	print_rows(1000);
 }
 
+void cmd_r10000(char *args) {
+	UNUSED(args);
+	print_rows(10000);
+}
+
 void cmd_help(char *args) {
 	UNUSED(args);
-	LEF_CliPrintCommands(commands);
+	LEF_Cli_print();
 }
 
 void printInfo(char *a, char *b) {
@@ -178,11 +181,11 @@ int main() {
 	//LEF_Button_init(&button, EVENT_Button);
 	//LEF_Buzzer_init();
 //	LEF_CliInit(commands, sizeof(commands) / sizeof((commands)[0]) );
-	LEF_CliInit(commands, LARRAY_LENGTH(commands));
+	LEF_Cli_init(commands, LARRAY_LENGTH(commands));
 
 	hw_init();
 
-	printf("\n\nSerial port testprogram\n\n");
+	printf("\n\nArduino serial port testprogram\n\n");
 
 	printSysInfo();
 	
@@ -193,14 +196,14 @@ int main() {
 		 case EVENT_Timer1:
 			ch = uart_getc();
 			while ((ch & 0xff00) != UART_NO_DATA ) {
-				LEF_CliPutChar(ch);
+				LEF_Cli_putc(ch);
 				ch = uart_getc();
 			}
 			
 			break;
 	 
 		 case LEF_EVENT_CLI:
-			LEF_CliExec();
+			LEF_Cli_exec();
 			break;
 		}
 	}

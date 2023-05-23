@@ -606,7 +606,7 @@ term: ##D Connect to QEMU virtual serial port via telnet terminal
 AVRDUDE_PORT = /dev/ttyUSB1
 
 flash: $(TARGET).hex # $(TARGET).eep  ##D Write program to MCU flash with avrdude
-	@mpterm.py --suspend
+	@mpterm --suspend
 	@$(MPUTILS) avrdude-arduino $(TARGET).hex $(MCU) $(AVRDUDE_PORT) 
 
 ##- Utils
