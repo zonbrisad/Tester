@@ -231,29 +231,119 @@ bpSetDefault() {
 
 ##- AVR utilities
 
+bpPIDWrite() {
+  echo $$ >"${BP_PID_FILE}"
+}
+
+bpPIDRemove() {
+  rm -f "${BP_PID_FILE}"
+}
+
+bpPIDLoad() {
+  if [ -e "${BP_PID_FILE}" ]; then
+    cat "${BP_PID_FILE}"
+  fi
+}
+
+bpPIDExist() {
+  if [ -e "${BP_PID_FILE}" ]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+arduino_write_flash() { ## Write firmware to Arduino via bootloader
+  FILE=${1}
+  MCU=${2}
+  PORT=${3}
+
+  if [ ! -e "${PORT}" ]; then
+    echo
+    bpError "Device ${PORT} does not exist!"
+    return
+  fi
+
+  # Suspend mpterm terminal program if available
+  if bpHasCmd "mpterm"; then
+    mpterm --suspend
+    sleep 0.4
+  fi
+
+  # Write to flash
+  avrdude -v -v -V -p "${MCU}" -b 57600 -c arduino -P "${PORT}" -U flash:w:"${FILE}":i
+}
+
+get_serial_port() {
+  PORT=$1
+  bpPrintLine "Available USB->serial ports"
+  ls --width 1 /dev/ttyUSB* 2>/dev/null
+  ls --width 1 /dev/ttyACM* 2>/dev/null
+  bpPrintLine
+
+  bpReturn=$(bpReadStrR "Enter Port >" "PORT" "${PORT}")
+}
+
 #
 # $2 file
 # $3 MCU type
 # $4 port
 #
-avrdude-arduino() { ##D Write firmware to arduino with avrdude
+arduino-flash() { ##D Write firmware to arduino with avrdude
   FILE=${2}
   MCU=${3}
   PORT=${4}
-  bpPrintLine "Available USB->serial ports"
-  ls --width 1 /dev/ttyUSB* 2>/dev/null
-  ls --width 1 /dev/ttyACM* 2>/dev/null
-	
-  bpPrintLine
 
-  PORT=$(bpReadStrR "Enter Port >" "PORT" "${PORT}")
-
-  if [ ! -e "${PORT}" ]; then
-    echo
-    bpWarning "Device ${PORT} does not exist!"
+  if bpPIDExist; then
+    pid=$(bpPIDLoad)
+    kill -s SIGUSR2 "$pid"
+    return
   fi
 
-  avrdude -v -v -V -p "${MCU}" -b 57600 -c arduino -P "${PORT}" -U flash:w:"${FILE}":i
+  get_serial_port "$PORT"
+  PORT="$bpReturn"
+
+  arduino_write_flash "${FILE}" "${MCU}" "${PORT}"
+}
+
+wait_write() {
+  FILE=${1}
+  MCU=${2}
+  PORT=${3}
+
+  arduino_write_flash "${FILE}" "${MCU}" "${PORT}"
+
+  echo
+  bpInfo "Waiting for USR2 signal to initiate write to Arduino flash...($$)"
+}
+
+flash_cleanup() {
+  bpCleanUp
+  bpPIDRemove
+  exit "$BP_OK"
+}
+
+#
+# $2 file
+# $3 MCU type
+# $4 port
+#
+arduino-flash-wait() { ##D  Loop waiting for signal to program
+  FILE=${2}
+  MCU=${3}
+  PORT=${4}
+
+  get_serial_port "$PORT"
+  PORT="$bpReturn"
+  bpPIDWrite
+  echo
+  bpInfo "Waiting for USR2 signal to initiate write to Arduino flash...($$)"
+  trap "wait_write ${FILE} ${MCU} ${PORT}" SIGUSR2
+  trap "flash_cleanup" SIGINT
+  quit=0
+  while [ "$quit" -ne 1 ]; do
+    sleep 0.2
+  done
 }
 
 #
@@ -264,6 +354,7 @@ qemu-avr() { # Emulate AVR
 }
 
 ##- Misc
+
 sermon() { ##D Monitor tcp port and open when available
   PORT=$2
 
@@ -296,6 +387,8 @@ command style shellscripts"
 
   ##V Lock file (uncomment to use lock file feature )
   #BP_LOCK_FILE=/tmp/${BP_SELF}.lock
+
+  BP_PID_FILE=/tmp/${BP_SELF}_${USER}.pid
 
   ##V Logging options (uncomment to activate logging parameters)
   BP_LOG_OK=1
