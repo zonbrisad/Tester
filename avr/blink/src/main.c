@@ -42,9 +42,11 @@ void hw_init(void)
 
 int main()
 {
+	uint32_t cnt;
+	
 	hw_init();
-//	_delay_ms(500);
 	printf("\n\nStarting up arduino blink program\n");
+	cnt = 0;
 	while (1)
 	{
 		ARDUINO_LED_ON();
@@ -56,7 +58,8 @@ int main()
 		ARDUINO_LED_OFF();
 
 		_delay_ms(300);
-		printf("Blink\n");
+		printf("Blink %5ld\n", cnt);
+		cnt++;
 	}
 
 	return 0;
