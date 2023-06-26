@@ -43,13 +43,20 @@ void hw_init(void)
 int main()
 {
 	hw_init();
-	_delay_ms(500);
-	printf("Starting up blink program\n");
+//	_delay_ms(500);
+	printf("\n\nStarting up arduino blink program\n");
 	while (1)
 	{
-		_delay_ms(100);
-		uart_putc('B');
-		ARDUINO_LED_TOGGLE();
+		ARDUINO_LED_ON();
+		_delay_ms(80);
+		ARDUINO_LED_OFF();
+		_delay_ms(50);
+		ARDUINO_LED_ON();
+		_delay_ms(80);
+		ARDUINO_LED_OFF();
+
+		_delay_ms(300);
+		printf("Blink\n");
 	}
 
 	return 0;

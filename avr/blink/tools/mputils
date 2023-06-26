@@ -47,13 +47,6 @@ bpUserSettings() {
 
 ##- Makeplates
 
-newproj() {
-  #  echo "New project name"
-  #  read -e -p ">" projname
-  projname=$(bpReadStr "New project name>" "")
-  echo "$projname"
-}
-
 ce() { ##D Check if file exists
   bn=$(basename "$2")
   cmd=$(command -v "$2")
@@ -79,50 +72,44 @@ cl() { ##D Check if library exists
 }
 
 printCommandMp() {
-  help_split=$1
-
-  help_command=$(echo "$help_line" | sed -s 's/:.*//')
-  help_info=$(echo "$help_line" | sed -s 's/^.*##//')
-
-  printf "${E_CYAN}  %-15s %s${E_RESET}" "$help_command"
-  printf "${E_GREEN}%s${E_RESET}\n" "$help_info"
-
+  CMD="${1%:*}"
+  DESC="${1##*##D }"
+  bpPrintDesc "${CMD}" "${DESC}" 15
 }
 
 mpHelp() { ##D Print makeplate makefile help
   IFS=$'\n'
-  help_lines=$(grep -h '##' "$2" | grep -v grep | grep -v '##D' | grep -v '##V' | grep -v '\*##C' | grep -v '\*##C-' | grep -v '\"##' | grep -v '##N-//' | grep -v help_line | grep -v printLine)
-  for help_line in ${help_lines}; do
-    case "$help_line" in
-    *"##-"*) printNamedLine "" ;;
-    *"##N-"*) printNamedLine "$help_line" ;;
-    *"##"*) printCommandMp "$help_line" ;;
+  LINES=$(grep -h '##' "$2" | grep -v -e 'grep' -e '##V' -e '\*##C' -e '\*##C-' -e '\"##' -e '##N-//' -e help_line -e 'printLine')
+  for LINE in ${LINES}; do
+    case "$LINE" in
+    *"##-"*) printNamedLine "$LINE" ;;
+    *"##D"*) printCommandMp "$LINE" ;;
     *) ;;
     esac
   done
-  #  printLine
 }
 
 # Directory where to store archives
-ARCHIVEDIR="archive"
+ARCHIVE_DIR="archive"
 BACKUP_DIR="backup"
 OUTDIR="output"
 BUILDDIR="build"
 
-#TARGET="kalle"
 #
-# Archive makeplate project
-#
-# $1 Target name
+# $2 Target name
 #
 archive() { ##D Make a tar archive of the source code
+  local TARGET=$2
+
   DT=$(date +"%Y%m%d-%H%M%S")
-  bpMkDir ${ARCHIVEDIR}
-  tar -cvzf "${ARCHIVEDIR}/${1}_${DT}.tar.gz" ./* \
-    --exclude=${ARCHIVEDIR} \
-    --exclude=${BACKUP_DIR} \
-    --exclude=${OUTDIR} \
-    --exclude=${BUILDDIR} \
+  ARCHIVE="${ARCHIVE_DIR}/${TARGET}_${DT}.tar.gz"
+
+  bpMkDir "${ARCHIVE_DIR}"
+  tar -cvzf "${ARCHIVE_DIR}/${TARGET}_${DT}.tar.gz" \
+    --exclude="${ARCHIVE_DIR}" \
+    --exclude="${BACKUP_DIR}" \
+    --exclude="${OUTDIR}" \
+    --exclude="${BUILDDIR}" \
     --exclude='*.a' \
     --exclude='*.o' \
     --exclude='*.ko' \
@@ -149,33 +136,46 @@ archive() { ##D Make a tar archive of the source code
     --exclude='*.x86_64' \
     --exclude='*~' \
     --exclude="*.old" \
-    --exclude="*.tmp"
+    --exclude="*.tmp" \
+    ./*
+
+  if (($? == 0)); then
+    echo
+    bpOk "Created archive: ${ARCHIVE}"
+  fi
 }
 
 # Max number of backups
 BACKUPS=100
 
+#
+#
 backup() { ##D Make an incremental backup
-  bpMkDir ${BACKUP_DIR}
+  bpMkDir "${BACKUP_DIR}"
   # remove oldest backup
-  bpRm ${BACKUP_DIR}/backup_${BACKUPS}
+  rm -rf "${BACKUP_DIR}/backup_${BACKUPS}"
   # rotate backups
   for ((x = BACKUPS; x > 0; x--)); do
     bdir="${BACKUP_DIR}/backup_$((x - 1))"
     # check if directory exist before renameing  it
     if [ -d "${bdir}" ]; then
-      mv -f ${bdir} ${BACKUP_DIR}/backup_${x}
+      mv -f "${bdir}" "${BACKUP_DIR}/backup_${x}"
     fi
   done
   rsync --archive \
     --delete \
     --relative \
-    --exclude=${BACKUP_DIR} \
-    --exclude=${ARCHIVEDIR} \
-    --exclude=${OUTDIR} \
+    --exclude="${BACKUP_DIR}" \
+    --exclude="${ARCHIVE_DIR}" \
+    --exclude="${OUTDIR}" \
     --link-dest="${PWD}/${BACKUP_DIR}/backup_1" \
     . \
-    ${BACKUP_DIR}/backup_0
+    "${BACKUP_DIR}/backup_0"
+
+  if (($? == 0)); then
+    echo
+    bpOk "Created backup."
+  fi
 }
 
 bpSource() { ##I Load file
@@ -229,35 +229,131 @@ bpSetDefault() {
   echo "${KEY}=${VAL}" >"${BP_SELF_DIR}/${BP_SELF}_${KEY}.bp_default"
 }
 
+##- AVR utilities
+
+bpPIDWrite() {
+  echo $$ >"${BP_PID_FILE}"
+}
+
+bpPIDRemove() {
+  rm -f "${BP_PID_FILE}"
+}
+
+bpPIDLoad() {
+  if [ -e "${BP_PID_FILE}" ]; then
+    cat "${BP_PID_FILE}"
+  fi
+}
+
+bpPIDExist() {
+  if [ -e "${BP_PID_FILE}" ]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+arduino_write_flash() { ## Write firmware to Arduino via bootloader
+  FILE=${1}
+  MCU=${2}
+  PORT=${3}
+
+  if [ ! -e "${PORT}" ]; then
+    echo
+    bpError "Device ${PORT} does not exist!"
+    return
+  fi
+
+  # Suspend mpterm terminal program if available
+  if bpHasCmd "mpterm"; then
+    mpterm --suspend
+    sleep 0.4
+  fi
+
+  # Write to flash
+  avrdude -v -v -p "${MCU}" -b 57600 -c arduino -P "${PORT}" -U flash:w:"${FILE}":i
+}
+
+get_serial_port() {
+  PORT=$1
+  bpPrintLine "Available USB->serial ports"
+  ls --width 1 /dev/ttyUSB* 2>/dev/null
+  ls --width 1 /dev/ttyACM* 2>/dev/null
+  bpPrintLine
+
+  bpReturn=$(bpReadStrR "Enter Port >" "PORT" "${PORT}")
+}
+
 #
 # $2 file
 # $3 MCU type
 # $4 port
 #
-avrdude-arduino() { ##D Write firmware to arduino with avrdude
+arduino-flash() { ##D Write firmware to arduino with avrdude
   FILE=${2}
   MCU=${3}
   PORT=${4}
-  bpPrintLine "Available USB->serial ports"
-  ls --width 1 /dev/ttyUSB*
-  bpPrintLine
 
-  PORT=$(bpReadStrR "Enter Port >" "PORT" "${PORT}")
-
-  if [ ! -e "${PORT}" ]; then
-    echo
-    bpWarning "Device ${PORT} does not exist!"
+  if bpPIDExist; then
+    pid=$(bpPIDLoad)
+    kill -s SIGUSR2 "$pid"
+    return
   fi
 
-  avrdude -v -v -p "${MCU}" -b 57600 -c arduino -P "${PORT}" -U flash:w:"${FILE}":i
+  get_serial_port "$PORT"
+  PORT="$bpReturn"
+
+  arduino_write_flash "${FILE}" "${MCU}" "${PORT}"
+}
+
+wait_write() {
+  FILE=${1}
+  MCU=${2}
+  PORT=${3}
+
+  arduino_write_flash "${FILE}" "${MCU}" "${PORT}"
+
+  echo
+  bpInfo "Waiting for USR2 signal to initiate write to Arduino flash...($$)"
+}
+
+flash_cleanup() {
+  bpCleanUp
+  bpPIDRemove
+  exit "$BP_OK"
+}
+
+#
+# $2 file
+# $3 MCU type
+# $4 port
+#
+arduino-flash-wait() { ##D  Loop waiting for signal to program
+  FILE=${2}
+  MCU=${3}
+  PORT=${4}
+
+  get_serial_port "$PORT"
+  PORT="$bpReturn"
+  bpPIDWrite
+  echo
+  bpInfo "Waiting for USR2 signal to initiate write to Arduino flash...($$)"
+  trap "wait_write ${FILE} ${MCU} ${PORT}" SIGUSR2
+  trap "flash_cleanup" SIGINT
+  quit=0
+  while [ "$quit" -ne 1 ]; do
+    sleep 0.2
+  done
 }
 
 #
 # $1
 #
-qemu-avr() { ##D Emulate AVR
+qemu-avr() { # Emulate AVR
   :
 }
+
+##- Misc
 
 sermon() { ##D Monitor tcp port and open when available
   PORT=$2
@@ -291,6 +387,8 @@ command style shellscripts"
 
   ##V Lock file (uncomment to use lock file feature )
   #BP_LOCK_FILE=/tmp/${BP_SELF}.lock
+
+  BP_PID_FILE=/tmp/${BP_SELF}_${USER}.pid
 
   ##V Logging options (uncomment to activate logging parameters)
   BP_LOG_OK=1
@@ -523,6 +621,11 @@ BP_C_URL_SCHEME="${E_DARKGRAY}"
 # BP_C_URL_HOST=""
 BP_C_TIME="${E_BR_MAGENTA}"
 BP_C_DATE="${E_MAGENTA}"
+
+BP_C_QUERY=$'\e[38;5;194m'
+BP_C_QUERY_DEF=$'\e[38;5;240m'
+BP_C_EMPHASIS=$'\e[38;5;255m'
+BP_C_DEEMPHASIS=$'\e[38;5;250m'
 
 # Shellscript colorize colors
 BP_C_RESERVED="${E_RED}"
@@ -906,17 +1009,15 @@ bpInsert() { ##I Insert text into file
 # return string read from cmdline/default if enter pressed
 #
 bpReadStr() { ##I Read string from commandline
+  QUERY="$1"
+  DEFAULT="$2"
 
-  if [ "${2}" == "" ]; then
-    read -erp "${1} > " result
-  else
-    read -erp "${1} " -i "${2}" result
-    if [ "${result}" == "" ]; then
-      result="${2}"
-    fi
+  read -er -i "$DEFAULT" -p "${BP_C_QUERY}${1}${E_RESET} > " RESULT
+  if [ "${RESULT}" == "" ]; then
+    RESULT="${2}"
   fi
 
-  echo "${result}"
+  echo "${RESULT}"
 }
 
 #
@@ -927,23 +1028,29 @@ bpReadStr() { ##I Read string from commandline
 # return integer read from cmdline/default if enter pressed
 #
 bpReadInt() { ##I Read integer from commandline
+  QUERY="$1"
+  DEFAULT="$2"
+  MIN="$3"
+  MAX="$4"
+
+  RANGE=""
+  if [ -n "$MIN" ] || [ -n "$MAX" ]; then
+    RANGE=" ${BP_C_QUERY_DEF}[${E_RESET}$3-$4${BP_C_QUERY_DEF}]${E_RESET}"
+  fi
+
   while true; do
-    if [ "${2}" == "" ]; then
-      read -erp "${1} ($3-$4) >" result
-      if [ "${result}" == "" ]; then
-        result=$(($3 - 1))
+    read -er -i "$DEFAULT" -p "${BP_C_QUERY}${1}${E_RESET}${RANGE} > " RESULT
+
+    if [ -n "${RANGE}" ]; then
+      #if [ -n "$MIN" ] && [ -n "$MAX" ]; then
+      if [ $((RESULT)) -ge "$MIN" ] && [ $((RESULT)) -le "$MAX" ]; then
+        break
       fi
     else
-      read -erp "${1} ($3-$4) [$2] >" result
-      if [ "${result}" == "" ]; then
-        result="${2}"
-      fi
-    fi
-    if [ $((result)) -ge "$3" ] && [ $((result)) -le "$4" ]; then
       break
     fi
   done
-  echo "${result}"
+  echo "${RESULT}"
 }
 
 #
@@ -952,12 +1059,14 @@ bpReadInt() { ##I Read integer from commandline
 # return 0 = Yes, 1=No
 #
 bpReadBool() { ##I Ask yes/no question generic
+  QUERY="$1"
+  DEFAULT="$2"
   while true; do
 
     if [ "$2" -eq 1 ]; then
-      yn=$(bpReadStr "${1} [y/N]")
+      yn=$(bpReadStr "${BP_C_QUERY}${1}${E_RESET} ${BP_C_QUERY_DEF}[${BP_C_DEEMPHASIS}y${BP_C_QUERY_DEF}/${BP_C_EMPHASIS}N${BP_C_QUERY_DEF}]${E_RESET}")
     else
-      yn=$(bpReadStr "${1} [Y/n]")
+      yn=$(bpReadStr "${BP_C_QUERY}${1}${E_RESET} ${BP_C_QUERY_DEF}[${E_RESET}${BP_C_EMPHASIS}Y${BP_C_QUERY_DEF}/${BP_C_DEEMPHASIS}n${BP_C_QUERY_DEF}]${E_RESET}")
     fi
 
     case "$yn" in
@@ -1042,6 +1151,7 @@ bpSelectFromList() { ##I Select from list
 
   while true; do
     bpPrintChoiceList "$1" "${@:2}"
+    echo
     x=$(bpReadStr "$2" "$1")
 
     arr=("${@}")
@@ -1584,7 +1694,7 @@ help() { ##D Print help information
 
   IFS=$'\n'
   SC="$1"
-  LINES=$(grep -h '##' "$0" | grep -v -e 'grep' -e '##I' -e '##V' -e '\*##C' -e '\*##C-' -e '\"##' -e '##-//' -e 'LINE' -e 'printLine')
+  LINES=$(grep -h '##' "$0" | grep -v -e 'grep' -e '##I' -e '##V' -e '\*##C' -e '\*##C-' -e '\"##' -e '##-//' -e 'LINE' -e 'printLine' -e 'DESC')
   LINES="${LINES//()/}"
 
   for LINE in ${LINES}; do
@@ -1773,7 +1883,7 @@ bpRunCommand() {
   fi
 
   # Check if command is conditional
-  CL=$(grep "${command}().*##C" "$0")
+  CL=$(grep -E "${command}().*##C" "$0")
   if [[ "$CL" = *"##C"* ]]; then
 
     # Check if condition is true and then execute else printout error message

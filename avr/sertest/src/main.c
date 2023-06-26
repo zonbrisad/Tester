@@ -17,7 +17,9 @@
 #define UART_BAUD_RATE 57600
 
 void hw_init(void);
+void printSysInfo(void);
 
+void cmd_help(char *args);
 void cmd_c16(char *args);
 void cmd_c256(char *args);
 void cmd_attr(char *args);
@@ -25,7 +27,7 @@ void cmd_r100(char *args);
 void cmd_r1000(char *args);
 void cmd_r10000(char *args);
 void cmd_bar(char *args);
-void cmd_help(char *args);
+void cmd_clear(char *args);
 
 typedef enum
 {
@@ -41,30 +43,35 @@ const PROGMEM LEF_CliCmd commands[] = {
 	{cmd_c16, "c16", "Print 16 terminal colors"},
 	{cmd_c256, "c256", "Print 256 terminal colors"},
 	{cmd_attr, "attr", "Print attributes"},
+	LEF_CLI_LABEL("Cursor"),
+	{cmd_clear, "clear", "Clear entire screen"},
 	LEF_CLI_LABEL("Generators"),
 	{cmd_r100, "r100", "Print 100 rows"},
 	{cmd_r1000, "r1000", "print 1000 rows"},
 	{cmd_r10000, "r10000", "print 10000 rows"},
+
 	LEF_CLI_LABEL("Animators"),
 	{cmd_bar, "bar", "Print progressbar"},
+
 	LEF_CLI_LABEL("Other"),
+	{printSysInfo, "info", "System info"},
 	{cmd_help, "help", "Print help information"},
 };
-
-ISR(TIMER1_COMPA_vect)
-{
-	TIMER1_RELOAD(0);
-	LEF_TimerUpdate(&timer1);
-}
 
 const PROGMEM char cc[][10] = {
 	E_BLACK, E_RED, E_GREEN, E_YELLOW, E_BLUE, E_MAGENTA,
 	E_CYAN, E_GRAY, E_DARKGRAY, E_BR_RED, E_BR_GREEN, E_BR_YELLOW,
 	E_BR_BLUE, E_BR_MAGENTA, E_BR_CYAN, E_WHITE};
-const PROGMEM char bgcc[][10] = {
-	E_BLACK, E_RED, E_GREEN, E_YELLOW, E_BLUE, E_MAGENTA,
-	E_CYAN, E_GRAY, E_DARKGRAY, E_BR_RED, E_BR_GREEN, E_BR_YELLOW,
-	E_BR_BLUE, E_BR_MAGENTA, E_BR_CYAN, E_WHITE};
+// const PROGMEM char bgcc[][10] = {
+// 	E_BLACK, E_RED, E_GREEN, E_YELLOW, E_BLUE, E_MAGENTA,
+// 	E_CYAN, E_GRAY, E_DARKGRAY, E_BR_RED, E_BR_GREEN, E_BR_YELLOW,
+// 	E_BR_BLUE, E_BR_MAGENTA, E_BR_CYAN, E_WHITE};
+
+void cmd_clear(char *args)
+{
+	UNUSED(args);
+	printf(E_CLEAR_SCREEN);
+}
 
 void print_bar(int l, int max)
 {
@@ -249,6 +256,12 @@ void printSysInfo(void)
 	//  printf("Size %d\n",sizeof(void*));
 
 	printInfo("Pointer size:", buf);
+}
+
+ISR(TIMER1_COMPA_vect)
+{
+	TIMER1_RELOAD(0);
+	LEF_TimerUpdate(&timer1);
 }
 
 void hw_init(void)
