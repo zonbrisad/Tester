@@ -44,19 +44,23 @@ def main() -> None:
     logging_format = "[%(levelname)s] %(lineno)d %(funcName)s() : %(message)s"
     logging.basicConfig(format=logging_format, level=logging.DEBUG)
 
-    # _plugins = [importlib.import_module(plugin, ".").Plugin() for plugin in plugins]
+    # Find plugins in directory
     plugin_files = [
-        os.path.splitext(fn)[0]
-        for fn in os.listdir("plugins")
-        if os.path.isfile(f"plugins/{fn}")
+        os.path.splitext(file_name)[0]
+        for file_name in os.listdir("plugins")
+        if os.path.isfile(f"plugins/{file_name}")
     ]
     print(plugin_files)
 
-    plugins = [importlib.import_module(f"plugins.{fn}").Plugin() for fn in plugin_files]
-    # plugins = [importlib.import_module("plugins.default").Plugin()]
+    # Load plugins
+    plugins = [
+        importlib.import_module(f"plugins.{file_name}").Plugin()
+        for file_name in plugin_files
+    ]
 
-    for pl in plugins:
-        pl.process()
+    # Call plugins
+    for plugin in plugins:
+        plugin.process()
 
 
 if __name__ == "__main__":
