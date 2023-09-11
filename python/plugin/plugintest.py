@@ -49,6 +49,7 @@ def main() -> None:
         os.path.splitext(file_name)[0]
         for file_name in os.listdir("plugins")
         if os.path.isfile(f"plugins/{file_name}")
+        and file_name.startswith("__") is not True
     ]
     print(plugin_files)
 
