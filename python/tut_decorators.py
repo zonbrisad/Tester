@@ -25,8 +25,9 @@ def my_decorator(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         print("Before...")
-        func(*args, **kwargs)
+        result = func(*args, **kwargs)
         print("After...")
+        return result
 
     return wrapper
 
@@ -64,6 +65,7 @@ count_decorator = class_decorator()
 @my_decorator
 def my_func(s: str):
     print(f"How dare you, {s}")
+    return "Ha Ha"
 
 
 @repeat_decorator(repeat=3)
@@ -76,7 +78,8 @@ def my_tjohej():
     print("Tjohej!")
 
 
-my_func("Nisse")
+r = my_func("Nisse")
+print(f"Result: {r}")
 
 my_print("Kalle")
 
