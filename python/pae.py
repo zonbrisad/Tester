@@ -6,21 +6,22 @@
 #
 # File:    pae.py
 # Author:  Peter Malmberg <peter.malmberg@gmail.com>
-# Date:    
+# Date:
 # Version: 0.3
 # Python:  >=3
 # License: MIT
 #
 # ---------------------------------------------------------------------------
 
+from __future__ import annotations
 import argparse
 from dataclasses import dataclass
 from enum import Enum
 from logging import NullHandler
-from platform import node
-from pydoc import doc
 from math import sin
 from xmlrpc.client import Boolean
+from escape import Esc
+import time
 
 
 class PaeType(Enum):
@@ -31,104 +32,106 @@ class PaeType(Enum):
     Average = 4
     Integrate = 5
 
-    Sine    = 100
-    Noise   = 101
-    
+    Sine = 100
+    Noise = 101
+
     # dict = {
     #     this.Normal : "Normal",
     #     this.Max    : "Max"
     # }
 
+
+@dataclass
 class PaeObject:
-    tick = 0
+    tick: int = 0
+    enabled: Boolean = True
+    id: str = ""
+    name: str = ""
+    desc: str = ""
+    unit: str = ""
 
-    def __init__(self, enabled=True, id="", name="", description="", source=None, unit="") -> None:
-        self.enabled = enabled
-        self.id = id
-        self.name = name
-        self.description = description
-        self.source = source
-        self.unit = unit
-
-    def enable(self, en: Boolean):
+    def enable(self, en: Boolean) -> None:
         self.enabled = en
-    
-    def is_enabled(self):
+
+    def is_enabled(self) -> Boolean:
         return self.enabled
 
-    def get_id(self):
-        if self.source is not None :
+    def get_id(self) -> str:
+        if self.source is not None:
             return self.source.get_id()
 
         return self.id
 
-    def set_id(self, id):
+    def set_id(self, id) -> None:
         self.id = id
 
-    def set_description(self, description):
+    def set_description(self, description) -> None:
         self.description = description
 
-    def get_description(self):
+    def get_description(self) -> str:
         return self.description
 
-    def set_source(self, source):
+    def set_source(self, source: PaeNode) -> None:
         self.source = source
-    
-    def get_source(self):
+
+    def get_source(self) -> PaeNode:
         return self.source
 
-    def update(self):
+    def update(self) -> None:
         pass
 
 
 class PaeNode(PaeObject):
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(
+        self,
+        id: str = "",
+        desc: str = "",
+        type: PaeType = PaeType.Normal,
+        source: PaeNode = None,
+    ) -> None:
+        super().__init__(id=id)
         self.value = 0
-        self.type = PaeType.Normal
-
+        self.type = type
+        self.source = source
         self.invalid = False
         self.no_data = False
         self.out_of_range = False
 
-    def getValue(self):
-        return self.value 
+    def get_value(self):
+        return self.value
 
     def update(self):
         super().update()
-        
-        if not self.isEnabled():
+
+        if not self.is_enabled():
             return
 
-        if self.source is not None: 
-            sv = self.source.getValue()
+        if self.source is not None:
+            sv = self.source.get_value()
         else:
             sv = self.value
 
-        # match self.type:
-        #     case PaeType.Normal:
-        #         pass
-        #     case PaeType.Min:
-        #         pass
-        #     case PaeType.Max:
-        #         pass
-        #     case PaeType.Average:
-        #         pass
         if self.type == PaeType.Normal:
-            pass
+            self.value = sv
+
         if self.type == PaeType.Min:
-            pass
+            if sv < self.value:
+                self.value = sv
+
         if self.type == PaeType.Max:
-            pass
+            if sv > self.value:
+                self.value = sv
+
         if self.type == PaeType.Average:
             pass
+
         if self.type == PaeType.Sine:
-            sv = sin(self.tick/10)
-            
-        self.value = sv
+            sv = sin(self.tick / 20)
+            self.value = sv
+            self.tick += 1
 
     def __str__(self) -> str:
-        return super().__str__()
+        return f"{self.id:8} {self.type.name:6} {self.value:8.3}"
 
 
 class PaeAlarm(PaeObject):
@@ -142,14 +145,14 @@ class PaeMotor(PaeObject):
         self.nodes = []
         self.alarms = []
 
-    def addNode(self, node):
+    def add_node(self, node: PaeNode):
         self.nodes.append(node)
 
-    def addAlarm(self, alarm):
+    def add_alarm(self, alarm: PaeAlarm):
         self.alarms.append(alarm)
 
     def update(self):
-        PaeObject.tick = PaeObject.tick + 1
+        # PaeObject.tick = PaeObject.tick + 1
         for node in self.nodes:
             node.update()
 
@@ -157,7 +160,8 @@ class PaeMotor(PaeObject):
             alarm.update()
         pass
 
-class PaeFType():
+
+class PaeFType:
     MovingAverage = 0
     IIR = 1
     FIR = 2
@@ -169,36 +173,37 @@ class PaeFilter(PaeObject):
 
 
 def main() -> None:
-    
-    n1 = PaeNode()
-    n2 = PaeNode()
-    n_sin = PaeNode()
-    
-    
-    n1.set_id("Id1")
-    n2.set_source(n1)
-    
+    # n_sin = PaeNode()
+    # n_sin = PaeNode()
+    n_sin = PaeNode(type=PaeType.Sine, id="sin")
+    n_min = PaeNode(type=PaeType.Min, source=n_sin)
+    n_max = PaeNode(type=PaeType.Max, source=n_sin)
+
     motor = PaeMotor()
-    
-    motor.addNode(n1)
-    motor.addNode(n2)
-    motor.addNode(n_sin)
-    
-    
-    print("n1 id = " + n1.get_id() )
-    print("n2 id = " + n2.get_id() )
-    
-    
-    print("n1 tick = ", n1.tick )
-    print("n2 tick = ", n2.tick )
-    PaeObject.tick = PaeObject.tick + 1
-    print("n1 tick = ", n1.tick )
-    print("n2 tick = ", n2.tick )
-    n1.tick = n1.tick + 1
-    print("n1 tick = ", n1.tick )
-    print("n2 tick = ", n2.tick )
-    
-    
+
+    motor.add_node(n_sin)
+    motor.add_node(n_min)
+    motor.add_node(n_max)
+
+    print()
+    for i in range(1, 10):
+        motor.update()
+        print(f"{Esc.UP}", end="")
+        print(n_sin)
+        time.sleep(0.1)
+
+    # print("n_sin id = " + n_sin.get_id())
+    # print("n_min id = " + n_min.get_id())
+
+    # print("n_sin tick = ", n_sin.tick)
+    # print("n_min tick = ", n_min.tick)
+    # PaeObject.tick = PaeObject.tick + 1
+    # print("n_sin tick = ", n_sin.tick)
+    # print("n_min tick = ", n_min.tick)
+    # n_sin.tick = n_sin.tick + 1
+    # print("n_sin tick = ", n_sin.tick)
+    # print("n_min tick = ", n_min.tick)
+
+
 if __name__ == "__main__":
-    main()    
-    
+    main()
