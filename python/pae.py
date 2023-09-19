@@ -14,10 +14,8 @@
 # ---------------------------------------------------------------------------
 
 from __future__ import annotations
-import argparse
 from dataclasses import dataclass
 from enum import Enum
-from logging import NullHandler
 from math import sin
 from xmlrpc.client import Boolean
 from escape import Esc
@@ -33,12 +31,8 @@ class PaeType(Enum):
     Integrate = 5
 
     Sine = 100
-    Noise = 101
-
-    # dict = {
-    #     this.Normal : "Normal",
-    #     this.Max    : "Max"
-    # }
+    Square = 101
+    Noise = 200
 
 
 @dataclass
@@ -90,17 +84,17 @@ class PaeNode(PaeObject):
         source: PaeNode = None,
     ) -> None:
         super().__init__(id=id)
-        self.value = 0
+        self.value = 0.0
         self.type = type
         self.source = source
         self.invalid = False
         self.no_data = False
         self.out_of_range = False
 
-    def get_value(self):
+    def get_value(self) -> float:
         return self.value
 
-    def update(self):
+    def update(self) -> None:
         super().update()
 
         if not self.is_enabled():
@@ -130,8 +124,17 @@ class PaeNode(PaeObject):
             self.value = sv
             self.tick += 1
 
+        if self.type == PaeType.Square:
+            if self.tick > 0:
+                self.value = 1
+            else:
+                self.value = 0
+            self.tick += 1
+            if self.tick > 5:
+                self.tick = -5
+
     def __str__(self) -> str:
-        return f"{self.id:8} {self.type.name:6} {self.value:8.3}"
+        return f"{self.id:8} {self.type.name:6} {self.value:8.3f}"
 
 
 class PaeAlarm(PaeObject):
@@ -145,14 +148,13 @@ class PaeMotor(PaeObject):
         self.nodes = []
         self.alarms = []
 
-    def add_node(self, node: PaeNode):
+    def add_node(self, node: PaeNode) -> None:
         self.nodes.append(node)
 
-    def add_alarm(self, alarm: PaeAlarm):
+    def add_alarm(self, alarm: PaeAlarm) -> None:
         self.alarms.append(alarm)
 
-    def update(self):
-        # PaeObject.tick = PaeObject.tick + 1
+    def update(self) -> None:
         for node in self.nodes:
             node.update()
 
@@ -173,36 +175,31 @@ class PaeFilter(PaeObject):
 
 
 def main() -> None:
-    # n_sin = PaeNode()
-    # n_sin = PaeNode()
     n_sin = PaeNode(type=PaeType.Sine, id="sin")
+    n_square = PaeNode(type=PaeType.Square, id="square")
     n_min = PaeNode(type=PaeType.Min, source=n_sin)
     n_max = PaeNode(type=PaeType.Max, source=n_sin)
 
     motor = PaeMotor()
 
     motor.add_node(n_sin)
+    motor.add_node(n_square)
     motor.add_node(n_min)
     motor.add_node(n_max)
 
     print()
-    for i in range(1, 10):
+    print()
+    print()
+    print()
+    for i in range(1, 100):
         motor.update()
-        print(f"{Esc.UP}", end="")
+        for _ in range(0, 4):
+            print(f"{Esc.UP}", end="")
         print(n_sin)
+        print(n_square)
+        print(n_min)
+        print(n_max)
         time.sleep(0.1)
-
-    # print("n_sin id = " + n_sin.get_id())
-    # print("n_min id = " + n_min.get_id())
-
-    # print("n_sin tick = ", n_sin.tick)
-    # print("n_min tick = ", n_min.tick)
-    # PaeObject.tick = PaeObject.tick + 1
-    # print("n_sin tick = ", n_sin.tick)
-    # print("n_min tick = ", n_min.tick)
-    # n_sin.tick = n_sin.tick + 1
-    # print("n_sin tick = ", n_sin.tick)
-    # print("n_min tick = ", n_min.tick)
 
 
 if __name__ == "__main__":
