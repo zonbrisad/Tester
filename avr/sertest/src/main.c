@@ -27,7 +27,12 @@ void cmd_r100(char *args);
 void cmd_r1000(char *args);
 void cmd_r10000(char *args);
 void cmd_bar(char *args);
-void cmd_clear(char *args);
+void cmd_mrtcu(char *args);
+void cmd_mrtcp(char *args);
+void cmd_erase(char *args);
+void cmd_erasea(char *args);
+void cmd_eraseb(char *args);
+void cmd_erasela(char *args);
 
 typedef enum
 {
@@ -40,11 +45,14 @@ LEF_Timer timer1;
 
 const PROGMEM LEF_CliCmd commands[] = {
 	LEF_CLI_LABEL("Text attributes"),
+	{cmd_attr, "attr", "Print attributes"},
 	{cmd_c16, "c16", "Print 16 terminal colors"},
 	{cmd_c256, "c256", "Print 256 terminal colors"},
-	{cmd_attr, "attr", "Print attributes"},
-	LEF_CLI_LABEL("Cursor"),
-	{cmd_clear, "clear", "Clear entire screen"},
+	LEF_CLI_LABEL("Erase tests"),
+	{cmd_erase, "erase", "Clear entire screen"},
+	{cmd_erasea, "erasea", "Clear all above cursor"},
+	{cmd_eraseb, "eraseb", "Clear all below screen"},
+	{cmd_erasela, "erasela", "Erase line above"},
 	LEF_CLI_LABEL("Generators"),
 	{cmd_r100, "r100", "Print 100 rows"},
 	{cmd_r1000, "r1000", "print 1000 rows"},
@@ -52,6 +60,10 @@ const PROGMEM LEF_CliCmd commands[] = {
 
 	LEF_CLI_LABEL("Animators"),
 	{cmd_bar, "bar", "Print progressbar"},
+
+	LEF_CLI_LABEL("Tests"),
+	{cmd_mrtcu, "mrtcu", "Multirow Cursor Up test"},
+	{cmd_mrtcp, "mrtcp", "Multirow Cursor Position test"},
 
 	LEF_CLI_LABEL("Other"),
 	{printSysInfo, "info", "System info"},
@@ -67,10 +79,43 @@ const PROGMEM char cc[][10] = {
 // 	E_CYAN, E_GRAY, E_DARKGRAY, E_BR_RED, E_BR_GREEN, E_BR_YELLOW,
 // 	E_BR_BLUE, E_BR_MAGENTA, E_BR_CYAN, E_WHITE};
 
-void cmd_clear(char *args)
+void fill_screen()
+{
+	int i;
+	printf("\n\n");
+	for (i = 0; i < 24; i++)
+	{
+		printf("Row:%2d  This is some random text to illustrate terminal functions\n", i);
+	}
+}
+
+void cmd_erase(char *args)
 {
 	UNUSED(args);
-	printf(E_CLEAR_SCREEN);
+	// fill_screen();
+	printf(E_ERASE_DISPLAY);
+}
+void cmd_eraseb(char *args)
+{
+	UNUSED(args);
+	// fill_screen();
+	printf(E_CUR_POS(12, 1));
+	printf(E_ERASE_DISPLAY_TO_END);
+}
+void cmd_erasea(char *args)
+{
+	UNUSED(args);
+	// fill_screen();
+	printf(E_CUR_POS(12, 1));
+	printf(E_ERASE_DISPLAY_TO_BEGINING);
+}
+void cmd_erasela(char *args)
+{
+	UNUSED(args);
+	// printf(E_SAVE_CURSOR_POS E_UP E_UP);
+	printf(E_SAVE_CURSOR_POS E_CUR_PREVIOUS_LINE);
+	printf(E_ERASE_LINE_TO_END);
+	printf(E_RESTORE_CURSOR_POS);
 }
 
 void print_bar(int l, int max)
@@ -83,7 +128,6 @@ void print_bar(int l, int max)
 	}
 	buf[i] = '\0';
 	printf("  [%*s]  \n", max, buf);
-	//	printf("  [%-30s]  %2d\n", buf, l);
 }
 
 #define BAR 30
@@ -96,7 +140,6 @@ void print_bar2(int l, int max)
 		buf[i] = '=';
 	}
 	buf[l] = '\0';
-	//	printf("  [%*s]  %2d\n",30, buf, l);
 	printf("  [%-30s]  %2d", buf, l);
 }
 
@@ -108,8 +151,49 @@ void cmd_bar(char *args)
 	{
 		print_bar2(i, BAR);
 		_delay_ms(100);
-		//		printf(E_CPL);
 		printf("\r");
+	}
+	printf("\n");
+}
+
+#define MRT 23
+void cmd_mrtcu(char *args)
+{
+	int i, j;
+	UNUSED(args);
+	for (j = 0; j < 20; j++)
+	{
+		for (i = 0; i < MRT; i++)
+		{
+			printf("Row  %2d %2d\n", i, j + i);
+		}
+
+		if (j < 19)
+		{
+			for (i = 0; i < MRT; i++)
+			{
+				printf(E_UP);
+			}
+		}
+		_delay_ms(100);
+	}
+	printf("\n");
+}
+
+void cmd_mrtcp(char *args)
+{
+	int i, j;
+	UNUSED(args);
+	for (j = 0; j < 20; j++)
+	{
+		for (i = 0; i < MRT; i++)
+		{
+			printf("Row  %2d %2d\n", i, j + i);
+		}
+
+		if (j < 19)
+			printf(E_CUR_POS(1, 1));
+		_delay_ms(100);
 	}
 	printf("\n");
 }
