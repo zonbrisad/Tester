@@ -8,6 +8,8 @@
 #include <util/atomic.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 #include "uart.h"
 #include "main.h"
@@ -33,6 +35,8 @@ void cmd_erase(char *args);
 void cmd_erasea(char *args);
 void cmd_eraseb(char *args);
 void cmd_erasela(char *args);
+void cmd_insert(char *args);
+void cmd_delete(char *args);
 
 typedef enum
 {
@@ -44,48 +48,55 @@ static FILE mystdout = FDEV_SETUP_STREAM((void *)uart_putc, NULL, _FDEV_SETUP_WR
 LEF_Timer timer1;
 
 const PROGMEM LEF_CliCmd commands[] = {
-	LEF_CLI_LABEL("Text attributes"),
-	{cmd_attr, "attr", "Print attributes"},
-	{cmd_c16, "c16", "Print 16 terminal colors"},
-	{cmd_c256, "c256", "Print 256 terminal colors"},
-	LEF_CLI_LABEL("Erase tests"),
-	{cmd_erase, "erase", "Clear entire screen"},
-	{cmd_erasea, "erasea", "Clear all above cursor"},
-	{cmd_eraseb, "eraseb", "Clear all below screen"},
-	{cmd_erasela, "erasela", "Erase line above"},
-	LEF_CLI_LABEL("Generators"),
-	{cmd_r100, "r100", "Print 100 rows"},
-	{cmd_r1000, "r1000", "print 1000 rows"},
-	{cmd_r10000, "r10000", "print 10000 rows"},
-
-	LEF_CLI_LABEL("Animators"),
-	{cmd_bar, "bar", "Print progressbar"},
-
-	LEF_CLI_LABEL("Tests"),
-	{cmd_mrtcu, "mrtcu", "Multirow Cursor Up test"},
-	{cmd_mrtcp, "mrtcp", "Multirow Cursor Position test"},
-
-	LEF_CLI_LABEL("Other"),
-	{printSysInfo, "info", "System info"},
-	{cmd_help, "help", "Print help information"},
+		LEF_CLI_LABEL("Text attributes"),
+		{cmd_attr, "attr", "Print attributes"},
+		{cmd_c16, "c16", "Print 16 terminal colors"},
+		{cmd_c256, "c256", "Print 256 terminal colors"},
+		LEF_CLI_LABEL("Erase tests"),
+		{cmd_erase, "erase", "Clear entire screen"},
+		{cmd_erasea, "erasea", "Clear all above cursor"},
+		{cmd_eraseb, "eraseb", "Clear all below screen"},
+		{cmd_erasela, "erasela", "Erase line above"},
+		LEF_CLI_LABEL("Scrolling"),
+		{cmd_insert, "insert", "Insert line"},
+		{cmd_delete, "delete", "Delete line"},
+		LEF_CLI_LABEL("Generators"),
+		{cmd_r100, "r100", "Print 100 rows"},
+		{cmd_r1000, "r1000", "print 1000 rows"},
+		{cmd_r10000, "r10000", "print 10000 rows"},
+		LEF_CLI_LABEL("Animators"),
+		{cmd_bar, "bar", "Print progressbar"},
+		LEF_CLI_LABEL("Tests"),
+		{cmd_mrtcu, "mrtcu", "Multirow Cursor Up test"},
+		{cmd_mrtcp, "mrtcp", "Multirow Cursor Position test"},
+		LEF_CLI_LABEL("Other"),
+		{printSysInfo, "info", "System info"},
+		{cmd_help, "help", "Print help information"},
 };
 
 const PROGMEM char cc[][10] = {
-	E_BLACK, E_RED, E_GREEN, E_YELLOW, E_BLUE, E_MAGENTA,
-	E_CYAN, E_GRAY, E_DARKGRAY, E_BR_RED, E_BR_GREEN, E_BR_YELLOW,
-	E_BR_BLUE, E_BR_MAGENTA, E_BR_CYAN, E_WHITE};
+		E_BLACK, E_RED, E_GREEN, E_YELLOW, E_BLUE, E_MAGENTA,
+		E_CYAN, E_GRAY, E_DARKGRAY, E_BR_RED, E_BR_GREEN, E_BR_YELLOW,
+		E_BR_BLUE, E_BR_MAGENTA, E_BR_CYAN, E_WHITE};
 // const PROGMEM char bgcc[][10] = {
 // 	E_BLACK, E_RED, E_GREEN, E_YELLOW, E_BLUE, E_MAGENTA,
 // 	E_CYAN, E_GRAY, E_DARKGRAY, E_BR_RED, E_BR_GREEN, E_BR_YELLOW,
 // 	E_BR_BLUE, E_BR_MAGENTA, E_BR_CYAN, E_WHITE};
 
-void fill_screen()
+void fill_screen(vod)
 {
-	int i;
-	printf("\n\n");
-	for (i = 0; i < 24; i++)
+	for (size_t i = 1; i <= 24; i++)
 	{
-		printf("Row:%2d  This is some random text to illustrate terminal functions\n", i);
+		if ((i == 1) || (i == 24))
+		{
+			printf_P(PSTR("+----%2d--+--------+--------+--------+--------+--------+--------+--------+"), i);
+			// continue;
+		}
+		else
+			printf_P(PSTR("Line %2d"), i);
+
+		if (i < 24)
+			printf_P(PSTR("\n"));
 	}
 }
 
@@ -112,30 +123,57 @@ void cmd_erasea(char *args)
 void cmd_erasela(char *args)
 {
 	UNUSED(args);
-	// printf(E_SAVE_CURSOR_POS E_UP E_UP);
 	printf(E_SAVE_CURSOR_POS E_CUR_PREVIOUS_LINE);
 	printf(E_ERASE_LINE_TO_END);
 	printf(E_RESTORE_CURSOR_POS);
 }
-
+void cmd_delete(char *args)
+{
+	UNUSED(args);
+	fill_screen();
+	printf(E_SAVE_CURSOR_POS);
+	printf(E_CUR_POS(5, 1));
+	_delay_ms(300);
+	for (size_t i = 0; i < 10; i++)
+	{
+		printf(E_DELETE_LINE);
+		_delay_ms(300);
+	}
+	printf(E_RESTORE_CURSOR_POS);
+	printf_P(PSTR("\n"));
+}
+void cmd_insert(char *args)
+{
+	UNUSED(args);
+	fill_screen();
+	printf(E_SAVE_CURSOR_POS);
+	printf(E_CUR_POS(5, 1));
+	_delay_ms(300);
+	for (size_t i = 0; i < 10; i++)
+	{
+		printf(E_INSERT_LINE);
+		_delay_ms(300);
+	}
+	printf(E_RESTORE_CURSOR_POS);
+	printf_P(PSTR("\n"));
+}
 void print_bar(int l, int max)
 {
-	int i;
+	size_t i;
 	char buf[96];
 	for (i = 0; i < l; i++)
 	{
-		buf[i] = '=';
+		buf[] = '=';
 	}
-	buf[i] = '\0';
+	buf[l] = '\0';
 	printf("  [%*s]  \n", max, buf);
 }
 
 #define BAR 30
 void print_bar2(int l, int max)
 {
-	int i;
 	char buf[96];
-	for (i = 0; i < l; i++)
+	for (size_t i = 0; i < l; i++)
 	{
 		buf[i] = '=';
 	}
@@ -145,9 +183,8 @@ void print_bar2(int l, int max)
 
 void cmd_bar(char *args)
 {
-	int i;
 	UNUSED(args);
-	for (i = 0; i <= BAR; i++)
+	for (size_t i = 0; i <= BAR; i++)
 	{
 		print_bar2(i, BAR);
 		_delay_ms(100);
@@ -159,18 +196,17 @@ void cmd_bar(char *args)
 #define MRT 23
 void cmd_mrtcu(char *args)
 {
-	int i, j;
 	UNUSED(args);
-	for (j = 0; j < 20; j++)
+	for (size_t j = 0; j < 20; j++)
 	{
-		for (i = 0; i < MRT; i++)
+		for (size_t i = 0; i < MRT; i++)
 		{
 			printf("Row  %2d %2d\n", i, j + i);
 		}
 
 		if (j < 19)
 		{
-			for (i = 0; i < MRT; i++)
+			for (size_t i = 0; i < MRT; i++)
 			{
 				printf(E_UP);
 			}
@@ -182,11 +218,10 @@ void cmd_mrtcu(char *args)
 
 void cmd_mrtcp(char *args)
 {
-	int i, j;
 	UNUSED(args);
-	for (j = 0; j < 20; j++)
+	for (size_t j = 0; j < 20; j++)
 	{
-		for (i = 0; i < MRT; i++)
+		for (size_t i = 0; i < MRT; i++)
 		{
 			printf("Row  %2d %2d\n", i, j + i);
 		}
@@ -205,10 +240,9 @@ void cmd_mrtcp(char *args)
 
 void cmd_c16(char *args)
 {
-	int i;
 	UNUSED(args);
 
-	for (i = 0; i < 16; i++)
+	for (size_t i = 0; i < 16; i++)
 	{
 		printf(E_FG256P " %3d " E_RESET, i, i);
 		if (i == 7)
@@ -217,7 +251,7 @@ void cmd_c16(char *args)
 		}
 	}
 	printf("\n\n");
-	for (i = 0; i < 16; i++)
+	for (size_t i = 0; i < 16; i++)
 	{
 		printf(E_BG256P " %3d " E_RESET, i, i);
 		if (i == 7)
@@ -230,7 +264,6 @@ void cmd_c16(char *args)
 
 void cmd_c256(char *args)
 {
-	int i;
 	char buf[128];
 	char *p;
 	UNUSED(args);
@@ -239,7 +272,7 @@ void cmd_c256(char *args)
 
 	p = buf;
 
-	for (i = 16; i < 256; i++)
+	for (size_t i = 16; i < 256; i++)
 	{
 
 		printf(E_FG256P " %3d " E_RESET, i, i);
@@ -257,6 +290,7 @@ void cmd_c256(char *args)
 
 void cmd_attr(char *args)
 {
+	UNUSED(args);
 	printf("Text attributes\n");
 	printf("Normal text\n");
 	printf(E_BOLD "Bold text\n" E_RESET);
@@ -271,8 +305,7 @@ void cmd_attr(char *args)
 
 void print_rows(int r)
 {
-	int i;
-	for (i = 1; i <= r; i++)
+	for (size_t i = 1; i <= r; i++)
 	{
 		printf("Row %d\n", i);
 	}
@@ -382,7 +415,7 @@ int main()
 
 	printSysInfo();
 
-	while (1)
+	while (true)
 	{
 		LEF_Wait(&event);
 
