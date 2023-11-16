@@ -49,7 +49,7 @@ OPT = 2
 
 # Compiler flag to set the C and C++ Standard level.
 # [ gnu99 gnu11 c++98 c++03 c++11 c++14 c++17 c++23] 
-CSTANDARD   = gnu99
+CSTANDARD   = gnu17
 CPPSTANDARD = c++11
 
 # C Macro definitions
@@ -63,7 +63,7 @@ CPPDEFS =
 # 1 = minimal debug information
 # 2 = normal debug information 
 # 3 = maximal debug information
-DEBUG=0
+DEBUG=3
 
 
 #
@@ -477,8 +477,13 @@ strip: $(TRGFILE) ##D Strip target binary from symbols
 run:    ##D Run application
 	@$(OUTDIR)/$(TARGET)
 
+
+GDBOPTS = --tui             # activate text user interface (tui)
+GDBOPTS += -ex 'break main' # Set a breakpoint at main function
+
 debug: ##D Debug program
-	@$(GDB) $(TRGFILE) 
+
+	@$(GDB) $(GDBOPTS) $(TRGFILE) 
 
 #
 # Various utility rules	

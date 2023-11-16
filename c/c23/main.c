@@ -92,6 +92,8 @@ int main(void)
 
 	printf("Size: %ld\n", sizeof(slist));
 	printf("Size: %ld\n", sizeof(size_t));
+	// printf("C standard " __STDC__ "\n");
+	printf("C standard: %d\n", __STDC_VERSION__);
 
 	return 0;
 }
