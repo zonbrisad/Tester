@@ -24,6 +24,9 @@
 
 // Macros -------------------------------------------------------------------
 
+//constexpr char* ces = "Kalle";
+
+
 // Prototypes ---------------------------------------------------------------
 
 // Datatypes ----------------------------------------------------------------
@@ -41,10 +44,16 @@ typedef struct
 test_s a = {.ma = 1, .mb = 2};
 test_s b = {3, 4};
 
+void print_s(test_s *x);
 void print_s(test_s *x)
 {
 	printf("test_s a=%032b  %06ld, b=%032b %p\n", x->ma, x->ma, x->mb, x);
 }
+
+[[deprecated]]
+void depr() {
+}
+
 
 // void print_size(test_s x[])
 // {
@@ -72,7 +81,15 @@ int main(void)
 	int x1[] = {1};
 	int x2[] = {2, 3};
 	int x3[] = {3, 4, 5};
+	bool bl = false;
+	int x = 0b10101;
 
+	auto a = "123";
+//	int y = 1'000'000;
+//	constexpr int xx = 123;
+	depr();  // compile time warning
+	
+  	
 	for (size_t i = 0; i < 10; i++)
 	{
 		printf("Row %ld\n", i);
