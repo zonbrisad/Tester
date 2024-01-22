@@ -91,13 +91,13 @@ CFLAGS += -funsigned-char
 
 # Compiler Warnings C -------------------------------------------------------
 CFLAGS += -Wall                  # Standard warnings
-CFLAGS += -Wextra                # Some extra warnings
+#CFLAGS += -Wextra                # Some extra warnings
 CFLAGS += -Wmissing-braces 
 CFLAGS += -Wmissing-declarations # Warn if global function is not declared
-CFLAGS += -Wmissing-prototypes   # if a function is missing its prototype
+#CFLAGS += -Wmissing-prototypes   # if a function is missing its prototype
 #CFLAGS += -Wstrict-prototypes    # non correct prototypes i.e. void fun() => void fun(void) 
 CFLAGS += -Wredundant-decls      # Warn if something is declared more than ones
-CFLAGS += -Wunreachable-code     # if code is not used
+#CFLAGS += -Wunreachable-code     # if code is not used
 CFLAGS += -Wshadow               # if local variable has same name as global
 CFLAGS += -Wformat=2             # check printf and scanf for problems
 #CFLAGS += -Wno-format-nonliteral # 
@@ -105,7 +105,8 @@ CFLAGS += -Wpointer-arith        # warn if trying to do aritmethics on a void po
 #CFLAGS += -Wsign-compare
 #CFLAGS += -Wundef
 #CFLAGS += -Werror               # All warnings will be treated as errors
-
+CFLAGS += -Wno-unused-variable
+CFLAGS += -Wno-missing-declarations
 
 # Compiler Options C++ ------------------------------------------------------
 CPPFLAGS = -g$(DEBUG)                              # Debugging information

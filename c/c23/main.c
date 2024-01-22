@@ -15,7 +15,10 @@
 
 // Include ------------------------------------------------------------------
 
+#if __has_include (<stdio.h>)
 #include <stdio.h>
+#endif
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
