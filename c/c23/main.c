@@ -47,6 +47,8 @@ typedef struct
 test_s a = {.ma = 1, .mb = 2};
 test_s b = {3, 4};
 
+//char x[32] = { #embed <hello.txt> };
+
 void print_s(test_s *x);
 void print_s(test_s *x)
 {
@@ -86,12 +88,13 @@ int main(void)
 	int x3[] = {3, 4, 5};
 	bool bl = false;
 	int x = 0b10101;
-
+	char str[] = "Hello";
+	char str2[12];
 	auto a = "123";
 //	int y = 1'000'000;
 //	constexpr int xx = 123;
 	depr();  // compile time warning
-	
+//	str2 = strdup(str);
   	
 	for (size_t i = 0; i < 10; i++)
 	{
