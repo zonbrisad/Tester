@@ -511,32 +511,32 @@ class MainForm(QMainWindow):
 
         # Exit button
         self.pbExit = QtWidgets.QPushButton("Exit", self.centralwidget)
-        self.pbExit.pressed.connect(self.appExit)
+        self.pbExit.pressed.connect(self.app_exit)
         self.verticalLayout.addWidget(self.pbExit)
 
         # Button html colors
         self.pb1 = QtWidgets.QPushButton("HTML colors", self.centralwidget)
-        self.pb1.pressed.connect(lambda: self.addHtml(htmlColors))
+        self.pb1.pressed.connect(lambda: self.add_html(htmlColors))
         self.verticalLayout.addWidget(self.pb1)
 
         # Button html font
         self.pb2 = QtWidgets.QPushButton("HTML fonts", self.centralwidget)
-        self.pb2.pressed.connect(lambda: self.addHtml(htmlFonts))
+        self.pb2.pressed.connect(lambda: self.add_html(htmlFonts))
         self.verticalLayout.addWidget(self.pb2)
 
         # Button html table
         self.pb3 = QtWidgets.QPushButton("HTML table", self.centralwidget)
-        self.pb3.pressed.connect(lambda: self.addHtml(htmlTable))
+        self.pb3.pressed.connect(lambda: self.add_html(htmlTable))
         self.verticalLayout.addWidget(self.pb3)
 
         # Button html block
         self.pb4 = QtWidgets.QPushButton("HTML block", self.centralwidget)
-        self.pb4.pressed.connect(lambda: self.addHtml(htmlBlock))
+        self.pb4.pressed.connect(lambda: self.add_html(htmlBlock))
         self.verticalLayout.addWidget(self.pb4)
 
         # Button html list
         self.pb5 = QtWidgets.QPushButton("HTML list", self.centralwidget)
-        self.pb5.pressed.connect(lambda: self.addHtml(htmlList))
+        self.pb5.pressed.connect(lambda: self.add_html(htmlList))
         self.verticalLayout.addWidget(self.pb5)
 
         # Spacer
@@ -570,7 +570,7 @@ class MainForm(QMainWindow):
         self.actionQuit = QtWidgets.QAction("Quit", self)
         self.actionQuit.setStatusTip("Quit application")
         self.actionQuit.setShortcut("Ctrl+Q")
-        self.actionQuit.triggered.connect(self.appExit)
+        self.actionQuit.triggered.connect(self.app_exit)
         self.menuFile.addAction(self.actionQuit)
 
         self.actionAbout = QtWidgets.QAction("About", self)
@@ -584,15 +584,15 @@ class MainForm(QMainWindow):
         )
         self.menuHelp.addAction(self.actionMarkdown)
 
-    def addTag(self, desc: str, tag: str) -> None:
+    def add_tag(self, desc: str, tag: str) -> None:
         d = desc.replace("<", "&lt;").replace(">", "&gt;")
-        # self.addHtml(f"{d}<br>")
-        # self.addHtml(f"{tag}<br>")
-        # self.addHtml("<tr>")
-        # self.addHtml(f"<th><{d}</th>")
-        # self.addHtml(f"<th>{tag}</th>")
-        # self.addHtml("<\tr>")
-        self.addHtml(
+        # self.add_html(f"{d}<br>")
+        # self.add_html(f"{tag}<br>")
+        # self.add_html("<tr>")
+        # self.add_html(f"<th><{d}</th>")
+        # self.add_html(f"<th>{tag}</th>")
+        # self.add_html("<\tr>")
+        self.add_html(
             f"""<tr>
         <th><{d}</th>
         <th>{tag}</th>
@@ -600,30 +600,31 @@ class MainForm(QMainWindow):
         """
         )
 
-    def scrollDown(self):
+    def scroll_down(self) -> None:
         vsb = self.textEdit.verticalScrollBar()
         vsb.setValue(vsb.maximum())
 
-    def addHtml(self, text):
-        self.textEdit.insertHtml(text)
-        self.scrollDown()
+    def add_html(self, html: str) -> None:
+        self.textEdit.insertHtml(html)
+        self.textEdit.insertHtml("<hr>")
+        self.scroll_down()
 
-    # def htmlColors(self):
-    #     self.addHtml(htmlColors)
-    #     self.addHtml(color2html(purpleColors))
-    #     self.addHtml(color2html(grayColors))
-    #     self.addHtml(color2html(whiteColors))
+    # def html_colors(self):
+    #     self.add_html(htmlColors)
+    #     self.add_html(color2html(purpleColors))
+    #     self.add_html(color2html(grayColors))
+    #     self.add_html(color2html(whiteColors))
 
-    def append(self, str):
-        self.addHtml(str)
+    def append(self, str: str) -> None:
+        self.add_html(str)
 
-    def message(self, msg):
+    def message(self, msg: str) -> None:
         self.statusbar.showMessage(msg, MsgTime)
 
-    def appExit(self):
+    def app_exit(self) -> None:
         self.close()
 
-    def msgBox(self):
+    def msg_box(self) -> None:
         msg = QMessageBox()
         # msg.setIcon(QMessageBox.Information)
         msg.setText("This is a message box")
@@ -636,10 +637,10 @@ class MainForm(QMainWindow):
         retval = msg.exec_()
         print("value of pressed message box button:", retval)
 
-    def msgBoxOk(self):
+    def msgBoxOk(self) -> None:
         self.message("XXX")
 
-    def about(self):
+    def about(self) -> None:
         AboutDialog.about()
 
 
