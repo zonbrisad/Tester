@@ -130,6 +130,7 @@ Background-color set by using blue
 htmlColors = """
 <br>
 <h2>Standard colors</h2><br>
+<div style="background-color:black">
 <font color="White">White<br>
 <font color="Silver">Silver<br>
 <font color="Gray">Gray<br>
@@ -147,10 +148,9 @@ htmlColors = """
 <font color="Fuchsia">Fuchsia<br>
 <font color="Purple">Purple<br>
 <font color="White">
-
+</div>
 <font color="Black">
 <h2">Pink colors</h2><br>
-
 <font color="Pink">Pink<br>
 <font color="LightPink">LightPink<br>
 <font color="HotPink">HotPink<br>
@@ -607,6 +607,7 @@ class MainForm(QMainWindow):
     def add_html(self, html: str) -> None:
         self.textEdit.insertHtml(html)
         self.textEdit.insertHtml("<hr>")
+        self.textEdit.setHtml
         self.scroll_down()
 
     # def html_colors(self):

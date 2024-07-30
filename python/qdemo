@@ -1,0 +1,558 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# ----------------------------------------------------------------------------
+#
+# Qt widgets demo program
+#
+# File:     qdemo
+# Author:   Peter Malmberg  <peter.malmberg@gmail.com>
+# Org:
+# Date:     2024-07-27
+# License:
+# Python:   >= 3.0
+#
+# ----------------------------------------------------------------------------
+
+import traceback
+import os
+import sys
+import logging
+import argparse
+from typing import Callable
+from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtGui import QCloseEvent, QValidator, QIntValidator, QDoubleValidator, QIcon
+
+from PyQt5.QtWidgets import (
+    QComboBox,
+    QWidget,
+    QApplication,
+    QMainWindow,
+    QVBoxLayout,
+    QHBoxLayout,
+    QGridLayout,
+    QMenuBar,
+    QMenu,
+    QAction,
+    QStatusBar,
+    QDialog,
+    QDialogButtonBox,
+    QFileDialog,
+    QMessageBox,
+    QPushButton,
+    QLabel,
+    QLineEdit,
+    QTextEdit,
+    QSlider,
+    QDial,
+    QSpacerItem,
+    QSizePolicy,
+    QStyle,
+    QCheckBox,
+    QSpinBox,
+)
+from numpy import short
+
+
+class App:
+    NAME = "QDemo"
+    VERSION = "0.1"
+    DESCRIPTION = "Demo program for PyQt5 widgets"
+    LICENSE = ""
+    AUTHOR = "Peter Malmberg"
+    EMAIL = "<peter.malmberg@gmail.com>"
+    ORG = "__ORGANISATION__"
+    HOME = ""
+    ICON = ""
+
+
+# Qt main window settings
+win_title = App.NAME
+win_x_size = 1000
+win_y_size = 400
+about_html = f"""
+<center><h2>{App.NAME}</h2></center>
+<br>
+<b>Version: </b>{App.VERSION}
+<br>
+<b>Author: </b>{App.AUTHOR}
+<br>
+<hr>
+<br>
+{App.DESCRIPTION}
+<br>
+"""
+
+
+class AboutDialog(QDialog):
+    def __init__(self, parent=None):
+        super(AboutDialog, self).__init__(parent)
+
+        self.setWindowTitle(App.NAME)
+        self.setWindowModality(Qt.ApplicationModal)
+        self.resize(400, 300)
+
+        self.verticalLayout = QVBoxLayout(self)
+        self.verticalLayout.setSpacing(2)
+        self.setLayout(self.verticalLayout)
+
+        # TextEdit
+        self.textEdit = QTextEdit(self)
+        self.textEdit.setReadOnly(True)
+        self.verticalLayout.addWidget(self.textEdit)
+        self.textEdit.insertHtml(about_html)
+
+        # Buttonbox
+        self.buttonBox = QDialogButtonBox(self)
+        self.buttonBox.setStandardButtons(QDialogButtonBox.Ok)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.setCenterButtons(True)
+        self.verticalLayout.addWidget(self.buttonBox)
+
+    @staticmethod
+    def about(parent=None):
+        dialog = AboutDialog(parent)
+        result = dialog.exec_()
+        return result == QDialog.Accepted
+
+
+class QWidgetDemo(QWidget):
+    def __init__(
+        self, title: str, parent: QWidget, te_message: QTextEdit = None
+    ) -> None:
+        super().__init__(parent=parent)
+
+        self.layout: QVBoxLayout = QVBoxLayout(parent)
+        self.setLayout(self.layout)
+
+        self.first_title = False
+        self.add_title(title)
+        self.te_message = te_message
+
+    def message(self, msg: str) -> None:
+        self.te_message.append(msg)
+
+    def add_title(self, title: str) -> QLabel:
+        label_title = self.add_qlabel(f"<h4>{title}</h4>")
+        label_title.setAlignment(Qt.AlignCenter)
+        if self.first_title is True:
+            self.layout.addSpacing(10)
+
+        self.layout.addWidget(label_title)
+        self.layout.addSpacing(10)
+        self.first_title = True
+
+        return label_title
+
+    def add_qlabel(self, text: str) -> QLabel:
+        label = QLabel(text)
+        self.layout.addWidget(label)
+        return label
+
+    def add_qpushbutton(self, text: str) -> QPushButton:
+        pb = QPushButton(text)
+        self.layout.addWidget(pb)
+        return pb
+
+    def get_icon(self, icon_name: str) -> QIcon:
+        """Return a standard Qt icon from name
+
+        Args:
+            icon_name (str): Name of Standard Qt icon
+
+        Returns:
+            QIcon: Qt icon
+        """
+        icon = self.style().standardIcon(getattr(QStyle, icon_name))
+        return icon
+
+
+class QLabelDemo(QWidgetDemo):
+    def __init__(self, parent: QWidget) -> None:
+        super().__init__("Qlabel", parent)
+
+        self.add_qlabel("Normal")
+        self.add_qlabel("<b>Bold</b>")
+        self.add_qlabel("<i><u>Italic underline</i></u>")
+        self.add_qlabel("Indented").setIndent(20)
+        self.add_qlabel("""<pre>Pre tag</pre>""")
+        self.add_qlabel("""<div style="color:Blue;">Blue text</div>""")
+        self.add_qlabel("""<div style="background-color:Red;">Red background</div>""")
+        tooltip = self.add_qlabel("With tooltip")
+        tooltip.setToolTip("This is a tooltip")
+
+        self.add_qlabel("Align left").setAlignment(Qt.AlignLeft)
+        self.add_qlabel("Align center").setAlignment(Qt.AlignCenter)
+        self.add_qlabel("Align right").setAlignment(Qt.AlignRight)
+        self.add_qlabel(
+            "This label will wrap, because it is so so so long"
+        ).setWordWrap(True)
+
+        icon = self.style().standardIcon(getattr(QStyle, "SP_FileDialogEnd"))
+        label_icon = self.add_qlabel("Icon")
+        label_icon.setPixmap(icon.pixmap(QSize(16, 16)))
+        label_icon.setToolTip("Label with image")
+
+        self.layout.addStretch()
+
+
+class QPushButtonDemo(QWidgetDemo):
+    def __init__(self, parent: QWidget) -> None:
+        super().__init__("QPushButton", parent)
+
+        self.add_qpushbutton("Normal")
+
+        icon = self.style().standardIcon(getattr(QStyle, "SP_FileDialogEnd"))
+        self.add_qpushbutton("With icon").setIcon(icon)
+        self.layout.addStretch()
+
+
+# class CustomValidator(QValidator):
+
+
+class QLineEditDemo(QWidgetDemo):
+    """_summary_
+    https://www.pythonguis.com/docs/qlineedit-widget/
+    """
+
+    def __init__(self, parent: QWidget, te_message: QTextEdit = None) -> None:
+        super().__init__("QLineEdit", parent, te_message=te_message)
+
+        self.add_qlineedit("Normal")
+
+        le_ro = self.add_qlineedit("Read only")
+        le_ro.setReadOnly(True)
+        le_ro.setToolTip("Read only mode")
+
+        self.add_qlineedit("Password").setEchoMode(QLineEdit.EchoMode.Password)
+
+        int_validator = QIntValidator(parent=self)
+        int_validator.setRange(-100, 200)
+        le_int = self.add_qlineedit("", "QintValidator")
+        le_int.setValidator(int_validator)
+        le_int.textChanged.connect(self.int_valid)
+
+        dbl_validator = QDoubleValidator(parent=self)
+        dbl_validator.setRange(-100, 100)
+        le_dbl = self.add_qlineedit("", "QDoubleValidator")
+        le_dbl.setValidator(dbl_validator)
+
+        self.layout.addStretch()
+
+    def int_valid(self, a) -> None:
+        self.message(f"Int edit {a}")
+
+    def add_qlineedit(self, text: str, tip: str = "") -> QLineEdit:
+        le = QLineEdit()
+        self.layout.addWidget(le)
+        le.setText(text)
+        le.setToolTip(tip)
+        return le
+
+
+class QIconDemo(QWidgetDemo):
+    def add_icon(self, icon_name: str, idx: int) -> None:
+
+        icon = self.style().standardIcon(getattr(QStyle, icon_name))
+        label_icon = QLabel("")
+        # label_icon = self.add_qlabel("Icon")
+        label_icon.setPixmap(icon.pixmap(QSize(16, 16)))
+        label_icon.setToolTip(f"Icon: {icon_name}")
+
+        self.layout_grid.addWidget(label_icon, idx % 20, idx // 20)
+        # self.layout.addWidget(label_icon)
+
+    def __init__(self, parent: QWidget) -> None:
+        super().__init__("QIcon", parent)
+
+        self.layout_grid = QGridLayout()
+        self.layout.addLayout(self.layout_grid)
+
+        icons = sorted([attr for attr in dir(QStyle) if attr.startswith("SP_")])
+        print(len(icons))
+
+        for i, icon in enumerate(icons):
+            self.add_icon(icon, i)
+
+        self.layout.addStretch()
+
+
+class QMiscDemo(QWidgetDemo):
+    def __init__(self, parent: QWidget, te_message: QTextEdit = None) -> None:
+        super().__init__("QCheckBox", parent, te_message=te_message)
+
+        cb = self.add_qcheckbox("Test")
+        cb.stateChanged.connect(self.cb_state_changed)
+
+        self.add_title("QSpinBox")
+
+        sb1 = self.add_qspinbox()
+
+        sb2 = self.add_qspinbox()
+        sb2.setToolTip("Value: -20 to 12")
+        sb2.setMinimum(-20)
+        sb2.setMaximum(12)
+
+        self.layout.addStretch()
+
+    def cb_state_changed(self, val) -> None:
+        self.message(f"QCheckBox: {val}")
+
+    def add_qcheckbox(self, text: str) -> QCheckBox:
+        cb = QCheckBox(text)
+        self.layout.addWidget(cb)
+        return cb
+
+    def add_qspinbox(self) -> QSpinBox:
+        sb = QSpinBox()
+        self.layout.addWidget(sb)
+        return sb
+
+
+class QSliderDemo(QWidgetDemo):
+    def __init__(self, parent: QWidget, te_message: QTextEdit = None) -> None:
+        super().__init__("QSlider", parent, te_message=te_message)
+
+        slider1 = self.add_slider()
+        slider1.setOrientation(Qt.Orientation.Horizontal)
+        slider1.setToolTip("Normal slider")
+        slider1.valueChanged.connect(self.slider_value_changed)
+
+        slider2 = self.add_slider()
+        slider2.setOrientation(Qt.Orientation.Horizontal)
+        slider2.setInvertedAppearance(True)
+        slider2.setToolTip("Inverted slider")
+        slider2.valueChanged.connect(self.slider_value_changed)
+
+        slider3 = self.add_slider()
+        slider3.setOrientation(Qt.Orientation.Horizontal)
+        slider3.setToolTip("Min = 100, Max = 1000")
+        slider3.setMaximum(1000)
+        slider3.setMinimum(100)
+        slider3.valueChanged.connect(self.slider_value_changed)
+
+        slider4 = self.add_slider()
+        slider4.setOrientation(Qt.Orientation.Horizontal)
+        slider4.setToolTip("QSlider.TicksAbove")
+        slider4.setTickPosition(QSlider.TicksAbove)
+        slider4.setTickInterval(10)
+        slider4.valueChanged.connect(self.slider_value_changed)
+
+        slider5 = self.add_slider()
+        slider5.setOrientation(Qt.Orientation.Horizontal)
+        slider5.setToolTip("QSlider.TicksBelow")
+        slider5.setTickPosition(QSlider.TicksBelow)
+        slider5.setTickInterval(10)
+        slider5.valueChanged.connect(self.slider_value_changed)
+
+        slider6 = self.add_slider()
+        slider6.setOrientation(Qt.Orientation.Horizontal)
+        slider6.setToolTip("QSlider.TicksBothSides")
+        slider6.setTickPosition(QSlider.TicksBothSides)
+        slider6.setTickInterval(10)
+        slider6.valueChanged.connect(self.slider_value_changed)
+
+        self.add_title("QDial")
+
+        dial1 = self.add_qdial()
+        dial1.setToolTip("Normal")
+        dial1.valueChanged.connect(self.dial_value_changed)
+
+        dial2 = self.add_qdial()
+        dial2.valueChanged.connect(self.dial_value_changed)
+        dial2.setToolTip("Notches visible")
+        dial2.setNotchesVisible(True)
+
+        self.layout.addStretch()
+
+    def slider_value_changed(self, val) -> None:
+        self.message(f"QSlider: {val}")
+
+    def dial_value_changed(self, val) -> None:
+        self.message(f"QDial: {val}")
+
+    def add_slider(self) -> QSlider:
+        slider = QSlider()
+        self.layout.addWidget(slider)
+        return slider
+
+    def add_qdial(self) -> QDial:
+        dial = QDial()
+        self.layout.addWidget(dial)
+        return dial
+
+
+class QComboBoxDemo(QWidgetDemo):
+    def __init__(self, parent: QWidget, te_message: QTextEdit = None) -> None:
+        super().__init__("QComboBox", parent, te_message=te_message)
+
+        cb1 = self.add_qcombobox()
+        cb1.currentIndexChanged.connect(self.cb_changed)
+        cb1.addItem("Item A", "A")
+        cb1.addItem("Item B", "B")
+        cb1.addItem("Item C", "C")
+        cb1.addItem("Item D", "D")
+
+        cb2 = self.add_qcombobox()
+        cb2.currentIndexChanged.connect(self.cb_changed)
+        cb2.setToolTip("Combobox with icons in items")
+        cb2.addItem(self.get_icon("SP_ArrowRight"), "ArrowRight")
+        cb2.addItem(self.get_icon("SP_ArrowLeft"), "ArrowLeft")
+        cb2.addItem(self.get_icon("SP_ArrowUp"), "ArrowUp")
+        cb2.addItem(self.get_icon("SP_ArrowDown"), "ArrowDown")
+
+        self.layout.addStretch()
+
+    def cb_changed(self, val) -> None:
+        self.message(f"QComboBox: {val}")
+
+    def add_qcombobox(self) -> QComboBox:
+        cb = QComboBox()
+        self.layout.addWidget(cb)
+        return cb
+
+
+class MainWindow(QMainWindow):
+
+    def add_menu(self, name: str, dest: QMenu) -> QMenu:
+        menu = QMenu(name, dest)
+        dest.addAction(menu.menuAction())
+        return menu
+
+    def add_action(
+        self,
+        name: str,
+        menu: QMenu,
+        trig: Callable = None,
+        tip: str = "",
+        shortcut: str = "",
+    ) -> QAction:
+        action = QAction(name, self)
+        action.triggered.connect(trig)
+        action.setStatusTip(tip)
+        action.setShortcut(shortcut)
+        menu.addAction(action)
+        return action
+
+    def __init__(self, parent=None):
+        super(MainWindow, self).__init__(parent)
+
+        self.resize(win_x_size, win_y_size)
+        self.setWindowTitle(win_title)
+        # self.setWindowIcon(QIcon(App.ICON))
+
+        # Create central widget
+        self.centralwidget = QWidget(self)
+        self.setCentralWidget(self.centralwidget)
+        layout_main = QHBoxLayout(self.centralwidget)
+        layout_main.setSpacing(2)
+        layout_main.setContentsMargins(2, 2, 2, 2)
+
+        # TextEdit
+        self.te_message = QTextEdit(self.centralwidget)
+
+        # QLabel demo
+        qlabel_demo = QLabelDemo(self.centralwidget)
+        layout_main.addWidget(qlabel_demo)
+
+        # QPushButton demo
+        qpushbutton_demo = QPushButtonDemo(self.centralwidget)
+        layout_main.addWidget(qpushbutton_demo)
+
+        # QLineEdit demo
+        qlinedit_demo = QLineEditDemo(self.centralwidget, te_message=self.te_message)
+        layout_main.addWidget(qlinedit_demo)
+
+        layout_main.addWidget(QMiscDemo(self.centralwidget, te_message=self.te_message))
+
+        layout_main.addWidget(
+            QSliderDemo(self.centralwidget, te_message=self.te_message)
+        )
+
+        # QCheckbox demo
+        layout_main.addWidget(
+            QComboBoxDemo(self.centralwidget, te_message=self.te_message)
+        )
+
+        # QIcon demo
+        layout_main.addWidget(QIconDemo(self.centralwidget))
+
+        layout_main.addWidget(self.te_message)
+
+        # Menubar
+        self.menubar = QMenuBar(self)
+        self.setMenuBar(self.menubar)
+
+        # Menus
+        menu_file = self.add_menu("File", self.menubar)
+        menu_help = self.add_menu("Help", self.menubar)
+
+        self.add_action("Open", menu_file, self.open, "Open file", "Ctrl+O")
+        menu_file.addSeparator()
+        self.add_action("Quit", menu_file, self.exit, "Quit application", "Ctrl+Q")
+        self.add_action("About", menu_help, lambda: AboutDialog.about(), "About")
+
+        # Statusbar
+        self.statusbar = QStatusBar(self)
+        self.statusbar.setLayoutDirection(Qt.LeftToRight)
+        self.statusbar.setObjectName("statusbar")
+        self.setStatusBar(self.statusbar)
+
+    def exit(self):
+        # msgBox = QMessageBox()
+        # msgBox.setIcon(QMessageBox.Information)
+        # msgBox.setWindowTitle("Quit")
+        # msgBox.setText("Are you sure you want to quit?")
+        # msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+        # if msgBox.exec() == QMessageBox.Ok:
+        #     self.close()
+        return
+
+    def open(self):
+        files = QFileDialog.getOpenFileNames(self, "Open file", ".", "*.*")
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        self.exit()
+        return super().closeEvent(event)
+
+
+def main() -> None:
+    logging_format = "[%(levelname)s] %(lineno)-4d %(funcName)-14s : %(message)s"
+    #    logging.basicConfig(format=logging_format, level=logging.DEBUG)
+
+    app = QApplication(sys.argv)
+    main_window = MainWindow()
+    main_window.show()
+    sys.exit(app.exec_())
+    parser = argparse.ArgumentParser(
+        prog=App.NAME, description=App.DESCRIPTION, epilog="", add_help=True
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"{App.NAME} {App.VERSION}",
+        help="Print version information",
+    )
+
+    parser.add_argument(
+        "--debug", action="store_true", default=False, help="Print debug messages"
+    )
+
+    args = parser.parse_args()
+
+    if args.debug:
+        logging.basicConfig(format=logging_format, level=logging.DEBUG)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+        sys.exit(0)
+    except KeyboardInterrupt as e:  # Ctrl-C
+        raise e
+    except SystemExit as e:  # sys.exit()
+        raise e
+    except Exception as e:
+        print("ERROR, UNEXPECTED EXCEPTION")
+        print(str(e))
+        traceback.print_exc()
+        os._exit(1)

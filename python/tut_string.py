@@ -41,6 +41,7 @@ def main() -> None:
     str3: str = "ccc"
     state: State = State.STARTUP
     my_variable: str = "Some value"
+    vals: list[int] = [1, 2, 3]
 
     separator("Integer formating:")
     print(f"No formating:       {num2}")
@@ -95,6 +96,9 @@ def main() -> None:
     # Special output
     separator("Special output:")
     print(f"Braces:             {{{num2}}}")
+
+    separator("Lists:")
+    print(f"List:               {vals}")
 
 
 if __name__ == "__main__":
