@@ -22,7 +22,7 @@ import argparse
 
 import gi
 
-gi.reqgi.require_version("Gtk", "3.0")
+gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
 
