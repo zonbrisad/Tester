@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------
 #
-# gtk demo for python
+# GTK demo for Python
 #
 # File:     gdemo
 # Author:   Peter Malmberg  <peter.malmberg@gmail.com>
@@ -22,7 +22,7 @@ import argparse
 
 import gi
 
-gi.reqgi.require_version("Gtk", "3.0")
+gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
 
@@ -36,6 +36,23 @@ class App:
     ORG = "__ORGANISATION__"
     HOME = ""
     ICON = ""
+
+
+class MainWindow(Gtk.Window):
+    def __init__(self):
+        super().__init__(title="Hello World")
+
+        self.button = Gtk.Button(label="Click Here")
+        self.button.connect("clicked", self.on_button_clicked)
+        # self.add(self.button)
+
+        # label = Gtk.Label(label="Normal")
+        # self.add(label)
+        label2 = Gtk.Label(label="<b>Normal</b>")
+        self.add(label2)
+
+    def on_button_clicked(self, widget):
+        print("Hello World")
 
 
 def main() -> None:
@@ -61,7 +78,7 @@ def main() -> None:
     if args.debug:
         logging.basicConfig(format=logging_format, level=logging.DEBUG)
 
-    win = Gtk.Window()
+    win = MainWindow()
     win.connect("destroy", Gtk.main_quit)
     win.show_all()
     Gtk.main()
