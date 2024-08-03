@@ -1,0 +1,221 @@
+#!/usr/bin/env python3
+# -----------------------------------------------------------------------
+# 
+# Convert binary file to a hex encoded array for inclusion in C projects
+#
+# File:    bin2array.py
+# Author:  Peter Malmberg <peter.malmberg@gmail.com>
+# Date:    2016-02-19
+# Version: 1.4
+# Python:  >=3
+# Licence: MIT
+# Credits: Based on code written by ???
+# -----------------------------------------------------------------------
+# 
+# History
+#   1.3 Changed to Python 3
+#       Added header to C and H files
+#   1.4 Major revision, using template system
+#
+# Todo 
+#   Fix 2 and 4 byte integer size
+#   Add multiple infile option
+#   Use mptemplate generator
+
+import os
+import sys
+import traceback
+import struct
+import logging
+import argparse
+from datetime import datetime, date, time
+from templatec import *
+from tgenerator import TGenerator
+from bashplates import Bp
+
+
+CHUNK_SIZE=12
+t_bin2array = TemplateC(
+   c_includes_text="""\
+#include <stdint.h>
+"""
+)
+
+class BinToArray(TemplateC):
+    def __init__(self):
+        super().__init__()
+        pass
+
+    def readChunk(self, size):
+        buf = self.fileIn.read(size)   
+        zero=0
+        self.size += len(buf)
+        if len(buf)<size and len(buf) > 0 and self.null_terminate:
+            buf = buf + zero.to_bytes(1,"big")
+        return buf
+    
+    def ConvertFileToArray(self, strInFile:str, integerSize:int, ignoreBytes:int, endianNess:str, arrayName:str, nullTerminate:bool):
+        """ Reads binary file at location strInFile and writes out a C array of hex values
+        Parameters -
+        strInFile - Path and filename of binary file to convert
+        
+        integerSize - Size in bytes of output array elements. Array generated is always
+        of type uint8, uint16, uint32. These types would need to be defined using
+        typedef if they don't exist, or the user can replace the type name with the
+        appropriate keyword valid for the compiler size conventions
+        ignoreBytes - Number of bytes to ignore at the beginning of binary file. Helps
+        strip out file headers and only encode the payload/data.
+        endianNess - Only used for integerSize of 2 or 4. 'l' for Little Endian, 'b' for
+        Big Endian
+
+        """
+        self.null_terminate = nullTerminate
+        self.size = 0
+        
+        # Check integerSize value
+        if integerSize not in (1, 2, 4):
+            logging.debug("Integer Size parameter must be 1, 2 or 4")
+            return
+
+        
+        # Open input file
+        try:
+            self.fileIn = open(strInFile, 'rb')
+        except IOError:
+            logging.debug(f"Could not open input file {strInFile}")
+            return
+         
+        # # Start array definition preamble
+        # inFileName = os.path.basename(strInFile)
+        
+        strVarType = f"uint{integerSize * 8}_t"
+        
+        # if no arrayname is given use filename
+        if arrayName=='':
+            arrayName=os.path.basename(strInFile).replace('.','_').replace(' ','_')
+            
+        self.c_variables_text += f"{strVarType} {arrayName}[] = {{ \n"
+
+        self.h_variables_text+= f"//\n"
+        self.h_variables_text+= f"// file: {os.path.basename(strInFile)}\n"
+        self.h_variables_text+= f"// size: __SIZE__\n"
+        self.h_variables_text+= f"//\n"
+        self.h_variables_text+= f"extern {strVarType} {arrayName}[];\n\n"
+                    
+        # Convert and write array into C file
+        self.fileIn.seek(ignoreBytes)
+        if integerSize == 1:
+            buf = self.readChunk(CHUNK_SIZE)
+           
+            while buf:
+                self.c_variables_text += "    "
+                for byteVal in buf:
+                    self.c_variables_text += f"0x{byteVal:02x}, " 
+                
+                self.c_variables_text += "\n"
+                buf = self.readChunk(CHUNK_SIZE)
+            
+        else:
+            if   endianNess == 'l' and integerSize == 2:
+                endianFormatter = '<H'
+                maxWordsPerLine = 8
+            elif endianNess == 'l' and integerSize == 4:
+                endianFormatter = '<L'
+                maxWordsPerLine = 6
+            elif endianNess == 'b' and integerSize == 2:
+                endianFormatter = '>H'
+                maxWordsPerLine = 8
+            elif endianNess == 'b' and integerSize == 4:
+                endianFormatter = '>L'
+                maxWordsPerLine = 6
+
+            buf = self.readChunk(integerSize)
+            i = 0
+
+            self.c_variables_text += "    "
+            while buf != '':
+                wordVal = struct.unpack(endianFormatter, buf)
+                if integerSize == 2:
+                    # self.c_variables_text += f"0x{wordVal:04x}, "      
+                    self.c_variables_text += f"0x{wordVal}, "      
+                else:
+                    self.c_variables_text += f"0x{wordVal:08x}, " 
+
+                i += 1
+                if i == maxWordsPerLine:
+                    self.c_variables_text += "\n    "
+                    i = 0
+
+                buf = self.readChunk(integerSize)
+
+            
+        self.fileIn.close()
+
+        # Close array definition
+        self.c_variables_text += "};\n\n"
+        self.h_variables_text = self.h_variables_text.replace("__SIZE__", str(self.size))
+
+        
+def main():
+    logging.basicConfig(level=logging.DEBUG)
+ 
+    # options parsing
+    parser = argparse.ArgumentParser(description="File to C array converter")
+    parser.add_argument("--file",          action="append", help="Input file(s)", default=[])
+    parser.add_argument("--name",          type=str, action="store", help="Input file(s)", default="")
+    parser.add_argument("--outdir",        type=str, action="store", help="Output directory", default=os.getcwd())
+    #parser.add_argument("--intsize",       type=int, help="Integer size 1,2 or 4 bytes", choices=[1, 2, 4], default=1)
+    parser.add_argument("--ignore",        type=int, help="Nr of bytes to ignore in begining",  default=0)
+    parser.add_argument("--endian",        type=str, help="Endian [l, b]",                      default='l')
+    parser.add_argument("--arrayname",     type=str, help="Name of array",                      default='')
+    parser.add_argument("--nullterminate", action="store_true",   help="nullterminate",         default=False)
+    parser.add_argument("--debug", action="store_true", help="Print debug information")
+    parser.add_argument("--description",  type=str, help="Brief description",      default="")
+    parser.add_argument("--author",       type=str, help="Author of file",      default=Bp.name())
+    parser.add_argument("--email",        type=str, help="Email of author",      default=Bp.email())
+    parser.add_argument("--license",      type=str, help="License of new file", default=Bp.license())
+    parser.add_argument("--organization", type=str, help="Name of organisation", default=Bp.organisation())
+    parser.add_argument("--dryrun",    action="store_true", help="Do not write", default=False)
+    
+    
+    # parse arguments
+    args = parser.parse_args()
+
+    args.intsize=1
+
+    tmpl=[t_sentinel, t_bin2array]
+
+    if len(args.file) == 0:
+        parser.print_help()
+        exit(0)
+
+    for file in args.file:
+        cnv = BinToArray()
+        cnv.ConvertFileToArray(file, args.intsize, args.ignore, args.endian, args.arrayname, args.nullterminate)
+        tmpl.append(cnv)
+
+    if args.name=="":
+        args.name=args.file[0].replace(".","_")
+        args.name=os.path.basename(args.file[0]).replace(".","_").replace(" ","_")
+    
+    args.separators=False
+    template = TGenerator(args, t_header, None, tmpl, [])
+    template.generate()
+    if args.dryrun:
+        print(template)
+        exit(0)
+    template.write()
+
+if __name__ == "__main__":
+    try:
+        main()
+        sys.exit(0)
+    except KeyboardInterrupt as e:  # Ctrl-C
+        raise e
+    except SystemExit as e:  # sys.exit()
+        raise e
+    except Exception as e:
+        print("ERROR, UNEXPECTED EXCEPTION")
+        print(str(e))
+        traceback.print_exc()
+        os._exit(1)

@@ -1,0 +1,362 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# --------------------------------------------------------------------------
+#
+# C template generator
+#
+# File:    mptemplate.py
+# Author:  Peter Malmberg <peter.malmberg@gmail.com>
+# Date:    2016-02-19
+# Version: 0.3
+# Python:  >=3
+# License: MIT
+#
+# ---------------------------------------------------------------------------
+
+# History -------------------------------------------------------------------
+# - Ver 0.3
+# Major rewrite for better code generation
+#
+
+# Todo ----------------------------------------------------------------------
+#
+
+# Imports -------------------------------------------------------------------
+
+from __future__ import annotations
+
+import logging
+import argparse
+import json
+import os
+import sys
+import traceback
+from datetime import datetime
+from typing import List
+from pathlib import Path
+from dataclasses import dataclass
+
+from bashplates import Bp
+from query import Query
+from Project import ProjectGenerator
+
+from templatec import *
+from tgenerator import TGenerator
+
+# Settings ------------------------------------------------------------------
+
+AppName = "mptemplate"
+AppVersion = "0.3"
+AppLicense = "MIT"
+AppAuthor = "Peter Malmberg <peter.malmberg@gmail.com>"
+
+# Absolute path to script itself
+self_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
+
+
+class App:
+    NAME = "mpterm"
+    VERSION = "0.2"
+    DESCRIPTION = "MpTerm is a simple serial terminal program"
+    LICENSE = ""
+    AUTHOR = "Peter Malmberg"
+    EMAIL = "peter.malmberg@gmail.com"
+    ORG = ""
+    HOME = "github.com/zonbrisad/mpterm"
+    ICON = f"{self_dir}/icons/mp_icon2.png"
+
+
+template_dir = f"{self_dir}/pyplate"
+# readme_md = f"{template_dir}/README.md"
+
+# Code ----------------------------------------------------------------------
+
+
+def print_info():
+    print("Script name    " + AppName)
+    print("Script version " + AppVersion)
+    print("Script path    " + os.path.realpath(__file__))
+
+
+def create_project(template: TGenerator):
+
+    if Query.read_bool("Do you want to create a project?", False):
+        proj = ProjectGenerator()
+        proj.project_name = template.name
+        proj.query()
+        proj.create()
+        proj.git_add(template.write(proj.project_dir))
+        proj.commit()
+        return True
+
+    return False
+
+
+def cmd_header(args):
+    print(t_header.header_text)
+
+def cmd_newc(args):
+
+    main = None
+    pre  = []
+
+    # Set default header
+    header = t_header
+    jd = t_header.to_json()
+    #print(jd)
+    #t_header.write("Kalle")
+    # if os.path.isdir("./mpconf"):
+    #     print("Makeplates exist")
+
+    # Load external project header if existing
+    headerFile = "./.mpconf/header.txt"
+    if os.path.isfile(headerFile):
+        header = TemplateC()
+        header.header_text = Path(headerFile).read_text()
+        #print("Header template exist")
+
+    if args.main: 
+        pre.append(t_sentinel)
+        pre.append(t_app_info)
+
+        if args.target == "system":
+            main = t_main
+            pre.append(t_common_includes)
+
+        if args.target == "system-gtk":
+            main = t_main
+            pre.append(t_common_includes)
+            pre.append(t_glib_options)            
+
+        if args.target == "avr":
+            args.name="main"
+            main = t_main_embeded
+            pre.append(t_avr)
+            pre.append(t_avr_uart)
+            
+    else:
+        pre.append(t_sentinel)
+        pre.append(t_cplusplus)
+   
+    template = TGenerator(args, header, main, pre, [])
+    template.query()
+    template.generate()
+    if args.dryrun is True:
+        print(template)
+        exit(0)
+    template.write()
+
+
+def cmd_newa(args):
+    
+    template = TGenerator(args, t_header, t_main, [t_app_info, t_argtable], [])
+    #template.has_main = True
+    template.query()
+    template.generate()
+    if args.dryrun:
+        print(template)
+        exit(0)
+    template.write()
+
+def cmd_newavr(args):
+    args.target="avr"
+    args.main=True
+
+    cmd_newc(args)
+
+def cmd_newmod(args):
+    template = TGenerator(args, t_header, None, [t_sentinel, t_cplusplus], [])
+    template.query()
+    template.generate()
+    if args.dryrun:
+        print(template)
+        exit(0)
+    template.write()
+
+
+# def cmd_newqt(args):
+#     conf = TConf(args)
+#     has_main = False
+#     has_main_application = True
+#     has_separators = True
+
+#     template = TGenerator(conf, [t_app_info], [t_qt5])
+#     template.generate()
+
+#     if not create_project(template):
+#         template.write()
+
+
+def cmd_newgtk(args):
+    args.target = "system-gtk"
+    args.main = True
+    cmd_newc(args)
+
+# def cmd_newp(args):
+#     proj = ProjectGenerator()
+#     proj.query()
+#     proj.create()
+#     proj.commit()
+
+
+class Settings:
+    SETTINGS_DIR = "~/.config/pyplate"
+    SETTINGS_FILE = "pyplate.json"
+
+    def __init__(self) -> None:
+        with open("pyplate/pyplate.json") as f:
+            data = json.load(f)
+
+        print(data)
+
+    def create(self) -> None:
+        # Create personal settings
+        pass
+
+
+def main() -> None:
+
+    logging_format = "[%(levelname)s] %(lineno)d %(funcName)s() : %(message)s"
+    
+    parrent_parser = argparse.ArgumentParser(add_help=False)
+    parrent_parser.add_argument(
+        "--name", action="store", type=str, help="Name of C module", default=""
+    )
+    parrent_parser.add_argument("--description", type=str, help="Brief description")
+    parrent_parser.add_argument(
+        "--author", type=str, help="Name of author", default=Bp.name()
+    )
+    parrent_parser.add_argument("--email", type=str, help="Email of author", default=Bp.email())
+    # parrent_parser.add_argument("--project", type=str, help="Name of project")
+    parrent_parser.add_argument("--license",
+                                type=str,
+                                help="License of new file",
+                                default=Bp.license())
+    parrent_parser.add_argument(
+        "--organization", type=str, help="Name of organisation", default=Bp.organisation()
+    )
+
+    parrent_parser.add_argument(
+        "--main",
+        action="store_true",
+        help="Add main function block",
+        default=False,
+    )
+    parrent_parser.add_argument(
+        "--header", type=argparse.FileType("r"), help="Include external header"
+    )
+    parrent_parser.add_argument(
+        "--outdir",
+        type=str,
+        action="store",
+        help="Output directory",
+        default=os.getcwd(),
+    )
+    parrent_parser.add_argument(
+        "--basedir", type=str, help="Project directory", default="."
+    )
+    # parrent_parser.add_argument(
+    #     "--write", action="store_true", help="Write file to disk", default=False
+    # )
+    parrent_parser.add_argument(
+        "--printheader",
+        action="store_true",
+        help="Print default header to stdout",
+        default=False,
+    )
+    parrent_parser.add_argument(
+        "--separators", action="store_true", help="Add code separators", default=False
+    )
+    #    parrent_parser.add_argument("--outfile",
+    #                                type=argparse.FileType("w",0),
+    #                                help="Write template to file")
+    parrent_parser.add_argument(
+        "--debug", action="store_true", help="Print debug information"
+    )
+    parrent_parser.add_argument(
+        "--version",
+        action="version",
+        help="Print application version",
+        version=AppVersion,
+    )
+    parrent_parser.add_argument(
+        "--no_interaction", action="store_true", help="Disable interactive questions"
+    )
+    parrent_parser.add_argument(
+        "--target", action="store", choices=["system", "system-gtk", "avr", "arm"], help="Compiler target", default="system"
+    )
+    parrent_parser.add_argument("--dryrun",    action="store_true", help="Do not write to file", default=False)
+    # options parsing
+    parser = argparse.ArgumentParser(
+        prog=AppName,
+        description="C/C++ template generator",
+        epilog="Part of Makeplates <https://github.com/zonbrisad/makeplates.git>",
+        parents=[parrent_parser],
+    )
+
+    subparsers = parser.add_subparsers(title="Commands", help="", description="")
+
+    parser_new = subparsers.add_parser(
+        "newc", parents=[parrent_parser], help="Create a new C file"
+    )
+    parser_new.set_defaults(func=cmd_newc)
+
+    parser_new = subparsers.add_parser(
+        "newavr", parents=[parrent_parser], help="Create a new AVR application (main)"
+    )
+    parser_new.set_defaults(func=cmd_newavr)
+
+    parser_new = subparsers.add_parser(
+        "newm", parents=[parrent_parser], help="Create new C module"
+    )
+    parser_new.set_defaults(func=cmd_newmod)
+
+    parser_new = subparsers.add_parser(
+        "newca", parents=[parrent_parser], help="Create a new C application (main)"
+    )
+    parser_new.set_defaults(func=cmd_newa)
+
+    # parser_new = subparsers.add_parser(
+    #     "newqt", parents=[parrent_parser], help="Create a new QT5 application"
+    # )
+    # parser_new.set_defaults(func=cmd_newqt)
+    parser_new = subparsers.add_parser(
+        "newgtk", parents=[parrent_parser], help="Create a new glib/GTK3 application"
+    )
+    parser_new.set_defaults(func=cmd_newgtk)
+
+    parser_new = subparsers.add_parser(
+        "header", parents=[parrent_parser], help="Print default header to stdout"
+    )
+    parser_new.set_defaults(func=cmd_header)
+
+    args = parser.parse_args()
+
+    if args.debug:
+        logging.basicConfig(format=logging_format, level=logging.DEBUG)
+        
+    #print(args)
+    if hasattr(args, "func"):
+        args.func(args)
+        exit(0)
+
+    if args.printheader:
+        print(t_header.header_text)
+        exit(0)
+
+    parser.print_help()
+
+
+if __name__ == "__main__":
+    try:
+        main()
+        sys.exit(0)
+    except KeyboardInterrupt as e:  # Ctrl-C
+        raise e
+    except SystemExit as e:  # sys.exit()
+        raise e
+    except Exception as e:
+        print("ERROR, UNEXPECTED EXCEPTION")
+        print(str(e))
+        traceback.print_exc()
+        os._exit(1)
