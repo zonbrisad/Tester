@@ -49,7 +49,7 @@ OPT = 2
 
 # Compiler flag to set the C and C++ Standard level.
 # [ gnu99 gnu11 c++98 c++03 c++11 c++14 c++17 c++23] 
-CSTANDARD   = gnu17
+CSTANDARD   = gnu2x
 CPPSTANDARD = c++11
 
 # C Macro definitions

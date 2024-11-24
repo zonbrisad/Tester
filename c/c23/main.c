@@ -52,11 +52,13 @@ test_s b = {3, 4};
 void print_s(test_s *x);
 void print_s(test_s *x)
 {
-	printf("test_s a=%032b  %06ld, b=%032b %p\n", x->ma, x->ma, x->mb, x);
+	printf("test_s a=%032lb  %06ld, b=%032lb %p\n", x->ma, x->ma, x->mb, x);
 }
+
 
 [[deprecated]]
 void depr() {
+	printf("Deprecated\n");
 }
 
 
@@ -72,7 +74,7 @@ test_s slist[] = {
 		{.ma = 7, .mb = 8},
 		{0},
 		[10] =
-				{.ma = 7, .mb = 8},
+    {.ma = 7, .mb = 8},
 
 };
 
@@ -90,9 +92,14 @@ int main(void)
 	int x = 0b10101;
 	char str[] = "Hello";
 	char str2[12];
-	auto a = "123";
-//	int y = 1'000'000;
-//	constexpr int xx = 123;
+	auto autostr = "123";
+	auto autoint = 456;
+	int y = 1'000'000;
+  constexpr int xx = 123;
+	constexpr float fx1 = 123.45f/3.0f;
+	constexpr float fx2 = fx1 *4.0f;
+
+
 	depr();  // compile time warning
 //	str2 = strdup(str);
   	
@@ -115,8 +122,7 @@ int main(void)
 
 	printf("Size: %ld\n", sizeof(slist));
 	printf("Size: %ld\n", sizeof(size_t));
-	// printf("C standard " __STDC__ "\n");
-	printf("C standard: %d\n", __STDC_VERSION__);
+	printf("C standard: %ld\n", __STDC_VERSION__);
 
 	return 0;
 }
