@@ -47,7 +47,11 @@ typedef struct
 test_s a = {.ma = 1, .mb = 2};
 test_s b = {3, 4};
 
-//char x[32] = { #embed <hello.txt> };
+/*
+const char x[] = {
+#embed <hello.txt>
+};
+*/
 
 void print_s(test_s *x);
 void print_s(test_s *x)
