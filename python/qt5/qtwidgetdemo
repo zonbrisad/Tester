@@ -12,18 +12,24 @@
 # Python:   >= 3.0
 #
 # ----------------------------------------------------------------------------
+# https://github.com/Taiko2k/GTK4PythonTutorial
 
 import traceback
 import os
 import sys
 import logging
 import argparse
+import subprocess
 from typing import Callable
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QCloseEvent, QValidator, QIntValidator, QDoubleValidator, QIcon
 
 from PyQt5.QtWidgets import (
     QComboBox,
+    QFontDialog,
+    QInputDialog,
+    QProgressBar,
+    QProgressDialog,
     QWidget,
     QApplication,
     QMainWindow,
@@ -49,6 +55,7 @@ from PyQt5.QtWidgets import (
     QStyle,
     QCheckBox,
     QSpinBox,
+    QColorDialog,
 )
 from numpy import short
 
@@ -121,7 +128,7 @@ class QWidgetDemo(QWidget):
     ) -> None:
         super().__init__(parent=parent)
 
-        self.layout: QVBoxLayout = QVBoxLayout(parent)
+        self.layout: QVBoxLayout = QVBoxLayout()
         self.setLayout(self.layout)
 
         self.first_title = False
@@ -268,7 +275,7 @@ class QIconDemo(QWidgetDemo):
         self.layout.addLayout(self.layout_grid)
 
         icons = sorted([attr for attr in dir(QStyle) if attr.startswith("SP_")])
-        print(len(icons))
+        # print(len(icons))
 
         for i, icon in enumerate(icons):
             self.add_icon(icon, i)
@@ -475,7 +482,6 @@ class MainWindow(QMainWindow):
 
         # QIcon demo
         layout_main.addWidget(QIconDemo(self.centralwidget))
-
         layout_main.addWidget(self.te_message)
 
         # Menubar
@@ -484,12 +490,62 @@ class MainWindow(QMainWindow):
 
         # Menus
         menu_file = self.add_menu("File", self.menubar)
+        menu_dialogs = self.add_menu("Dialogs", self.menubar)
         menu_help = self.add_menu("Help", self.menubar)
 
-        self.add_action("Open", menu_file, self.open, "Open file", "Ctrl+O")
+        # Absolute path to script itself
+        self_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
+        # self.add_action("Open", menu_file, self.open, "Open file", "Ctrl+O")
+        self.add_action(
+            "Open in vscode",
+            menu_file,
+            lambda: subprocess.Popen(["code", f"{self_dir}/qtwidgetdemo"], shell=False),
+            "Open in VSCode",
+        )
+
+        # lambda: subprocess.Popen([f"{self_dir}/mpterm"], shell=False)
         menu_file.addSeparator()
         self.add_action("Quit", menu_file, self.exit, "Quit application", "Ctrl+Q")
         self.add_action("About", menu_help, lambda: AboutDialog.about(), "About")
+
+        self.add_action(
+            "File dialog",
+            menu_dialogs,
+            lambda: QFileDialog.getOpenFileNames(self, "Open file", ".", "*.*"),
+            "Open file dialog",
+        )
+        self.add_action(
+            "Color dialog",
+            menu_dialogs,
+            lambda: QColorDialog.getColor(),
+            "Color dialog",
+        )
+        self.add_action(
+            "Font dialog",
+            menu_dialogs,
+            lambda: QFontDialog.getFont(),
+            "Font dialog",
+        )
+        self.add_action(
+            "Input dialog",
+            menu_dialogs,
+            lambda: QInputDialog.getText(self, "Input dialog", "Enter text"),
+            "Input dialog",
+        )
+        self.add_action(
+            "Message box",
+            menu_dialogs,
+            lambda: QMessageBox.information(
+                self, "Message box", "This is a message box"
+            ),
+            "Message box",
+        )
+        self.add_action(
+            "Progress dialog",
+            menu_dialogs,
+            lambda: QProgressDialog("Progress dialog", "Cancel", 0, 100, self).exec_(),
+            "Progress dialog",
+        )
 
         # Statusbar
         self.statusbar = QStatusBar(self)
