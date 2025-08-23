@@ -232,8 +232,29 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider)
 		}
 		break;
 
-	case ALARM_MODE_ABOVE:
+	case CHANNEL_MODE_GREATER_THAN:
+		if (nVal > chn->tmp1)
+		{
+			chn->value = 1;
+		}
+		else
+		{
+			chn->value = 0;
+		}
+		break;
 
+	case CHANNEL_MODE_LESS_THAN:
+		if (nVal < chn->tmp1)
+		{
+			chn->value = 1;
+		}
+		else
+		{
+			chn->value = 0;
+		}
+		break;
+
+	case ALARM_MODE_ABOVE:
 		break;
 
 	default:

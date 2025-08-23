@@ -60,6 +60,13 @@ typedef enum
   CHANNEL_MODE_PID,
   CHANNEL_MODE_ALARM,
 
+  CHANNEL_MODE_LESS_THAN,
+  CHANNEL_MODE_LESS_THAN_OR_EQUAL,
+  CHANNEL_MODE_GREATER_THAN,
+  CHANNEL_MODE_GREATER_THAN_OR_EQUAL,
+  CHANNEL_MODE_EQUAL,
+  CHANNEL_MODE_NOT_EQUAL,
+
   ALARM_MODE_ABOVE,
   ALARM_MODE_BELLOW,
   ALARM_MODE_WHITHIN,
@@ -101,6 +108,8 @@ typedef enum
 #define CHANNEL_SQUARE(id, cname, cid, step) CHANNEL_INIT(id, cname, cid, CHANNEL_MODE_SQUARE, 0, step, 0)
 #define CHANNEL_PWM(id, cname, cid, con, coff) CHANNEL_INIT(id, cname, cid, CHANNEL_MODE_PWM, con, coff, 0)
 
+#define CHANNEL_GREATER_THAN(id, cname, cid, limit, rsrc) CHANNEL_INIT(id, cname, cid, CHANNEL_MODE_GREATER_THAN, limit, 0, rsrc)
+#define CHANNEL_LESS_THAN(id, cname, cid, limit, rsrc) CHANNEL_INIT(id, cname, cid, CHANNEL_MODE_LESS_THAN, limit, 0, rsrc)
 #define CHANNEL_IS_ENABLED(chn) (Bit_is_set(chn->flags, CHANNEL_FLAG_ENABLE))
 
 #ifdef __cplusplus
@@ -110,16 +119,16 @@ extern "C"
 
   typedef struct channel
   {
-    CHANNEL_VAL value;
-    CHANNEL_VAL tmp1;
-    CHANNEL_VAL tmp2;
-    CHANNEL_VAL tmp3;
+    CHANNEL_VAL value; // channel value
+    CHANNEL_VAL tmp1;  // temporary value 1
+    CHANNEL_VAL tmp2;  // temporary value 2
+    CHANNEL_VAL tmp3;  // temporary value 3
 
-    uint8_t rid;
-    char tid[16];
-    char name[NAMESIZE];
-    uint8_t flags;
-    CHANNEL_MODE mode;
+    uint8_t rid;         // channel ID
+    char tid[16];        // text ID
+    char name[NAMESIZE]; // channel name
+    uint8_t flags;       // channel flags
+    CHANNEL_MODE mode;   // channel mode
     union
     {
       struct channel *ptr; // external source channel channel
@@ -143,6 +152,11 @@ extern "C"
    */
   CHANNEL_VAL CHANNEL_GetValue(CHANNEL *chn);
 
+  /**
+   * Set value to channel.
+   * @param ch channel
+   * @param value value to be set
+   */
   void CHANNEL_SetValue(CHANNEL *chn, CHANNEL_VAL value);
 
   void CHANNEL_SetConnection(CHANNEL *chn, CHANNEL *connection);
