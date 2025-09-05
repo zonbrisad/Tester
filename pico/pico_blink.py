@@ -1,5 +1,8 @@
 """
   Simple LED blink program for Raspberry Pi Pico
+  
+  Hardware:
+  PCB LED on GPIO 25
 """
 
 from machine import Pin, Timer

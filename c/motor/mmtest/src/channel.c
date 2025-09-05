@@ -109,38 +109,46 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider)
 	case CHANNEL_MODE_NORMAL:
 		break; // chn->value = nVal; break;
 	case CHANNEL_MODE_MAX:
+		if (chn->flags & (1<<CHANNEL_FLAG_VALUE_NOT_SET)) {
+			chn->value = nVal;
+			break;
+		}
 		if (nVal > chn->value)
 			chn->value = nVal;
 		break;
 	case CHANNEL_MODE_MIN:
+		if (chn->flags & (1<<CHANNEL_FLAG_VALUE_NOT_SET)) {
+			chn->value = nVal;
+			break;
+		}
 		if (nVal < chn->value)
 			chn->value = nVal;
 		break;
 	case CHANNEL_MODE_COUNT:
-		if ((nVal > chn->tmp2) && (chn->tmp1 <= chn->tmp2))
-		{
-			chn->value++;
-		}
-		chn->tmp1 = nVal;
-		break;
+	if ((nVal > chn->tmp2) && (chn->tmp1 <= chn->tmp2))
+	{
+		chn->value++;
+	}
+	chn->tmp1 = nVal;
+	break;
 	case CHANNEL_MODE_AVERAGE:
-		//		chn->param[0] += nVal;
-		//		chn->param[1] += 1;
-		//		if (chn->param[1] >= 10) {
+	//		chn->param[0] += nVal;
+	//		chn->param[1] += 1;
+	//		if (chn->param[1] >= 10) {
 		//			chn->value = chn->param[0] / 10;
 		//			chn->param[0] = 0;
 		//			chn->param[1] = 0;
 		//		}
-
+		
 		break;
-	case CHANNEL_MODE_RATE_LIMIT:
+		case CHANNEL_MODE_RATE_LIMIT:
 		//		  rate = Abs(chn->value - nVal);
 		rate = Clamp(nVal - chn->value, 0 - chn->tmp1, chn->tmp1);
 		chn->value += rate;
 		//		chn->value += (chn->tmp1 > rate) ? (rate) : chn->tmp1;
-
+		
 		break;
-	case CHANNEL_MODE_LIMIT:
+		case CHANNEL_MODE_LIMIT:
 		chn->value = nVal;
 		if (nVal > chn->tmp1)
 		{ // max value
@@ -151,51 +159,51 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider)
 			chn->value = chn->tmp2;
 		}
 		break;
-	case CHANNEL_MODE_DELAY:
+		case CHANNEL_MODE_DELAY:
 		if ((nVal > chn->tmp2) && (chn->tmp1 <= chn->tmp2))
 		{
 			chn->value++;
 		}
 		chn->tmp1 = nVal;
 		break;
-	case CHANNEL_MODE_TIMER:
+		case CHANNEL_MODE_TIMER:
 		if (chn->value > 0)
 		{
 			chn->value = chn->value - 1;
 		}
 		break;
-	case CHANNEL_MODE_INTEGRATE:
+		case CHANNEL_MODE_INTEGRATE:
 		chn->value += nVal / divider;
 		break;
-	case CHANNEL_MODE_DERIVATE:
+		case CHANNEL_MODE_DERIVATE:
 		chn->value = nVal - chn->tmp1;
 		chn->tmp1 = nVal;
 		break;
-	case CHANNEL_MODE_FILTER:
+		case CHANNEL_MODE_FILTER:
 		//		FILTER_add(chn->filter, nVal);
 		//		chn->value = FILTER_value(chn->filter);
 		break;
-
-	case CHANNEL_MODE_ADD:
+		
+		case CHANNEL_MODE_ADD:
 		chn->value = nVal + chn->tmp1;
 		break;
-	case CHANNEL_MODE_SUBTRACT:
+		case CHANNEL_MODE_SUBTRACT:
 		chn->value = nVal - chn->tmp1;
 		break;
-
-	case CHANNEL_MODE_DIVIDE:
+		
+		case CHANNEL_MODE_DIVIDE:
 		chn->value = nVal / chn->tmp1;
 		break;
-
-	case CHANNEL_MODE_MULTIPLY:
+		
+		case CHANNEL_MODE_MULTIPLY:
 		chn->value = nVal * chn->tmp1;
 		break;
-
-	case CHANNEL_MODE_SINE:
+		
+		case CHANNEL_MODE_SINE:
 		chn->value += chn->tmp2;
 		break;
-
-	case CHANNEL_MODE_SQUARE:
+		
+		case CHANNEL_MODE_SQUARE:
 		chn->tmp1 += 1;
 		if (chn->tmp1 > chn->tmp2)
 		{
@@ -203,9 +211,9 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider)
 			chn->value ^= 1;
 		}
 		// chn->value += chn->tmp2;
-
+		
 		break;
-	case CHANNEL_MODE_PWM:
+		case CHANNEL_MODE_PWM:
 		if (chn->tmp3 < 0)
 		{
 			chn->value = 0;
@@ -220,8 +228,8 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider)
 			chn->tmp3 = 0 - chn->tmp2;
 		}
 		break;
-
-	case CHANNEL_MODE_INVERSE:
+		
+		case CHANNEL_MODE_INVERSE:
 		if (nVal > 0)
 		{
 			chn->value = 0;
@@ -231,8 +239,8 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider)
 			chn->value = 1;
 		}
 		break;
-
-	case CHANNEL_MODE_GREATER_THAN:
+		
+		case CHANNEL_MODE_GREATER_THAN:
 		if (nVal > chn->tmp1)
 		{
 			chn->value = 1;
@@ -242,8 +250,8 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider)
 			chn->value = 0;
 		}
 		break;
-
-	case CHANNEL_MODE_LESS_THAN:
+		
+		case CHANNEL_MODE_LESS_THAN:
 		if (nVal < chn->tmp1)
 		{
 			chn->value = 1;
@@ -253,13 +261,15 @@ void CHANNEL_Update(CHANNEL *chn, CHANNEL_VAL newValue, uint8_t divider)
 			chn->value = 0;
 		}
 		break;
-
-	case ALARM_MODE_ABOVE:
+		
+		case ALARM_MODE_ABOVE:
 		break;
-
-	default:
+		
+		default:
 		break;
 	}
+	// clear when first value set
+	chn->flags &= ~(1<<CHANNEL_FLAG_VALUE_NOT_SET);
 }
 
 void CHANNEL_SetConnection(CHANNEL *chn, CHANNEL *connection)

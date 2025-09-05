@@ -79,12 +79,13 @@ typedef enum
 {
   CHANNEL_FLAG_ENABLE = 0,
   CHANNEL_FLAG_OVERRIDE,
-  CHANNEL_FLAG_CLEARONLOG,
-  CHANNEL_FLAG_OUTOFBOUND,
-  CHANNEL_FLAG_VALUE_NA
+  CHANNEL_FLAG_CLEAR_ON_LOG,
+  CHANNEL_FLAG_OUT_OF_BOUND,
+  CHANNEL_FLAG_VALUE_NA,
+  CHANNEL_FLAG_VALUE_NOT_SET // indicates that value has never been set, used by MIN/MAX functions
 } CHANNEL_FLAGS;
 
-#define CHANNEL_INIT(id, cname, cid, cmode, ctmp1, ctmp2, rsrc) {.rid = id, .value = 0, .tmp1 = ctmp1, .tmp2 = ctmp2, .tmp3 = 0, .name = cname, .tid = cid, .mode = cmode, .src.init = rsrc, .flags = (1 << CHANNEL_FLAG_ENABLE)}
+#define CHANNEL_INIT(id, cname, cid, cmode, ctmp1, ctmp2, rsrc) {.rid = id, .value = 0, .tmp1 = ctmp1, .tmp2 = ctmp2, .tmp3 = 0, .name = cname, .tid = cid, .mode = cmode, .src.init = rsrc, .flags = (1 << CHANNEL_FLAG_ENABLE) | (1 << CHANNEL_FLAG_VALUE_NOT_SET)}
 
 #define CHANNEL_NORMAL(id, cname, cid, cmode, rsrc) CHANNEL_INIT(id, cname, cid, cmode, 0, 0, rsrc)
 

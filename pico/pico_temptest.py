@@ -1,7 +1,8 @@
 """
   DS18b20 program for Raspberry Pi Pico
   
-  sensors attached to pin 0
+  Hardware:
+  DS18b20 attached to GPIO 0
 """
 
 from machine import Pin, Timer

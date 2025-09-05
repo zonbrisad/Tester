@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# ----------------------------------------------------------------------------
+"""
 #
 # Testprogram for Led class
 #
@@ -10,8 +9,9 @@
 # License:
 # Python:   >= Micropython
 #
-# ----------------------------------------------------------------------------
-
+# Hardware:
+#  PCB LED on GPIO 25
+"""
 from machine import Pin, Timer
 from led import *
 

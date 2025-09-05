@@ -219,7 +219,7 @@ int main(int argc, char **argv)
 			temptest(sensor->filename[0]);
 			safeExit(0);
 		}
-		temptest("/sys/class/thermal/thermal_zone0/temp");
+		temptest("/sys/class/hwmon/hwmon1/temp1_input");
 		safeExit(0);
 	}
 
