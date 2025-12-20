@@ -9,7 +9,7 @@
 # File:     tut_argparse.py
 # Author:   Peter Malmberg  <peter.malmberg@gmail.com>
 # Date:     2022-06-25
-# License:  
+# License:
 #
 # ----------------------------------------------------------------------------
 
@@ -43,7 +43,7 @@ def main():
                         help="Print version information",
                         version=f"{app_name} {app_version}")
 
-     # Some examples of parameters (rename or remove unwanted parameters)
+    # Some examples of parameters (rename or remove unwanted parameters)
     parser.add_argument("-s", "--storetrue",
                         action="store_true",
                         help="Boolean type argument")
@@ -74,13 +74,21 @@ def main():
                         type=int,
                         choices=range(1, 10),
                         help="Integer choices argument")
+    parser.add_argument("-a", "--append",
+                        action="append",
+                        type=str,
+                        help="Append string to list",
+                        dest='astring',
+                        default=[])
+
+    # Parse arguments
 
     args = parser.parse_args()
     print(args)
     if hasattr(args, "string"):
         print(f"String argument: {args.string}")
         return
-    
+
     parser.print_help()
 
 
