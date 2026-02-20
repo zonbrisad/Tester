@@ -83,7 +83,8 @@ const PROGMEM char cc[][10] = {
 // 	E_CYAN, E_GRAY, E_DARKGRAY, E_BR_RED, E_BR_GREEN, E_BR_YELLOW,
 // 	E_BR_BLUE, E_BR_MAGENTA, E_BR_CYAN, E_WHITE};
 
-void fill_screen(vod)
+void fill_screen(void);
+void fill_screen(void)
 {
 	for (size_t i = 1; i <= 24; i++)
 	{
@@ -157,19 +158,22 @@ void cmd_insert(char *args)
 	printf(E_RESTORE_CURSOR_POS);
 	printf_P(PSTR("\n"));
 }
+
+void print_bar(int l, int max);
 void print_bar(int l, int max)
 {
 	size_t i;
 	char buf[96];
 	for (i = 0; i < l; i++)
 	{
-		buf[] = '=';
+		buf[i] = '=';
 	}
 	buf[l] = '\0';
 	printf("  [%*s]  \n", max, buf);
 }
 
 #define BAR 30
+void print_bar2(int l, int max);
 void print_bar2(int l, int max)
 {
 	char buf[96];
