@@ -244,26 +244,27 @@ void cmd_mrtcp(char *args)
 
 void cmd_c16(char *args)
 {
+	char buf[192];
+	char *p;
 	UNUSED(args);
 
+	p = buf;
+	
 	for (size_t i = 0; i < 16; i++)
 	{
-		printf(E_FG256P " %3d " E_RESET, i, i);
-		if (i == 7)
+		printf(E_FG256P " %2d " E_RESET, i, i);
+		p += sprintf(p, E_BG256P " %2d " E_RESET, i, i);
+		p++;
+		p[0] = ' ';
+		p--;
+
+		if ((i == 7) || (i == 15))
 		{
-			printf("\n");
+			p = buf;
+			printf("       %s\n", buf);
 		}
 	}
-	printf("\n\n");
-	for (size_t i = 0; i < 16; i++)
-	{
-		printf(E_BG256P " %3d " E_RESET, i, i);
-		if (i == 7)
-		{
-			printf("\n");
-		}
-	}
-	printf("\n\n");
+	printf("\n");
 }
 
 void cmd_c256(char *args)
@@ -279,8 +280,8 @@ void cmd_c256(char *args)
 	for (size_t i = 16; i < 256; i++)
 	{
 
-		printf(E_FG256P " %3d " E_RESET, i, i);
-		p += sprintf(p, E_BG256P " %3d " E_RESET, i, i);
+		printf(E_FG256P " %4d " E_RESET, i, i);
+		p += sprintf(p, E_BG256P " %4d " E_RESET, i, i);
 		p++;
 		p[0] = ' ';
 		p--;
