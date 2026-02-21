@@ -296,8 +296,23 @@ void cmd_attr(char *args)
 {
 	UNUSED(args);
 	printf("Text attributes\n");
-	printf("Normal text\n");
-	printf(E_BOLD "Bold text\n" E_RESET);
+	printf(E_RESET "Normal text\n");
+	printf(E_BOLD "Bold text" E_RESET "\n");
+	printf(E_DIM "Dim text" E_RESET "\n");
+	printf(E_ITALIC "Italic text" E_RESET "\n");
+	printf(E_UNDERLINE "Underline text" E_RESET "\n");
+	printf(E_BLINK "Blink text" E_RESET "\n");
+	printf(E_REVERSE "Reverse text" E_RESET "\n");
+	printf(E_CROSSED "Crossed text" E_RESET "\n");
+	printf(E_OVERLINED "Overlined text" E_RESET "\n");
+
+/*
+ * Keep this code!
+ * It produce a weird rendering error from attribute Underline and forward
+ * Probably a bug in mpterm terminal renderer.
+*/
+/*
+  printf(E_BOLD "Bold text\n" E_RESET);
 	printf(E_DIM "Dim text\n" E_RESET);
 	printf(E_ITALIC "Italic text\n" E_RESET);
 	printf(E_UNDERLINE "Underline text\n" E_RESET);
@@ -305,6 +320,7 @@ void cmd_attr(char *args)
 	printf(E_REVERSE "Reverse text\n" E_RESET);
 	printf(E_CROSSED "Crossed text\n" E_RESET);
 	printf(E_OVERLINED "Overlined text\n" E_RESET);
+*/
 }
 
 void print_rows(int r)
