@@ -29,11 +29,7 @@ void hw_init(void);
 
 #define UART_BAUD_RATE 9600
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
-static FILE mystdout = FDEV_SETUP_STREAM(uart_putc, NULL, _FDEV_SETUP_WRITE);
-#pragma GCC diagnostic pop
-
+static FILE mystdout = FDEV_SETUP_STREAM((void*)uart_putc, NULL, _FDEV_SETUP_WRITE);
 
 void hw_init(void)
 {
