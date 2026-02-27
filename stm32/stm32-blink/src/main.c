@@ -44,6 +44,23 @@
  *------------------------------------------------------------------
  */
 
+void delay_us(uint32_t us) {
+  uint32_t count;
+  
+  count = (SystemCoreClock / 10000000) * us / 5; // Adjust for loop overhead
+  count -= 10; // Compensate for function call overhead
+  while(count--) {
+    __NOP(); // No operation, just waste time
+  }
+}
+
+void delay_ms(uint32_t ms) {
+  while(ms--) {
+    delay_us(1000);
+  }
+}
+
+
 int _write (int fd, const void *buf, size_t count) {
   return 0;
 }
@@ -96,46 +113,54 @@ void hwInit() {
 
 void checkResetCause() {
   if (PWR_GetFlagStatus(PWR_FLAG_SB))
-  printf("System resumed from STANDBY mode");
+  printf("System resumed from STANDBY mode\n");
  
   if (RCC_GetFlagStatus(RCC_FLAG_SFTRST))
-    printf("Software Reset");
+    printf("Software Reset\n");
  
   if (RCC_GetFlagStatus(RCC_FLAG_PORRST))
-    printf("Power-On-Reset");
+    printf("Power-On-Reset\n");
  
   if (RCC_GetFlagStatus(RCC_FLAG_PINRST)) // Always set, test other cases first
-    printf("External Pin Reset");
+    printf("External Pin Reset\n");
  
   if (RCC_GetFlagStatus(RCC_FLAG_IWDGRST) != RESET)
-    printf("Watchdog Reset");
+    printf("Watchdog Reset\n");
  
   if (RCC_GetFlagStatus(RCC_FLAG_WWDGRST) != RESET)
-    printf("Window Watchdog Reset");
+    printf("Window Watchdog Reset\n");
  
   if (RCC_GetFlagStatus(RCC_FLAG_LPWRRST) != RESET)
-    printf("Low Power Reset");
+    printf("Low Power Reset\n");
    
 //if (RCC_GetFlagStatus(RCC_FLAG_BORRST) != RESET) // F4 Usually set with POR
 //  printf("Brown-Out Reset");
    
   RCC_ClearFlag(); // The flags cleared after use
 }
+
+void us_blink() {
+  while (1) {
+    GPIOC->ODR ^= GPIO_Pin_13;
+    delay_us(20);
+  }
+}
+
 int main() {
 	int i;
 	int j;
   hwInit();
 	
-  printf("\nSTM32 Example startup...\n");
-  
+  printf("\nSTM32 Example startup...\n\n");
+  us_blink();
 	checkResetCause();
   j=0;
+  
 	while(1){
     
     printf("Blink %d\n",j);
 		GPIOC->ODR ^= GPIO_Pin_13;
-    for(i=0;i<0x40000;i++) {
-    }
+    delay_ms(400);
 
 		j++;
 	}
