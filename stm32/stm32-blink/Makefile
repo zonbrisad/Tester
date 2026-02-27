@@ -563,7 +563,7 @@ debug: ##D Debug program
 
 
 flash: ##D Write program to flash memory
-	echo
+	@openocd -f interface/stlink.cfg -f target/stm32f1x.cfg -c "program $(TRGFILE) verify reset exit"
 	
 finfo: ##D Read information from MCU via st-link
 	@st-info --probe

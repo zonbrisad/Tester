@@ -152,7 +152,7 @@ int main() {
   hwInit();
 	
   printf("\nSTM32 Example startup...\n\n");
-  us_blink();
+ // us_blink();
 	checkResetCause();
   j=0;
   
@@ -160,7 +160,7 @@ int main() {
     
     printf("Blink %d\n",j);
 		GPIOC->ODR ^= GPIO_Pin_13;
-    delay_ms(400);
+    delay_ms(200);
 
 		j++;
 	}
