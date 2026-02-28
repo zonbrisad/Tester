@@ -39,6 +39,13 @@
   * @retval None
   */
 
+
+void hwInit(void);
+void checkResetCause(void);
+void delay_us(uint32_t us);
+void delay_ms(uint32_t ms);
+void us_blink(void);
+
 /**
  * Code
  *------------------------------------------------------------------
@@ -60,11 +67,6 @@ void delay_ms(uint32_t ms) {
   }
 }
 
-
-int _write (int fd, const void *buf, size_t count) {
-  return 0;
-}
-
 void hwInit() {
 /* USART configuration structure for USART1 */
   USART_InitTypeDef uart1; 
@@ -77,7 +79,7 @@ void hwInit() {
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA |
                          RCC_APB2Periph_GPIOB |
 												 RCC_APB2Periph_GPIOC |
-												 RCC_APB2Periph_USART1 ,ENABLE);
+												 RCC_APB2Periph_USART1, ENABLE);
 
 	/* Configure the GPIO_LED pin */
 	gpioc.GPIO_Pin   = GPIO_Pin_13;
@@ -147,7 +149,6 @@ void us_blink() {
 }
 
 int main() {
-	int i;
 	int j;
   hwInit();
 	

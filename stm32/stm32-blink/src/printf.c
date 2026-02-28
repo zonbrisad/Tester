@@ -1,14 +1,33 @@
 /**************************************************************************//*****
- * @file     printf.c
- * @brief    Implementation of several stdio.h methods, such as printf(), 
- *           sprintf() and so on. This reduces the memory footprint of the
- *           binary when using those methods, compared to the libc implementation.
- ********************************************************************************/
+* @file     printf.c
+* @brief    Implementation of several stdio.h methods, such as printf(), 
+*           sprintf() and so on. This reduces the memory footprint of the
+*           binary when using those methods, compared to the libc implementation.
+********************************************************************************/
 #include <stdio.h>
 #include <stdarg.h>
 
 #include "stm32f10x_usart.h"
 
+void PrintChar(char c);
+signed int PutChar(char *pStr, char c);
+signed int PutString(char *pStr, const char *pSource);
+signed int PutUnsignedInt(
+       char *pStr,
+       char fill,
+       signed int width,
+       unsigned int value);
+signed int PutSignedInt(
+       char *pStr,
+       char fill,
+       signed int width,
+       signed int value);
+signed int PutHexa(
+       char *pStr,
+       char fill,
+       signed int width,
+       unsigned char maj,
+       unsigned int value);
 /**
  * @brief  Transmit a char, if you want to use printf(), 
  *         you need implement this function
@@ -28,12 +47,12 @@ void PrintChar(char c)
 }
 
 /** Maximum string size allowed (in bytes). */
-#define MAX_STRING_SIZE         100
+#define MAX_STRING_SIZE         256
 
 
 /** Required for proper compilation. */
-struct _reent r = {0, (FILE *) 0, (FILE *) 1, (FILE *) 0};
-struct _reent *_impure_ptr = &r;
+// struct _reent r = {0, (FILE *) 0, (FILE *) 1, (FILE *) 0};
+// struct _reent *_impure_ptr = &r;
 
 /**
  * @brief  Writes a character inside the given string. Returns 1.
@@ -271,8 +290,8 @@ signed int vsnprintf(char *pStr, size_t length, const char *pFormat, va_list ap)
 {
     char          fill;
     unsigned char width;
-    signed int    num = 0;
-    signed int    size = 0;
+    size_t    num = 0;
+    size_t    size = 0;
 
     /* Clear the string */
     if (pStr) {
