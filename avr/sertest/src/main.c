@@ -136,33 +136,33 @@ void cmd_insert(char* args) {
     printf(E_CUR_POS(5, 1));
     _delay_ms(300);
     for (size_t i = 0; i < 10; i++) {
-        printf(E_INSERT_LINE);
+        printf_P(PSTR(E_INSERT_LINE));
         _delay_ms(300);
     }
-    printf(E_RESTORE_CURSOR_POS);
+    printf_P(PSTR(E_RESTORE_CURSOR_POS));
     printf_P(PSTR("\n"));
 }
 
-void print_bar(int l, int max);
-void print_bar(int l, int max) {
-    size_t i;
-    char buf[96];
-    for (i = 0; i < l; i++) {
-        buf[i] = '=';
-    }
-    buf[l] = '\0';
-    printf("  [%*s]  \n", max, buf);
-}
-
-#define BAR 30
-void print_bar2(int l, int max);
-void print_bar2(int l, int max) {
+void print_bar(size_t l, size_t max);
+void print_bar(size_t l, size_t max) {
     char buf[96];
     for (size_t i = 0; i < l; i++) {
         buf[i] = '=';
     }
     buf[l] = '\0';
-    printf("  [%-30s]  %2d", buf, l);
+    printf_P(PSTR("  [%*s]  \n"), max, buf);
+    // printf("  [%*s]  \n", max, buf);
+}
+
+#define BAR 30
+void print_bar2(size_t l, size_t max);
+void print_bar2(size_t l, size_t max) {
+    char buf[96];
+    for (size_t i = 0; i < l; i++) {
+        buf[i] = '=';
+    }
+    buf[l] = '\0';
+    printf_P(PSTR("  [%-30s]  %2d"), buf, l);
 }
 
 void cmd_bar(char* args) {
@@ -180,7 +180,7 @@ void cmd_mrtcu(char* args) {
     UNUSED(args);
     for (size_t j = 0; j < 20; j++) {
         for (size_t i = 0; i < MRT; i++) {
-            printf("Row  %2d %2d\n", i, j + i);
+            printf_P(PSTR("Row  %2d %2d\n"), i, j + i);
         }
 
         if (j < 19) {
@@ -197,13 +197,13 @@ void cmd_mrtcp(char* args) {
     UNUSED(args);
     for (size_t j = 0; j < 20; j++) {
         for (size_t i = 0; i < MRT; i++) {
-            printf("Row  %2d %2d\n", i, j + i);
+            printf_P(PSTR("Row  %2d %2d\n"), i, j + i);
         }
 
         if (j < 19) printf(E_CUR_POS(1, 1));
         _delay_ms(100);
     }
-    printf("\n");
+    printf_P(PSTR("\n"));
 }
 
 #define E_FG256(x) "\e[38;5;" #x "m"
@@ -227,7 +227,7 @@ void cmd_c16(char* args) {
 
         if ((i == 7) || (i == 15)) {
             p = buf;
-            printf("       %s\n", buf);
+            printf_P(PSTR("       %s\n"), buf);
         }
     }
     printf("\n");
@@ -243,7 +243,7 @@ void cmd_c256(char* args) {
     p = buf;
 
     for (size_t i = 16; i < 256; i++) {
-        printf(E_FG256P " %4d " E_RESET, i, i);
+        printf_P(PSTR(E_FG256P " %4d " E_RESET), i, i);
         p += sprintf(p, E_BG256P " %4d " E_RESET, i, i);
         p++;
         p[0] = ' ';
@@ -257,16 +257,16 @@ void cmd_c256(char* args) {
 
 void cmd_attr(char* args) {
     UNUSED(args);
-    printf("Text attributes\n");
-    printf(E_RESET "Normal text\n");
-    printf(E_BOLD "Bold text" E_RESET "\n");
-    printf(E_DIM "Dim text" E_RESET "\n");
-    printf(E_ITALIC "Italic text" E_RESET "\n");
-    printf(E_UNDERLINE "Underline text" E_RESET "\n");
-    printf(E_BLINK "Blink text" E_RESET "\n");
-    printf(E_REVERSE "Reverse text" E_RESET "\n");
-    printf(E_CROSSED "Crossed text" E_RESET "\n");
-    printf(E_OVERLINED "Overlined text" E_RESET "\n");
+    printf_P(PSTR("Text attributes\n"));
+    printf_P(PSTR(E_RESET "Normal text\n"));
+    printf_P(PSTR(E_BOLD "Bold text" E_RESET "\n"));
+    printf_P(PSTR(E_DIM "Dim text" E_RESET "\n"));
+    printf_P(PSTR(E_ITALIC "Italic text" E_RESET "\n"));
+    printf_P(PSTR(E_UNDERLINE "Underline text" E_RESET "\n"));
+    printf_P(PSTR(E_BLINK "Blink text" E_RESET "\n"));
+    printf_P(PSTR(E_REVERSE "Reverse text" E_RESET "\n"));
+    printf_P(PSTR(E_CROSSED "Crossed text" E_RESET "\n"));
+    printf_P(PSTR(E_OVERLINED "Overlined text" E_RESET "\n"));
 
     /*
      * Keep this code!
@@ -287,7 +287,7 @@ void cmd_attr(char* args) {
 
 void print_rows(int r) {
     for (size_t i = 1; i <= r; i++) {
-        printf("Row %d\n", i);
+        printf_P(PSTR("Row %d\n"), i);
     }
 }
 
@@ -314,10 +314,13 @@ void cmd_help(char* args) {
 ISR(TIMER1_COMPA_vect) {
     TIMER1_RELOAD(0);
     LEF_Timer_update(&timer1);
+	ARDUINO_LED_SET(LEF_Led_update(&led));
 }
 
 void hw_init(void) {
     stdout = &mystdout;
+
+	ARDUINO_LED_INIT();
 
     // Timer 1 (16 bit)
     TIMER1_CLK_PRES_256();  // set prescaler to 1/1024
@@ -333,14 +336,14 @@ int main() {
     uint16_t ch;
 	
 	LEF_init();
+	LEF_Led_init(&led, LED_BLINK);
     LEF_Timer_init(&timer1, EVENT_Timer1);
     LEF_Timer_start_repeat(&timer1, 10);
-    // LEF_Cli_init(commands, LARRAY_LENGTH(commands));
 	LEF_CLI_INIT(commands);
 
     hw_init();
 
-    printf("\n\nArduino serial port testprogram\n\n");
+    printf_P(PSTR("\n\nArduino serial port testprogram\n\n"));
 
     print_sysinfo();
 
