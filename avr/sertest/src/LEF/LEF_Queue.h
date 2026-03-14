@@ -20,11 +20,10 @@
  * Source repository:
  * https://github.com/zonbrisad/LEF
  *
- * 1 tab = 2 spaces
+ * 
  */
 
-#ifndef LEF_QUEUE_H
-#define LEF_QUEUE_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,9 +34,6 @@ extern "C" {
 #include "LEF.h"
 
 // Macros -----------------------------------------------------------------
-
-
-#define LEF_queue_element LEF_Event // Temporary macro until all instances changed
 	
 // Typedefs ---------------------------------------------------------------
 
@@ -48,8 +44,6 @@ typedef struct {
 	uint8_t func;
 } LEF_Event;
 
-
-	
 typedef struct {
 	LEF_Event que[LEF_QUEUE_LENGTH];            // queue it self
 	uint8_t head;
@@ -57,8 +51,6 @@ typedef struct {
 } LEF_EventQueue;
 
 // Variables --------------------------------------------------------------
-
-//extern LEF_EventQueue StdQueue;
 
 // Functions --------------------------------------------------------------
 
@@ -78,21 +70,9 @@ void LEF_QueueWait(LEF_EventQueue *queue, LEF_Event *event);
  */
 uint16_t LEF_QueueCnt(LEF_EventQueue *queue);
 
-/*
-void LEF_QueueStdSend(LEF_Event *event);
-
-
-void LEF_QueueStdWait(LEF_Event *event);
-
-	
-void LEF_QueueStdClear(void);
-
-uint16_t LEF_QueueStdCnt(void);
-
-*/
 
 #ifdef __cplusplus
 } //end brace for extern "C"
 #endif
-#endif
+
 

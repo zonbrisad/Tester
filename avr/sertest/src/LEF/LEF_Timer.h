@@ -19,17 +19,17 @@
  *
  * https://github.com/zonbrisad/LEF
  *
- * 1 tab = 2 spaces
+ * 
  */
 
-#ifndef LEF_TIMER_H
-#define LEF_TIMER_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 // Includes ---------------------------------------------------------------
+#include "LEF.h"
 
 // Macros -----------------------------------------------------------------
 
@@ -54,23 +54,20 @@ typedef struct {
  * --------------------------------------------------------------------------
  */
 
-void LEF_TimerInit(LEF_Timer *timer, LEF_EventId id);
+void LEF_Timer_init(LEF_Timer *timer, LEF_EventId id);
 
-void LEF_TimerStartRepeat(LEF_Timer *timer, uint16_t ticks);
+void LEF_Timer_start_repeat(LEF_Timer *timer, uint16_t ticks);
 
-void LEF_TimerStartSingle(LEF_Timer *timer, uint16_t ticks);
+void LEF_Timer_start_single(LEF_Timer *timer, uint16_t ticks);
 
-void LEF_TimerStop(LEF_Timer *timer);
+void LEF_Timer_stop(LEF_Timer *timer);
 	
-//void LEF_TimerUpdate(LEF_Timer *timer, LEF_EventId event);
-void LEF_TimerUpdate(LEF_Timer *timer);
+void LEF_Timer_update(LEF_Timer *timer);
 
-//void LEF_TimerReset(LEF_Timer *timer);
-
-
+//void LEF_Timer_reset(LEF_Timer *timer);
 
 #ifdef __cplusplus
 } //end brace for extern "C"
 #endif
-#endif
+
 

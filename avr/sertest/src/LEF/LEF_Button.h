@@ -14,8 +14,7 @@
  */
 
         
-#ifndef _LEF_BUTTON_H_
-#define _LEF_BUTTON_H_
+#pragma once
 
 #include "LEF.h"
 
@@ -38,8 +37,6 @@ void LEF_Button_init(LEF_Button *button, LEF_EventId id);
 void LEF_Button_update(LEF_Button *button, uint8_t state);
 
 void LEF_Button_free(LEF_Button *button);
-
-#endif // _LEF_BUTTON_H_ 
         
 #ifdef __cplusplus
 } //end brace for extern "C"

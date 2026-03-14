@@ -20,18 +20,18 @@
  * Source repository:
  * https://github.com/zonbrisad/LEF
  *
- * 1 tab = 2 spaces
+ * 
  */
 
-#ifndef LEF_LED_H
-#define LEF_LED_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 // Includes ---------------------------------------------------------------
-#include <stdint.h>
+#include "LEF.h"
+
 // Macros -----------------------------------------------------------------
 
 // Typedefs ---------------------------------------------------------------
@@ -39,6 +39,8 @@ extern "C" {
 typedef enum {
 	LED_OFF = 0, 
 	LED_ON,
+	
+	LED_SLOW_BLINK,
 	LED_BLINK,
 	LED_FAST_BLINK,
 
@@ -46,29 +48,29 @@ typedef enum {
 	LED_DOUBLE_BLINK,
 	LED_TRIPPLE_BLINK,
 
+	LED_BLIP,
+	LED_SLOW_BLIP,
+
 	LED_LAST               // This state must always be the last in the enum
 } LED_STATES;
 
 typedef struct {
 	uint8_t mode;
-	int8_t cnt;
+	int16_t cnt;
 } LEF_Led;
 
 // Variables --------------------------------------------------------------
 
 // Functions --------------------------------------------------------------
 
-void LEF_LedInit(LEF_Led *led, LED_STATES mode);
-//void LEF_LedInit(LEF_Led *led);
+void LEF_Led_init(LEF_Led *led, LED_STATES mode);
 
-uint8_t LEF_LedUpdate(LEF_Led *led);
+uint8_t LEF_Led_update(LEF_Led *led);
 
-void LEF_LedSetState(LEF_Led *led, LED_STATES state);
-
-
+void LEF_Led_set(LEF_Led *led, LED_STATES state);
 
 #ifdef __cplusplus
 } //end brace for extern "C"
 #endif
-#endif
+
 

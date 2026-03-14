@@ -1,5 +1,5 @@
 /**
- * LEF - Lightweiht Event Framework
+ * LEF - Lightweight Event Framework
  *
  * This file is part of LEF distribution
  *
@@ -19,7 +19,7 @@
  *
  * https://github.com/zonbrisad/LEF
  *
- * 1 tab = 2 spaces
+ * 
  */
 
 // Includes ---------------------------------------------------------------
@@ -35,15 +35,15 @@
 // Code -------------------------------------------------------------------
 
 
-void LEF_TimerInit(LEF_Timer *timer, LEF_EventId id) {
+void LEF_Timer_init(LEF_Timer *timer, LEF_EventId id) {
 	timer->id = id;
   timer->counter = 0;
   timer->reload   = 0;
 }
 
 
-void LEF_TimerUpdate(LEF_Timer *timer) {
-	LEF_queue_element qe;
+void LEF_Timer_update(LEF_Timer *timer) {
+	LEF_Event qe;
 
   ATOMIC_BLOCK(ATOMIC_FORCEON) {
   if (timer->counter>0) {
@@ -60,7 +60,7 @@ void LEF_TimerUpdate(LEF_Timer *timer) {
 }
 
 
-void LEF_TimerStartRepeat(LEF_Timer *timer, uint16_t ticks) {
+void LEF_Timer_start_repeat(LEF_Timer *timer, uint16_t ticks) {
   ATOMIC_BLOCK(ATOMIC_FORCEON) {
     timer->reload   = ticks;
     timer->counter  = ticks;
@@ -68,7 +68,7 @@ void LEF_TimerStartRepeat(LEF_Timer *timer, uint16_t ticks) {
 }
 
 
-void LEF_TimerStartSingle(LEF_Timer *timer, uint16_t ticks) {
+void LEF_Timer_start_single(LEF_Timer *timer, uint16_t ticks) {
   ATOMIC_BLOCK(ATOMIC_FORCEON) {
       timer->reload   = 0;
       timer->counter = ticks;
@@ -76,7 +76,7 @@ void LEF_TimerStartSingle(LEF_Timer *timer, uint16_t ticks) {
 }
 
 
-void LEF_TimerStop(LEF_Timer *timer) {
+void LEF_Timer_stop(LEF_Timer *timer) {
   ATOMIC_BLOCK(ATOMIC_FORCEON) {
         timer->reload   = 0;
         timer->counter  = 0;

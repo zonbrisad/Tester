@@ -45,13 +45,15 @@ void LEF_Rotary_update(LEF_Rotary *rotary, uint8_t clk, uint8_t dt) {
 	if ((rotary->clk & 0x3) == 2) {
 		if (dt) 
 			event.func = 0;
-		else
+		else 
 			event.func = 1;		
-			LEF_Send(&event);
+		
+		LEF_Send(&event);
 	}
 
 }
 
+void LEF_Rotary_update_alt(LEF_Rotary *rotary, uint8_t clk , uint8_t dt);
 void LEF_Rotary_update_alt(LEF_Rotary *rotary, uint8_t clk , uint8_t dt) {
 	LEF_Event event;
 	event.id = rotary->id;

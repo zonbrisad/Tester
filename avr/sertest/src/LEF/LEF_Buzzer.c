@@ -20,7 +20,7 @@
  * Source repository:
  * https://github.com/zonbrisad/LEF
  *
- * 1 tab = 2 spaces
+ * 
  */
 
 // Includes ---------------------------------------------------------------
@@ -66,13 +66,14 @@ void LEF_Buzzer_set(LEF_Buzzer_mode state) {
 	buz_state = state;	
 }
 
-void LEF_Buzzer(uint16_t duration, uint16_t pause, uint16_t repeat) {
+void LEF_Buzzer_beep(uint16_t duration, uint16_t pause, uint16_t repeat) {
 	buz_duration = duration;
 	buz_pause = pause;
 	buz_repeat = repeat;
 
 	buz_cnt = 0;
 	buz_rep = 0;
+	buz_state = LEF_BUZZER_CUSTOM;
 }
 
 int8_t LEF_Beep(uint16_t duration, uint16_t pause, uint16_t repeat);
@@ -141,7 +142,9 @@ bool LEF_Buzzer_update() {
 	 case LEF_BUZZER_BRP:
 		return LEF_Beep(1, 1, 20);
 		break;
-
+	 case LEF_BUZZER_CUSTOM:
+		return LEF_Beep(buz_duration, buz_pause, buz_repeat);
+		;
 		
 	 default: break; //return 0;
 		

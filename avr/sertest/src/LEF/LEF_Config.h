@@ -19,58 +19,69 @@
  *
  * https://github.com/zonbrisad/LEF
  *
- * 1 tab = 2 spaces
+ * 
  */
 
-#ifndef LEF_CONFIG_H
-#define LEF_CONFIG_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 
-
-
 // StdQue settings --------------------------------------------------------
 
-#define LEF_QUEUE_LENGTH 10  /**< Length of LEF std queue */
+#define LEF_QUEUE_LENGTH                10  /**< Length of LEF std queue */
 
-	
 // Cli settings -----------------------------------------------------------
+#define LEF_CLI_BUF_LENGTH              32  /**< Length of CLI input buffer */
+#define LEF_CLI_PROMPT            "LEF > "
 
-#define LEF_CLI_BUF_LENGTH   32
-#define LEF_CLI_PROMPT      "ASPT > "
-
-#define LEF_CLI_CMD_LENGTH   12
-#define LEF_CLI_DESC_LENGTH  32
+#define LEF_CLI_CMD_LENGTH              12
+#define LEF_CLI_DESC_LENGTH             32
+#define LEF_CLI_HISTORY                  5 /**< Number of previous commands to store in history */
 
 
 // Buzzer settings --------------------------------------------------------
 
-#define LEF_BUZZER_BEEP_DURATION       40  // (cycles)
-#define LEF_BUZZER_SHORT_BEEP_DURATION 10  // (cycles)
-#define LEF_BUZZER_BLIP_DURATION        2  // (cycles)
-#define LEF_BUZZER_LONG_BEEP_DURATION  80  // (cycles)
-#define LEF_BUZZER_PAUSE               15  // (cycles)
-
+#define LEF_BUZZER_BEEP_DURATION        40  // (ticks)
+#define LEF_BUZZER_SHORT_BEEP_DURATION  10  // (ticks)
+#define LEF_BUZZER_BLIP_DURATION         2  // (ticks)
+#define LEF_BUZZER_LONG_BEEP_DURATION   80  // (ticks)
+#define LEF_BUZZER_PAUSE                15  // (ticks)
 
 // Led settings -----------------------------------------------------------
 
-#define LED_BLINK_DURATION             40  // (cycles)
-#define LED_FAST_BLINK_DURATION         5  // (cycles)
-#define LED_SINGLE_BLINK_DURATION       5  // (cycles)
+#define LED_SLOW_BLINK_DURATION        100  // (ticks)
+#define LED_BLINK_DURATION              40  // (ticks)
+#define LED_FAST_BLINK_DURATION          5  // (ticks)
+ 
+#define LED_SINGLE_BLINK_DURATION       10  // (ticks)
 
+#define LED_BLIP_DURATION                1  // (ticks)
+#define LED_BLIP_PAUSE                 150  // (ticks)
+
+#define LED_SLOW_BLIP_DURATION           1  // (ticks)
+#define LED_SLOW_BLIP_PAUSE            300  // (ticks)
+
+// Analog Led settings ----------------------------------------------------
+
+#define LEDA_BLINK_DURATION             40  // (ticks)
+#define LEDA_FAST_BLINK_DURATION         5  // (ticks)
+#define LEDA_SINGLE_BLINK_DURATION       5  // (ticks)
+
+#define LEDA_STEP                        5
+#define LEDA_MAX                       180
 	
 // LedRG settings ---------------------------------------------------------
 
-#define LEDRG_BLINK_PERIOD             30  // (cycles)
-#define LEDRG_FAST_BLINK_PERIOD         5  // (cycles)
-#define LEDRG_SINGLE_BLINK_PERIOD       5  // (cycles)
+#define LEDRG_BLINK_PERIOD              30  // (cycles)
+#define LEDRG_FAST_BLINK_PERIOD          5  // (cycles)
+#define LEDRG_SINGLE_BLINK_PERIOD        5  // (cycles)
 
 
 #ifdef __cplusplus
 } //end brace for extern "C"
 #endif
-#endif
+
 

@@ -20,11 +20,10 @@
  * Source repository:
  * https://github.com/zonbrisad/LEF
  *
- * 1 tab = 2 spaces
+ * 
  */
 
-#ifndef LEF_CLI_H
-#define LEF_CLI_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,14 +35,19 @@ extern "C" {
 
 // Macros -----------------------------------------------------------------
 
+#define LEF_CLI_INIT(commands) LEF_Cli_init(commands, (sizeof((commands)) / sizeof((commands)[0])))
+
 #define LEF_CLI_LABEL(label)  {.function=NULL, .desc=label }
-	
+#define LEF_CLI_CMD(func, name, desc)  {(cmd_handler)func, name, desc }
+// #define LEF_CLI_CMD(func, name, desc)  {.function=(cmd_handler)func, .name=name, .desc=desc }
+
+
 // Typedefs ---------------------------------------------------------------
 
-typedef void (*handler)(char *);
+typedef void (*cmd_handler)(char *);
 
 typedef struct {
-  handler function;
+  cmd_handler function;
   char name[LEF_CLI_CMD_LENGTH];
   char desc[LEF_CLI_DESC_LENGTH];
 } LEF_CliCmd;
@@ -52,16 +56,23 @@ typedef struct {
 
 // Prototypes -------------------------------------------------------------
 
+/** Initialize the CLI 
+ * @param cmds Pointer to an array of LEF_CliCmd structs
+ * @param size Number of commands in the cmds array
+*/
 void LEF_Cli_init(const LEF_CliCmd *cmds, uint8_t size);
 
-void LEF_Cli_putc(char ch);
+void LEF_Cli_putc(const char ch);
 
-void LEF_Cli_exec(void);
+void LEF_Cli_exec(LEF_Event *event);
 
 void LEF_Cli_print(void);
-	
+
+void LEF_Cli_WaitKeyPressed(void);
+
+uint16_t ANSI_Filter(const char ch);
+
 #ifdef __cplusplus
 } //end brace for extern "C"
-#endif
 #endif
 

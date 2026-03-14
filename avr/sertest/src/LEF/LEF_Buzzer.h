@@ -20,11 +20,10 @@
  * Source repository:
  * https://github.com/zonbrisad/LEF
  *
- * 1 tab = 2 spaces
+ * 
  */
 
-#ifndef LEF_BUZZER_H
-#define LEF_BUZZER_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,7 +44,8 @@ typedef enum {
 	LEF_BUZZER_LONG_BEEP,
 	LEF_BUZZER_DOUBLE_BEEP,
 	LEF_BUZZER_TRIPPLE_BEEP,
-	LEF_BUZZER_BRP, 
+	LEF_BUZZER_BRP,
+	LEF_BUZZER_CUSTOM,
 } LEF_Buzzer_mode;
 
 //#define BUZZER_OFF 0,0,0
@@ -59,13 +59,14 @@ void LEF_Buzzer_init(void);
 	
 void LEF_Buzzer_set(LEF_Buzzer_mode state);
 
-void LEF_Buzzer(uint16_t duration, uint16_t pause, uint16_t repeat);
+void LEF_Buzzer_beep(uint16_t duration, uint16_t pause, uint16_t repeat);
 	
 bool LEF_Buzzer_update(void);
+
+//void LEF_Buzzer_custom(uint8_t duration, uint8_t pause, uint16_t
 	
 	
 #ifdef __cplusplus
 } //end brace for extern "C"
-#endif
 #endif
 

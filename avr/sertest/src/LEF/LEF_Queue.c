@@ -20,7 +20,7 @@
  * Source repository:
  * https://github.com/zonbrisad/LEF
  *
- * 1 tab = 2 spaces
+ * 
  */
 
 // Includes ---------------------------------------------------------------
@@ -30,7 +30,6 @@
 // Macros -----------------------------------------------------------------
 
 // Variables --------------------------------------------------------------
-//LEF_EventQueue StdQueue;
 
 // Prototypes -------------------------------------------------------------
 
@@ -101,6 +100,7 @@ void LEF_QueueSendEvent(LEF_EventQueue *queue, LEF_EventId ev, void *data) {
   LEF_Event event;
   (void) data;
   event.id = ev;
+  event.func = 0;
   LEF_QueueSend(queue, &event);
 }
 
@@ -108,21 +108,3 @@ void LEF_QueueSendEvent(LEF_EventQueue *queue, LEF_EventId ev, void *data) {
 uint16_t LEF_QueueCnt(LEF_EventQueue *queue) {
   return queue->cnt;
 }
-
-/*
-void LEF_QueueStdSend(LEF_Event *event) {
-	return LEF_QueueSend(&StdQueue, event);
-}
-
-void LEF_QueueStdWait(LEF_Event *event) {
-	return LEF_QueueWait(&StdQueue, event);
-}
-
-void LEF_QueueStdClear(void) {
-	return LEF_QueueClear(&StdQueue);
-}
-
-uint16_t LEF_QueueStdCnt(void) {
-  return LEF_QueueCnt(&StdQueue);
-}
-*/

@@ -25,13 +25,14 @@ TARGET = sertest
 
 # List C, C++ and assembler source files here. (C/C++ dependencies are automatically generated.)
 SRC = src/main.c \
-      src/uart.c \
-			src/LEF/LEF.c \
-			src/LEF/LEF_Timer.c \
-			src/LEF/LEF_Queue.c \
-			src/LEF/LEF_Button.c \
-			src/LEF/LEF_Cli.c \
-			src/LEF/LEF_Led.c \
+	src/uart.c \
+	src/LEF/LEF.c \
+	src/LEF/LEF_Timer.c \
+	src/LEF/LEF_Queue.c \
+	src/LEF/LEF_Button.c \
+	src/LEF/LEF_Led.c \
+	src/LEF/LEF_Cli.c \
+	src/LEF/LEF_Cli_History.c
 
 # List C, C++ and assembler library/3rd party source files here. (C/C++ dependencies are automatically generated.)
 LSRC =	
@@ -46,7 +47,6 @@ LIB   = -lm
 
 # Libraries to use in pkg-config system
 PKGLIBS =
-
 
 # Object files directory
 #     To put object files in current directory, use a dot (.), do NOT make
