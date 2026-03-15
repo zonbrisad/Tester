@@ -2167,7 +2167,11 @@ static void arg_date_errorfn(void* parent_, arg_dstr_t ds, int errorcode, const 
             arg_dstr_catf(ds, "illegal timestamp format \"%s\"\n", argval);
             memset(&tm, 0, sizeof(tm));
             arg_strptime("1999-12-31 23:59:59", "%F %H:%M:%S", &tm);
+            // strftime(buff, sizeof(buff), parent->format, &tm);
+            #pragma GCC diagnostic push
+            #pragma GCC diagnostic ignored "-Wformat-nonliteral"
             strftime(buff, sizeof(buff), parent->format, &tm);
+            #pragma GCC diagnostic pop
             arg_dstr_catf(ds, "correct format is \"%s\"\n", buff);
             break;
         }
