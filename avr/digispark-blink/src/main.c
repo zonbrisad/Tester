@@ -27,7 +27,7 @@
 #include <stdbool.h>
 
 #include "main.h"
-// #include "def_avr.h"
+#include "def_avr.h"
 
 // Macros -------------------------------------------------------------------
 
@@ -46,19 +46,22 @@ void hw_init(void);
 
 
 void hw_init(void) {
-  DDRB |= (1<<PB1);
-
+  // DDRB |= (1<<PB1);
+  ARDUINO_LED_INIT();
   sei();  // Enable all interrupts
 } 
 int main() {
 
   hw_init();
-
   while(true) {
-    PORTB |= (1<<PB1);
+    ARDUINO_LED_SET(true);
     _delay_ms(100);
-    PORTB &= ~(1<<PB1);
+    ARDUINO_LED_SET(false);
     _delay_ms(100);
+    // PORTB |= (1<<PB1);
+    // _delay_ms(100);
+    // PORTB &= ~(1<<PB1);
+    // _delay_ms(100);
   }
   return 0;
 }

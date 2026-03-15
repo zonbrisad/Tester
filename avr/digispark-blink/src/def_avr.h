@@ -48,6 +48,7 @@
 #define _GET(type, port, bit) (BitCheck((type##port), bit))
 
 // AVR Reset causes ---------------------------------------------------------
+
 inline bool IS_POWER_ON_RESET(void)       { return MCUSR & (1<<PORF); }
 inline bool IS_BROWN_OUT_RESET(void)      { return MCUSR & (1<<BORF); }
 inline bool IS_WATCH_DOG_RESET(void)      { return MCUSR & (1<<WDRF); }
@@ -108,96 +109,96 @@ inline void ADC_TRG_TIMER1_CPT(void)      { ADCSRB = (ADCSRB & 0b00000111) | 0b1
 
 
 // AVR TWI (I2C -------------------------------------------------------------
-
+#ifdef TWCR
 inline void I2C_Enable(bool enable)       { if (enable) BitSet(TWCR, TWEN); else BitClear(TWCR, TWEN); }
 inline void I2C_Int_Enable(bool enable)   { if (enable) BitSet(TWCR, TWIE); else BitClear(TWCR, TWIE); }
 inline void I2C_Bitrate(uint8_t bitrate)  { TWBR = bitrate; }
 inline bool I2C_Is_Busy(void)             { return (!BitCheck(TWCR, TWINT)); }
 inline void I2C_Wait_Completion(void)     { while(I2C_Is_Busy()) {} }
-
+#endif
 
 // AVR Timer 0 (8 bit) ------------------------------------------------------
 
 // Clock source
-inline void TIMER0_CLK_DISSABLE(void)     { TCCR0B &= 0b11111000; }        // Disable timer
-inline void TIMER0_CLK_PRES_1(void)       { TCCR0B = (TCCR0B & 0b11111000) | 0b00000001; }  // Select prescaler 1/1
-inline void TIMER0_CLK_PRES_8(void)       { TCCR0B = (TCCR0B & 0b11111000) | 0b00000010; }  // Select prescaler 1/8
-inline void TIMER0_CLK_PRES_64(void)      { TCCR0B = (TCCR0B & 0b11111000) | 0b00000011; }  // Select prescaler 1/64
-inline void TIMER0_CLK_PRES_256(void)     { TCCR0B = (TCCR0B & 0b11111000) | 0b00000100; }  // Select prescaler 1/256
-inline void TIMER0_CLK_PRES_1024(void)    { TCCR0B = (TCCR0B & 0b11111000) | 0b00000101; }  // Select prescaler 1/1024
-inline void TIMER0_CLK_EXT_FE(void)       { TCCR0B = (TCCR0B & 0b11111000) | 0b00000110; }  // External T0 falling edge
-inline void TIMER0_CLK_EXT_RE(void)       { TCCR0B = (TCCR0B & 0b11111000) | 0b00000111; }  // External T0 rising edge
+// inline void TIMER0_CLK_DISSABLE(void)     { TCCR0B &= 0b11111000; }        // Disable timer
+// inline void TIMER0_CLK_PRES_1(void)       { TCCR0B = (TCCR0B & 0b11111000) | 0b00000001; }  // Select prescaler 1/1
+// inline void TIMER0_CLK_PRES_8(void)       { TCCR0B = (TCCR0B & 0b11111000) | 0b00000010; }  // Select prescaler 1/8
+// inline void TIMER0_CLK_PRES_64(void)      { TCCR0B = (TCCR0B & 0b11111000) | 0b00000011; }  // Select prescaler 1/64
+// inline void TIMER0_CLK_PRES_256(void)     { TCCR0B = (TCCR0B & 0b11111000) | 0b00000100; }  // Select prescaler 1/256
+// inline void TIMER0_CLK_PRES_1024(void)    { TCCR0B = (TCCR0B & 0b11111000) | 0b00000101; }  // Select prescaler 1/1024
+// inline void TIMER0_CLK_EXT_FE(void)       { TCCR0B = (TCCR0B & 0b11111000) | 0b00000110; }  // External T0 falling edge
+// inline void TIMER0_CLK_EXT_RE(void)       { TCCR0B = (TCCR0B & 0b11111000) | 0b00000111; }  // External T0 rising edge
 
-// Interrupt control
-inline void TIMER0_OVF_IE(void)           { TIMSK0 |= (1<<TOIE0); }        // Enable overflow interrupt
-inline void TIMER0_OVF_ID(void)           { TIMSK0 &= ~(1<<TOIE0); }       // Disable overflow interrupt
-inline void TIMER0_OCA_IE(void)           { TIMSK0 |= (1<<OCIE0A); }       // Enable output compare A interrupt
-inline void TIMER0_OCA_ID(void)           { TIMSK0 &= ~(1<<OCIE0A); }      // Disable output compare A interrupt
-inline void TIMER0_OCB_IE(void)           { TIMSK0 |= (1<<OCIE0B); }       // Enable output compare B interrupt
-inline void TIMER0_OCB_ID(void)           { TIMSK0 &= ~(1<<OCIE0B); }      // Disable output compare B interrupt
+// // Interrupt control
+// inline void TIMER0_OVF_IE(void)           { TIMSK0 |= (1<<TOIE0); }        // Enable overflow interrupt
+// inline void TIMER0_OVF_ID(void)           { TIMSK0 &= ~(1<<TOIE0); }       // Disable overflow interrupt
+// inline void TIMER0_OCA_IE(void)           { TIMSK0 |= (1<<OCIE0A); }       // Enable output compare A interrupt
+// inline void TIMER0_OCA_ID(void)           { TIMSK0 &= ~(1<<OCIE0A); }      // Disable output compare A interrupt
+// inline void TIMER0_OCB_IE(void)           { TIMSK0 |= (1<<OCIE0B); }       // Enable output compare B interrupt
+// inline void TIMER0_OCB_ID(void)           { TIMSK0 &= ~(1<<OCIE0B); }      // Disable output compare B interrupt
 
-inline void  TIMER0_OCA_SET(uint8_t x)    { OCR0A = x; }                  // Set output compare A register
-inline void  TIMER0_OCB_SET(uint8_t x)    { OCR0B = x; }                  // Set output compare B register
-inline void  TIMER0_RELOAD(uint8_t x)     { TCNT0 = x; }                  // Reload timer register
+// inline void  TIMER0_OCA_SET(uint8_t x)    { OCR0A = x; }                  // Set output compare A register
+// inline void  TIMER0_OCB_SET(uint8_t x)    { OCR0B = x; }                  // Set output compare B register
+// inline void  TIMER0_RELOAD(uint8_t x)     { TCNT0 = x; }                  // Reload timer register
     
-// Waveform generation mode
-inline void TIMER0_WGM_NORMAL(void)       { TCCR0A = (TCCR0A & 0b11111100) | 0b00000000; }
-inline void TIMER0_WGM_PWM(void)          { TCCR0A = (TCCR0A & 0b11111100) | 0b00000001; } // PWM, phase correct
-inline void TIMER0_WGM_FAST_PWM(void)     { TCCR0A = (TCCR0A & 0b11111100) | 0b00000011; } // Fast PWM
+// // Waveform generation mode
+// inline void TIMER0_WGM_NORMAL(void)       { TCCR0A = (TCCR0A & 0b11111100) | 0b00000000; }
+// inline void TIMER0_WGM_PWM(void)          { TCCR0A = (TCCR0A & 0b11111100) | 0b00000001; } // PWM, phase correct
+// inline void TIMER0_WGM_FAST_PWM(void)     { TCCR0A = (TCCR0A & 0b11111100) | 0b00000011; } // Fast PWM
 
-// Output modes
-inline void TIMER0_OM_NORMAL(void)        { TCCR0A &= 0b00111111; }                        // OC0A disconnected
-inline void TIMER0_OM_TOGGLE(void)        { TCCR0A = (TCCR0A & 0b00111111) | 0b01000000; } // Toggle OC0A on compare match
-inline void TIMER0_OM_CLEAR(void)         { TCCR0A = (TCCR0A & 0b00111111) | 0b10000000; } // Clear OC0A on compare match
-inline void TIMER0_OM_SET(void)           { TCCR0A = (TCCR0A & 0b00111111) | 0b11000000; } // Set OC0A on compare match
+// // Output modes
+// inline void TIMER0_OM_NORMAL(void)        { TCCR0A &= 0b00111111; }                        // OC0A disconnected
+// inline void TIMER0_OM_TOGGLE(void)        { TCCR0A = (TCCR0A & 0b00111111) | 0b01000000; } // Toggle OC0A on compare match
+// inline void TIMER0_OM_CLEAR(void)         { TCCR0A = (TCCR0A & 0b00111111) | 0b10000000; } // Clear OC0A on compare match
+// inline void TIMER0_OM_SET(void)           { TCCR0A = (TCCR0A & 0b00111111) | 0b11000000; } // Set OC0A on compare match
 
 // AVR Timer 1 (16 bit) -----------------------------------------------------
 
-// Clock source
-inline void TIMER1_CLK_NONE(void)         { TCCR1B &= 0b11111000; }                        // Disable timer
-inline void TIMER1_CLK_PRES_1(void)       { TCCR1B = (TCCR1B & 0b11111000) | 0b00000001; } // Select prescaler 1/1            
-inline void TIMER1_CLK_PRES_8(void)       { TCCR1B = (TCCR1B & 0b11111000) | 0b00000010; } // Select prescaler 1/8           
-inline void TIMER1_CLK_PRES_64(void)      { TCCR1B = (TCCR1B & 0b11111000) | 0b00000011; } // Select prescaler 1/64          
-inline void TIMER1_CLK_PRES_256(void)     { TCCR1B = (TCCR1B & 0b11111000) | 0b00000100; } // Select prescaler 1/256         
-inline void TIMER1_CLK_PRES_1024(void)    { TCCR1B = (TCCR1B & 0b11111000) | 0b00000101; } // Select prescaler 1/1024        
-inline void TIMER1_CLK_EXT_FE(void)       { TCCR1B = (TCCR1B & 0b11111000) | 0b00000110; } // External T0 falling edge       
-inline void TIMER1_CLK_EXT_RE(void)       { TCCR1B = (TCCR1B & 0b11111000) | 0b00000111; } // External T0 rising edge        
+// // Clock source
+// inline void TIMER1_CLK_NONE(void)         { TCCR1B &= 0b11111000; }                        // Disable timer
+// inline void TIMER1_CLK_PRES_1(void)       { TCCR1B = (TCCR1B & 0b11111000) | 0b00000001; } // Select prescaler 1/1            
+// inline void TIMER1_CLK_PRES_8(void)       { TCCR1B = (TCCR1B & 0b11111000) | 0b00000010; } // Select prescaler 1/8           
+// inline void TIMER1_CLK_PRES_64(void)      { TCCR1B = (TCCR1B & 0b11111000) | 0b00000011; } // Select prescaler 1/64          
+// inline void TIMER1_CLK_PRES_256(void)     { TCCR1B = (TCCR1B & 0b11111000) | 0b00000100; } // Select prescaler 1/256         
+// inline void TIMER1_CLK_PRES_1024(void)    { TCCR1B = (TCCR1B & 0b11111000) | 0b00000101; } // Select prescaler 1/1024        
+// inline void TIMER1_CLK_EXT_FE(void)       { TCCR1B = (TCCR1B & 0b11111000) | 0b00000110; } // External T0 falling edge       
+// inline void TIMER1_CLK_EXT_RE(void)       { TCCR1B = (TCCR1B & 0b11111000) | 0b00000111; } // External T0 rising edge        
 
-// Interrupt control
-inline void TIMER1_OVF_IE(void)           { TIMSK1 |= (1<<TOIE1); }        // Enable overflow interrupt      
-inline void TIMER1_OVF_ID(void)           { TIMSK1 &= ~(1<<TOIE1); }       // Disable overflow interrupt     
-inline void TIMER1_OCA_IE(void)           { TIMSK1 |= (1<<OCIE1A); }       // Enable output compare A interrupt
-inline void TIMER1_OCA_ID(void)           { TIMSK1 &= ~(1<<OCIE1A); }      // Disable output compare A interrupt
-inline void TIMER1_OCB_IE(void)           { TIMSK1 |= (1<<OCIE1B); }       // Enable output compare B interrupt
-inline void TIMER1_OCB_ID(void)           { TIMSK1 &= ~(1<<OCIE1B); }      // Disable output compare B interrupt
+// // Interrupt control
+// inline void TIMER1_OVF_IE(void)           { TIMSK1 |= (1<<TOIE1); }        // Enable overflow interrupt      
+// inline void TIMER1_OVF_ID(void)           { TIMSK1 &= ~(1<<TOIE1); }       // Disable overflow interrupt     
+// inline void TIMER1_OCA_IE(void)           { TIMSK1 |= (1<<OCIE1A); }       // Enable output compare A interrupt
+// inline void TIMER1_OCA_ID(void)           { TIMSK1 &= ~(1<<OCIE1A); }      // Disable output compare A interrupt
+// inline void TIMER1_OCB_IE(void)           { TIMSK1 |= (1<<OCIE1B); }       // Enable output compare B interrupt
+// inline void TIMER1_OCB_ID(void)           { TIMSK1 &= ~(1<<OCIE1B); }      // Disable output compare B interrupt
                                                              
-inline void TIMER1_OCA_SET(uint16_t x)    { OCR1AH = (uint8_t) ((uint16_t)x>>8); OCR1AL = (uint8_t) ((uint16_t)x & 0xff); } // Set output compare A register
-inline void TIMER1_OCB_SET(uint16_t x)    { OCR1BH = (uint8_t) ((uint16_t)x>>8); OCR1BL = (uint8_t) ((uint16_t)x & 0xff); } // Set output compare B register                                                           
-inline void TIMER1_RELOAD(uint16_t x)     { TCNT1H = (uint8_t) ((uint16_t)x>>8); TCNT1L = (uint8_t)((uint16_t)x & 0xff); } // Reload timer register
+// inline void TIMER1_OCA_SET(uint16_t x)    { OCR1AH = (uint8_t) ((uint16_t)x>>8); OCR1AL = (uint8_t) ((uint16_t)x & 0xff); } // Set output compare A register
+// inline void TIMER1_OCB_SET(uint16_t x)    { OCR1BH = (uint8_t) ((uint16_t)x>>8); OCR1BL = (uint8_t) ((uint16_t)x & 0xff); } // Set output compare B register                                                           
+// inline void TIMER1_RELOAD(uint16_t x)     { TCNT1H = (uint8_t) ((uint16_t)x>>8); TCNT1L = (uint8_t)((uint16_t)x & 0xff); } // Reload timer register
                                                               
 // AVR Timer 2 (8 bit) ------------------------------------------------------
 
 // Clock source
-inline void TIMER2_CLK_DISSABLE(void)     { TCCR2B &= 0b11111000; }        // Disable timer
-inline void TIMER2_CLK_PRES_1(void)       { TCCR2B = (TCCR2B & 0b11111000) | 0b00000001; } // Select prescaler 1/1
-inline void TIMER2_CLK_PRES_8(void)       { TCCR2B = (TCCR2B & 0b11111000) | 0b00000010; } // Select prescaler 1/8
-inline void TIMER2_CLK_PRES_64(void)      { TCCR2B = (TCCR2B & 0b11111000) | 0b00000011; } // Select prescaler 1/64
-inline void TIMER2_CLK_PRES_256(void)     { TCCR2B = (TCCR2B & 0b11111000) | 0b00000100; } // Select prescaler 1/256
-inline void TIMER2_CLK_PRES_1024(void)    { TCCR2B = (TCCR2B & 0b11111000) | 0b00000101; } // Select prescaler 1/1024
-inline void TIMER2_CLK_EXT_FE(void)       { TCCR2B = (TCCR2B & 0b11111000) | 0b00000110; } // External T0 falling edge
-inline void TIMER2_CLK_EXT_RE(void)       { TCCR2B = (TCCR2B & 0b11111000) | 0b00000111; } // External T0 rising edge
+// inline void TIMER2_CLK_DISSABLE(void)     { TCCR2B &= 0b11111000; }        // Disable timer
+// inline void TIMER2_CLK_PRES_1(void)       { TCCR2B = (TCCR2B & 0b11111000) | 0b00000001; } // Select prescaler 1/1
+// inline void TIMER2_CLK_PRES_8(void)       { TCCR2B = (TCCR2B & 0b11111000) | 0b00000010; } // Select prescaler 1/8
+// inline void TIMER2_CLK_PRES_64(void)      { TCCR2B = (TCCR2B & 0b11111000) | 0b00000011; } // Select prescaler 1/64
+// inline void TIMER2_CLK_PRES_256(void)     { TCCR2B = (TCCR2B & 0b11111000) | 0b00000100; } // Select prescaler 1/256
+// inline void TIMER2_CLK_PRES_1024(void)    { TCCR2B = (TCCR2B & 0b11111000) | 0b00000101; } // Select prescaler 1/1024
+// inline void TIMER2_CLK_EXT_FE(void)       { TCCR2B = (TCCR2B & 0b11111000) | 0b00000110; } // External T0 falling edge
+// inline void TIMER2_CLK_EXT_RE(void)       { TCCR2B = (TCCR2B & 0b11111000) | 0b00000111; } // External T0 rising edge
 
-// Interrupt control
-inline void TIMER2_OVF_IE(void)           { TIMSK2 |= (1<<TOIE0); }   // Enable overflow interrupt
-inline void TIMER2_OVF_ID(void)           { TIMSK2 &= ~(1<<TOIE0); }  // Disable overflow interrupt
-inline void TIMER2_OCA_IE(void)           { TIMSK2 |= (1<<OCIE0A); }  // Enable output compare A interrupt
-inline void TIMER2_OCA_ID(void)           { TIMSK2 &= ~(1<<OCIE0A); } // Disable output compare A interrupt
-inline void TIMER2_OCB_IE(void)           { TIMSK2 |= (1<<OCIE0B); }  // Enable output compare B interrupt
-inline void TIMER2_OCB_ID(void)           { TIMSK2 &= ~(1<<OCIE0B); } // Disable output compare B interrupt
+// // Interrupt control
+// inline void TIMER2_OVF_IE(void)           { TIMSK2 |= (1<<TOIE0); }   // Enable overflow interrupt
+// inline void TIMER2_OVF_ID(void)           { TIMSK2 &= ~(1<<TOIE0); }  // Disable overflow interrupt
+// inline void TIMER2_OCA_IE(void)           { TIMSK2 |= (1<<OCIE0A); }  // Enable output compare A interrupt
+// inline void TIMER2_OCA_ID(void)           { TIMSK2 &= ~(1<<OCIE0A); } // Disable output compare A interrupt
+// inline void TIMER2_OCB_IE(void)           { TIMSK2 |= (1<<OCIE0B); }  // Enable output compare B interrupt
+// inline void TIMER2_OCB_ID(void)           { TIMSK2 &= ~(1<<OCIE0B); } // Disable output compare B interrupt
 
-inline void TIMER2_OCA_SET(uint8_t x)     { OCR2A = x; }              // Set output compare A register
-inline void TIMER2_OCB_SET(uint8_t x)     { OCR2B = x; }              // Set output compare B register
-inline void TIMER2_RELOAD(uint8_t x)      { TCNT2 = x; }              // Reload timer register
+// inline void TIMER2_OCA_SET(uint8_t x)     { OCR2A = x; }              // Set output compare A register
+// inline void TIMER2_OCB_SET(uint8_t x)     { OCR2B = x; }              // Set output compare B register
+// inline void TIMER2_RELOAD(uint8_t x)      { TCNT2 = x; }              // Reload timer register
 
 // Arduino specific ---------------------------------------------------------
 

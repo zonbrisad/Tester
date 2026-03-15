@@ -29,15 +29,9 @@
 #define APP_ICON        ""
 
 // AVR Reset causes ---------------------------------------------------------
-#define IS_POWER_ON_RESET()            (MCUSR & (1<<PORF))
-#define IS_BROWN_OUT_RESET()           (MCUSR & (1<<BORF))
-#define IS_WATCH_DOG_RESET()           (MCUSR & (1<<WDRF))
-#define IS_JTAG_RESET_RESET()          (MCUSR & (1<<JTRF))
-#define IS_EXTERNAL_RESET()            (MCUSR & (1<<EXTRF))
-#define CLEAR_RESETS()                 MCUSR  &= (~31)              // clearing all reset causes
+
 
 // AVR Reset MCU with watchdog ----------------------------------------------
-#define RESET()                     wdt_enable(WDTO_500MS); while(1) {}
 
 
 // Datatypes ----------------------------------------------------------------
