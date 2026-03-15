@@ -39,6 +39,8 @@
 // #define __AVR__
 //  Platform detection ------------------------------------------------------
 
+#pragma once
+
 #if defined(unix) || defined(__unix__) || defined(__unix)
 #define DEF_PLATFORM_UNIX
 #endif
@@ -69,74 +71,10 @@
 #endif
 
 #ifdef DEF_PLATFORM_AVR
-//#include "def_avr.h"
+#include "def_avr.h"
 #endif
-
-#ifndef DEF_H_
-#define DEF_H_
 
 // Constants --------------------------------------------------------------
-
-/** @name Usual Constants
- */
-//! @{
-
-//#ifndef __cplusplus
-//  #if !defined(__bool_true_false_are_defined)
-//  #define false 0
-//  #define true 1
-//  #endif
-//#endif
-
-
-#ifndef FALSE
-#define FALSE (0)
-#endif
-
-#ifndef TRUE
-#define TRUE (1)
-#endif
-
-#ifndef DISABLE
-#define DISABLE (0)
-#endif
-
-#ifndef ENABLE
-#define ENABLE (1)
-#endif
-
-#ifndef PASS
-#define PASS (0)
-#endif
-
-#ifndef FAIL
-#define FAIL (1)
-#endif
-
-#ifndef LOW
-#define LOW (0)
-#endif
-
-#ifndef HIGH
-#define HIGH (1)
-#endif
-
-
-#ifndef false
-#define false (0)
-#endif
-
-#ifndef true
-#define true (1)
-#endif
-
-#ifndef NULL
-#define NULL (void)0
-#endif
-
-
-//! @}
-
 
 /**
  * @name Mathematical constants
@@ -145,15 +83,10 @@
 //! @{
 
 #define PI 3.1415926535897932384626433832795
-
 #define HALF_PI 1.5707963267948966192313216916398
-
 #define TWO_PI 6.283185307179586476925286766559
-
 #define DEG_TO_RAD 0.017453292519943295769236907684886
-
 #define RAD_TO_DEG 57.295779513082320876798154814105
-
 #define EULER 2.718281828459045235360287471352
 
 //! @}
@@ -182,146 +115,163 @@ typedef uint32_t iram_size_t;
 //! @{
 
 //! 16-bit union.
-typedef union
-{
-  S16 s16;
-  U16 u16;
-  S8 s8[2];
-  U8 u8[2];
+typedef union {
+    S16 s16;
+    U16 u16;
+    S8 s8[2];
+    U8 u8[2];
 } Union16;
 
 //! 32-bit union.
-typedef union
-{
-  S32 s32;
-  U32 u32;
-  S16 s16[2];
-  U16 u16[2];
-  S8 s8[4];
-  U8 u8[4];
+typedef union {
+    S32 s32;
+    U32 u32;
+    S16 s16[2];
+    U16 u16[2];
+    S8 s8[4];
+    U8 u8[4];
 } Union32;
 
 //! 64-bit union.
-typedef union
-{
-  S64 s64;
-  U64 u64;
-  S32 s32[2];
-  U32 u32[2];
-  S16 s16[4];
-  U16 u16[4];
-  S8 s8[8];
-  U8 u8[8];
+typedef union {
+    S64 s64;
+    U64 u64;
+    S32 s32[2];
+    U32 u32[2];
+    S16 s16[4];
+    U16 u16[4];
+    S8 s8[8];
+    U8 u8[8];
 } Union64;
 
 //! Union of pointers to 64-, 32-, 16- and 8-bit unsigned integers.
-typedef union
-{
-  S64 *s64ptr;
-  U64 *u64ptr;
-  S32 *s32ptr;
-  U32 *u32ptr;
-  S16 *s16ptr;
-  U16 *u16ptr;
-  S8 *s8ptr;
-  U8 *u8ptr;
+typedef union {
+    S64* s64ptr;
+    U64* u64ptr;
+    S32* s32ptr;
+    U32* u32ptr;
+    S16* s16ptr;
+    U16* u16ptr;
+    S8* s8ptr;
+    U8* u8ptr;
 } UnionPtr;
 
 //! Union of pointers to volatile 64-, 32-, 16- and 8-bit unsigned integers.
-typedef union
-{
-  volatile S64 *s64ptr;
-  volatile U64 *u64ptr;
-  volatile S32 *s32ptr;
-  volatile U32 *u32ptr;
-  volatile S16 *s16ptr;
-  volatile U16 *u16ptr;
-  volatile S8 *s8ptr;
-  volatile U8 *u8ptr;
+typedef union {
+    volatile S64* s64ptr;
+    volatile U64* u64ptr;
+    volatile S32* s32ptr;
+    volatile U32* u32ptr;
+    volatile S16* s16ptr;
+    volatile U16* u16ptr;
+    volatile S8* s8ptr;
+    volatile U8* u8ptr;
 } UnionVPtr;
 
 //! Union of pointers to constant 64-, 32-, 16- and 8-bit unsigned integers.
-typedef union
-{
-  const S64 *s64ptr;
-  const U64 *u64ptr;
-  const S32 *s32ptr;
-  const U32 *u32ptr;
-  const S16 *s16ptr;
-  const U16 *u16ptr;
-  const S8 *s8ptr;
-  const U8 *u8ptr;
+typedef union {
+    const S64* s64ptr;
+    const U64* u64ptr;
+    const S32* s32ptr;
+    const U32* u32ptr;
+    const S16* s16ptr;
+    const U16* u16ptr;
+    const S8* s8ptr;
+    const U8* u8ptr;
 } UnionCPtr;
 
-//! Union of pointers to constant volatile 64-, 32-, 16- and 8-bit unsigned integers.
-typedef union
-{
-  const volatile S64 *s64ptr;
-  const volatile U64 *u64ptr;
-  const volatile S32 *s32ptr;
-  const volatile U32 *u32ptr;
-  const volatile S16 *s16ptr;
-  const volatile U16 *u16ptr;
-  const volatile S8 *s8ptr;
-  const volatile U8 *u8ptr;
+//! Union of pointers to constant volatile 64-, 32-, 16- and 8-bit unsigned
+//! integers.
+typedef union {
+    const volatile S64* s64ptr;
+    const volatile U64* u64ptr;
+    const volatile S32* s32ptr;
+    const volatile U32* u32ptr;
+    const volatile S16* s16ptr;
+    const volatile U16* u16ptr;
+    const volatile S8* s8ptr;
+    const volatile U8* u8ptr;
 } UnionCVPtr;
 
 //! Structure of pointers to 64-, 32-, 16- and 8-bit unsigned integers.
-typedef struct
-{
-  S64 *s64ptr;
-  U64 *u64ptr;
-  S32 *s32ptr;
-  U32 *u32ptr;
-  S16 *s16ptr;
-  U16 *u16ptr;
-  S8 *s8ptr;
-  U8 *u8ptr;
+typedef struct {
+    S64* s64ptr;
+    U64* u64ptr;
+    S32* s32ptr;
+    U32* u32ptr;
+    S16* s16ptr;
+    U16* u16ptr;
+    S8* s8ptr;
+    U8* u8ptr;
 } StructPtr;
 
 //! Structure of pointers to volatile 64-, 32-, 16- and 8-bit unsigned integers.
-typedef struct
-{
-  volatile S64 *s64ptr;
-  volatile U64 *u64ptr;
-  volatile S32 *s32ptr;
-  volatile U32 *u32ptr;
-  volatile S16 *s16ptr;
-  volatile U16 *u16ptr;
-  volatile S8 *s8ptr;
-  volatile U8 *u8ptr;
+typedef struct {
+    volatile S64* s64ptr;
+    volatile U64* u64ptr;
+    volatile S32* s32ptr;
+    volatile U32* u32ptr;
+    volatile S16* s16ptr;
+    volatile U16* u16ptr;
+    volatile S8* s8ptr;
+    volatile U8* u8ptr;
 } StructVPtr;
 
 //! Structure of pointers to constant 64-, 32-, 16- and 8-bit unsigned integers.
-typedef struct
-{
-  const S64 *s64ptr;
-  const U64 *u64ptr;
-  const S32 *s32ptr;
-  const U32 *u32ptr;
-  const S16 *s16ptr;
-  const U16 *u16ptr;
-  const S8 *s8ptr;
-  const U8 *u8ptr;
+typedef struct {
+    const S64* s64ptr;
+    const U64* u64ptr;
+    const S32* s32ptr;
+    const U32* u32ptr;
+    const S16* s16ptr;
+    const U16* u16ptr;
+    const S8* s8ptr;
+    const U8* u8ptr;
 } StructCPtr;
 
-//! Structure of pointers to constant volatile 64-, 32-, 16- and 8-bit unsigned integers.
-typedef struct
-{
-  const volatile S64 *s64ptr;
-  const volatile U64 *u64ptr;
-  const volatile S32 *s32ptr;
-  const volatile U32 *u32ptr;
-  const volatile S16 *s16ptr;
-  const volatile U16 *u16ptr;
-  const volatile S8 *s8ptr;
-  const volatile U8 *u8ptr;
+//! Structure of pointers to constant volatile 64-, 32-, 16- and 8-bit unsigned
+//! integers.
+typedef struct {
+    const volatile S64* s64ptr;
+    const volatile U64* u64ptr;
+    const volatile S32* s32ptr;
+    const volatile U32* u32ptr;
+    const volatile S16* s16ptr;
+    const volatile U16* u16ptr;
+    const volatile S8* s8ptr;
+    const volatile U8* u8ptr;
 } StructCVPtr;
 
 //! @}
 
 // #endif  // #ifndef __ASSEMBLY__
 
+/** \name Usual Constants
+ */
+//! @{
+
+#define DISABLE 0
+#define ENABLE 1
+#define PASS 0
+#define FAIL 1
+#define LOW 0
+#define HIGH 1
+
+#ifndef FALSE
+#define FALSE (0)
+#endif
+
+#ifndef TRUE
+#define TRUE (1)
+#endif
+
+#ifndef __cplusplus
+#if !defined(__bool_true_false_are_defined)
+#define false 0
+#define true 1
+#endif
+#endif
+//! @}
 
 #ifndef bool
 typedef uint8_t bool;
@@ -332,6 +282,18 @@ typedef unsigned char uchar;
 typedef unsigned int uint;
 typedef unsigned short ushort;
 typedef unsigned long ulong;
+
+#ifndef false
+#define false 0
+#endif
+
+#ifndef true
+#define true 1
+#endif
+
+#ifndef NULL
+#define NULL (void)0
+#endif
 
 #ifndef ulong
 #define ulong uint32_t
@@ -422,7 +384,6 @@ typedef unsigned long ulong;
 #ifndef MAXLONG
 #define MAXLONG ((long)2147483647) ///< Long integer max value.
 #endif
-
 
 /**
  * @name Mathematics
@@ -585,7 +546,6 @@ typedef unsigned long ulong;
 
 #undef isOutside
 #define isOutside(val, min, max) (!isWithin(val, min, max))
-
 
 // Bit manipulation ---------------------------------------------------------
 
@@ -829,7 +789,7 @@ typedef unsigned long ulong;
 
 //! @}
 
-#define low_byte(w) ((uint8_t)((w)&0xff))
+#define low_byte(w) ((uint8_t)((w) & 0xff))
 
 #define high_byte(w) ((uint8_t)((w) >> 8))
 
@@ -838,19 +798,6 @@ typedef unsigned long ulong;
 
 // #define BIT_SET(v, bit)      ((v) |= (bit))
 // #define BIT_CLEAR(v, bit)    ((v) &= ~(bit))
-
-
-
-//#define BIT_IS_SET(b, pos) ((b) & (1<<pos))
-//#define BIT_IS_CLEAR(b, pos) !(BIT_IS_SET(b,pos))
-
-
-#define Bit_is_set(d, pos)    ((d) & (1<<pos))
-#define Bit_is_clear(d, pos)  !(Bit_is_set(d, pos))
-
-#define Bit_set(d, pos)       d |= (1<<pos)
-#define Bit_clear(d, pos)     d &= ~(1<<pos)
-#define Bit_toggle(d, pos)    d ^= (1<<pos)
 
 // Special character definitions --------------------------------------------
 
@@ -920,67 +867,117 @@ typedef unsigned long ulong;
 
 // ANSI color codes ---------------------------------------------------------
 
-#define E_BLACK "\033[0;300m"
-#define E_RED "\033[0;31m"
-#define E_GREEN "\033[0;32m"
-#define E_YELLOW "\033[0;33m"
-#define E_BLUE "\033[0;34m"
-#define E_MAGENTA "\033[0;35m"
-#define E_CYAN "\033[0;36m"
-#define E_GRAY "\033[0;37m"
-#define E_DARKGRAY "\033[1;30m"
-#define E_BR_RED "\033[1;31m"
-#define E_BR_GREEN "\033[1;32m"
-#define E_BR_YELLOW "\033[1;33m"
-#define E_BR_BLUE "\033[1;34m"
-#define E_BR_MAGENTA "\033[1;35m"
-#define E_BR_CYAN "\033[1;36m"
-#define E_WHITE "\033[1;37m"
+#define E_BLACK "\e[0;300m"
+#define E_RED "\e[0;31m"
+#define E_GREEN "\e[0;32m"
+#define E_YELLOW "\e[0;33m"
+#define E_BLUE "\e[0;34m"
+#define E_MAGENTA "\e[0;35m"
+#define E_CYAN "\e[0;36m"
+#define E_GRAY "\e[0;37m"
+#define E_DARKGRAY "\e[1;30m"
+#define E_BR_RED "\e[1;31m"
+#define E_BR_GREEN "\e[1;32m"
+#define E_BR_YELLOW "\e[1;33m"
+#define E_BR_BLUE "\e[1;34m"
+#define E_BR_MAGENTA "\e[1;35m"
+#define E_BR_CYAN "\e[1;36m"
+#define E_WHITE "\e[1;37m"
 
-#define E_BG_BLACK "\033[40m"
-#define E_BG_RED "\033[41m"
-#define E_BG_GREEN "\033[42m"
-#define E_BG_YELLOW "\033[43m"
-#define E_BG_BLUE "\033[44m"
-#define E_BG_MAGENTA "\033[45m"
-#define E_BG_CYAN "\033[46m"
-#define E_BG_WHITE "\033[1;47m"
+#define E_BG_BLACK "\e[40m"
+#define E_BG_RED "\e[41m"
+#define E_BG_GREEN "\e[42m"
+#define E_BG_YELLOW "\e[43m"
+#define E_BG_BLUE "\e[44m"
+#define E_BG_MAGENTA "\e[45m"
+#define E_BG_CYAN "\e[46m"
+#define E_BG_WHITE "\e[1;47m"
 
 // ANSI Text attributes
 #define E_BOLD "\e[1m"
-#define E_LOWI "\e[2m"
+#define E_DIM "\e[2m"
+#define E_ITALIC "\e[3m"
 #define E_UNDERLINE "\e[4m"
 #define E_BLINK "\e[5m"
 #define E_REVERSE "\e[7m"
+#define E_CROSSED "\e[9m"
+#define E_OVERLINED "\e[53m"
 
-#define E_END "\033[0m"
-#define E_CLEAR "\033[2J"
-#define E_RESET "\033c"
+#define E_RESET "\e[0m"
+#define E_CLEAR "\e[2J"
 
-#define E_WONR "\033[1;47\033[1;31m"
+#define E_WONR "\e[1;47\033[1;31m"
 
-#define E_OK "\033[0;32m"
-#define E_WARN "\033[33;01m"
-#define E_ERROR "\033[31;01m"
+#define E_OK "\e[0;32m"
+#define E_WARN "\e[33;01m"
+#define E_ERROR "\e[31;01m"
 
 // ANSI movement codes ------------------------------------------------------
 
+#define E_UP "\e[A"                // cursor up one line
+#define E_DOWN "\e[B"              // cursor down one lin
+#define E_FORWARD "\e[C"           // cursor right one character
+#define E_BACK "\e[D"              // cursor left one charachter
+#define E_CUR_NEXT_LINE "\e[E"     // Cursor next line, move cursor to begining of next line
+#define E_CUR_PREVIOUS_LINE "\e[F" // Cursor previous line, move cursor to begining of previous line
 
-#define E_UP "\033[A"      // Move cursor up one line
-#define E_DOWN "\033[B"    // Move cursor down one line
-#define E_FORWARD "\033[C" // Move cursor right one character
-#define E_BACK "\033[D"    // Move cursor left one charachter
+#define E_SAVE_CURSOR_POS "\e[s"
+#define E_RESTORE_CURSOR_POS "\e[u"
+#define E_CUR_POS(n, m) "\e[" #n ";" #m "H" // Cursor position, move cursor to row "n", column "m"
 
-#define E_NEXTLINE "\033[E" // (CNL) Cursor Next Line
-                            // Move cursor to beginning of line, n (defult 1) line(s) down
-#define E_PREVLINE "\033[F" // (CPL) Cursor Previous Line
-                            // Move cursor to beginning of line, n (defult 1) line(s) up
+#define E_ERASE_DISPLAY_TO_END "\e[0J"      // Clear from cursor to end of display
+#define E_ERASE_DISPLAY_TO_BEGINING "\e[1J" // Clear from cursor to begining of display
+#define E_ERASE_DISPLAY "\e[2J"             // Clear all display
 
- 
-#define E_HOME "\033[H"    // cursor to left upper corner
+#define E_ERASE_LINE_TO_END "\e[0K"      // Erase in line from cursor to end of line
+#define E_ERASE_LINE_TO_BEGINING "\e[1K" // Erase in line from cursor to begining of line
 
-#define E_HIDE_CURSOR "\033[?25l" // hide cursor
-#define E_SHOW_CURSOR "\033[?25h" // show cursor
+#define E_INSERT_LINE "\e[1L" // Insert line at cursor, current line move down
+#define E_DELETE_LINE "\e[1M" // Delete line at cursor, lines bellow move up
+
+#define E_HOME "\e[H" // cursor to left upper corner
+
+#define E_HIDE "\e[?25l" // hide cursor
+#define E_SHOW "\e[?25h" // show cursor
+
+// String formating ---------------------------------------------------------
+
+static inline char* int2bin8(uint8_t x) {
+    static char str[9];
+    for (int i = 0; i < 8; i++) {
+        str[7 - i] = (x & (1 << i)) ? '1' : '0';
+    }
+    str[8] = '\0';
+    return str;
+}
+
+static inline char* int2bin16(uint16_t x) {
+    static char str[17];
+    for (int i = 0; i < 16; i++) {
+        str[15 - i] = (x & (1 << i)) ? '1' : '0';
+    }
+    str[16] = '\0';
+    return str;
+}
+
+static inline char* int2bin32(uint32_t x) {
+    static char str[33];
+    for (int i = 0; i < 32; i++) {
+        str[31 - i] = (x & (1 << i)) ? '1' : '0';
+    }
+    str[32] = '\0';
+    return str;
+}
+
+static inline char* int2bin(char* buf, uint32_t val, uint8_t bits) {
+    // static char buf[33];
+    for (int i = 0; i < bits; i++) {
+        buf[bits -1 - i] = (val & (1 << i)) ? '1' : '0';
+    }
+    buf[bits] = '\0';
+    return buf;
+}
+
 
 // Debugging ----------------------------------------------------------------
 
@@ -1004,7 +1001,7 @@ typedef unsigned long ulong;
 #define FATAL_COLOR E_BR_RED
 #define ROWNR_COLOR E_WHITE
 #define FUNC_COLOR E_BR_CYAN
-#define DEBUG_CEND E_END
+#define DEBUG_CEND E_RESET
 #endif
 
 // default defprintf
@@ -1085,11 +1082,10 @@ typedef unsigned long ulong;
 #undef FATALPRINT
 #define FATALPRINT(_fmt, ...) defprintf(FATALSTR _fmt, WHEREARG, ##__VA_ARGS__)
 #define FATALPRINTC(cond, _fmt, ...)                   \
-  if (cond)                                            \
-  {                                                    \
-    defprintf(FATALSTR _fmt, WHEREARG, ##__VA_ARGS__); \
-    defprintf(FATALSTRE)                               \
-  }
+    if (cond) {                                        \
+        defprintf(FATALSTR _fmt, WHEREARG, ##__VA_ARGS__); \
+        defprintf(FATALSTRE)                               \
+    }
 #define FATALDO(f) f
 #else
 #
@@ -1098,20 +1094,10 @@ typedef unsigned long ulong;
 #define FATALDO(f)
 #endif
 
-// some legacy macros, DO NOT USE IN NEW CODE
-// #define DEBUGPRINT_COND(cond, _fmt, ...) DEBUGPRINTC(cond, _fmt, ...)
-// #define ERRORPRINT_COND(cond, _fmt, ...) ERRORPRINTC(cond, _fmt, ...)
-// #define WARNINGPRINT_COND(cond, _fmt, ...) WARNINGPRINTC(cond, _fmt, ...)
-// #define INFOPRINT_COND(cond, _fmt, ...) INFOPRINTC(cond, _fmt, ...)
-// #define FATALPRINT_COND(cond, _fmt, ...) FATALPRINTC(cond, _fmt, ...)
-
-// #define DEBUG_DO(f) DEBUGDO(f)
-// #define FATAL_DO(f) FATALDO(f)
-// #define ERROR_DO(f) ERRORDO(f)
-// #define WARNING_DO(f) WARNINGDO(f)
-// #define FATAL_DO(f) FATALDO(f)
-
 // Misc ---------------------------------------------------------------------
+
+// Determine length of array
+#define ARRAY_LENGTH(array) (sizeof((array)) / sizeof((array)[0]))
 
 // For removing unused variable/parameter warning from compiler output
 #define UNUSED_PARAM(p) (void)p
@@ -1126,4 +1112,40 @@ typedef unsigned long ulong;
 #define WEAK __attribute__((weak))
 #define WEAKA(a) __attribute__((weak, alias(a)))
 
-#endif /* DEF_H */
+// Misc -----------------------------------------------------------------------
+
+static inline void print_info(char* a, char* b) {
+    defprintf("%-20s    %s\n", a, b);
+}
+
+static inline void print_sysinfo(void) {
+    char buf[16];
+    print_info("Build:", __DATE__ "  " __TIME__);
+    print_info("C Standard:", STRINGIZE(__STDC_VERSION__));
+
+#ifdef __GNUC__
+    print_info("GNU C ver:", __GNUC_VERSION__);
+#endif
+
+#ifdef __BIG_ENDIAN__
+    print_info("Byteorder:", "big endian");
+#endif
+#ifdef __LITTLE_ENDIAN__
+    print_info("Byteorder:", "little endian");
+#endif
+
+#ifdef __cplusplus
+    print_info("C++:", "enabled");
+#endif
+
+#ifdef __OPTIMIZE__
+#ifdef __OPTIMIZE_SIZE__
+    print_info("Optimization, size:", "Enabled");
+#else
+    print_info("Optimization:", "Enabled");
+#endif
+#endif
+
+    sprintf(buf, "%d", sizeof(void*));
+    print_info("Pointer size:", buf);
+}

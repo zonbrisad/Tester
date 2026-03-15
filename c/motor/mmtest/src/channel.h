@@ -10,8 +10,6 @@
  *
  */
 
-#ifndef CHANNEL_H
-#define CHANNEL_H
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -19,70 +17,70 @@
 #include "mmmotor_settings.h"
 #include "filter.h"
 
-typedef enum
-{
-  CHANNEL_MODE_NONE = 0,
-  CHANNEL_MODE_NORMAL,
-  CHANNEL_MODE_COUNT,
-  CHANNEL_MODE_MAX,
-  CHANNEL_MODE_MIN,
-  CHANNEL_MODE_LIMIT,
-  CHANNEL_MODE_RATE_LIMIT,
+#pragma once
+typedef enum {
+    CHANNEL_MODE_NONE = 0,
+    CHANNEL_MODE_NORMAL,
+    CHANNEL_MODE_COUNT,
+    CHANNEL_MODE_MAX,
+    CHANNEL_MODE_MIN,
+    CHANNEL_MODE_LIMIT,
+    CHANNEL_MODE_RATE_LIMIT,
 
-  CHANNEL_MODE_FILTER,
+    CHANNEL_MODE_FILTER,
 
-  // Math
-  CHANNEL_MODE_ADD,
-  CHANNEL_MODE_SUBTRACT,
-  CHANNEL_MODE_DIVIDE,
-  CHANNEL_MODE_MULTIPLY,
-  CHANNEL_MODE_INTEGRATE,
-  CHANNEL_MODE_DERIVATE,
-  CHANNEL_MODE_ABS,
+    // Math
+    CHANNEL_MODE_ADD,
+    CHANNEL_MODE_SUBTRACT,
+    CHANNEL_MODE_DIVIDE,
+    CHANNEL_MODE_MULTIPLY,
+    CHANNEL_MODE_INTEGRATE,
+    CHANNEL_MODE_DERIVATE,
+    CHANNEL_MODE_ABS,
 
-  // Binary
-  CHANNEL_MODE_INVERSE,
-  CHANNEL_MODE_DELAY, /* Binary delay */
+    // Binary
+    CHANNEL_MODE_INVERSE,
+    CHANNEL_MODE_DELAY, /* Binary delay */
 
-  CHANNEL_MODE_TIMER,
+    CHANNEL_MODE_TIMER,
 
-  // Generators
-  CHANNEL_MODE_SINE,
-  CHANNEL_MODE_RAMP,
-  CHANNEL_MODE_SQUARE,
-  CHANNEL_MODE_PWM,
+    // Generators
+    CHANNEL_MODE_SINE,
+    CHANNEL_MODE_RAMP,
+    CHANNEL_MODE_SQUARE,
+    CHANNEL_MODE_PWM,
 
-  // Not implemented yet
-  CHANNEL_MODE_AVERAGE,
-  CHANNEL_MODE_VARIANCE,
-  CHANNEL_MODE_FIR,
-  CHANNEL_MODE_HYSTERESIS,
-  CHANNEL_MODE_PID,
-  CHANNEL_MODE_ALARM,
+    // Not implemented yet
+    CHANNEL_MODE_AVERAGE,
+    CHANNEL_MODE_VARIANCE,
+    CHANNEL_MODE_FIR,
+    CHANNEL_MODE_HYSTERESIS,
+    CHANNEL_MODE_PID,
+    CHANNEL_MODE_ALARM,
 
-  CHANNEL_MODE_LESS_THAN,
-  CHANNEL_MODE_LESS_THAN_OR_EQUAL,
-  CHANNEL_MODE_GREATER_THAN,
-  CHANNEL_MODE_GREATER_THAN_OR_EQUAL,
-  CHANNEL_MODE_EQUAL,
-  CHANNEL_MODE_NOT_EQUAL,
+    CHANNEL_MODE_LESS_THAN,
+    CHANNEL_MODE_LESS_THAN_OR_EQUAL,
+    CHANNEL_MODE_GREATER_THAN,
+    CHANNEL_MODE_GREATER_THAN_OR_EQUAL,
+    CHANNEL_MODE_EQUAL,
+    CHANNEL_MODE_NOT_EQUAL,
 
-  ALARM_MODE_ABOVE,
-  ALARM_MODE_BELLOW,
-  ALARM_MODE_WHITHIN,
-  ALARM_MODE_OUTSIDE,
+    ALARM_MODE_ABOVE,
+    ALARM_MODE_BELLOW,
+    ALARM_MODE_WHITHIN,
+    ALARM_MODE_OUTSIDE,
 
-  CHANNEL_MODE_LAST
+    CHANNEL_MODE_LAST
 } CHANNEL_MODE;
 
-typedef enum
-{
-  CHANNEL_FLAG_ENABLE = 0,
-  CHANNEL_FLAG_OVERRIDE,
-  CHANNEL_FLAG_CLEAR_ON_LOG,
-  CHANNEL_FLAG_OUT_OF_BOUND,
-  CHANNEL_FLAG_VALUE_NA,
-  CHANNEL_FLAG_VALUE_NOT_SET // indicates that value has never been set, used by MIN/MAX functions
+typedef enum {
+    CHANNEL_FLAG_ENABLE = 0,
+    CHANNEL_FLAG_OVERRIDE,
+    CHANNEL_FLAG_CLEAR_ON_LOG,
+    CHANNEL_FLAG_OUT_OF_BOUND,
+    CHANNEL_FLAG_VALUE_NA,
+    CHANNEL_FLAG_VALUE_NOT_SET  // indicates that value has never been set, used
+                                // by MIN/MAX functions
 } CHANNEL_FLAGS;
 
 #define CHANNEL_INIT(id, cname, cid, cmode, ctmp1, ctmp2, rsrc) {.rid = id, .value = 0, .tmp1 = ctmp1, .tmp2 = ctmp2, .tmp3 = 0, .name = cname, .tid = cid, .mode = cmode, .src.init = rsrc, .flags = (1 << CHANNEL_FLAG_ENABLE) | (1 << CHANNEL_FLAG_VALUE_NOT_SET)}
@@ -118,25 +116,23 @@ extern "C"
 {
 #endif
 
-  typedef struct channel
-  {
-    CHANNEL_VAL value; // channel value
-    CHANNEL_VAL tmp1;  // temporary value 1
-    CHANNEL_VAL tmp2;  // temporary value 2
-    CHANNEL_VAL tmp3;  // temporary value 3
+typedef struct channel {
+    CHANNEL_VAL value;  // channel value
+    CHANNEL_VAL tmp1;   // temporary value 1
+    CHANNEL_VAL tmp2;   // temporary value 2
+    CHANNEL_VAL tmp3;   // temporary value 3
 
-    uint8_t rid;         // channel ID
-    char tid[16];        // text ID
-    char name[NAMESIZE]; // channel name
-    uint8_t flags;       // channel flags
-    CHANNEL_MODE mode;   // channel mode
-    union
-    {
-      struct channel *ptr; // external source channel channel
-      int8_t init;
+    uint8_t rid;          // channel ID
+    char tid[16];         // text ID
+    char name[NAMESIZE];  // channel name
+    uint8_t flags;        // channel flags
+    CHANNEL_MODE mode;    // channel mode
+    union {
+        struct channel* ptr;  // external source channel channel
+        int8_t init;
     } src;
-    FILTER *filter;
-  } CHANNEL;
+    FILTER* filter;
+} CHANNEL;
 
   /**
    * Initiate channel.
@@ -180,4 +176,4 @@ extern "C"
 }
 #endif
 
-#endif /* CHANNEL_H */
+

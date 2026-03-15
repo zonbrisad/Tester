@@ -41,7 +41,6 @@ extern "C" {
 #define LEF_CLI_CMD(func, name, desc)  {(cmd_handler)func, name, desc }
 // #define LEF_CLI_CMD(func, name, desc)  {.function=(cmd_handler)func, .name=name, .desc=desc }
 
-
 // Typedefs ---------------------------------------------------------------
 
 typedef void (*cmd_handler)(char *);

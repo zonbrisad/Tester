@@ -28,7 +28,6 @@ extern "C" {
 // Prototypes -------------------------------------------------------------
 
 
-char *int2bin(char *buf, int val, int8_t bits);
 
 void printLine(void);
 void printTextLine(char *text);

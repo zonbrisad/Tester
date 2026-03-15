@@ -41,25 +41,6 @@
 
 
 
-char *int2bin(char *buf, int val, int8_t bits) {
-    int i;
-    int n;
-    int mb;
-
-    n = val;
-
-    mb = Clamp(bits, 0, MAXBITS);
-    buf[mb] = '\0';
-
-    for (i = mb - 1; i >= 0; --i) {
-        buf[i] = (n & 1) ? '1' : '0';
-        n >>= 1;
-    }
-
-    return buf;
-}
-
-
 
 void printLine(void) {
     char buf[COLS + 2];
