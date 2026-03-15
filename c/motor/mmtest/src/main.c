@@ -7,16 +7,14 @@
 
 #include <argtable3.h>
 #include <fcntl.h>
-#include <glib-2.0/glib.h>
-#include <glib-unix.h>
 #include <malloc.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <termios.h>
 #include <signal.h>
+#include <pthread.h>
 
 #include "channel.h"
 // #include "alarm.h"
@@ -70,10 +68,9 @@ void temptest(const char* sensor) {
     while (1) {
         STEMP_read(temp);
         CHANNEL_SetValue(&channels[0], (temp->temperature / 10));
-
         mmotor_update();
-
         print_channels(channels, MARRAY_LENGTH(channels));
+		usleep(100000);
     }
 }
 
