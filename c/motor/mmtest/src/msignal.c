@@ -43,7 +43,7 @@ void SIGNAL_setChannel(SIGNAL *signal, CHANNEL *channel) {
 }
 
 void SIGNAL_update(SIGNAL *signal) {
-  CHANNEL_VAL value;
+  CHANNEL_VALx value;
   switch (signal->mode){
     case SIGNAL_MODE_SINUS:
       value =100*(signal->param1 * sin(signal->param3/10));

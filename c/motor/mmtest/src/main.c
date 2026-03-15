@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <termios.h>
+#include <signal.h>
 
 #include "channel.h"
 // #include "alarm.h"
@@ -40,23 +41,22 @@ void safeExit(int x) {
     exit(x);
 }
 
-void print_channels(CHANNEL* chns, int len) {
-    int i;
+void print_channels(CHANNEL* chns, size_t len) {
     printf("%s\n", CHANNEL_toString(NULL));
 
-    for (i = 0; i < len; i++) {
+    for (size_t i = 0; i < len; i++) {
         printf("  %s\n", CHANNEL_toString(&chns[i]));
     }
-    for (i = 0; i <= len; i++) {
+    for (size_t i = 0; i <= len; i++) {
         printf(E_CUR_PREVIOUS_LINE);
     }
 }
 
 void temptest(const char* sensor) {
-    STEMP* temp;
+	STEMP* temp = STEMP_new();
+	STEMP_init(temp, sensor);
 
-    //	filter = FILTER_new();
-    CHANNEL channels[] = {
+	CHANNEL channels[] = {
         CHANNEL_NORMAL(1, "CPU Temperature", "CPU", CHANNEL_MODE_NORMAL, 0),
         CHANNEL_NORMAL(2, "Min", "", CHANNEL_MODE_MIN, 1),
         CHANNEL_NORMAL(3, "Max", "", CHANNEL_MODE_MAX, 1),
@@ -64,8 +64,6 @@ void temptest(const char* sensor) {
         //		CHANNEL_FILTER("Filter", "", filter),
     };
 
-    temp = STEMP_new();
-    STEMP_init(temp, sensor);
     mmotor_init(channels, MARRAY_LENGTH(channels));
     printf(E_HIDE);
     signal(SIGINT, safeExit);
@@ -125,8 +123,7 @@ int main(int argc, char** argv) {
     struct arg_lit* help = arg_lit0("h", "help", "Print help options");
     struct arg_lit* mainT = arg_lit0("m", "main", "Main test");
     struct arg_lit* tempT = arg_lit0("t", "temp", "Temperature test");
-    struct arg_file* sensor =
-        arg_file0("s", "sensor", "<sensorfile>", "File with sensor data");
+    struct arg_file* sensor = arg_file0("s", "sensor", "<sensorfile>", "File with sensor data");
     struct arg_end* end = arg_end(20);
 
     void* argtable[] = {help, mainT, tempT, sensor, end};
@@ -148,10 +145,7 @@ int main(int argc, char** argv) {
     }
 
     print_sysinfo();
-
-    printf("\n");
-    printf("Size of channel struct: %ld\n", sizeof(CHANNEL));
-    printf("\n");
+    printf("\nSize of channel struct: %ld\n\n", sizeof(CHANNEL));
 
     if (mainT->count > 0) {
         maintest();

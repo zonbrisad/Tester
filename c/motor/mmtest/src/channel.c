@@ -254,18 +254,16 @@ void CHANNEL_SetMode(CHANNEL* chn, CHANNEL_MODE mode) {
 }
 
 char* CHANNEL_modeToString(CHANNEL_MODE mode) {
-    int i;
-    i = 0;
-
-    for (i = 0; i < 30; i++) {
-        if (mode2name[i].mode == CHANNEL_MODE_NONE) {
-            return "";
+	for (size_t i = 0; i < 30; i++) {
+		if (mode2name[i].mode == CHANNEL_MODE_NONE) {
+			return "";
         }
         if (mode2name[i].mode == mode) {
-            return mode2name[i].name;
+			return mode2name[i].name;
         }
     }
-
+	
+	int i = 0;
     while (mode2name[i].mode != CHANNEL_MODE_NONE) {
         if (mode2name[i].mode == mode) {
             return mode2name[i].name;
@@ -277,12 +275,10 @@ char* CHANNEL_modeToString(CHANNEL_MODE mode) {
 
 char* CHANNEL_toString(CHANNEL* chn) {
     static char buf[128];
-    char ibuf[16];
+    // char ibuf[16];
 
     if (chn == NULL) {
-        return E_YELLOW
-            "  rId   Id          Name             Mode           Value     "
-            "Flags" E_RESET;
+        return E_YELLOW "  rId   Id          Name             Mode           Value     Flags" E_RESET;
     }
     //	sprintf(buf, " %2d   %-10s  " E_BR_MAGENTA "%-16s" E_END " %-10s" E_CYAN
     //"%10d" E_END "   %s", chn->rid, CHANNEL_get_id(chn), chn->name,

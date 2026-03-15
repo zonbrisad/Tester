@@ -10,8 +10,7 @@
  *
  */
 
-#ifndef MMMOTOR_SETTINGS_H
-#define MMMOTOR_SETTINGS_H
+#pragma once
 
 // typedef int16_t CHANNEL_VAL;
 typedef int32_t CHANNEL_VAL;
@@ -21,4 +20,3 @@ typedef int32_t CHANNEL_VAL;
 
 #define NAMESIZE 20 // size of channelname
 
-#endif /* MMMOTOR_SETTINGS_H */

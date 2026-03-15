@@ -31,7 +31,10 @@ void STEMP_init(STEMP *stemp, const char *filename) {
 
 void STEMP_read(STEMP *stemp) {
 	stemp->file = fopen(stemp->filename, "r");
-	fscanf(stemp->file, "%d", &stemp->temperature);
+	int ret = fscanf(stemp->file, "%d", &stemp->temperature);
+	if (ret != 1) 
+		stemp->temperature = 0;
+		
 	fclose(stemp->file);
 }
 

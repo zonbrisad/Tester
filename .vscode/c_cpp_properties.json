@@ -1,36 +1,71 @@
 {
     "configurations": [
         {
-            "name": "Linux",
-            "includePath": [
-                "${workspaceFolder}/**"
-            ],
-            "defines": [],
-            "compilerPath": "/usr/bin/gcc",
-            "cStandard": "c17",
-            "cppStandard": "gnu++17",
-            "intelliSenseMode": "linux-gcc-x64"
+            "name": "AVR",
+            "intelliSenseMode": "${default}",
+            "compilerPath": "/usr/bin/avr-gcc",
+            "cStandard": "${default}",
+            "cppStandard": "${default}",
+            "includePath": [],
+            "compilerArgs": [
+                "-g",
+                "-Os",
+                "-Wall",
+                "-Wextra",
+                "-fpermissive",
+                "-fno-exceptions",
+                "-fno-threadsafe-statics",
+                "-ffunction-sections",
+                "-fdata-sections",
+                "-pipe"
+            ]
         },
         {
-            "name": "ATmega",
+            "name": "Linux GCC",
             "includePath": [
-                "${workspaceFolder}/**",
-                "/usr/lib/avr/include"
+                "${workspaceFolder}/**",           // your project files (recursive)
+                "/usr/include",
+                "/usr/local/include"
+                // Add more paths here if needed, e.g.:
+                // "/usr/include/opencv4",
+                // "${workspaceFolder}/third_party/glfw/include",
+                // "/opt/ros/humble/include"
             ],
             "defines": [
-                "__AVR_ATmega328P__",               // important for <avr/io.h> to pick correct device
-                "ARDUINO_MEGA"
+                // "_DEBUG",              // uncomment when debugging
+                // "USE_FEATURE_X=1",
+                // "NDEBUG"               // for release builds
             ],
-            "compilerPath": "/usr/bin/avr-gcc",
-            "cStandard": "c11",
-            "cppStandard": "gnu++17",
+            "compilerPath": "/usr/bin/g++",
+            // or "/usr/bin/gcc" if you mainly write C
+            // or full path to a specific version e.g. "/usr/bin/g++-13"
+
+            "cStandard": "c17",                    // or "c11", "gnu17", "c23"
+            "cppStandard": "c++20",                // very common in 2025–2026
+            // Alternatives: "c++17", "c++23", "gnu++20", "c++latest"
+
             "intelliSenseMode": "linux-gcc-x64",
+            // Most accurate mode for GCC on Linux
+            // Alternatives you sometimes see (older/worse):
+            // "gcc-x64" → legacy
+            // "clang-x64" → do NOT use with gcc
+
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/**",
+                    "/usr/include",
+                    "/usr/local/include"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            },
+
             "compilerArgs": [
-                "-mmcu=atmega328p",                  // critical: tells compiler & IntelliSense the target MCU
-                "-DF_CPU=16000000UL"                 // very common for Arduino Uno
+                // Optional: extra flags passed to the compiler for IntelliSense
+                // "-Wall",
+                // "-Wextra",
+                // "-pedantic"
             ]
         }
-
     ],
     "version": 4
 }

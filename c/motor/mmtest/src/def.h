@@ -1146,6 +1146,6 @@ static inline void print_sysinfo(void) {
 #endif
 #endif
 
-    sprintf(buf, "%d", sizeof(void*));
+    sprintf(buf, "%ld", sizeof(void*));
     print_info("Pointer size:", buf);
 }
