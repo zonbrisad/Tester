@@ -17,7 +17,6 @@
 #include <math.h>
 
 #include "def.h"
-// #include "def_util.h"
 
 #define Bit_set(d, pos) d |= (1 << pos)
 #define Bit_clear(d, pos) d &= ~(1 << pos)

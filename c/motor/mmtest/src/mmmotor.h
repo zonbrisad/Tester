@@ -10,15 +10,16 @@
  * 
  */
 
-#ifndef ALARM_H
-#define	ALARM_H
+#pragma once
+
+#include "mmmotor.h"
 
 #include <stdlib.h>
 #include <stdint.h>
 
 #include "mmmotor_settings.h"
 #include "channel.h"
-#include "alarm.h"
+// #include "alarm.h"
 
 
 // Determine length of array
@@ -53,6 +54,4 @@ extern "C" {
 #ifdef	__cplusplus
 }
 #endif
-
-#endif	/* ALARM_H */
 
