@@ -26,32 +26,29 @@
 typedef struct {
     CHANNEL_MODE mode;
     char* name;
-} modeName;
+} mode_name_t;
 
-modeName mode2name[] = {{CHANNEL_MODE_NORMAL, "Normal"},
-                        {CHANNEL_MODE_MIN, "Min"},
-                        {CHANNEL_MODE_MAX, "Max"},
-                        {CHANNEL_MODE_COUNT, "Count"},
-                        {CHANNEL_MODE_LIMIT, "Limit"},
-
-                        {CHANNEL_MODE_DIVIDE, "Divide"},
-                        {CHANNEL_MODE_MULTIPLY, "Multiply"},
-                        {CHANNEL_MODE_INTEGRATE, "Integrate"},
-                        {CHANNEL_MODE_DERIVATE, "Derivate"},
-
-                        {CHANNEL_MODE_RATE_LIMIT, "Rate limit"},
-                        {CHANNEL_MODE_AVERAGE, "Average"},
-                        {CHANNEL_MODE_TIMER, "Timer"},
-
-                        {CHANNEL_MODE_SINE, "Sine"},
-                        {CHANNEL_MODE_RAMP, "Ramp"},
-                        {CHANNEL_MODE_SQUARE, "Square"},
-
-                        {CHANNEL_MODE_PWM, "PWM"},
-                        {CHANNEL_MODE_INVERSE, "Inverse"},
-                        {CHANNEL_MODE_DELAY, "Delay"},
-
-                        {CHANNEL_MODE_NONE, "None"}};
+mode_name_t mode2name[] = {
+    {CHANNEL_MODE_NORMAL, "Normal"},
+    {CHANNEL_MODE_MIN, "Min"},
+    {CHANNEL_MODE_MAX, "Max"},
+    {CHANNEL_MODE_COUNT, "Count"},
+    {CHANNEL_MODE_LIMIT, "Limit"},
+    {CHANNEL_MODE_DIVIDE, "Divide"},
+    {CHANNEL_MODE_MULTIPLY, "Multiply"},
+    {CHANNEL_MODE_INTEGRATE, "Integrate"},
+    {CHANNEL_MODE_DERIVATE, "Derivate"},
+    {CHANNEL_MODE_RATE_LIMIT, "Rate limit"},
+    {CHANNEL_MODE_AVERAGE, "Average"},
+    {CHANNEL_MODE_TIMER, "Timer"},
+    {CHANNEL_MODE_SINE, "Sine"},
+    {CHANNEL_MODE_RAMP, "Ramp"},
+    {CHANNEL_MODE_SQUARE, "Square"},
+    {CHANNEL_MODE_PWM, "PWM"},
+    {CHANNEL_MODE_INVERSE, "Inverse"},
+    {CHANNEL_MODE_DELAY, "Delay"},
+    {CHANNEL_MODE_NONE, "None"}
+};
 
 void CHANNEL_Init(CHANNEL* chn) {
     chn->value = 0;

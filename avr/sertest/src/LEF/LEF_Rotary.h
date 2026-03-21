@@ -27,7 +27,7 @@ typedef struct {
 	uint8_t state;
 	uint8_t cnt;
 	uint8_t clk;
-	uint8_t dt;
+	uint8_t data;
 } LEF_Rotary;
 
 
