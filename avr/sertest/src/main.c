@@ -17,26 +17,6 @@
 #include "def.h"
 
 #define UART_BAUD_RATE 57600
-
-void hw_init(void);
-
-void cmd_help(char *args);
-void cmd_c16(char *args);
-void cmd_c256(char *args);
-void cmd_attr(char *args);
-void cmd_r100(char *args);
-void cmd_r1000(char *args);
-void cmd_r10000(char *args);
-void cmd_bar(char *args);
-void cmd_mrtcu(char *args);
-void cmd_mrtcp(char *args);
-void cmd_erase(char *args);
-void cmd_erasea(char *args);
-void cmd_eraseb(char *args);
-void cmd_erasela(char *args);
-void cmd_insert(char *args);
-void cmd_delete(char *args);
-
 typedef enum {
 	EVENT_Timer1 = 0,
 } Events;
@@ -46,40 +26,15 @@ static FILE mystdout = FDEV_SETUP_STREAM((void *)uart_putc, NULL, _FDEV_SETUP_WR
 LEF_Timer timer1;
 LEF_Led   led;
 
-const PROGMEM LEF_CliCmd commands[] = {
-    LEF_CLI_LABEL("Text attributes"),
-    {cmd_attr, "attr", "Print attributes"},
-    {cmd_c16, "c16", "Print 16 terminal colors"},
-    {cmd_c256, "c256", "Print 256 terminal colors"},
-    LEF_CLI_LABEL("Erase tests"),
-    {cmd_erase, "erase", "Clear entire screen"},
-    {cmd_erasea, "erasea", "Clear all above cursor"},
-    {cmd_eraseb, "eraseb", "Clear all below screen"},
-    {cmd_erasela, "erasela", "Erase line above"},
-    LEF_CLI_LABEL("Scrolling"),
-    {cmd_insert, "insert", "Insert line"},
-    {cmd_delete, "delete", "Delete line"},
-    LEF_CLI_LABEL("Generators"),
-    {cmd_r100, "r100", "Print 100 rows"},
-    {cmd_r1000, "r1000", "print 1000 rows"},
-    {cmd_r10000, "r10000", "print 10000 rows"},
-    LEF_CLI_LABEL("Animators"),
-    {cmd_bar, "bar", "Print progressbar"},
-    LEF_CLI_LABEL("Tests"),
-    {cmd_mrtcu, "mrtcu", "Multirow Cursor Up test"},
-    {cmd_mrtcp, "mrtcp", "Multirow Cursor Position test"},
-    LEF_CLI_LABEL("Other"),
-    {(void*)(char*)print_sysinfo, "info", "System info"},
-    {cmd_help, "help", "Print help information"},
-};
+
 
 const PROGMEM char cc[][10] = {
 		E_BLACK, E_RED, E_GREEN, E_YELLOW, E_BLUE, E_MAGENTA,
 		E_CYAN, E_GRAY, E_DARKGRAY, E_BR_RED, E_BR_GREEN, E_BR_YELLOW,
 		E_BR_BLUE, E_BR_MAGENTA, E_BR_CYAN, E_WHITE};
 
-void fill_screen(void);
-void fill_screen(void) {
+static void fill_screen(void);
+static void fill_screen(void) {
     for (size_t i = 1; i <= 24; i++) {
         if ((i == 1) || (i == 24)) {
             printf_P(PSTR("+----%2d--+--------+--------+--------+--------+-----"
@@ -93,30 +48,30 @@ void fill_screen(void) {
     }
 }
 
-void cmd_erase(char* args) {
+static void cmd_erase(char* args) {
     UNUSED(args);
     // fill_screen();
     printf(E_ERASE_DISPLAY);
 }
-void cmd_eraseb(char* args) {
+static void cmd_eraseb(char* args) {
     UNUSED(args);
     // fill_screen();
     printf(E_CUR_POS(12, 1));
     printf(E_ERASE_DISPLAY_TO_END);
 }
-void cmd_erasea(char* args) {
+static void cmd_erasea(char* args) {
     UNUSED(args);
     // fill_screen();
     printf(E_CUR_POS(12, 1));
     printf(E_ERASE_DISPLAY_TO_BEGINING);
 }
-void cmd_erasela(char* args) {
+static void cmd_erasela(char* args) {
     UNUSED(args);
     printf(E_SAVE_CURSOR_POS E_CUR_PREVIOUS_LINE);
     printf(E_ERASE_LINE_TO_END);
     printf(E_RESTORE_CURSOR_POS);
 }
-void cmd_delete(char* args) {
+static void cmd_delete(char* args) {
     UNUSED(args);
     fill_screen();
     printf(E_SAVE_CURSOR_POS);
@@ -129,7 +84,7 @@ void cmd_delete(char* args) {
     printf(E_RESTORE_CURSOR_POS);
     printf_P(PSTR("\n"));
 }
-void cmd_insert(char* args) {
+static void cmd_insert(char* args) {
     UNUSED(args);
     fill_screen();
     printf(E_SAVE_CURSOR_POS);
@@ -144,8 +99,8 @@ void cmd_insert(char* args) {
 }
 
 #define BAR 15
-void print_bar(size_t l, size_t max);
-void print_bar(size_t l, size_t max) {
+static void print_bar(size_t l, size_t max);
+static void print_bar(size_t l, size_t max) {
     char buf[96];
 	UNUSED(max);
     for (size_t i = 0; i < l; i++) {
@@ -155,7 +110,7 @@ void print_bar(size_t l, size_t max) {
     printf_P(PSTR("  [%-15s]  %2d"), buf, l);
 }
 
-void cmd_bar(char* args) {
+static void cmd_bar(char* args) {
     UNUSED(args);
     for (size_t i = 0; i <= BAR; i++) {
         print_bar(i, BAR);
@@ -166,7 +121,7 @@ void cmd_bar(char* args) {
 }
 
 #define MRT 23
-void cmd_mrtcu(char* args) {
+static void cmd_mrtcu(char* args) {
     UNUSED(args);
     for (size_t j = 0; j < 20; j++) {
         for (size_t i = 0; i < MRT; i++) {
@@ -175,7 +130,7 @@ void cmd_mrtcu(char* args) {
 
         if (j < 19) {
             for (size_t i = 0; i < MRT; i++) {
-                printf(E_UP);
+                printf(E_CUR_UP);
             }
         }
         _delay_ms(100);
@@ -183,7 +138,7 @@ void cmd_mrtcu(char* args) {
     printf("\n");
 }
 
-void cmd_mrtcp(char* args) {
+static void cmd_mrtcp(char* args) {
     UNUSED(args);
     for (size_t j = 0; j < 20; j++) {
         for (size_t i = 0; i < MRT; i++) {
@@ -201,7 +156,7 @@ void cmd_mrtcp(char* args) {
 #define E_FG256P "\e[38;5;%dm"
 #define E_BG256P "\e[48;5;%dm"
 
-void cmd_c16(char* args) {
+static void cmd_c16(char* args) {
     char buf[192];
     char* p;
     UNUSED(args);
@@ -223,7 +178,7 @@ void cmd_c16(char* args) {
     printf("\n");
 }
 
-void cmd_c256(char* args) {
+static void cmd_c256(char* args) {
     char buf[128];
     char* p;
     UNUSED(args);
@@ -245,7 +200,7 @@ void cmd_c256(char* args) {
     }
 }
 
-void cmd_attr(char* args) {
+static void cmd_attr(char* args) {
     UNUSED(args);
     printf_P(PSTR("Text attributes\n"));
     printf_P(PSTR(E_RESET "Normal text\n"));
@@ -275,32 +230,58 @@ void cmd_attr(char* args) {
     */
 }
 
-void print_rows(size_t r);
-void print_rows(size_t r) {
+static void print_rows(size_t r) {
     for (size_t i = 1; i <= r; i++) {
         printf_P(PSTR("Row %d\n"), i);
     }
 }
 
-void cmd_r100(char* args) {
+static void cmd_r100(char* args) {
     UNUSED(args);
     print_rows(100);
 }
 
-void cmd_r1000(char* args) {
+static void cmd_r1000(char* args) {
     UNUSED(args);
     print_rows(1000);
 }
 
-void cmd_r10000(char* args) {
+static void cmd_r10000(char* args) {
     UNUSED(args);
     print_rows(10000);
 }
 
-void cmd_help(char* args) {
+static void cmd_help(char* args) {
     UNUSED(args);
     LEF_Cli_print();
 }
+
+const PROGMEM LEF_CliCmd commands[] = {
+    LEF_CLI_LABEL("Text attributes"),
+    {cmd_attr, "attr", "Print attributes"},
+    {cmd_c16, "c16", "Print 16 terminal colors"},
+    {cmd_c256, "c256", "Print 256 terminal colors"},
+    LEF_CLI_LABEL("Erase tests"),
+    {cmd_erase, "erase", "Clear entire screen"},
+    {cmd_erasea, "erasea", "Clear all above cursor"},
+    {cmd_eraseb, "eraseb", "Clear all below screen"},
+    {cmd_erasela, "erasela", "Erase line above"},
+    LEF_CLI_LABEL("Scrolling"),
+    {cmd_insert, "insert", "Insert line"},
+    {cmd_delete, "delete", "Delete line"},
+    LEF_CLI_LABEL("Generators"),
+    {cmd_r100, "r100", "Print 100 rows"},
+    {cmd_r1000, "r1000", "print 1000 rows"},
+    {cmd_r10000, "r10000", "print 10000 rows"},
+    LEF_CLI_LABEL("Animators"),
+    {cmd_bar, "bar", "Print progressbar"},
+    LEF_CLI_LABEL("Tests"),
+    {cmd_mrtcu, "mrtcu", "Multirow Cursor Up test"},
+    {cmd_mrtcp, "mrtcp", "Multirow Cursor Position test"},
+    LEF_CLI_LABEL("Other"),
+    {(void*)(char*)print_sysinfo, "info", "System info"},
+    {cmd_help, "help", "Print help information"},
+};
 
 ISR(TIMER1_COMPA_vect) {
     TIMER1_RELOAD(0);
@@ -308,7 +289,7 @@ ISR(TIMER1_COMPA_vect) {
 	ARDUINO_LED_SET(LEF_Led_update(&led));
 }
 
-void hw_init(void) {
+static void hw_init(void) {
     stdout = &mystdout;
 
 	ARDUINO_LED_INIT();
@@ -335,8 +316,6 @@ int main() {
     hw_init();
 
     printf_P(PSTR("\n\nArduino serial port testprogram\n\n"));
-
-    print_sysinfo();
 
     while (true) {
         LEF_Wait(&event);
