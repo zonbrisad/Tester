@@ -321,7 +321,7 @@ static inline void lcd_newline(uint8_t pos)
         addressCounter = LCD_START_LINE1;
 #endif
 #endif
-    lcd_command((1<<LCD_DDRAM)+addressCounter);
+    lcd_send_command((1<<LCD_DDRAM)+addressCounter);
 
 }/* lcd_newline */
 
@@ -335,7 +335,7 @@ Send LCD controller instruction command
 Input:   instruction to send to LCD controller, see HD44780 data sheet
 Returns: none
 *************************************************************************/
-void lcd_command(uint8_t cmd)
+void lcd_send_command(uint8_t cmd)
 {
     lcd_waitbusy();
     lcd_write(cmd,0);
@@ -347,7 +347,7 @@ Send data byte to LCD controller
 Input:   data to send to LCD controller, see HD44780 data sheet
 Returns: none
 *************************************************************************/
-void lcd_data(uint8_t data)
+void lcd_send_data(uint8_t data)
 {
     lcd_waitbusy();
     lcd_write(data,1);
@@ -368,9 +368,9 @@ void lcd_gotoxy(uint8_t x, uint8_t y)
 #endif
 #if LCD_LINES==2
     if ( y==0 ) 
-        lcd_command((1<<LCD_DDRAM)+LCD_START_LINE1+x);
+        lcd_send_command((1<<LCD_DDRAM)+LCD_START_LINE1+x);
     else
-        lcd_command((1<<LCD_DDRAM)+LCD_START_LINE2+x);
+        lcd_send_command((1<<LCD_DDRAM)+LCD_START_LINE2+x);
 #endif
 #if LCD_LINES==4
     if ( y==0 )
@@ -399,7 +399,7 @@ Clear display and set cursor to home position
 *************************************************************************/
 void lcd_clrscr(void)
 {
-    lcd_command(1<<LCD_CLR);
+    lcd_send_command(1<<LCD_CLR);
 }
 
 
@@ -408,7 +408,7 @@ Set cursor to home position
 *************************************************************************/
 void lcd_home(void)
 {
-    lcd_command(1<<LCD_HOME);
+    lcd_send_command(1<<LCD_HOME);
 }
 
 
@@ -582,11 +582,11 @@ void lcd_init(uint8_t dispAttr)
 	lcd_command(KS0073_4LINES_MODE);
 	lcd_command(KS0073_EXTENDED_FUNCTION_REGISTER_OFF);
 #else
-    lcd_command(LCD_FUNCTION_DEFAULT);      /* function set: display lines  */
+    lcd_send_command(LCD_FUNCTION_DEFAULT);      /* function set: display lines  */
 #endif
-    lcd_command(LCD_DISP_OFF);              /* display off                  */
+    lcd_send_command(LCD_DISP_OFF);              /* display off                  */
     lcd_clrscr();                           /* display clear                */ 
-    lcd_command(LCD_MODE_DEFAULT);          /* set entry mode               */
-    lcd_command(dispAttr);                  /* display/cursor control       */
+    lcd_send_command(LCD_MODE_DEFAULT);          /* set entry mode               */
+    lcd_send_command(dispAttr);                  /* display/cursor control       */
 
 }/* lcd_init */

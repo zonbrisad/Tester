@@ -38,13 +38,13 @@ typedef struct {
     struct itimerspec ts;
     size_t id;
     void (*func)(void);
-} timerx_t;
+} ev_timer_t;
 
 typedef struct {
     timerx_t* items;
     size_t count;
     size_t capacity;
-} my_str_array;
+} event_array_t;
 
 void event_array_init(my_str_array* array) {
     array->items = NULL;

@@ -123,7 +123,7 @@ extern "C" {
 	
 // Variables --------------------------------------------------------------
 
-extern LEF_EventQueue StdQueue;
+extern LEF_EventQueue lef_std_queue;
 	
 // Functions --------------------------------------------------------------
 
