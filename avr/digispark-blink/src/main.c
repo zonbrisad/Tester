@@ -30,29 +30,20 @@
 
 #include "def_avr.h"
 
-// Macros -------------------------------------------------------------------
-
-// Prototypes ---------------------------------------------------------------
-
-void hw_init(void);
-
-// Datatypes ----------------------------------------------------------------
-
-// Variables ----------------------------------------------------------------
-
 // Code ---------------------------------------------------------------------
 
-void hw_init(void) {
+static void hw_init(void) {
     ARDUINO_LED_INIT();
     sei();  // Enable all interrupts
 }
+
 int main() {
     hw_init();
     while (true) {
         ARDUINO_LED_SET(true);
-        _delay_ms(100);
+        _delay_ms(200);
         ARDUINO_LED_SET(false);
-        _delay_ms(100);
+        _delay_ms(200);
     }
     return 0;
 }

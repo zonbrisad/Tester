@@ -33,7 +33,6 @@ const PROGMEM char cc[][10] = {
 		E_CYAN, E_GRAY, E_DARKGRAY, E_BR_RED, E_BR_GREEN, E_BR_YELLOW,
 		E_BR_BLUE, E_BR_MAGENTA, E_BR_CYAN, E_WHITE};
 
-static void fill_screen(void);
 static void fill_screen(void) {
     for (size_t i = 1; i <= 24; i++) {
         if ((i == 1) || (i == 24)) {
@@ -99,7 +98,6 @@ static void cmd_insert(char* args) {
 }
 
 #define BAR 15
-static void print_bar(size_t l, size_t max);
 static void print_bar(size_t l, size_t max) {
     char buf[96];
 	UNUSED(max);
