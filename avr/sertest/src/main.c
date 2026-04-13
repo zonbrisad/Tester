@@ -1,4 +1,9 @@
+#include "main.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <avr/io.h>
 #include <avr/pgmspace.h>
 #include <avr/interrupt.h>
@@ -6,15 +11,12 @@
 #include <avr/sleep.h>
 #include <util/delay.h>
 #include <util/atomic.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <stdint.h>
 
 #include "uart.h"
-#include "main.h"
 #include "LEF.h"
 #include "def.h"
+#include "def_avr.h"
+#include "lcd.h"
 
 #define UART_BAUD_RATE 57600
 typedef enum {
@@ -26,7 +28,70 @@ static FILE mystdout = FDEV_SETUP_STREAM((void *)uart_putc, NULL, _FDEV_SETUP_WR
 LEF_Timer timer1;
 LEF_Led   led;
 
+#define LCD_RS_PIN B, 5    /**< pin for RS line         */
+#define LCD_RW_PIN B, 6    /**< pin for Read/Write line */
+#define LCD_E_PIN B, 7     /**< pin for Enable line     */
+#define LCD_DATA4_PIN B, 4 /**< pin for 4bit data bit 0  */
+#define LCD_DATA5_PIN B, 5 /**< pin for 4bit data bit 1  */
+#define LCD_DATA6_PIN B, 6 /**< pin for 4bit data bit 2  */
+#define LCD_DATA7_PIN B, 7 /**< pin for 4bit data bit 3  */
 
+static uint16_t lcd_gpio_callback(HD44780_MSG msg, uint16_t data_arg) {
+    uint16_t result = 0;
+    switch (msg) {
+        case HD44780_MSG_INIT:
+            gpio_init(LCD_E_PIN, true, false);
+            gpio_init(LCD_RW_PIN, true, false);
+            gpio_init(LCD_RS_PIN, true, false);
+            break;
+        case HD44780_MSG_GPIO_DATA_DIRECTION:
+            gpio_direction(LCD_DATA4_PIN, data_arg);
+            gpio_direction(LCD_DATA5_PIN, data_arg);
+            gpio_direction(LCD_DATA6_PIN, data_arg);
+            gpio_direction(LCD_DATA7_PIN, data_arg);
+            break;
+        case HD44780_MSG_GPIO_DATA_READ:
+            if (gpio_read(LCD_DATA4_PIN)) result |= 0x01;
+            if (gpio_read(LCD_DATA5_PIN)) result |= 0x02;
+            if (gpio_read(LCD_DATA6_PIN)) result |= 0x04;
+            if (gpio_read(LCD_DATA7_PIN)) result |= 0x08;
+            break;
+        case HD44780_MSG_GPIO_DATA_WRITE:
+            gpio_write(LCD_DATA7_PIN, data_arg & 0x80);
+            gpio_write(LCD_DATA6_PIN, data_arg & 0x40);
+            gpio_write(LCD_DATA5_PIN, data_arg & 0x20);
+            gpio_write(LCD_DATA4_PIN, data_arg & 0x10);
+            break;
+        case HD44780_MSG_GPIO_E:
+            gpio_write(LCD_E_PIN, data_arg);
+            break;
+        case HD44780_MSG_GPIO_E_TOGGLE:
+            gpio_write(LCD_E_PIN, 1);
+            _delay_us(HD44780_DELAY_ENABLE_PULSE);
+            gpio_write(LCD_E_PIN, 0);
+            break;
+        case HD44780_MSG_GPIO_RW:
+            gpio_write(LCD_RW_PIN, data_arg);
+            break;
+        case HD44780_MSG_GPIO_RS:
+            gpio_write(LCD_RS_PIN, data_arg);
+            break;
+        case HD44780_MSG_DELAY_E:
+            _delay_us(HD44780_DELAY_ENABLE_PULSE);
+            break;
+        case HD44780_MSG_DELAY_US:
+            data_arg = data_arg / 10;
+            while (data_arg--) _delay_us(10);
+            break;
+        case HD44780_MSG_BACKLIGHT:
+            TIMER_OCA(3, data_arg);  // set PWM on LCD backlight
+            break;
+
+        default:
+            break;
+    }
+    return result;
+}
 
 const PROGMEM char cc[][10] = {
 		E_BLACK, E_RED, E_GREEN, E_YELLOW, E_BLUE, E_MAGENTA,

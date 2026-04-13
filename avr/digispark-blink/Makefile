@@ -280,6 +280,7 @@ NM        = ${TCHAIN}nm
 AS        = ${TCHAIN}as
 GDB       = ${TCHAIN}gdb
 STRIP     = ${TCHAIN}strip
+LD        = ${TCHAIN}ld
 
 #
 # Message/Filter settings
@@ -360,6 +361,7 @@ MSG_EXTENDED_COFF    = "${C_ACTION}Converting to AVR Extended COFF:${E_RESET}"
 MSG_MOC              = "${C_ACTION}Creating MOC file:${E_RESET}"
 MSG_UI               = "${C_ACTION}Generating UI header:${E_RESET}"
 MSG_BACKUP           = "${C_ACTION}Making incremental backup of project:${E_RESET}"
+MSG_UF2              = "${C_ACTION}Creating UF2:${E_RESET}"
 MSG_SRC              = "${C_MSG}Source files $(E_FG_GREEN)-----------------------------------------------------${E_RESET}"
 MSG_FLAGS            = "${C_MSG}Compiler Flags $(E_FG_GREEN)---------------------------------------------------${E_RESET}"
 MSG_LINKER           = "${C_MSG}Linker Flags $(E_FG_GREEN)-----------------------------------------------------${E_RESET}"
@@ -784,53 +786,6 @@ ccheck: ##D Static code analysis using cppcheck(errors only)
 acheck: ##D Static code analysis using cppcheck(all warnings)
 	@$(CPPCHECK) --inline-suppr --enable=all $(SRC) $(CPPCHECK_FILTER)
 
-#
-# Artistic Style (astyle) Format source code to a standard
-#============================================================================
-.PHONY: astyle
-
-TABSIZE=4
-
-# Bracket style options
-AST  = --style=java
-
-# Tab options
-AST += --indent=spaces=$(TABSIZE)
-
-# Indentation options
-AST += --indent-switches
-AST += --indent-cases
-#AST += --indent-preproc-cond
-AST += --indent-col1-comments
-AST += --max-instatement-indent=40
- 
-# C++ specific indentation
-AST += --indent-modifiers
-
-# Padding options
-AST += --break-blocks
-AST += --pad-oper
-#AST += --pad-comma
-AST += --pad-header
-AST += --align-pointer=name
-AST += --align-reference=name 
-
-# Formatting options
-AST += --add-brackets 
-AST += --convert-tabs
-
-# Other options
-AST += --lineend=linux
-#AST += --recursive
-#AST += --exclude=
-AST +=--preserve-date
-
-PSRCH = $(PSRC:%.c=%.h) 
-
-astyle: ##D Format source to conform to a standard
-	@$(ASTYLE) $(AST) src/*.c src/*.cpp src/*.h
-
-	
 # Listing of phony targets.
 .PHONY : all clean gccversion build begin finished end elf lss sym archive edit help backup list-src list-flags run
 

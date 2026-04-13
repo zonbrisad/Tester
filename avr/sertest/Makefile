@@ -32,7 +32,8 @@ SRC = src/main.c \
 	src/LEF/LEF_Button.c \
 	src/LEF/LEF_Led.c \
 	src/LEF/LEF_Cli.c \
-	src/LEF/LEF_Cli_History.c
+	src/LEF/LEF_Cli_History.c \
+	src/lcd.c
 
 # List C, C++ and assembler library/3rd party source files here. (C/C++ dependencies are automatically generated.)
 LSRC =	
