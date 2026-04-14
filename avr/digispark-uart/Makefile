@@ -24,8 +24,8 @@ SRCDIR = src
 INCDIR = src 
 
 # List C, C++ and assembler source files here. (C/C++ dependencies are automatically generated.)
-SRC = src/main.c 
-
+SRC = src/main.c \
+      src/usi-uart.c
 
 # Libraries to link
 LIB   = -lm 
