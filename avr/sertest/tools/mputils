@@ -2,6 +2,7 @@
 # shellcheck disable=2034
 # shellcheck disable=2317
 # shellcheck disable=1090
+# shellcheck disable=2329
 #---------------------------------------------------------------------
 #
 #  mptools2
@@ -172,7 +173,7 @@ backup() { ##D Make an incremental backup
     . \
     "${BACKUP_DIR}/backup_0"
 
-  if (($? == 0)); then
+  if (( $? == 0)); then
     echo
     bpOk "Created backup."
   fi
@@ -253,29 +254,33 @@ bpPIDExist() {
   fi
 }
 
-arduino_write_flash() { ## Write firmware to Arduino via bootloader
-  FILE=${1}
-  MCU=${2}
-  PORT=${3}
-
-  if [ ! -e "${PORT}" ]; then
-    echo
-    bpError "Device ${PORT} does not exist!"
-    return
-  fi
-
-  # Suspend mpterm terminal program if available
+mpterm_suspend() { ##D Suspend mpterm serial terminal if available
   if bpHasCmd "mpterm"; then
     mpterm --suspend
     sleep 0.4
   fi
+}
 
-  # Write to flash
-  avrdude -v -v -V -p "${MCU}" -b 57600 -c arduino -P "${PORT}" -U flash:w:"${FILE}":i
+check_port_exist() { ## Check if serial port exist, exit if not
+  local PORT="${1}"
+  if [ ! -e "${PORT}" ]; then
+    echo
+    bpError "Device ${PORT} does not exist!"
+    bpExit
+  fi
+}
+
+check_writing() { ## Check if writing is ongoing, if so abort
+  if bpPIDExist; then
+    pid=$(bpPIDLoad)
+    kill -s SIGUSR2 "$pid"
+    bpError "Flashing already in progress"
+    bpExit
+  fi
 }
 
 get_serial_port() {
-  PORT=$1
+  local PORT=$1
   bpPrintLine "Available USB->serial ports"
   ls --width 1 /dev/ttyUSB* 2>/dev/null
   ls --width 1 /dev/ttyACM* 2>/dev/null
@@ -284,32 +289,73 @@ get_serial_port() {
   bpReturn=$(bpReadStrR "Enter Port >" "PORT" "${PORT}")
 }
 
-#
-# $2 file
-# $3 MCU type
-# $4 port
-#
-arduino-flash() { ##D Write firmware to arduino with avrdude
-  FILE=${2}
-  MCU=${3}
-  PORT=${4}
 
-  if bpPIDExist; then
-    pid=$(bpPIDLoad)
-    kill -s SIGUSR2 "$pid"
-    return
-  fi
+avr_flash_arduino() { ##D Write firmware to AVR with avrdude using arduino protocol 
+  local FILE=${2}
+  local MCU=${3}
+  local PORT=${4}
+
+  check_writing
 
   get_serial_port "$PORT"
   PORT="$bpReturn"
 
-  arduino_write_flash "${FILE}" "${MCU}" "${PORT}"
+  check_port_exist "${PORT}"
+
+  mpterm_suspend
+
+  # Write to flash
+  avrdude -v -v -V -p "${MCU}" -c arduino -P "${PORT}" -b 57600 -U flash:w:"${FILE}":i
+}
+
+avr_flash_urboot() { ##D Write firmware to AVR with avrdude using urboot protocol 
+  local FILE=${2}
+  local MCU=${3}
+  local PORT=${4}
+
+  check_writing
+
+  get_serial_port "${PORT}"
+  PORT="$bpReturn"
+
+  check_port_exist "${PORT}"
+
+  mpterm_suspend
+
+  # Write to flash
+  avrdude -v -v -V -p "${MCU}" -c urclock -P "${PORT}" -U flash:w:"${FILE}":i
+}
+
+avr_flash_micronucleus() { ##D Write firmware to AVR ATtiny(sparkfun) with micronucleus
+  local FILE=${2}
+
+  check_writing
+
+  # Write to flash
+  micronucleus "${FILE}"  
+}
+
+rp_usb_flash() { ##D Flash firmware to RP mcu via USB drive
+  local FILE=${2}
+  local DEST 
+  
+  bpPrintLine "Avalable destination"
+  ls --directory --width 1 /media/"${USER}"/R* 2>/dev/null
+  bpPrintLine
+
+  bpReturn=$(bpReadStrR "Enter destination" "DEST" "${DEST}")
+  DEST=${bpReturn}
+  if [ -d "$DEST" ]; then
+    cp "${FILE}" "${DEST}"
+  else
+    bpError "Could not find drive ${DEST}"
+  fi
 }
 
 wait_write() {
-  FILE=${1}
-  MCU=${2}
-  PORT=${3}
+  local FILE=${1}
+  local MCU=${2}
+  local PORT=${3}
 
   arduino_write_flash "${FILE}" "${MCU}" "${PORT}"
 
@@ -355,7 +401,7 @@ qemu-avr() { # Emulate AVR
 
 ##- Misc
 
-sermon() { ##D Monitor tcp port and open when available
+sermon() { ##D Monitor tcp port and open with telnet when available
   PORT=$2
 
   bpInfo "Waiting for port $PORT to become available."

@@ -356,19 +356,18 @@ ISR(TIMER1_COMPA_vect) {
 	ARDUINO_LED_SET(LEF_Led_update(&led));
 }
 
-ISR(TIMER0_COMPA_vect) {
-
-}
-
+#define LCD_BACKLIGHT_PIN D,6
 static void hw_init(void) {
     stdout = &mystdout;
 
 	ARDUINO_LED_INIT();
 
+    // Timer 0 (8 bit) setup for PWM on OCA0 for LCD backlight control
     TIMER0_CLK_PRES_64();
-    TIMER0_OCA_IE();
     TIMER0_WGM_FAST_PWM();
-
+    TIMER0_OM_CLEAR();
+    TIMER0_OCA_SET(200  );
+    gpio_init(LCD_BACKLIGHT_PIN, GPIO_OUTPUT, GPIO_NO_PULLUP);
 
     // Timer 1 (16 bit) Sytem timer
     TIMER1_CLK_PRES_256();  // set prescaler to 1/1024
@@ -378,7 +377,10 @@ static void hw_init(void) {
     uart_init(UART_BAUD_SELECT(UART_BAUD_RATE, F_CPU));
 
     lcd_init(lcd_gpio_callback, HD44780_MODE_ON);
-    lcd_puts("LCD test");
+    lcd_puts_P("Terminal tester");
+    lcd_gotoxy(0, 1);
+    lcd_puts_P("  57600 bits/s");
+
     sei();  // Enable all interrupts
 }
 
