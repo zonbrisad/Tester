@@ -28,21 +28,25 @@ static FILE mystdout = FDEV_SETUP_STREAM((void *)uart_putc, NULL, _FDEV_SETUP_WR
 LEF_Timer timer1;
 LEF_Led   led;
 
-#define LCD_RS_PIN B, 5    /**< pin for RS line         */
-#define LCD_RW_PIN B, 6    /**< pin for Read/Write line */
-#define LCD_E_PIN B, 7     /**< pin for Enable line     */
-#define LCD_DATA4_PIN B, 4 /**< pin for 4bit data bit 0  */
-#define LCD_DATA5_PIN B, 5 /**< pin for 4bit data bit 1  */
-#define LCD_DATA6_PIN B, 6 /**< pin for 4bit data bit 2  */
-#define LCD_DATA7_PIN B, 7 /**< pin for 4bit data bit 3  */
+#define LCD_RS_PIN C, 5    /**< pin for RS line         */
+// #define LCD_RW_PIN B, 6    /**< pin for Read/Write line */
+#define LCD_E_PIN C, 4     /**< pin for Enable line     */
+#define LCD_DATA4_PIN C, 3 /**< pin for 4bit data bit 0  */
+#define LCD_DATA5_PIN C, 2 /**< pin for 4bit data bit 1  */
+#define LCD_DATA6_PIN C, 1 /**< pin for 4bit data bit 2  */
+#define LCD_DATA7_PIN C, 0 /**< pin for 4bit data bit 3  */
 
 static uint16_t lcd_gpio_callback(HD44780_MSG msg, uint16_t data_arg) {
     uint16_t result = 0;
     switch (msg) {
         case HD44780_MSG_INIT:
-            gpio_init(LCD_E_PIN, true, false);
-            gpio_init(LCD_RW_PIN, true, false);
-            gpio_init(LCD_RS_PIN, true, false);
+        // gpio_init(LCD_RW_PIN, true, false);
+            gpio_init(LCD_RS_PIN, GPIO_OUTPUT, GPIO_NO_PULLUP);
+            gpio_init(LCD_E_PIN, GPIO_OUTPUT, GPIO_NO_PULLUP);
+            gpio_init(LCD_DATA4_PIN, GPIO_OUTPUT, GPIO_NO_PULLUP);
+            gpio_init(LCD_DATA5_PIN, GPIO_OUTPUT, GPIO_NO_PULLUP);
+            gpio_init(LCD_DATA6_PIN, GPIO_OUTPUT, GPIO_NO_PULLUP);
+            gpio_init(LCD_DATA7_PIN, GPIO_OUTPUT, GPIO_NO_PULLUP);
             break;
         case HD44780_MSG_GPIO_DATA_DIRECTION:
             gpio_direction(LCD_DATA4_PIN, data_arg);
@@ -71,7 +75,7 @@ static uint16_t lcd_gpio_callback(HD44780_MSG msg, uint16_t data_arg) {
             gpio_write(LCD_E_PIN, 0);
             break;
         case HD44780_MSG_GPIO_RW:
-            gpio_write(LCD_RW_PIN, data_arg);
+            // gpio_write(LCD_RW_PIN, data_arg);
             break;
         case HD44780_MSG_GPIO_RS:
             gpio_write(LCD_RS_PIN, data_arg);
@@ -84,7 +88,7 @@ static uint16_t lcd_gpio_callback(HD44780_MSG msg, uint16_t data_arg) {
             while (data_arg--) _delay_us(10);
             break;
         case HD44780_MSG_BACKLIGHT:
-            TIMER_OCA(3, data_arg);  // set PWM on LCD backlight
+            //TIMER_OCA(3, data_arg);  // set PWM on LCD backlight
             break;
 
         default:
@@ -352,17 +356,29 @@ ISR(TIMER1_COMPA_vect) {
 	ARDUINO_LED_SET(LEF_Led_update(&led));
 }
 
+ISR(TIMER0_COMPA_vect) {
+
+}
+
 static void hw_init(void) {
     stdout = &mystdout;
 
 	ARDUINO_LED_INIT();
 
-    // Timer 1 (16 bit)
+    TIMER0_CLK_PRES_64();
+    TIMER0_OCA_IE();
+    TIMER0_WGM_FAST_PWM();
+
+
+    // Timer 1 (16 bit) Sytem timer
     TIMER1_CLK_PRES_256();  // set prescaler to 1/1024
     TIMER1_OCA_SET(625);
     TIMER1_OCA_IE();  // enable output compare A interrupt
 
     uart_init(UART_BAUD_SELECT(UART_BAUD_RATE, F_CPU));
+
+    lcd_init(lcd_gpio_callback, HD44780_MODE_ON);
+    lcd_puts("LCD test");
     sei();  // Enable all interrupts
 }
 

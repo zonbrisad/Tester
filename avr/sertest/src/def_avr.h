@@ -128,6 +128,9 @@ inline void I2C_Wait_Completion(void)     { while(I2C_Is_Busy()) {} }
 #endif
 
 // AVR Timer 0 (8 bit) ------------------------------------------------------
+#ifdef TIMSK0
+#define TIMSK TIMSK0
+#endif
 
 // Clock source
 inline void TIMER0_CLK_DISSABLE(void)     { TCCR0B &= 0b11111000; }        // Disable timer
