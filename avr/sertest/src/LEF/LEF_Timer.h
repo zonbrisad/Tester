@@ -39,7 +39,7 @@ typedef struct {
 	LEF_EventId id;
   uint16_t counter;
   uint16_t reload;
-
+  LEF_EventFunc func;
 } LEF_Timer;
 
 
@@ -59,6 +59,8 @@ void LEF_Timer_init(LEF_Timer *timer, LEF_EventId id);
 void LEF_Timer_start_repeat(LEF_Timer *timer, uint16_t ticks);
 
 void LEF_Timer_start_single(LEF_Timer *timer, uint16_t ticks);
+
+void LEF_Timer_start_single_msg(LEF_Timer *timer, uint16_t ticks, LEF_EventFunc func);
 
 void LEF_Timer_stop(LEF_Timer *timer);
 	

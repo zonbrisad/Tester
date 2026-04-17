@@ -334,7 +334,8 @@ LICENSE:
  #error "no UART definition for MCU available"
 #endif
 
-
+uint32_t rx_bytes = 0;
+uint32_t tx_bytes = 0;
 
 /*
  *  module global variables
@@ -398,7 +399,8 @@ Purpose:  called when the UART has received a character
         /* store received data in buffer */
         UART_RxBuf[tmphead] = data;
     }
-    UART_LastRxError |= lastRxError;   
+    UART_LastRxError |= lastRxError;
+    rx_bytes++;   
 }
 
 
@@ -421,6 +423,7 @@ Purpose:  called when the UART is ready to transmit the next byte
         /* tx buffer empty, disable UDRE interrupt */
         UART0_CONTROL &= ~_BV(UART0_UDRIE);
     }
+    tx_bytes++;
 }
 
 

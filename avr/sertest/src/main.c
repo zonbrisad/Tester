@@ -1,3 +1,17 @@
+/**
+ *---------------------------------------------------------------------------
+ * @brief    Program for testing terminal functions over serial port.
+ *
+ * @file     main.c
+ * @author   Peter Malmberg <peter.malmberg@gmail.com>
+ * @version  0.01
+ * @date     2026-04-15
+ * @license  MIT
+ *
+ *---------------------------------------------------------------------------
+ *
+ *
+ */
 #include "main.h"
 
 #include <stdio.h>
@@ -21,11 +35,19 @@
 #define UART_BAUD_RATE 57600
 typedef enum {
 	EVENT_Timer1 = 0,
+    EVENT_Timer_msg,
+    EVENT_LCD
 } Events;
+
+typedef enum {
+    MSG_UPDATE_LCD = 0
+} msg_t;
 
 static FILE mystdout = FDEV_SETUP_STREAM((void *)uart_putc, NULL, _FDEV_SETUP_WRITE);
 
 LEF_Timer timer1;
+LEF_Timer timer_lcd;
+LEF_Timer timer_msg;
 LEF_Led   led;
 
 #define LCD_RS_PIN C, 5    /**< pin for RS line         */
@@ -157,10 +179,10 @@ static void cmd_insert(char* args) {
     fill_screen();
     printf(E_SAVE_CURSOR_POS);
     printf(E_CUR_POS(5, 1));
-    _delay_ms(300);
+    LEF_Delay(30);
     for (size_t i = 0; i < 10; i++) {
         printf_P(PSTR(E_INSERT_LINE));
-        _delay_ms(300);
+        LEF_Delay(30);
     }
     printf_P(PSTR(E_RESTORE_CURSOR_POS));
     printf_P(PSTR("\n"));
@@ -346,14 +368,39 @@ const PROGMEM LEF_CliCmd commands[] = {
     {cmd_mrtcu, "mrtcu", "Multirow Cursor Up test"},
     {cmd_mrtcp, "mrtcp", "Multirow Cursor Position test"},
     LEF_CLI_LABEL("Other"),
-    {(void*)(char*)print_sysinfo, "info", "System info"},
+    {(void*)(char*)LEF_print_sysinfo, "info", "System info"},
     {cmd_help, "help", "Print help information"},
 };
 
 ISR(TIMER1_COMPA_vect) {
     TIMER1_RELOAD(0);
+    LEF_systick();
     LEF_Timer_update(&timer1);
+    LEF_Timer_update(&timer_lcd);
+    LEF_Timer_update(&timer_msg);
 	ARDUINO_LED_SET(LEF_Led_update(&led));
+}
+
+static void update_lcd(uint8_t msg) {
+    char buf[16];
+    switch (msg) {
+        case 0:
+            lcd_gotoxy(0, 0);
+            lcd_puts_P("Terminal tester");
+            lcd_gotoxy(0, 1);
+            lcd_puts_P("  57600 bits/s");
+            break;
+        case 1:
+            lcd_gotoxy(0, 0);
+            sprintf(buf, "Rx: %6lu", rx_bytes);
+            lcd_puts(buf);
+            lcd_gotoxy(0, 1);
+            sprintf(buf, "Tx: %6lu", tx_bytes);
+            lcd_puts(buf);
+            break;
+        default:
+            break;
+    }
 }
 
 #define LCD_BACKLIGHT_PIN D,6
@@ -377,44 +424,65 @@ static void hw_init(void) {
     uart_init(UART_BAUD_SELECT(UART_BAUD_RATE, F_CPU));
 
     lcd_init(lcd_gpio_callback, HD44780_MODE_ON);
-    lcd_puts_P("Terminal tester");
-    lcd_gotoxy(0, 1);
-    lcd_puts_P("  57600 bits/s");
+    update_lcd(0);
 
     sei();  // Enable all interrupts
 }
 
-int main() {
-    LEF_Event event;
+static bool pre_event_handler(LEF_Event *event) {
+    if (event->id == EVENT_LCD) {
+        update_lcd(1);
+        return true;
+    }
+    return false;
+}
+
+static bool main_event_handler(LEF_Event *event) {
     uint16_t ch;
-	
+    switch (event->id) {
+        case EVENT_Timer1:
+            ch = uart_getc();
+            while ((ch & 0xff00) != UART_NO_DATA) {
+                LEF_Cli_putc(ch);
+                ch = uart_getc();
+            }
+            break;
+        case LEF_EVENT_CLI:
+            LEF_Cli_exec(event);
+            break;
+
+        case EVENT_Timer_msg:
+            switch (event->func) {
+                case MSG_UPDATE_LCD:
+                    LEF_Timer_start_repeat(&timer_lcd, 10);
+                    lcd_clear();
+                    update_lcd(1);
+                    break;
+                default:
+                    break;
+            }
+            break;
+    }
+    return true;
+}
+
+int main() {
+ 	
 	LEF_init();
 	LEF_Led_init(&led, LED_BLINK);
     LEF_Timer_init(&timer1, EVENT_Timer1);
     LEF_Timer_start_repeat(&timer1, 10);
+    LEF_Timer_init(&timer_lcd, EVENT_LCD);
+    // LEF_Timer_start_repeat(&timer_lcd, 10);
+    LEF_Timer_init(&timer_msg, EVENT_Timer_msg);
+    LEF_Timer_start_single_msg(&timer_msg, 400, MSG_UPDATE_LCD);
 	LEF_CLI_INIT(commands);
 
     hw_init();
 
-    printf_P(PSTR("\n\nArduino serial port testprogram\n\n"));
+    printf_P(PSTR("\n\nSerial terminal testprogram\n\n"));
 
-    while (true) {
-        LEF_Wait(&event);
+    LEF_Run(main_event_handler, pre_event_handler);
 
-        switch (event.id) {
-            case EVENT_Timer1:
-                ch = uart_getc();
-                while ((ch & 0xff00) != UART_NO_DATA) {
-                    LEF_Cli_putc(ch);
-                    ch = uart_getc();
-                }
-
-                break;
-
-            case LEF_EVENT_CLI:
-                LEF_Cli_exec(&event);
-                break;
-        }
-    }
     return 0;
 }

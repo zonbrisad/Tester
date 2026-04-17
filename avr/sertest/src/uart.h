@@ -106,6 +106,8 @@ LICENSE:
 #define UART_BUFFER_OVERFLOW  0x0200              /**< @brief receive ringbuffer overflow */
 #define UART_NO_DATA          0x0100              /**< @brief no receive data available   */
 
+extern uint32_t rx_bytes;
+extern uint32_t tx_bytes;
 
 /*
 ** function prototypes

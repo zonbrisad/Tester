@@ -25,29 +25,33 @@ LEF_Pot *LEF_Pot_new(void) {
 
 void LEF_Pot_init(LEF_Pot *pot, LEF_EventId id) {
 	pot->id = id;
-	pot->state = 0;
+	pot->value = 65535;
 	pot->enabled = true;
+	pot->threshold = POT_THRESHOLD;
 }
 
-void LEF_Pot_update(LEF_Pot *pot, uint16_t newState) {
+void LEF_Pot_update(LEF_Pot *pot, uint16_t new_value) {
 	int diff;
-	LEF_Event qe;
 
 	if (!pot->enabled) return;
 
-	qe.id = pot->id;
+	if (pot->value == 65535) {
+		pot->value = new_value;
+		return;
+	}
 
-	diff = pot->state - newState;
 
-	if ((((diff) < 0) ? -(diff) : (diff)) > POT_THRESHOLD) {
-		qe.func=1;
-		LEF_QueueStdSend(&qe);
-		pot->state = newState;
+	diff = pot->value - new_value;
+
+
+	if ((((diff) < 0) ? -(diff) : (diff)) > pot->threshold) {
+		LEF_Send_msg(pot->id, 1);
+		pot->value = new_value;
 	}
 }
 
 uint16_t LEF_Pot_state(LEF_Pot *pot) {
-  return pot->state;
+  return pot->value;
 }
 
 void LEF_Pot_enable(LEF_Pot *pot, bool en) {

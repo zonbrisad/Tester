@@ -23,40 +23,34 @@ void LEF_Button_init(LEF_Button* button, LEF_EventId id) {
     button->cnt = 0;
 }
 
-void LEF_Button_update(LEF_Button* button, uint8_t state) {
-    LEF_Event qe;
-    qe.id = button->id;
+void LEF_Button_update(LEF_Button* button, bool state) {
 
     // store button state
     button->state = (button->state << 1);
-    if (state)
-        button->state |= 1;
-    else
-        button->state &= ~1;
+    button->state |= (state) ? 1 : 0;
 
     // detect button press event
     if ((button->state & 0b111) == 0b011) {
-        qe.func = 1;
-        LEF_QueueStdSend(&qe);
+        LEF_Send_msg(button->id, 1);
     }
-
+    
     // detect button release event
     if ((button->state & 0b111) == 0b100) {
-        qe.func = 2;
-        LEF_QueueStdSend(&qe);
+        LEF_Send_msg(button->id, 2);
     }
-
+    
     // detect long press event
     if ((button->state & 0b111) == 0b111) {
         if (button->cnt < 252) button->cnt++;
-
+        
         if (button->cnt == 250) {
-            qe.func = 3;
-            LEF_QueueStdSend(&qe);
+            LEF_Send_msg(button->id, 3);
         }
     } else {
         button->cnt = 0;
     }
 }
 
-void LEF_Button_free(LEF_Button* button) { free(button); }
+void LEF_Button_free(LEF_Button* button) { 
+    free(button); 
+}

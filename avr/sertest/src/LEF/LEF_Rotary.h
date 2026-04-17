@@ -1,10 +1,10 @@
 /**
  *---------------------------------------------------------------------------
- * @brief    A button class
+ * @brief    A rotary encoder driver
  *
  * @file     LEF_Button.h
  * @author   Peter Malmberg <peter.malmberg@gmail.com>
- * @version  0.01
+ * @version  0.2
  * @date     2023-04-14
  * @license  MIT
  *
@@ -12,6 +12,10 @@
  *
  *
  */
+
+ /* 
+  * To function well, update function need to be called with 1ms intervall 
+  */
 
 #pragma once
 
@@ -24,21 +28,13 @@ extern "C"
 
 typedef struct {
 	LEF_EventId id;
-	uint8_t state;
-	uint8_t cnt;
 	uint8_t clk;
-	uint8_t data;
 } LEF_Rotary;
-
-
-//LEF_RotaryE *LEF_RotaryE_new(void);
 
 void LEF_Rotary_init(LEF_Rotary *rotary, LEF_EventId id);
 
-void LEF_Rotary_update(LEF_Rotary *rotary, uint8_t clk, uint8_t dt);
+void LEF_Rotary_update(LEF_Rotary *rotary, uint8_t clk, uint8_t data);
 
-void LEF_Rotary_free(LEF_Rotary *rotary);
-        
 #ifdef __cplusplus
 } //end brace for extern "C"
 #endif

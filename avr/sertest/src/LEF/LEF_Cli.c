@@ -112,52 +112,41 @@ void LEF_Cli_init(const LEF_CliCmd *cmds, uint8_t size) {
 
 	history_init(&cli_history);
 
-	printf("\n%s", LEF_CLI_PROMPT);
+	lefprintf("\n%s", LEF_CLI_PROMPT);
 }
 
 void LEF_Cli_putc(const char ch) {
-	LEF_Event event;
-	
 	uint16_t chf = ANSI_Filter(ch);
 
 	if (cli_wait_key_pressed) {
-		event.id = LEF_EVENT_CLI;
-		event.func = 1;
-		LEF_QueueStdSend(&event);
+		LEF_Send_msg(LEF_EVENT_CLI, 1);
 		return;
 	}
 	
 	if (chf == NO_DATA) {
 		return; // Filtered out character, do nothing
 	}
-
+	
 	// handle arrow keys
 	if (chf >= ARROW_UP) {
-		event.id = LEF_EVENT_CLI;		
-		event.func = chf >> 8; // Store arrow key code in func field (1=up, 2=down, 3=right, 4=left)
-		LEF_QueueStdSend(&event);
-		return;
+        LEF_Send_msg(LEF_EVENT_CLI, chf >> 8);
+        return;
 	}
-
+	
 	// handle backspace
 	if (chf=='\b') {
 		if (cli_cnt > 0 ) {
-		  cli_cnt--;
-			printf("\b \b");
+			cli_cnt--;
+			lefprintf("\b \b");
 			return;
 		}
 		return;
 	}
-
+	
 	// handle newline(enter)
 	if (chf=='\n') {
-		printf("\n");
-
-		event.id = LEF_EVENT_CLI;
-		event.func = 0;
-		
-		LEF_QueueStdSend(&event);
-				
+		lefprintf("\n");
+		LEF_Send_msg(LEF_EVENT_CLI, 0);
 		return;
 	}
 
@@ -169,7 +158,7 @@ void LEF_Cli_putc(const char ch) {
 	cli_buf[cli_cnt] = chf;
 	cli_cnt++;
     cli_buf[cli_cnt] = '\0';
-    printf("%c",chf);
+    lefprintf("%c",chf);
 }
 
 
@@ -187,15 +176,7 @@ void LEF_Cli_print(void) {
 		if (ptr != NULL)
 			lefprintf("  %-12s", cBuf);
 	
-	//		
-	// Change in future?
-	// use lefprintf("%s", dBuf) instead of lefprintf(dBuf) to avoid format string vulnerability warning from compiler
-	// 
-	#pragma GCC diagnostic ignored "-Wformat-security"
-    lefprintf(dBuf);
-	#pragma GCC diagnostic pop
-    
-    lefprintf("\n");
+    lefprintf("%s\n",dBuf);
   }
 }
 
@@ -218,8 +199,8 @@ void LEF_Cli_exec(LEF_Event *event) {
 			history_down(&cli_history);
 		
 		const char* hist_cmd = history_current(&cli_history);
-        printf("\r" LEF_CLI_PROMPT "%-40s", hist_cmd);
-		printf("\r\e[%dC", strlen(hist_cmd)+strlen(LEF_CLI_PROMPT));
+        lefprintf("\r" LEF_CLI_PROMPT "%-40s", hist_cmd);
+		lefprintf("\r\e[%dC", strlen(hist_cmd)+strlen(LEF_CLI_PROMPT));
 		cli_cnt = strlen(hist_cmd);
 		strncpy(cli_buf, hist_cmd, LEF_CLI_BUF_LENGTH - 1);
 		cli_buf[LEF_CLI_BUF_LENGTH - 1] = '\0';

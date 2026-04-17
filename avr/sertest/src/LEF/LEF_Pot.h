@@ -25,8 +25,9 @@ extern "C"
 
 typedef struct {
 	LEF_EventId id;
-	uint16_t state;
+	uint16_t value;
 	bool enabled;
+	uint16_t threshold;
 } LEF_Pot;
 
 
@@ -34,7 +35,7 @@ LEF_Pot *LEF_Pot_new(void);
 
 void LEF_Pot_init(LEF_Pot *pot, LEF_EventId id);
 
-void LEF_Pot_update(LEF_Pot *pot, uint16_t newState);
+void LEF_Pot_update(LEF_Pot *pot, uint16_t new_value);
 
 uint16_t LEF_Pot_state(LEF_Pot *pot);
 

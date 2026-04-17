@@ -24,6 +24,14 @@
 
 #pragma once
 
+#if defined(__ARM_LINUX__) || defined(unix) || defined(__unix__) || defined(__unix)
+#define LEF_SYSTEM_LINUX
+#endif
+
+#if defined(__AVR__)
+#define LEF_SYSTEM_AVR
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -33,25 +41,28 @@ extern "C" {
 #include <stdlib.h>
 #include <stdbool.h>
 	
-// AVR specific includes
-#ifdef __AVR__	
+#ifdef LEF_SYSTEM_AVR
 #include <util/atomic.h>
 #include <avr/pgmspace.h>
 #endif
 
-#include "LEF_Config.h"
+#ifdef LEF_SYSTEM_LINUX
+#include "LEF_linux.h"
+#endif
 
-#include "LEF_Queue.h"
-#include "LEF_Timer.h"
+#include "LEF_Button.h"
+#include "LEF_Buzzer.h"
+#include "LEF_Cli.h"
+#include "LEF_Config.h"
 #include "LEF_Led.h"
 #include "LEF_LedA.h"
 #include "LEF_LedRG.h"
-#include "LEF_Buzzer.h"
-#include "LEF_Button.h"
-#include "LEF_Rotary.h"
-#include "LEF_Cli.h"
 #include "LEF_Pot.h"
-	
+#include "LEF_Queue.h"
+#include "LEF_Rotary.h"
+#include "LEF_Timer.h"
+#include "LEF_Types.h"
+
 // Controls --------------------------------------------------------------
 
 #ifndef LEF_QUEUE_LENGTH
@@ -60,46 +71,39 @@ extern "C" {
 	
 // Events ----------------------------------------------------------------
 
+#define LEF_ERROR         240
 #define LEF_EVENT_CLI     250
+#define LEF_EVENT_DELAY   251
 #define LEF_EVENT_TEST    254
 #define LEF_SYSTICK_EVENT 255
-	
-// Macros -----------------------------------------------------------------
-	
-#define LEF_ATOMIC_BLOCK()
-	
-// 
-#define lefprintf(...)   printf( __VA_ARGS__)
-// #define lefprintf(...)   printf("%s" __VA_ARGS__)
-// #define lefprintf(str)   printf("%s" (str))
-// #define lefprintf(_fmt, ...)   printf(_fmt, ##__VA_ARGS__)
 
+// Typedefs ---------------------------------------------------------------
+
+
+// Macros -----------------------------------------------------------------
+
+#ifdef LEF_SYSTEM_LINUX
+
+#define LEF_ATOMIC_BLOCK()
+#define lefprintf(...)   printf( __VA_ARGS__)
 #define lefstrcpy(d, s)  strcpy(d,s)
- 
+
+#endif
 
 // if avr GCC use printf_P to store format strings in flash instead of RAM
-#ifdef __AVR__   
+#ifdef LEF_SYSTEM_AVR
 
 #undef LEF_ATOMIC_BLOCK
 #define LEF_ATOMIC_BLOCK() ATOMIC_BLOCK(ATOMIC_FORCEON)
 	
-//#undef lefprintf
-//#define lefprintf(fmt, ...)  printf_P(PSTR(fmt), ##__VA_ARGS__)
+#undef lefprintf
+#define lefprintf(fmt, ...)  printf_P(PSTR(fmt), ##__VA_ARGS__)
 
 #undef lefstrcpy
-#define lefstrcpy(d, s)  strcpy_P(d,s)
+#define lefstrcpy(d, s)      strcpy_P(d,s)
 	
 #endif
 
-	
- 
-// For compability with older code, remove in future
-#define LEF_QueueStdSend(event) LEF_Send(event)
-#define LEF_QueueStdWait(event) LEF_Wait(event)
-#define LEF_QueueStdClear()     LEF_Clear()
-#define LEF_QueueStdCnt()       LEF_Count()
-
-	
 // Critical Section -------------------------------------------------------
 
 #define LEF_EnterCritical()  \
@@ -118,13 +122,10 @@ extern "C" {
 #define LEF_portNOP  asm volatile ( "nop" );
 	
 	
-	
-// Typedefs ---------------------------------------------------------------
-	
 // Variables --------------------------------------------------------------
 
 extern LEF_EventQueue lef_std_queue;
-	
+
 // Functions --------------------------------------------------------------
 
 
@@ -134,17 +135,44 @@ void LEF_Print_event(LEF_Event *event);
 	
 void LEF_Send(LEF_Event *event);
 
-/**
- * Wait for
- * @param event
- */
-void LEF_Wait(LEF_Event *event);
-	
+void LEF_Send_msg(LEF_EventId id, LEF_EventFunc func);
+
+    /**
+     * Wait for
+     * @param event
+     */
+void LEF_Wait(LEF_Event* event);
+
 void LEF_Clear(void);
+
+void LEF_systick(void);
+
+void LEF_Delay(uint16_t ticks);
 
 uint16_t LEF_Count(void);
 
-	
+int LEF_Run(LEF_EventHandler main_event_handler,
+            LEF_EventHandler pre_event_handler);
+
+void LEF_print_sysinfo(void);
+
+#ifdef LEF_SYSTEM_LINUX
+
+/**
+ * @brief Add system(Linux) timer
+ *
+ * @param name Name of timer
+ * @param invervall Timer intervall in ms
+ * @param callback Callback function for timer
+ */
+void LEF_add_systimer(char* name, size_t intervall, LEF_Callback callback);
+
+#endif
+
+
+
+
+
 #ifdef __cplusplus
 } //end brace for extern "C"
 #endif
