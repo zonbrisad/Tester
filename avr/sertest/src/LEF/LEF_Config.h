@@ -35,7 +35,7 @@ extern "C" {
 
 // Cli settings -----------------------------------------------------------
 #define LEF_CLI_BUF_LENGTH              32  /**< Length of CLI input buffer */
-#define LEF_CLI_PROMPT            "Sertest > "
+#define LEF_CLI_PROMPT            "LEF > "
 
 #define LEF_CLI_CMD_LENGTH              12
 #define LEF_CLI_DESC_LENGTH             32

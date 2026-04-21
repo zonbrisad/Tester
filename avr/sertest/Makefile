@@ -29,6 +29,7 @@ SRC = src/main.c \
 	src/uart.c \
 	src/lcd.c \
 	src/LEF/LEF.c \
+	src/LEF/LEF_Core.c \
 	src/LEF/LEF_Timer.c \
 	src/LEF/LEF_Queue.c \
 	src/LEF/LEF_Button.c \

@@ -166,10 +166,10 @@ static void cmd_delete(char* args) {
     fill_screen();
     printf(E_SAVE_CURSOR_POS);
     printf(E_CUR_POS(5, 1));
-    _delay_ms(300);
+    LEF_Delay(30);
     for (size_t i = 0; i < 10; i++) {
         printf(E_DELETE_LINE);
-        _delay_ms(300);
+        LEF_Delay(15);
     }
     printf(E_RESTORE_CURSOR_POS);
     printf_P(PSTR("\n"));
@@ -182,13 +182,13 @@ static void cmd_insert(char* args) {
     LEF_Delay(30);
     for (size_t i = 0; i < 10; i++) {
         printf_P(PSTR(E_INSERT_LINE));
-        LEF_Delay(30);
+        LEF_Delay(15);
     }
     printf_P(PSTR(E_RESTORE_CURSOR_POS));
     printf_P(PSTR("\n"));
 }
 
-#define BAR 15
+#define BAR 25
 static void print_bar(size_t l, size_t max) {
     char buf[96];
 	UNUSED(max);
@@ -196,14 +196,14 @@ static void print_bar(size_t l, size_t max) {
         buf[i] = '=';
     }
     buf[l] = '\0';
-    printf_P(PSTR("  [%-15s]  %2d"), buf, l);
+    printf_P(PSTR("  [%-25s]  %2d"), buf, l);
 }
 
 static void cmd_bar(char* args) {
     UNUSED(args);
     for (size_t i = 0; i <= BAR; i++) {
         print_bar(i, BAR);
-        _delay_ms(100);
+        LEF_Delay(5);
         printf("\r");
     }
     printf("\n");

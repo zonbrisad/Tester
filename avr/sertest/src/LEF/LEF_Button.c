@@ -14,6 +14,7 @@
  */
 
 #include "LEF_Button.h"
+#include "LEF_Core.h"
 
 LEF_Button* LEF_Button_new(void) { return malloc(sizeof(LEF_Button)); }
 
