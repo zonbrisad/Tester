@@ -24,13 +24,13 @@ endif()
 include(${PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 
 # Main project
-project(blink-timer C CXX ASM
-)
-# project(blink-timer 
-#     LANGUAGES C CXX ASM
-#     VERSION 1.0
-#     DESCRIPTION Example showing how to use a timer to blink LED.
+# project(blink-timer C CXX ASM
 # )
+project(blink-timer 
+    LANGUAGES C CXX ASM
+    VERSION 1.0
+    DESCRIPTION "Example showing how to use a timer to blink LED."
+)
 
 # Set target board
 set(PICO_BOARD pico)  # alt. pico, pico_w, pico2, pico2_w
