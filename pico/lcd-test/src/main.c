@@ -76,10 +76,6 @@ static uint16_t lcd_gpio_callback(HD44780_MSG msg, uint16_t data_arg) {
             gpio_set_dir(LCD_DATA7_PIN, data_arg);
             break;
         case HD44780_MSG_GPIO_DATA_READ:
-            // if (gpio_read(LCD_DATA4_PIN)) result |= 0x01;
-            // if (gpio_read(LCD_DATA5_PIN)) result |= 0x02;
-            // if (gpio_read(LCD_DATA6_PIN)) result |= 0x04;
-            // if (gpio_read(LCD_DATA7_PIN)) result |= 0x08;
             break;
         case HD44780_MSG_GPIO_DATA_WRITE:
             gpio_put(LCD_DATA7_PIN, data_arg & 0x80);
@@ -122,7 +118,6 @@ static void hw_init(void) {
     stdio_init_all();
     gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);
-
 
     lcd_init(lcd_gpio_callback, HD44780_MODE_ON);
 }
